@@ -1,0 +1,49 @@
+name: Supabase Heartbeat
+
+# Mantém o projeto Supabase ativo fazendo uma escrita real na tabela
+# `heartbeat` a cada 3 dias (o plano gratuito pausa após 7 dias sem
+# atividade de banco). Também pode ser disparado manualmente para teste.
+
+on:
+  schedule:
+    - cron: "0 6 */3 * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Atualizar timestamp na tabela heartbeat
+        env:
+          SUPABASE_URL: https://npervqefspmwmrekskcb.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+
+          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          RESPONSE=$(curl -sS -w "\n%{http_code}" -X PATCH \
+            "$SUPABASE_URL/rest/v1/heartbeat?id=eq.1" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=representation" \
+            -d "{\"pinged_at\": \"$NOW\"}")
+
+          STATUS=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "HTTP status: $STATUS"
+          echo "Resposta: $BODY"
+
+          if [ "$STATUS" -ge 300 ]; then
+            echo "::error::Falha ao atualizar heartbeat (status $STATUS)"
+            exit 1
+          fi
+
+          if [ "$BODY" = "[]" ]; then
+            echo "::error::Nenhuma linha foi atualizada. Confirme se a tabela heartbeat existe e tem a linha id=1."
+            exit 1
+          fi
+
+          echo "Heartbeat atualizado com sucesso."
