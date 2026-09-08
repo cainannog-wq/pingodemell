@@ -9,10 +9,16 @@ on:
     - cron: "0 6 */3 * *"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
       - name: Atualizar timestamp na tabela heartbeat
         env:
           SUPABASE_URL: https://npervqefspmwmrekskcb.supabase.co
@@ -21,6 +27,7 @@ jobs:
           set -euo pipefail
 
           NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "NOW=$NOW" >> "$GITHUB_ENV"
 
           RESPONSE=$(curl -sS -w "\n%{http_code}" -X PATCH \
             "$SUPABASE_URL/rest/v1/heartbeat?id=eq.1" \
@@ -47,3 +54,24 @@ jobs:
           fi
 
           echo "Heartbeat atualizado com sucesso."
+
+      - name: Registrar execução (commit automático)
+        run: |
+          set -euo pipefail
+
+          # Commit próprio a cada execução conta como atividade no repositório,
+          # o que evita que o GitHub desative este workflow agendado depois de
+          # 60 dias sem nenhum commit (limite que é independente do Supabase).
+          echo "Última execução do heartbeat: $NOW" > heartbeat-log.txt
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add heartbeat-log.txt
+
+          if git diff --cached --quiet; then
+            echo "Nada para commitar."
+          else
+            git commit -m "chore: heartbeat log $NOW"
+            git push
+          fi
