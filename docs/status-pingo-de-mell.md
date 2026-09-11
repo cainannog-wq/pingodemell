@@ -55,6 +55,14 @@ Risco aceito conscientemente: como os estados faltantes do CRUD vão ser montado
 
 O acréscimo do painel de pedidos (11/09/2026) trouxe volume de trabalho não previsto nos marcos originais de prazo (dia 15, 30, 45, 60). Ainda não houve conversa sobre revisar esses marcos.
 
+## Painel de pedidos — concluído e em PR, aguardando staging (11/09/2026)
+
+Schema, RLS, rate limit por IP e as duas telas (histórico e detalhe) estão prontos e validados localmente: `scripts/test-rls-pedidos.mjs` 7/7, `scripts/test-rate-limit-pedidos.mjs` bloqueando na 6ª tentativa, 6 pedidos de teste semeados cobrindo os 4 status, cards/busca/filtro/exportação CSV/ações de status conferidos um a um rodando o app local.
+
+PR aberto: https://github.com/cainannog-wq/pingodemell/pull/1 (branch `painel-de-pedidos`). Esse PR também trouxe, em commits separados, todo o trabalho de sessões anteriores que nunca tinha sido commitado (login, CRUD de produto, design system) — até 11/09/2026 só o commit inicial existia no GitHub.
+
+**Sem link de staging ainda**, porque o Netlify nunca foi conectado a este repositório do GitHub (confirmado: PR sem nenhum check de CI, sem comentário de preview do Netlify). Isso é ação de fora do Claude Code — conectar o site Netlify ao repo `cainannog-wq/pingodemell` (Netlify → Add new site → Import from Git). Depois de conectado, esse PR e os próximos passam a ganhar link de preview automático.
+
 ## Próximo pedido ao Claude Code
 
-Exclusão de produto e a confirmação visual do CAPTCHA de produção estão fechadas (ver Retrato acima) — as duas pontas soltas que bloqueavam o avanço foram resolvidas. Em 11/09/2026, o painel de pedidos (histórico e detalhe) entrou em andamento fora da ordem original do roadmap, por decisão do Cainan (ver "Acréscimo de escopo" acima). O pedido em execução: tabela `pedidos` com RLS, rate limit por IP no insert (Route Handler, não Edge Function — ver roadmap), pedidos de teste semeados manualmente, teste automatizado de RLS, e as duas telas do painel. Depois de fechado e validado (link de staging + teste de RLS rodando), retomar a ordem do roadmap: catálogo público, carrinho, e por fim checkout (item 4), que vai reaproveitar a tabela `pedidos` e o Route Handler de rate limit já prontos.
+Exclusão de produto e a confirmação visual do CAPTCHA de produção estão fechadas (ver Retrato acima). Painel de pedidos está pronto, ver seção acima — falta só o Cainan revisar/mergear o PR #1 e conectar o Netlify. Depois disso, retomar a ordem do roadmap: catálogo público, carrinho, e por fim checkout (item 4), que vai reaproveitar a tabela `pedidos` e o Route Handler de rate limit já prontos.
