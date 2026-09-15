@@ -9,8 +9,20 @@ import { formatDataHoraCurta } from "@/lib/pedidos/format";
 const SEPARADOR = ";";
 const BOM = "﻿";
 
+// Campos como cliente_nome e ocasiao vem de um formulario publico, sem
+// autenticacao (o insert de pedido é anônimo por design). Se um valor
+// comecar com =, +, -, @, tab ou CR, o Excel/Sheets pode interpretar a
+// celula como formula ao abrir o CSV (CSV/formula injection) — um
+// "cliente" poderia gravar algo como "=HYPERLINK(...)" no nome e tentar
+// vazar dado ou rodar comando quando o admin abre a planilha exportada.
+// Prefixar com um apóstrofo neutraliza isso sem mudar o texto visível.
+const PREFIXOS_FORMULA = ["=", "+", "-", "@", "\t", "\r"];
+
 function celula(valor: string | number): string {
-  const texto = String(valor);
+  let texto = String(valor);
+  if (PREFIXOS_FORMULA.some((p) => texto.startsWith(p))) {
+    texto = `'${texto}`;
+  }
   if (texto.includes(SEPARADOR) || texto.includes('"') || texto.includes("\n")) {
     return `"${texto.replace(/"/g, '""')}"`;
   }

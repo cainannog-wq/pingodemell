@@ -63,6 +63,20 @@ PR aberto: https://github.com/cainannog-wq/pingodemell/pull/1 (branch `painel-de
 
 **Sem link de staging ainda**, porque o Netlify nunca foi conectado a este repositório do GitHub (confirmado: PR sem nenhum check de CI, sem comentário de preview do Netlify). Isso é ação de fora do Claude Code — conectar o site Netlify ao repo `cainannog-wq/pingodemell` (Netlify → Add new site → Import from Git). Depois de conectado, esse PR e os próximos passam a ganhar link de preview automático.
 
+## Decisões de checkout fechadas em 14/09/2026
+
+Das três decisões em aberto desde 12/09/2026 (ver checklist, roadmap e escopo), duas foram fechadas nesta conversa: antecedência mínima do pedido (confirmada a regra já desenhada no catálogo público, com exceção manual do admin pra pedido urgente) e aviso de fidelidade no checkout (Claude Code sugeriu o texto em 14/09, aguardando o Cainan escolher a versão final). Foto de referência do bolo personalizado segue em aberto, precisa da resposta da cliente antes de fechar — sem isso, o formulário de checkout (Fase 2, item 4) não pode assumir se vai ter campo de upload ou não.
+
+## Netlify conectado e auditoria de segurança fechada (14/09/2026)
+
+Netlify conectado ao repositório — o bloqueador de staging registrado acima está resolvido; `painel-de-pedidos--pingodemell.netlify.app` (branch) e `pingodemell.netlify.app` (produção) já servem o app de verdade.
+
+Rodada de auditoria de segurança completa (`docs/auditoria-seguranca-prompt.md`), com resultado em `docs/auditoria-seguranca-resultado.md`. Achado crítico (B12 — mass assignment em `pedidos`: insert anônimo direto no banco conseguia forjar status/id/criado_em/total) corrigido via `supabase/pedidos-hardening.sql` e reconfirmado 5/5 contra produção depois do Cainan rodar o SQL. Rate limit e resistência a spoofing de IP também reconfirmados de ponta a ponta contra o Netlify real (não só local). Cabeçalhos de segurança, injeção de fórmula em CSV na exportação de pedidos e uma página de debug esquecida (`/teste-supabase`) também corrigidos.
+
+**Segundo incidente de credencial, já fechado:** durante o teste do Netlify recém-conectado, uma chamada de ferramenta retornou a `SUPABASE_SERVICE_ROLE_KEY` sem máscara (contexto "dev") no histórico desta sessão — mesmo padrão do incidente de 11/09/2026. O Cainan rotacionou a chave no Supabase e atualizou o valor no `.env.local` e no Netlify; a chave nova foi validada contra produção (`test-rls-pedidos.mjs` e `test-mass-assignment-pedidos.mjs`, ambos passando) antes deste commit.
+
+Preview do Netlify (B23) confirmado apontando pro mesmo banco de produção, não um banco separado — aceito por ora (mesmo padrão de qualquer app Supabase sem projeto de staging dedicado), documentado no relatório da auditoria.
+
 ## Próximo pedido ao Claude Code
 
-Exclusão de produto e a confirmação visual do CAPTCHA de produção estão fechadas (ver Retrato acima). Painel de pedidos está pronto, ver seção acima — falta só o Cainan revisar/mergear o PR #1 e conectar o Netlify. Depois disso, retomar a ordem do roadmap: catálogo público, carrinho, e por fim checkout (item 4), que vai reaproveitar a tabela `pedidos` e o Route Handler de rate limit já prontos.
+Exclusão de produto e a confirmação visual do CAPTCHA de produção estão fechadas (ver Retrato acima). Painel de pedidos está pronto e agora também auditado — falta só o Cainan revisar/mergear o PR #1. Depois disso, retomar a ordem do roadmap: catálogo público, carrinho, e por fim checkout (item 4), que vai reaproveitar a tabela `pedidos` e o Route Handler de rate limit já prontos (agora também protegidos pela correção do B12).
