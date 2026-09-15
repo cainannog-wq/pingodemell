@@ -42,16 +42,16 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
+      <div className="admin-page-header" style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
         <div>
-          <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
+          <h1 className="admin-page-h1" style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
             Produtos
           </h1>
           <p style={{ margin: "4px 0 0", color: "var(--pdm-muted)" }}>
             {totalCount === 0 ? "Nenhum produto cadastrado ainda." : "Esses são os produtos que aparecem no cardápio."}
           </p>
         </div>
-        <Link href="/admin/produtos/novo">
+        <Link href="/admin/produtos/novo" className="admin-page-header-cta">
           <Button iconLeft="add">Cadastrar produto</Button>
         </Link>
       </div>
@@ -73,7 +73,7 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
         </div>
 
         {rows.length > 0 ? (
-          <div style={{ overflowX: "auto" }}>
+          <div className="admin-table-desktop-wrap" style={{ overflowX: "auto" }}>
             <table className="admin-table" style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "var(--pdm-cream)" }}>
@@ -138,11 +138,67 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
               </tbody>
             </table>
           </div>
-        ) : (
-          <div style={{ padding: "80px 24px", display: "grid", placeItems: "center", textAlign: "center", background: "var(--pdm-cream-warm)" }}>
+        ) : null}
+
+        {rows.length > 0 ? (
+          <div className="admin-mobile-cards">
+            {rows.map((produto) => (
+              <div key={produto.nome} className="admin-mobile-card">
+                <div style={{ display: "flex", gap: 12 }}>
+                  <div
+                    style={{
+                      width: 56,
+                      height: 56,
+                      flexShrink: 0,
+                      borderRadius: "var(--radius)",
+                      background: "var(--pdm-cream-warm)",
+                      display: "grid",
+                      placeItems: "center",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {produto.image_url ? (
+                      <Image src={produto.image_url} alt={produto.nome} width={56} height={56} style={{ objectFit: "cover" }} />
+                    ) : (
+                      <Icon name="photo_camera" size={26} />
+                    )}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 600 }}>{produto.nome}</div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
+                      <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{formatPreco(produto.preco)}</span>
+                      <span style={{ fontSize: 13, color: "var(--pdm-muted)" }}>{produto.pedido_minimo} un. mín.</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="admin-mobile-card-divider" />
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                  <Link href={`/admin/produtos/${encodeURIComponent(produto.nome)}`}>
+                    <Button variant="secondary" size="sm" iconLeft="edit">
+                      Editar
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    iconLeft="delete"
+                    aria-label={`Excluir ${produto.nome}`}
+                    title="Excluir produto"
+                    onClick={() => setProdutoParaExcluir(produto.nome)}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {rows.length === 0 && (
+          <div className="admin-empty-state" style={{ padding: "80px 24px", display: "grid", placeItems: "center", textAlign: "center", background: "var(--pdm-cream-warm)" }}>
             <div style={{ maxWidth: "46ch", display: "grid", justifyItems: "center", gap: 16 }}>
               <Icon name="cake" size={40} tone="accent" />
-              <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 24, lineHeight: 1.4, margin: 0, color: "var(--pdm-brown)" }}>
+              <h3 className="admin-empty-state-title" style={{ fontFamily: "var(--font-heading)", fontSize: 24, lineHeight: 1.4, margin: 0, color: "var(--pdm-brown)" }}>
                 {totalCount === 0 ? "Seu cardápio ainda está vazio" : "Nada encontrado com esse filtro"}
               </h3>
               <p style={{ margin: 0, color: "var(--pdm-muted)" }}>

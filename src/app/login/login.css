@@ -7,6 +7,18 @@
   padding: 64px 32px;
 }
 
+.login-logo {
+  width: 200px;
+}
+
+.login-h1 {
+  font-size: 40px;
+}
+
+.login-subtitle {
+  font-size: 18px;
+}
+
 .login-card-title {
   font-size: 32px;
 }
@@ -17,18 +29,27 @@
 }
 
 @media (max-width: 640px) {
-  /* No mobile, o formulário (e-mail, senha, botão) precisa caber na
-     primeira dobra sem rolagem — vem primeiro na tela, o painel de marca
-     fica compacto e desce pra depois. */
+  /* Segue a ordem do handoff: faixa da marca em cima, card do formulário
+     embaixo (ordem natural do DOM, sem inverter via `order`). */
   .login-form-panel {
-    order: 1;
     padding: 24px 20px 40px;
   }
 
   .login-brand-panel {
-    order: 2;
-    padding: 24px 24px;
+    padding: 32px 24px 40px;
     gap: 16px;
+  }
+
+  .login-logo {
+    width: 132px;
+  }
+
+  .login-h1 {
+    font-size: 28px;
+  }
+
+  .login-subtitle {
+    font-size: 15px;
   }
 
   .login-tagline {
@@ -36,7 +57,10 @@
   }
 
   .login-card {
-    padding: 20px !important;
+    padding: 24px !important;
+    /* Alvo de toque mínimo sobe pra 48px no mobile (evita zoom automático
+       do iOS nos inputs); --tap-min alimenta o Input e o Button do DS. */
+    --tap-min: 48px;
   }
 
   .login-card-title {
@@ -44,7 +68,7 @@
   }
 
   .login-form {
-    gap: 16px;
+    gap: 20px;
     margin-top: 20px;
   }
 }

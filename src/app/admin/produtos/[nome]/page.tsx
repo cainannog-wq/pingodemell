@@ -22,10 +22,10 @@ export default async function EditarProdutoPage({
 
   if (!produto) {
     return (
-      <div style={{ padding: "80px 24px", display: "grid", placeItems: "center", textAlign: "center", background: "var(--pdm-cream-warm)", borderRadius: "var(--radius)" }}>
+      <div className="admin-empty-state" style={{ padding: "80px 24px", display: "grid", placeItems: "center", textAlign: "center", background: "var(--pdm-cream-warm)", borderRadius: "var(--radius)" }}>
         <div style={{ maxWidth: "46ch", display: "grid", justifyItems: "center", gap: 16 }}>
           <Icon name="search_off" size={40} tone="accent" />
-          <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 24, lineHeight: 1.4, margin: 0, color: "var(--pdm-brown)" }}>
+          <h3 className="admin-empty-state-title" style={{ fontFamily: "var(--font-heading)", fontSize: 24, lineHeight: 1.4, margin: 0, color: "var(--pdm-brown)" }}>
             Produto &quot;{nomeDecodificado}&quot; não encontrado
           </h3>
           <p style={{ margin: 0, color: "var(--pdm-muted)" }}>Ele pode já ter sido excluído ou renomeado.</p>
@@ -40,7 +40,7 @@ export default async function EditarProdutoPage({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div>
-        <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
+        <h1 className="admin-page-h1" style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
           Editar produto
         </h1>
         <p style={{ margin: "4px 0 0", color: "var(--pdm-muted)" }}>{produto.nome}</p>

@@ -99,27 +99,32 @@ export function PedidoDetail({ pedido }: { pedido: Pedido }) {
       <div>
         <Link
           href="/admin/pedidos"
+          className="pedido-detail-back-link"
           style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--pdm-muted)", fontSize: 14, textDecoration: "none" }}
         >
           <Icon name="arrow_back" size={18} tone="inherit" />
           Voltar ao histórico
         </Link>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
+        <div
+          className="pedido-detail-header-top"
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginTop: 8, flexWrap: "wrap" }}
+        >
           <div>
-            <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
+            <h1 className="admin-page-h1" style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
               Pedido #{pedido.numero}
             </h1>
             <p style={{ margin: "4px 0 0", color: "var(--pdm-muted)" }}>
               Recebido em {formatDataHoraExtensa(pedido.criado_em)} pelo WhatsApp.
             </p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div className="pedido-detail-header-actions" style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Badge variant={STATUS_BADGE_VARIANT[pedido.status]}>{STATUS_LABEL[pedido.status]}</Badge>
             <a
               href={buildWhatsAppLink(pedido.cliente_whatsapp)}
               target="_blank"
               rel="noopener noreferrer"
+              className="pedido-detail-whatsapp-link"
               style={{ textDecoration: "none" }}
             >
               <Button variant="whatsapp" iconLeft="chat">
@@ -172,8 +177,13 @@ export function PedidoDetail({ pedido }: { pedido: Pedido }) {
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 8 }}>
-                <span style={{ fontFamily: "var(--font-heading)", fontSize: 22, color: "var(--pdm-brown)" }}>Total</span>
-                <span style={{ fontFamily: "var(--font-heading)", fontSize: 22, color: "var(--pdm-brown)", fontVariantNumeric: "tabular-nums" }}>
+                <span className="pedido-detail-total" style={{ fontFamily: "var(--font-heading)", fontSize: 22, color: "var(--pdm-brown)" }}>
+                  Total
+                </span>
+                <span
+                  className="pedido-detail-total"
+                  style={{ fontFamily: "var(--font-heading)", fontSize: 22, color: "var(--pdm-brown)", fontVariantNumeric: "tabular-nums" }}
+                >
                   {formatMoeda(pedido.total)}
                 </span>
               </div>
@@ -212,7 +222,7 @@ export function PedidoDetail({ pedido }: { pedido: Pedido }) {
                   Pedido {pedido.status === "entregue" ? "entregue" : "cancelado"} — nenhuma ação disponível.
                 </p>
               ) : (
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                <div className="pedido-detail-status-actions" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                   {podeMarcarEntregue ? (
                     <Button iconLeft="check" disabled={isPending} onClick={() => mudarStatus("entregue")}>
                       {isPending && acaoEmCurso === "entregue" ? "Atualizando…" : "Marcar como entregue"}
@@ -252,7 +262,7 @@ export function PedidoDetail({ pedido }: { pedido: Pedido }) {
               </InfoRow>
               {pedido.cliente_email ? (
                 <InfoRow icon="mail" label="E-mail">
-                  {pedido.cliente_email}
+                  <span style={{ overflowWrap: "anywhere" }}>{pedido.cliente_email}</span>
                 </InfoRow>
               ) : null}
               {pedido.ocasiao ? (

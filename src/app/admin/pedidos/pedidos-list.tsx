@@ -38,11 +38,11 @@ function contarItens(pedido: Pedido): number {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <Card tone="white" padding="20px 24px" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <span style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: ".05em", fontWeight: 700, color: "var(--pdm-muted)" }}>
+    <Card tone="white" padding="20px 24px" className="admin-stat-card" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <span className="admin-stat-card-label" style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: ".05em", fontWeight: 700, color: "var(--pdm-muted)" }}>
         {label}
       </span>
-      <span style={{ fontFamily: "var(--font-heading)", fontSize: 28, lineHeight: 1.2, color: "var(--pdm-brown)" }}>{value}</span>
+      <span className="admin-stat-card-value" style={{ fontFamily: "var(--font-heading)", fontSize: 28, lineHeight: 1.2, color: "var(--pdm-brown)" }}>{value}</span>
     </Card>
   );
 }
@@ -75,22 +75,19 @@ export function PedidosList({
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
         <div>
-          <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
+          <h1 className="admin-page-h1" style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
             Histórico de pedidos
           </h1>
           <p style={{ margin: "4px 0 0", color: "var(--pdm-muted)" }}>Todo pedido fechado pelo WhatsApp fica registrado aqui.</p>
         </div>
-        <Button
-          variant="secondary"
-          iconLeft="download"
-          onClick={() => exportarPedidosCSV(rows)}
-          disabled={rows.length === 0}
-        >
-          Exportar planilha
-        </Button>
+        <div className="admin-header-action-desktop">
+          <Button variant="secondary" iconLeft="download" onClick={() => exportarPedidosCSV(rows)} disabled={rows.length === 0}>
+            Exportar planilha
+          </Button>
+        </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
+      <div className="admin-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
         <StatCard label="Pedidos no mês" value={String(stats.pedidosNoMes)} />
         <StatCard label="Aguardando confirmação" value={String(stats.aguardandoConfirmacao)} />
         <StatCard label="Entregues" value={String(stats.entregues)} />
@@ -126,7 +123,7 @@ export function PedidosList({
         </div>
 
         {rows.length > 0 ? (
-          <div style={{ overflowX: "auto" }}>
+          <div className="admin-table-desktop-wrap" style={{ overflowX: "auto" }}>
             <table className="admin-table" style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "var(--pdm-cream)" }}>
@@ -173,11 +170,54 @@ export function PedidosList({
               </tbody>
             </table>
           </div>
-        ) : (
-          <div style={{ padding: "80px 24px", display: "grid", placeItems: "center", textAlign: "center", background: "var(--pdm-cream-warm)" }}>
+        ) : null}
+
+        {rows.length > 0 ? (
+          <div className="admin-mobile-cards">
+            {rows.map((pedido) => (
+              <div key={pedido.id} className="admin-mobile-card">
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                  <span style={{ fontWeight: 700, color: "var(--pdm-brown)" }}>#{pedido.numero}</span>
+                  <Badge variant={STATUS_BADGE_VARIANT[pedido.status]}>{STATUS_LABEL[pedido.status]}</Badge>
+                </div>
+                <div style={{ marginTop: 8, fontWeight: 600 }}>{pedido.cliente_nome}</div>
+                {pedido.ocasiao ? <div style={{ fontSize: 14, color: "var(--pdm-muted)" }}>{pedido.ocasiao}</div> : null}
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "4px 20px",
+                    marginTop: 8,
+                    fontSize: 14,
+                    color: "var(--pdm-muted)",
+                  }}
+                >
+                  <span style={{ fontVariantNumeric: "tabular-nums" }}>{formatDataHoraCurta(pedido.data_hora_entrega)}</span>
+                  <span style={{ fontVariantNumeric: "tabular-nums" }}>
+                    {contarItens(pedido)} {contarItens(pedido) === 1 ? "item" : "itens"}
+                  </span>
+                  <span style={{ fontWeight: 700, color: "var(--pdm-black)", fontVariantNumeric: "tabular-nums" }}>
+                    {formatMoeda(pedido.total)}
+                  </span>
+                </div>
+
+                <div className="admin-mobile-card-divider" />
+
+                <Link href={`/admin/pedidos/${pedido.numero}`} className="admin-mobile-card-cta">
+                  <Button variant="secondary" size="sm" iconLeft="visibility" style={{ width: "100%" }}>
+                    Ver pedido
+                  </Button>
+                </Link>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {rows.length === 0 && (
+          <div className="admin-empty-state" style={{ padding: "80px 24px", display: "grid", placeItems: "center", textAlign: "center", background: "var(--pdm-cream-warm)" }}>
             <div style={{ maxWidth: "46ch", display: "grid", justifyItems: "center", gap: 16 }}>
               <Icon name="receipt_long" size={40} tone="accent" />
-              <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 24, lineHeight: 1.4, margin: 0, color: "var(--pdm-brown)" }}>
+              <h3 className="admin-empty-state-title" style={{ fontFamily: "var(--font-heading)", fontSize: 24, lineHeight: 1.4, margin: 0, color: "var(--pdm-brown)" }}>
                 {totalCount === 0 ? "Nenhum pedido registrado ainda" : "Nada encontrado com esse filtro"}
               </h3>
               <p style={{ margin: 0, color: "var(--pdm-muted)" }}>
@@ -200,6 +240,18 @@ export function PedidosList({
           </div>
         )}
       </Card>
+
+      <div className="admin-header-action-mobile">
+        <Button
+          variant="secondary"
+          iconLeft="download"
+          onClick={() => exportarPedidosCSV(rows)}
+          disabled={rows.length === 0}
+          style={{ width: "100%" }}
+        >
+          Exportar planilha
+        </Button>
+      </div>
     </div>
   );
 }

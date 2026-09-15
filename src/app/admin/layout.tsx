@@ -5,6 +5,7 @@ import { Button, Icon } from "@/components/ds";
 import { NavLink } from "./nav-link";
 import { logout } from "./actions";
 import { Crumb } from "./crumb";
+import { MobileHeaderNav } from "./mobile-header-nav";
 import { ADMIN_NAV_TOGGLE_ID } from "./nav-toggle";
 import "./admin.css";
 
@@ -82,24 +83,59 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             Histórico de pedidos
           </NavLink>
         </nav>
+
+        <div className="admin-sidebar-footer">
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                background: "var(--pdm-gold)",
+                display: "grid",
+                placeItems: "center",
+                fontWeight: 700,
+                fontSize: 14,
+                color: "var(--pdm-black)",
+                flexShrink: 0,
+              }}
+            >
+              {initials}
+            </div>
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</span>
+          </div>
+          <form action={logout}>
+            <button
+              type="submit"
+              aria-label="Sair"
+              title="Sair"
+              style={{
+                width: 44,
+                height: 44,
+                display: "grid",
+                placeItems: "center",
+                background: "transparent",
+                border: "none",
+                color: "var(--pdm-white)",
+                cursor: "pointer",
+                borderRadius: "var(--radius)",
+              }}
+            >
+              <Icon name="logout" size={22} tone="inherit" />
+            </button>
+          </form>
+        </div>
       </aside>
 
       <main style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-        <header
-          className="admin-header"
-          style={{
-            minHeight: 72,
-            background: "var(--pdm-white)",
-            borderBottom: "1px solid var(--border-subtle)",
-          }}
-        >
+        <header className="admin-header">
           <div className="admin-header-crumb">
-            <label htmlFor={ADMIN_NAV_TOGGLE_ID} className="admin-nav-toggle-btn" aria-label="Abrir menu">
-              <Icon name="menu" size={24} tone="accent" />
-            </label>
-            <Crumb />
+            <MobileHeaderNav />
+            <div className="admin-header-crumb-text">
+              <Crumb />
+            </div>
           </div>
-          <div className="admin-header-user">
+          <div className="admin-header-user admin-header-user-desktop">
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div
                 style={{
@@ -124,6 +160,23 @@ export default async function AdminLayout({ children }: { children: ReactNode })
                 Sair
               </Button>
             </form>
+          </div>
+          <div
+            className="admin-header-user-mobile"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              background: "var(--pdm-gold)",
+              display: "grid",
+              placeItems: "center",
+              fontWeight: 700,
+              fontSize: 14,
+              color: "var(--pdm-black)",
+              flexShrink: 0,
+            }}
+          >
+            {initials}
           </div>
         </header>
 

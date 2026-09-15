@@ -26,7 +26,7 @@ export function ProdutoForm({
   const [fileName, setFileName] = useState<string | null>(null);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 980 }}>
+    <div className="produto-form-root" style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 980 }}>
       {state?.error && (
         <div
           style={{
@@ -48,6 +48,7 @@ export function ProdutoForm({
       <form action={formAction} encType="multipart/form-data">
         <Card tone="white" padding="0">
           <div
+            className="produto-form-band"
             style={{
               padding: 24,
               borderBottom: "1px solid var(--border-subtle)",
@@ -61,7 +62,10 @@ export function ProdutoForm({
             Dados do produto
           </div>
 
-          <div style={{ padding: "32px 24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24 }}>
+          <div
+            className="produto-form-body"
+            style={{ padding: "32px 24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24 }}
+          >
             <div style={{ gridColumn: "span 2" }}>
               <Field label="Nome do produto" htmlFor="f-nome" required hint="Como o cliente vai ver no cardápio.">
                 <Input
@@ -147,6 +151,7 @@ export function ProdutoForm({
           </div>
 
           <div
+            className="produto-form-actions"
             style={{
               padding: 24,
               borderTop: "1px solid var(--border-subtle)",
@@ -160,7 +165,7 @@ export function ProdutoForm({
             <Button type="submit" iconLeft="check" disabled={pending}>
               {pending ? "Salvando…" : submitLabel}
             </Button>
-            <Link href="/admin/produtos">
+            <Link href="/admin/produtos" className="produto-form-cancel-link">
               <Button type="button" variant="secondary">
                 Cancelar
               </Button>

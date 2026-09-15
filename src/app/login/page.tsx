@@ -39,12 +39,20 @@ export default async function LoginPage() {
           justifyContent: "space-between",
         }}
       >
-        <Image src="/logo-mono-cream.png" alt="Pingo de Mell" width={200} height={102} style={{ width: 200, height: "auto", display: "block" }} priority />
+        <Image
+          src="/logo-mono-cream.png"
+          alt="Pingo de Mell"
+          width={200}
+          height={102}
+          className="login-logo"
+          style={{ height: "auto", display: "block" }}
+          priority
+        />
         <div>
           <h1
+            className="login-h1"
             style={{
               fontFamily: "var(--font-heading)",
-              fontSize: 40,
               lineHeight: 1.3,
               margin: 0,
               color: "var(--pdm-white)",
@@ -53,7 +61,7 @@ export default async function LoginPage() {
           >
             O seu cardápio, sempre no ponto.
           </h1>
-          <p style={{ fontSize: 18, color: "rgba(255,255,255,.92)", maxWidth: "36ch", margin: "16px 0 0" }}>
+          <p className="login-subtitle" style={{ color: "rgba(255,255,255,.92)", maxWidth: "36ch", margin: "16px 0 0" }}>
             Cadastre bolos, doces e salgados e mantenha preço, descrição e quantidade mínima sempre atualizados.
           </p>
         </div>

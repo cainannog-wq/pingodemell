@@ -1,6 +1,8 @@
 /* Responsivo do painel admin. Dois pontos de corte:
-   860px  — a sidebar fixa vira gaveta (drawer) por cima do conteúdo
-   720px  — tabelas (produtos e pedidos) viram cartões em pé, célula por célula */
+   860px  — a sidebar fixa vira gaveta (drawer), o topbar branco vira a
+            faixa de marca (hambúrguer/voltar + logo/título + avatar)
+   720px  — tabelas (produtos e pedidos) escondem e dão lugar à lista de
+            cards própria do mobile (.admin-mobile-cards) */
 
 .admin-shell {
   display: grid;
@@ -32,6 +34,9 @@
   flex-wrap: wrap;
   gap: 12px 16px;
   padding: 0 32px;
+  min-height: 72px;
+  background: var(--pdm-white);
+  border-bottom: 1px solid var(--border-subtle);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -50,6 +55,20 @@
   gap: 16px;
 }
 
+.admin-header-user-mobile {
+  display: none;
+}
+
+.admin-mobile-logo,
+.admin-mobile-back,
+.admin-mobile-title {
+  display: none;
+}
+
+.admin-sidebar-footer {
+  display: none;
+}
+
 .admin-main-content {
   padding: 32px;
 }
@@ -57,13 +76,20 @@
 @media (max-width: 860px) {
   .admin-shell {
     grid-template-columns: minmax(0, 1fr);
+    /* Alvo de toque mínimo sobe de 44 para 48px no mobile (evita o zoom
+       automático do iOS em inputs); --tap-min alimenta o Button e o Input
+       do design system, então redefinir aqui basta para os dois. */
+    --tap-min: 48px;
   }
 
   .admin-sidebar {
     position: fixed;
     inset: 0 auto 0 0;
-    width: min(280px, 82vw);
+    width: 296px;
+    max-width: 82vw;
     z-index: 200;
+    display: flex;
+    flex-direction: column;
     transform: translateX(-100%);
     transition: transform 0.25s ease;
     box-shadow: var(--shadow-raised);
@@ -77,7 +103,7 @@
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.45);
     z-index: 150;
     opacity: 0;
     pointer-events: none;
@@ -89,19 +115,80 @@
     pointer-events: auto;
   }
 
-  .admin-nav-toggle-btn {
+  .admin-nav-toggle-btn,
+  .admin-mobile-back {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--tap-min);
-    height: var(--tap-min);
+    width: 44px;
+    height: 44px;
     flex: none;
     border-radius: var(--radius);
     cursor: pointer;
+    color: var(--pdm-white);
+  }
+
+  /* Centralizados no topbar inteiro (não só ao lado do hambúrguer/voltar),
+     por isso posicionados relativos ao .admin-header (que já é positioned
+     por causa do sticky), não ao .admin-header-crumb que os envolve. */
+  .admin-mobile-logo,
+  .admin-mobile-title {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .admin-mobile-logo {
+    display: block;
+    width: 92px;
+    height: auto;
+  }
+
+  .admin-mobile-title {
+    display: block;
+    max-width: calc(100% - 120px);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    color: var(--pdm-white);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-sidebar-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
+    color: var(--pdm-white);
   }
 
   .admin-header {
-    padding: 0 16px;
+    min-height: 56px;
+    padding: 0 12px;
+    background: var(--gradient-brand);
+    border-bottom: none;
+  }
+
+  .admin-header-crumb {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .admin-header-crumb-text,
+  .admin-header-user-desktop {
+    display: none;
+  }
+
+  .admin-header-user-mobile {
+    display: grid;
+    flex: none;
   }
 
   .admin-header-divider {
@@ -109,14 +196,109 @@
   }
 
   .admin-main-content {
-    padding: 20px 16px;
+    padding: 20px 16px 32px;
+  }
+
+  /* Cards de indicador do Histórico de pedidos: 2×2 em vez do
+     auto-fit do desktop, mais compactos. */
+  .admin-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .admin-stat-card {
+    padding: 14px !important;
+  }
+
+  .admin-stat-card-label {
+    font-size: 11px !important;
+  }
+
+  .admin-stat-card-value {
+    font-size: 22px !important;
+  }
+
+  /* Formulário de produto: barra de ações fixa no rodapé da viewport,
+     botões empilhados em largura total. */
+  .produto-form-root {
+    padding-bottom: 96px;
+  }
+
+  .produto-form-actions {
+    position: fixed !important;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 16px !important;
+    z-index: 60;
+    box-shadow: var(--shadow-raised);
+  }
+
+  .produto-form-actions button {
+    width: 100%;
+  }
+
+  .produto-form-cancel-link {
+    display: block;
+    width: 100%;
+  }
+
+  .produto-form-band {
+    padding: 20px 16px !important;
+  }
+
+  .produto-form-body {
+    padding: 20px 16px !important;
+    gap: 20px !important;
+  }
+
+  /* Cabeçalho das listas (Produtos / Histórico de pedidos): H1 encolhe e o
+     botão de ação principal desce pra baixo, em largura total. */
+  .admin-page-h1 {
+    font-size: 26px !important;
+  }
+
+  .admin-page-header-cta {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-page-header-cta button {
+    width: 100%;
+  }
+
+  .admin-empty-state {
+    padding: 40px 20px !important;
+  }
+
+  .admin-empty-state-title {
+    font-size: 22px !important;
   }
 }
 
-/* Tabelas do painel (listagem de produtos e de pedidos) */
+/* Tabelas do painel (listagem de produtos e de pedidos): no desktop é
+   <table>; no mobile vira uma lista de cards própria (.admin-mobile-cards),
+   renderizada à parte pelo componente — não é uma transformação em CSS da
+   mesma tabela, porque o formato dos cards (foto/nome em cima, ações
+   embaixo) não é uma tabela reto até vertical. Os dois ficam sempre no DOM;
+   só a visibilidade muda por breakpoint. */
 
 .admin-table-search {
   width: 320px;
+}
+
+.admin-mobile-cards {
+  display: none;
+}
+
+.admin-mobile-card-cta {
+  display: block;
+}
+
+.admin-header-action-mobile {
+  display: none;
 }
 
 @media (max-width: 720px) {
@@ -128,46 +310,35 @@
     width: 100%;
   }
 
-  .admin-table thead {
+  .admin-table-desktop-wrap {
     display: none;
   }
 
-  .admin-table,
-  .admin-table tbody,
-  .admin-table tr,
-  .admin-table td {
-    display: block;
-    width: 100%;
-  }
-
-  .admin-table tr {
-    padding: 14px 16px !important;
-    border-bottom: 1px solid var(--border-subtle);
-  }
-
-  .admin-table td {
-    display: flex !important;
-    align-items: center;
-    justify-content: space-between;
+  .admin-mobile-cards {
+    display: flex;
+    flex-direction: column;
     gap: 12px;
-    padding: 6px 0 !important;
-    text-align: left !important;
-    width: auto !important;
+    padding: 16px;
   }
 
-  .admin-table td[data-label]::before {
-    content: attr(data-label);
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--pdm-muted);
-    flex-shrink: 0;
+  .admin-mobile-card {
+    background: var(--pdm-white);
+    border-radius: var(--radius);
+    padding: 16px;
   }
 
-  .admin-table-title {
-    font-size: 17px !important;
-    padding: 0 0 10px !important;
+  .admin-mobile-card-divider {
+    border-top: 1px solid var(--border-subtle);
+    margin-top: 16px;
+    padding-top: 16px;
+  }
+
+  .admin-header-action-desktop {
+    display: none;
+  }
+
+  .admin-header-action-mobile {
+    display: block;
   }
 }
 
@@ -183,5 +354,41 @@
 @media (max-width: 900px) {
   .pedido-detail-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Detalhe do pedido no mobile: o back-link de conteúdo some (a volta já
+   está no topbar), cabeçalho e ações do andamento empilham em largura
+   total, e o Total encolhe um pouco. */
+@media (max-width: 860px) {
+  .pedido-detail-back-link {
+    display: none;
+  }
+
+  .pedido-detail-header-top {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .pedido-detail-header-actions {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .pedido-detail-whatsapp-link button {
+    width: 100%;
+  }
+
+  .pedido-detail-status-actions {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .pedido-detail-status-actions button {
+    width: 100%;
+  }
+
+  .pedido-detail-total {
+    font-size: 20px !important;
   }
 }
