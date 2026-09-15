@@ -36,11 +36,18 @@ function contarItens(pedido: Pedido): number {
   return pedido.itens.length;
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, mobileLabel, value }: { label: string; mobileLabel?: string; value: string }) {
   return (
     <Card tone="white" padding="20px 24px" className="admin-stat-card" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <span className="admin-stat-card-label" style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: ".05em", fontWeight: 700, color: "var(--pdm-muted)" }}>
-        {label}
+        {mobileLabel ? (
+          <>
+            <span className="admin-stat-card-label-full">{label}</span>
+            <span className="admin-stat-card-label-short">{mobileLabel}</span>
+          </>
+        ) : (
+          label
+        )}
       </span>
       <span className="admin-stat-card-value" style={{ fontFamily: "var(--font-heading)", fontSize: 28, lineHeight: 1.2, color: "var(--pdm-brown)" }}>{value}</span>
     </Card>
@@ -89,7 +96,7 @@ export function PedidosList({
 
       <div className="admin-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
         <StatCard label="Pedidos no mês" value={String(stats.pedidosNoMes)} />
-        <StatCard label="Aguardando confirmação" value={String(stats.aguardandoConfirmacao)} />
+        <StatCard label="Aguardando confirmação" mobileLabel="Aguardando" value={String(stats.aguardandoConfirmacao)} />
         <StatCard label="Entregues" value={String(stats.entregues)} />
         <StatCard label="Valor no mês" value={formatMoeda(stats.valorNoMes)} />
       </div>

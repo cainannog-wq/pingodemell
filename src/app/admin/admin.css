@@ -59,6 +59,10 @@
   display: none;
 }
 
+.admin-stat-card-label-short {
+  display: none;
+}
+
 .admin-mobile-logo,
 .admin-mobile-back,
 .admin-mobile-title {
@@ -216,6 +220,14 @@
 
   .admin-stat-card-value {
     font-size: 22px !important;
+  }
+
+  .admin-stat-card-label-full {
+    display: none;
+  }
+
+  .admin-stat-card-label-short {
+    display: inline;
   }
 
   /* Formulário de produto: barra de ações fixa no rodapé da viewport,
