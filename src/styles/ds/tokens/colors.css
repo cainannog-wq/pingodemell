@@ -1,0 +1,53 @@
+:root{
+/* --- Base / marca --- */
+--pdm-gold:#fed627;            /* primária — dourado vibrante */
+--pdm-brown:#8b592a;           /* secundária — marrom médio */
+--pdm-gold-soft:#c89552;       /* accent — dourado claro */
+--pdm-cream:#f2f0e9;           /* neutro claro — fundo principal */
+--pdm-black:#000000;           /* neutro escuro — texto principal */
+--pdm-brown-deep:#92440f;      /* neutro forte — texto secundário, hover, divisores */
+--pdm-white:#ffffff;
+
+/* Derivados usados nas peças (degradê marrom→dourado do topo das artes) */
+--pdm-brown-dark:#5c3208;
+--pdm-cream-warm:#fdf9f1;
+--pdm-line:#e3ddcd;
+--pdm-muted:#7a6f5c;
+--pdm-disabled-bg:#e6e2d7;
+--pdm-disabled-fg:#a39a89;
+
+/* --- Semânticas --- */
+--pdm-success:#6b8e4e;
+--pdm-error:#b33a2f;
+--pdm-warning:#e8a93b;
+--pdm-info:#5b7c99;
+--pdm-whatsapp:#25d366;
+
+/* --- Aliases semânticos --- */
+--surface-page:var(--pdm-cream);
+--surface-card:var(--pdm-cream);
+--surface-raised:var(--pdm-white);
+--surface-warm:var(--pdm-cream-warm);
+--surface-dark:var(--pdm-brown);
+--surface-accent:var(--pdm-gold);
+
+--text-body:var(--pdm-black);
+--text-heading:var(--pdm-brown);
+--text-strong:var(--pdm-brown-deep);
+--text-muted:var(--pdm-muted);
+--text-on-accent:var(--pdm-black);
+--text-on-dark:var(--pdm-white);
+--text-link:var(--pdm-brown);
+
+--border-subtle:var(--pdm-line);
+--border-strong:var(--pdm-brown);
+--focus-ring:var(--pdm-brown);
+
+--icon-default:var(--pdm-brown);
+--icon-accent:var(--pdm-gold-soft);
+
+/* Degradê assinatura: topo das peças institucionais */
+--gradient-brand:linear-gradient(135deg,var(--pdm-brown-dark) 0%,var(--pdm-brown) 45%,var(--pdm-gold-soft) 100%); /* @kind color */
+/* Degradê de proteção para legenda sobre foto */
+--gradient-caption:linear-gradient(to top,rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 60%); /* @kind color */
+}
