@@ -4,14 +4,8 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Cabecalhos de seguranca basicos (auditoria de seguranca, 14/09/2026 — item
-# B20). Sem CSP explicita ainda: o projeto ainda vai ganhar GA4/Clarity na
-# Fase 4 do roadmap, e definir a CSP antes disso so pra refazer depois nao
-# vale a pena — revisitar quando essas tags entrarem.
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Content-Type-Options = "nosniff"
-    X-Frame-Options = "DENY"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+# Cabecalhos de seguranca (auditoria de 14/09/2026, item B20): NAO ficam
+# aqui. O @netlify/plugin-nextjs nao repassa o bloco [[headers]] do
+# netlify.toml pras respostas que o Next.js renderiza (confirmado testando
+# contra o deploy real) — ver headers() em next.config.ts, que e o
+# mecanismo que o plugin realmente honra.
