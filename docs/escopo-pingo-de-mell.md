@@ -82,6 +82,12 @@ Essa lista incorpora, em 11/09/2026, o acréscimo de escopo do painel de pedidos
 - Pedido mínimo por produto, editável no CMS, sem step de quantidade por enquanto
 - Catálogo com cerca de 60 produtos, carga inicial parcial semeada manualmente no Supabase pra destravar o desenvolvimento do front antes do CMS existir, carga real dos 60 feita depois pelo próprio CMS como teste de usabilidade
 - Pedido nasce no clique de confirmação no site, não na leitura da mensagem do WhatsApp. Status do pedido é sempre atualizado manualmente pelo admin
+- Antecedência mínima do pedido, fechada em 14/09/2026, confirmando a regra que já estava no layout do catálogo público desenhado no Claude Design: dia de semana, pedido com 1 dia de antecedência; fim de semana, pedido até quinta-feira; sem atendimento a entrega numa segunda-feira. O checkout deve travar a escolha de data fora desse limite. Exceção: essa trava vale só pro fluxo público do site — o admin pode abrir manualmente, pelo painel, um pedido fora desse limite, pra atender um caso urgente
+- Aviso de fidelidade, fechado em 14/09/2026: o checkout mostra um aviso avisando que o resultado final é trabalho artesanal e pode variar em relação à foto de referência enviada. Texto exato sugerido pelo Claude Code em 14/09, aguardando o Cainan escolher entre as opções antes de virar prompt de implementação
+
+## Decisões em aberto
+
+- Foto de referência do bolo personalizado (envio pelo cliente no checkout): ainda em aberto em 14/09/2026, precisa da resposta da cliente antes de fechar. Se for por upload no site, a imagem fica junto do pedido gravado no Supabase (aparece no histórico e no detalhe do pedido no painel), mas exige endurecer a proteção do insert público da tabela de pedido — tipo e tamanho de arquivo, limite de volume — além do que já existe hoje (rate limit por IP e campo obrigatório, sem CAPTCHA). Se for pelo WhatsApp, a foto fica fora do registro no Supabase e não aparece no painel. Ver detalhamento no roadmap.
 
 ## Stack
 

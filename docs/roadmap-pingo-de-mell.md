@@ -71,6 +71,16 @@ A partir de prints das telas de histórico e detalhe de pedido, ficou decidido i
 
 Esse acréscimo trouxe três telas novas (checkout, histórico de pedidos, detalhe do pedido) e uma tabela nova com regra de RLS diferente da de produto. Ainda não houve conversa sobre se isso impacta o marco do dia 45 ou o prazo final do dia 60 — ver observação correspondente no documento de escopo.
 
+## Decisões de checkout registradas em 12 e 14/09/2026
+
+Três pontos de regra de negócio ficaram em aberto quando o checkout (Fase 2, item 4) começou a ser desenhado, registrados primeiro no checklist publicado em 12/09/2026 e revisitados em conversa no dia 14/09/2026:
+
+- **Foto de referência do bolo personalizado**: ainda em aberto em 14/09/2026, precisa da resposta da cliente. Se for por upload no site, a imagem fica junto do pedido gravado (aparece no histórico e no detalhe do pedido no painel), mas exige endurecer a proteção do insert público de pedido (tipo e tamanho de arquivo, limite de volume) além do que já existe hoje (rate limit por IP e campo obrigatório, sem CAPTCHA). Se for pelo WhatsApp, a foto fica fora do registro no Supabase e não aparece no painel.
+- **Aviso de fidelidade**: fechado em 14/09/2026 — o checkout vai ter um aviso avisando que o resultado final é trabalho artesanal e pode variar em relação à foto de referência enviada. Texto sugerido pelo Claude Code em 14/09, aguardando o Cainan escolher a versão final antes de virar prompt de implementação — ver documento de escopo.
+- **Antecedência mínima**: fechada em 14/09/2026, confirmando a regra que já estava no layout do catálogo público desenhado no Claude Design — dia de semana, 1 dia de antecedência; fim de semana, pedido até quinta-feira; sem atendimento a entrega numa segunda-feira. O checkout deve travar a escolha de data fora desse limite. Com uma exceção: essa trava vale só pro fluxo público do site — o admin pode abrir manualmente, pelo painel, um pedido fora desse limite, pra atender um caso urgente.
+
+Essas três regras (as duas já fechadas, mais a que segue em aberto) valem como contexto obrigatório pra qualquer prompt futuro sobre o item 4 da Fase 2 (checkout).
+
 ## Fase 3 — Testes
 
 Essa é a fase que mais importa pra quem não vai ler código, porque o teste automatizado é seu substituto pra revisão de código.
