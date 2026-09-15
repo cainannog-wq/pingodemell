@@ -1,0 +1,50 @@
+.login-brand-panel {
+  padding: 64px 56px;
+  gap: 32px;
+}
+
+.login-form-panel {
+  padding: 64px 32px;
+}
+
+.login-card-title {
+  font-size: 32px;
+}
+
+.login-form {
+  gap: 24px;
+  margin-top: 32px;
+}
+
+@media (max-width: 640px) {
+  /* No mobile, o formulário (e-mail, senha, botão) precisa caber na
+     primeira dobra sem rolagem — vem primeiro na tela, o painel de marca
+     fica compacto e desce pra depois. */
+  .login-form-panel {
+    order: 1;
+    padding: 24px 20px 40px;
+  }
+
+  .login-brand-panel {
+    order: 2;
+    padding: 24px 24px;
+    gap: 16px;
+  }
+
+  .login-tagline {
+    display: none;
+  }
+
+  .login-card {
+    padding: 20px !important;
+  }
+
+  .login-card-title {
+    font-size: 24px;
+  }
+
+  .login-form {
+    gap: 16px;
+    margin-top: 20px;
+  }
+}

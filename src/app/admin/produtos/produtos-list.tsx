@@ -42,7 +42,7 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
         <div>
           <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
             Produtos
@@ -57,8 +57,11 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
       </div>
 
       <Card tone="white" padding="0">
-        <div style={{ display: "flex", alignItems: "center", gap: 16, padding: 24, borderBottom: "1px solid var(--border-subtle)" }}>
-          <div style={{ width: 320 }}>
+        <div
+          className="admin-table-toolbar"
+          style={{ display: "flex", alignItems: "center", gap: 16, padding: 24, borderBottom: "1px solid var(--border-subtle)", flexWrap: "wrap" }}
+        >
+          <div className="admin-table-search">
             <Input
               icon="search"
               placeholder="Buscar pelo nome do produto"
@@ -70,66 +73,71 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
         </div>
 
         {rows.length > 0 ? (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "var(--pdm-cream)" }}>
-                <th style={{ ...thStyle, width: 96 }}>Foto</th>
-                <th style={thStyle}>Nome</th>
-                <th style={{ ...thStyle, textAlign: "right", width: 130 }}>Preço</th>
-                <th style={{ ...thStyle, textAlign: "right", width: 170 }}>Pedido mínimo</th>
-                <th style={{ ...thStyle, textAlign: "right", width: 170 }}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((produto) => (
-                <tr key={produto.nome} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-                  <td style={{ padding: "16px 24px" }}>
-                    <div
-                      style={{
-                        width: 56,
-                        height: 56,
-                        borderRadius: "var(--radius)",
-                        background: "var(--pdm-cream-warm)",
-                        display: "grid",
-                        placeItems: "center",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {produto.image_url ? (
-                        <Image src={produto.image_url} alt={produto.nome} width={56} height={56} style={{ objectFit: "cover" }} />
-                      ) : (
-                        <Icon name="photo_camera" size={26} />
-                      )}
-                    </div>
-                  </td>
-                  <td style={{ padding: "16px 24px", fontWeight: 600 }}>{produto.nome}</td>
-                  <td style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
-                    {formatPreco(produto.preco)}
-                  </td>
-                  <td style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: "var(--pdm-muted)" }}>
-                    {produto.pedido_minimo} un.
-                  </td>
-                  <td style={{ padding: "16px 24px" }}>
-                    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                      <Link href={`/admin/produtos/${encodeURIComponent(produto.nome)}`}>
-                        <Button variant="secondary" size="sm" iconLeft="edit">
-                          Editar
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        iconLeft="delete"
-                        aria-label={`Excluir ${produto.nome}`}
-                        title="Excluir produto"
-                        onClick={() => setProdutoParaExcluir(produto.nome)}
-                      />
-                    </div>
-                  </td>
+          <div style={{ overflowX: "auto" }}>
+            <table className="admin-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "var(--pdm-cream)" }}>
+                  <th style={{ ...thStyle, width: 96 }}>Foto</th>
+                  <th style={thStyle}>Nome</th>
+                  <th style={{ ...thStyle, textAlign: "right", width: 130 }}>Preço</th>
+                  <th style={{ ...thStyle, textAlign: "right", width: 170 }}>Pedido mínimo</th>
+                  <th style={{ ...thStyle, textAlign: "right", width: 170 }}>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((produto) => (
+                  <tr key={produto.nome} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                    <td data-label="Foto" style={{ padding: "16px 24px" }}>
+                      <div
+                        style={{
+                          width: 56,
+                          height: 56,
+                          borderRadius: "var(--radius)",
+                          background: "var(--pdm-cream-warm)",
+                          display: "grid",
+                          placeItems: "center",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {produto.image_url ? (
+                          <Image src={produto.image_url} alt={produto.nome} width={56} height={56} style={{ objectFit: "cover" }} />
+                        ) : (
+                          <Icon name="photo_camera" size={26} />
+                        )}
+                      </div>
+                    </td>
+                    <td className="admin-table-title" style={{ padding: "16px 24px", fontWeight: 600 }}>{produto.nome}</td>
+                    <td data-label="Preço" style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                      {formatPreco(produto.preco)}
+                    </td>
+                    <td
+                      data-label="Pedido mínimo"
+                      style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: "var(--pdm-muted)" }}
+                    >
+                      {produto.pedido_minimo} un.
+                    </td>
+                    <td data-label="Ações" style={{ padding: "16px 24px" }}>
+                      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                        <Link href={`/admin/produtos/${encodeURIComponent(produto.nome)}`}>
+                          <Button variant="secondary" size="sm" iconLeft="edit">
+                            Editar
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          iconLeft="delete"
+                          aria-label={`Excluir ${produto.nome}`}
+                          title="Excluir produto"
+                          onClick={() => setProdutoParaExcluir(produto.nome)}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div style={{ padding: "80px 24px", display: "grid", placeItems: "center", textAlign: "center", background: "var(--pdm-cream-warm)" }}>
             <div style={{ maxWidth: "46ch", display: "grid", justifyItems: "center", gap: 16 }}>

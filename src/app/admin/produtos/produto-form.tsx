@@ -61,7 +61,7 @@ export function ProdutoForm({
             Dados do produto
           </div>
 
-          <div style={{ padding: "32px 24px", display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 24 }}>
+          <div style={{ padding: "32px 24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24 }}>
             <div style={{ gridColumn: "span 2" }}>
               <Field label="Nome do produto" htmlFor="f-nome" required hint="Como o cliente vai ver no cardápio.">
                 <Input
@@ -98,7 +98,7 @@ export function ProdutoForm({
             </div>
 
             <Field label="Foto" hint="JPG, PNG ou WebP, luz natural e foco no produto. Até 2 MB.">
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
                 <div
                   style={{
                     width: 56,
@@ -154,6 +154,7 @@ export function ProdutoForm({
               display: "flex",
               alignItems: "center",
               gap: 16,
+              flexWrap: "wrap",
             }}
           >
             <Button type="submit" iconLeft="check" disabled={pending}>

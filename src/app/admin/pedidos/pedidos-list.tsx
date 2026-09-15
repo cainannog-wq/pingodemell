@@ -73,7 +73,7 @@ export function PedidosList({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
         <div>
           <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
             Histórico de pedidos
@@ -90,7 +90,7 @@ export function PedidosList({
         </Button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
         <StatCard label="Pedidos no mês" value={String(stats.pedidosNoMes)} />
         <StatCard label="Aguardando confirmação" value={String(stats.aguardandoConfirmacao)} />
         <StatCard label="Entregues" value={String(stats.entregues)} />
@@ -98,8 +98,11 @@ export function PedidosList({
       </div>
 
       <Card tone="white" padding="0">
-        <div style={{ display: "flex", alignItems: "center", gap: 16, padding: 24, borderBottom: "1px solid var(--border-subtle)" }}>
-          <div style={{ width: 320 }}>
+        <div
+          className="admin-table-toolbar"
+          style={{ display: "flex", alignItems: "center", gap: 16, padding: 24, borderBottom: "1px solid var(--border-subtle)", flexWrap: "wrap" }}
+        >
+          <div className="admin-table-search">
             <Input
               icon="search"
               placeholder="Buscar por cliente ou nº do pedido"
@@ -124,7 +127,7 @@ export function PedidosList({
 
         {rows.length > 0 ? (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <table className="admin-table" style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "var(--pdm-cream)" }}>
                   <th style={{ ...thStyle, width: 100 }}>Pedido</th>
@@ -139,24 +142,26 @@ export function PedidosList({
               <tbody>
                 {rows.map((pedido) => (
                   <tr key={pedido.id} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-                    <td style={{ padding: "16px 24px", fontWeight: 700, color: "var(--pdm-brown)" }}>#{pedido.numero}</td>
-                    <td style={{ padding: "16px 24px" }}>
+                    <td className="admin-table-title" style={{ padding: "16px 24px", fontWeight: 700, color: "var(--pdm-brown)" }}>
+                      #{pedido.numero}
+                    </td>
+                    <td data-label="Cliente" style={{ padding: "16px 24px" }}>
                       <div style={{ fontWeight: 600 }}>{pedido.cliente_nome}</div>
                       {pedido.ocasiao ? <div style={{ fontSize: 14, color: "var(--pdm-muted)" }}>{pedido.ocasiao}</div> : null}
                     </td>
-                    <td style={{ padding: "16px 24px", fontVariantNumeric: "tabular-nums" }}>
+                    <td data-label="Entrega" style={{ padding: "16px 24px", fontVariantNumeric: "tabular-nums" }}>
                       {formatDataHoraCurta(pedido.data_hora_entrega)}
                     </td>
-                    <td style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                    <td data-label="Itens" style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                       {contarItens(pedido)} {contarItens(pedido) === 1 ? "item" : "itens"}
                     </td>
-                    <td style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                    <td data-label="Total" style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
                       {formatMoeda(pedido.total)}
                     </td>
-                    <td style={{ padding: "16px 24px" }}>
+                    <td data-label="Status" style={{ padding: "16px 24px" }}>
                       <Badge variant={STATUS_BADGE_VARIANT[pedido.status]}>{STATUS_LABEL[pedido.status]}</Badge>
                     </td>
-                    <td style={{ padding: "16px 24px", textAlign: "right" }}>
+                    <td data-label="Ações" style={{ padding: "16px 24px", textAlign: "right" }}>
                       <Link href={`/admin/pedidos/${pedido.numero}`}>
                         <Button variant="secondary" size="sm" iconLeft="visibility">
                           Ver pedido

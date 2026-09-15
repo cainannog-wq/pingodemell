@@ -9,7 +9,7 @@ import type { PedidoStatus } from "@/lib/pedidos/types";
 // é automática, todas exigem clique de alguém do time (ver Fase de
 // escopo do painel de pedidos). "entregue" e "cancelado" são finais.
 const TRANSICOES_VALIDAS: Record<PedidoStatus, PedidoStatus[]> = {
-  aguardando_confirmacao: ["em_producao", "entregue", "cancelado"],
+  aguardando_confirmacao: ["em_producao", "cancelado"],
   em_producao: ["entregue", "cancelado"],
   entregue: [],
   cancelado: [],
@@ -28,10 +28,19 @@ export async function atualizarStatusPedido(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("pedidos").update({ status: novoStatus }).eq("id", id);
+  const { data, error } = await supabase
+    .from("pedidos")
+    .update({ status: novoStatus })
+    .eq("id", id)
+    .eq("status", statusAtual)
+    .select("id");
 
   if (error) {
     throw new Error(`Não foi possível atualizar o pedido #${numero}: ${error.message}`);
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error(`Pedido #${numero} já foi atualizado em outra aba. Atualize a página para ver o status atual.`);
   }
 
   revalidatePath("/admin/pedidos");

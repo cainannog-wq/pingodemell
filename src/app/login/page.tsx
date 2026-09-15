@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/supabase/dal";
 import { Card } from "@/components/ds";
 import { LoginForm } from "./login-form";
+import "./login.css";
 
 export default async function LoginPage() {
   const user = await getAuthenticatedUser();
@@ -25,14 +26,14 @@ export default async function LoginPage() {
         lineHeight: 1.6,
         minHeight: "100dvh",
         display: "grid",
-        gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)",
+        gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
       }}
     >
       <div
+        className="login-brand-panel"
         style={{
           background: "var(--gradient-brand)",
           color: "var(--pdm-white)",
-          padding: "64px 56px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
@@ -56,15 +57,15 @@ export default async function LoginPage() {
             Cadastre bolos, doces e salgados e mantenha preço, descrição e quantidade mínima sempre atualizados.
           </p>
         </div>
-        <div style={{ fontSize: 14, color: "rgba(255,255,255,.92)" }}>
+        <div className="login-tagline" style={{ fontSize: 14, color: "rgba(255,255,255,.92)" }}>
           Área da equipe · há 13 anos fazendo festa acontecer
         </div>
       </div>
 
-      <div style={{ display: "grid", placeItems: "center", padding: "64px 32px" }}>
+      <div className="login-form-panel" style={{ display: "grid", placeItems: "center" }}>
         <div style={{ width: "100%", maxWidth: 420 }}>
-          <Card tone="white" padding="32px">
-            <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
+          <Card tone="white" padding="32px" className="login-card">
+            <h2 className="login-card-title" style={{ fontFamily: "var(--font-heading)", lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
               Bem-vinda de volta
             </h2>
             <p style={{ margin: "8px 0 0", color: "var(--pdm-muted)" }}>

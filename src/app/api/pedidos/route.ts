@@ -20,8 +20,14 @@ function getClientIp(request: NextRequest): string {
   const netlifyIp = request.headers.get("x-nf-client-connection-ip");
   if (netlifyIp) return netlifyIp;
 
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  if (forwardedFor) return forwardedFor.split(",")[0].trim();
+  // x-forwarded-for é livremente definível pelo cliente e só serve como
+  // fallback fora de produção (dev local sem o proxy do Netlify na frente).
+  // Confiar nele em produção permitiria burlar o rate limit por IP trocando
+  // o header a cada request.
+  if (process.env.NODE_ENV !== "production") {
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    if (forwardedFor) return forwardedFor.split(",")[0].trim();
+  }
 
   return "unknown";
 }

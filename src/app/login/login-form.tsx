@@ -12,7 +12,7 @@ export function LoginForm({ siteKey }: { siteKey: string }) {
   const [turnstileToken, setTurnstileToken] = useState("");
 
   return (
-    <form action={formAction} style={{ display: "grid", gap: 24, marginTop: 32 }}>
+    <form action={formAction} className="login-form" style={{ display: "grid" }}>
       <Field label="E-mail" htmlFor="login-email">
         <Input
           id="login-email"

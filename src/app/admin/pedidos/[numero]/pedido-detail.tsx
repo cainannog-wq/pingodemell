@@ -87,7 +87,7 @@ export function PedidoDetail({ pedido }: { pedido: Pedido }) {
   }
 
   const podeMoverParaProducao = pedido.status === "aguardando_confirmacao";
-  const podeMarcarEntregue = pedido.status === "aguardando_confirmacao" || pedido.status === "em_producao";
+  const podeMarcarEntregue = pedido.status === "em_producao";
   const podeCancelar = pedido.status === "aguardando_confirmacao" || pedido.status === "em_producao";
   const semAcoesDisponiveis = !podeMoverParaProducao && !podeMarcarEntregue && !podeCancelar;
 
@@ -136,13 +136,13 @@ export function PedidoDetail({ pedido }: { pedido: Pedido }) {
         </div>
       ) : null}
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 360px", gap: 24, alignItems: "start" }}>
+      <div className="pedido-detail-grid">
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <Card tone="white" padding="24px">
             <h2 style={sectionTitleStyle}>Itens do pedido</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {pedido.itens.map((item, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
                   <div style={{ display: "flex", gap: 12 }}>
                     <Icon name="cake" size={22} tone="accent" style={{ marginTop: 2 }} />
                     <div>

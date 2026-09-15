@@ -2,8 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { Icon } from "@/components/ds";
+import { ADMIN_NAV_TOGGLE_ID } from "./nav-toggle";
+
+// A gaveta de navegação do mobile é um checkbox puro em CSS (sem estado em
+// React), então ela não fecha sozinha ao navegar — o layout não remonta
+// entre páginas. Fecha manualmente a cada troca de rota.
+function useCloseMobileNavOnNavigate(pathname: string) {
+  useEffect(() => {
+    const toggle = document.getElementById(ADMIN_NAV_TOGGLE_ID) as HTMLInputElement | null;
+    if (toggle) toggle.checked = false;
+  }, [pathname]);
+}
 
 export function NavLink({
   href,
@@ -21,6 +33,7 @@ export function NavLink({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  useCloseMobileNavOnNavigate(pathname);
   const active = exact
     ? pathname === href
     : (pathname === href || pathname.startsWith(href + "/")) &&

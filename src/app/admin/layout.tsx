@@ -1,10 +1,12 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { requireAuth } from "@/lib/supabase/dal";
-import { Button } from "@/components/ds";
+import { Button, Icon } from "@/components/ds";
 import { NavLink } from "./nav-link";
 import { logout } from "./actions";
 import { Crumb } from "./crumb";
+import { ADMIN_NAV_TOGGLE_ID } from "./nav-toggle";
+import "./admin.css";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const user = await requireAuth();
@@ -13,18 +15,19 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <div
+      className="admin-shell"
       style={{
         fontFamily: "var(--font-body)",
         color: "var(--pdm-black)",
         background: "var(--pdm-cream)",
         fontSize: 16,
         lineHeight: 1.6,
-        display: "grid",
-        gridTemplateColumns: "264px minmax(0, 1fr)",
-        minHeight: "100dvh",
       }}
     >
-      <aside style={{ background: "var(--gradient-brand)", color: "var(--pdm-white)", display: "flex", flexDirection: "column" }}>
+      <input type="checkbox" id={ADMIN_NAV_TOGGLE_ID} className="admin-nav-toggle-input" aria-hidden="true" tabIndex={-1} />
+      <label htmlFor={ADMIN_NAV_TOGGLE_ID} className="admin-nav-scrim" aria-hidden="true" />
+
+      <aside className="admin-sidebar" style={{ background: "var(--gradient-brand)", color: "var(--pdm-white)" }}>
         <div
           style={{
             padding: 24,
@@ -83,18 +86,20 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
       <main style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
         <header
+          className="admin-header"
           style={{
             minHeight: 72,
             background: "var(--pdm-white)",
             borderBottom: "1px solid var(--border-subtle)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 32px",
           }}
         >
-          <Crumb />
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div className="admin-header-crumb">
+            <label htmlFor={ADMIN_NAV_TOGGLE_ID} className="admin-nav-toggle-btn" aria-label="Abrir menu">
+              <Icon name="menu" size={24} tone="accent" />
+            </label>
+            <Crumb />
+          </div>
+          <div className="admin-header-user">
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div
                 style={{
@@ -106,13 +111,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
                   placeItems: "center",
                   fontWeight: 700,
                   color: "var(--pdm-black)",
+                  flexShrink: 0,
                 }}
               >
                 {initials}
               </div>
               <span>{displayName}</span>
             </div>
-            <div style={{ width: 1, height: 28, background: "var(--border-subtle)" }} />
+            <div className="admin-header-divider" style={{ width: 1, height: 28, background: "var(--border-subtle)" }} />
             <form action={logout}>
               <Button type="submit" variant="ghost" size="sm" iconLeft="logout">
                 Sair
@@ -121,7 +127,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           </div>
         </header>
 
-        <div style={{ padding: 32, display: "flex", flexDirection: "column", gap: 32, flex: 1 }}>{children}</div>
+        <div className="admin-main-content" style={{ display: "flex", flexDirection: "column", gap: 32, flex: 1 }}>{children}</div>
       </main>
     </div>
   );
