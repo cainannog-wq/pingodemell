@@ -43,7 +43,7 @@ export function ProdutoForm({
   const [tipo, setTipo] = useState<TipoProduto>(produto?.tipo ?? "normal");
 
   return (
-    <div className="produto-form-root" style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 980 }}>
+    <div className="produto-form-root" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {state?.error && (
         <div
           style={{
