@@ -77,6 +77,10 @@ Rodada de auditoria de segurança completa (`docs/auditoria-seguranca-prompt.md`
 
 Preview do Netlify (B23) confirmado apontando pro mesmo banco de produção, não um banco separado — aceito por ora (mesmo padrão de qualquer app Supabase sem projeto de staging dedicado), documentado no relatório da auditoria.
 
+## Extensão do cadastro de produto (22/09/2026)
+
+Admin CRUD de produto ganhou prazo de produção, step de quantidade (livre/múltiplos de 5/múltiplos de 10), toggle de destaque, toggle de status ativo/inativo e a categoria "Bebidas" (nova opção numa coluna `Categoria` que já existia no banco, mas nunca era exposta no formulário). Só no CMS, sem efeito no catálogo público/carrinho/checkout ainda. Migração aplicada em produção via MCP do Supabase, com valor padrão nos campos novos pros produtos já cadastrados. `npm run build`, `npm run lint` e a suíte automatizada (`npm run test`, cobrindo o bloqueio de salvar sem prazo de produção ou sem step de quantidade) rodados localmente e limpos. PR aberto, aguardando o Cainan clicar no link de preview do Netlify pra validar visualmente o cadastro com cada combinação de step e os toggles salvando.
+
 ## Próximo pedido ao Claude Code
 
 Exclusão de produto e a confirmação visual do CAPTCHA de produção estão fechadas (ver Retrato acima). Painel de pedidos está pronto e agora também auditado — falta só o Cainan revisar/mergear o PR #1. Depois disso, retomar a ordem do roadmap: catálogo público, carrinho, e por fim checkout (item 4), que vai reaproveitar a tabela `pedidos` e o Route Handler de rate limit já prontos (agora também protegidos pela correção do B12).

@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
-import type { Produto } from "@/lib/produtos/types";
-import { Card, Icon, Input, Button } from "@/components/ds";
+import { STEP_QUANTIDADE_LABELS, type Produto } from "@/lib/produtos/types";
+import { Card, Icon, Input, Button, Badge } from "@/components/ds";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 import { deleteProduto } from "./actions";
 
@@ -79,8 +79,13 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                 <tr style={{ background: "var(--pdm-cream)" }}>
                   <th style={{ ...thStyle, width: 96 }}>Foto</th>
                   <th style={thStyle}>Nome</th>
+                  <th style={{ ...thStyle, width: 120 }}>Categoria</th>
                   <th style={{ ...thStyle, textAlign: "right", width: 130 }}>Preço</th>
                   <th style={{ ...thStyle, textAlign: "right", width: 170 }}>Pedido mínimo</th>
+                  <th style={{ ...thStyle, textAlign: "right", width: 140 }}>Prazo</th>
+                  <th style={{ ...thStyle, width: 160 }}>Step</th>
+                  <th style={{ ...thStyle, width: 120 }}>Destaque</th>
+                  <th style={{ ...thStyle, width: 110 }}>Status</th>
                   <th style={{ ...thStyle, textAlign: "right", width: 170 }}>Ações</th>
                 </tr>
               </thead>
@@ -107,6 +112,9 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                       </div>
                     </td>
                     <td className="admin-table-title" style={{ padding: "16px 24px", fontWeight: 600 }}>{produto.nome}</td>
+                    <td data-label="Categoria" style={{ padding: "16px 24px", color: "var(--pdm-muted)" }}>
+                      {produto.Categoria ?? "—"}
+                    </td>
                     <td data-label="Preço" style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                       {formatPreco(produto.preco)}
                     </td>
@@ -115,6 +123,21 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                       style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: "var(--pdm-muted)" }}
                     >
                       {produto.pedido_minimo} un.
+                    </td>
+                    <td
+                      data-label="Prazo"
+                      style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: "var(--pdm-muted)" }}
+                    >
+                      {produto.prazo_producao_dias} {produto.prazo_producao_dias === 1 ? "dia" : "dias"}
+                    </td>
+                    <td data-label="Step" style={{ padding: "16px 24px", color: "var(--pdm-muted)" }}>
+                      {STEP_QUANTIDADE_LABELS[produto.step_quantidade]}
+                    </td>
+                    <td data-label="Destaque" style={{ padding: "16px 24px" }}>
+                      {produto.destaque ? <Badge variant="gold">Destaque</Badge> : <span style={{ color: "var(--pdm-muted)" }}>—</span>}
+                    </td>
+                    <td data-label="Status" style={{ padding: "16px 24px" }}>
+                      {produto.ativo ? <Badge variant="success">Ativo</Badge> : <Badge variant="outline">Inativo</Badge>}
                     </td>
                     <td data-label="Ações" style={{ padding: "16px 24px" }}>
                       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -165,9 +188,22 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontWeight: 600 }}>{produto.nome}</div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
                       <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{formatPreco(produto.preco)}</span>
                       <span style={{ fontSize: 13, color: "var(--pdm-muted)" }}>{produto.pedido_minimo} un. mín.</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap", fontSize: 13, color: "var(--pdm-muted)" }}>
+                      <span>{produto.Categoria ?? "Sem categoria"}</span>
+                      <span>·</span>
+                      <span>
+                        Prazo: {produto.prazo_producao_dias} {produto.prazo_producao_dias === 1 ? "dia" : "dias"}
+                      </span>
+                      <span>·</span>
+                      <span>{STEP_QUANTIDADE_LABELS[produto.step_quantidade]}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                      {produto.destaque ? <Badge variant="gold">Destaque</Badge> : null}
+                      {produto.ativo ? <Badge variant="success">Ativo</Badge> : <Badge variant="outline">Inativo</Badge>}
                     </div>
                   </div>
                 </div>

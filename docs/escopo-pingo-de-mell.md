@@ -34,8 +34,9 @@ Painel de pedidos (CMS)
 
 CMS de produtos
 - Login email e senha, sem cadastro público, usuário único criado manualmente
-- CRUD completo de produto: nome, preço, descrição, foto, quantidade mínima
+- CRUD completo de produto: nome, preço, descrição, foto, quantidade mínima, categoria (bolo, doce, salgado, bebida), prazo de produção (dias), step de quantidade (livre, múltiplos de 5, múltiplos de 10), produto em destaque, status ativo/inativo
 - Upload de imagem pelo próprio painel
+- Prazo de produção, step de quantidade, destaque e status existem só no CMS nesta entrega, sem efeito ainda no catálogo público, carrinho ou checkout — isso é trabalho de um bloco futuro
 
 Segurança
 - RLS ativo desde a criação das tabelas
@@ -55,7 +56,6 @@ Analytics
 ## Fora de escopo (nessa entrega)
 
 - Pagamento online de qualquer tipo, gateway, PIX automatizado, cartão
-- Step de quantidade (múltiplos fixos por pedido)
 - Mais de um usuário admin ou permissão por papel
 - Recuperação de senha automatizada, 2FA
 - Structured data de produto (schema.org) e otimização fina de performance (Lighthouse), ficam para depois do lançamento
@@ -84,6 +84,10 @@ Essa lista incorpora, em 11/09/2026, o acréscimo de escopo do painel de pedidos
 - Pedido nasce no clique de confirmação no site, não na leitura da mensagem do WhatsApp. Status do pedido é sempre atualizado manualmente pelo admin
 - Antecedência mínima do pedido, fechada em 14/09/2026, confirmando a regra que já estava no layout do catálogo público desenhado no Claude Design: dia de semana, pedido com 1 dia de antecedência; fim de semana, pedido até quinta-feira; sem atendimento a entrega numa segunda-feira. O checkout deve travar a escolha de data fora desse limite. Exceção: essa trava vale só pro fluxo público do site — o admin pode abrir manualmente, pelo painel, um pedido fora desse limite, pra atender um caso urgente
 - Aviso de fidelidade, fechado em 14/09/2026: o checkout mostra um aviso avisando que o resultado final é trabalho artesanal e pode variar em relação à foto de referência enviada. Texto exato sugerido pelo Claude Code em 14/09, aguardando o Cainan escolher entre as opções antes de virar prompt de implementação
+
+## Mudança de decisão registrada em 22/09/2026 — step de quantidade
+
+O "step de quantidade" estava listado como fora de escopo nesta entrega (múltiplos fixos por pedido). Decisão revertida em 22/09/2026: o campo entrou no CRUD de produto do CMS, com três opções (livre, múltiplos de 5, múltiplos de 10), obrigatório, padrão "livre". Por enquanto o campo só existe e é editável no CMS — o carrinho público ainda não lê nem aplica esse valor, isso fica para quando o carrinho (Fase 2, item 3) for implementado.
 
 ## Decisões em aberto
 

@@ -3,9 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
-import type { Produto } from "@/lib/produtos/types";
+import { CATEGORIA_VALUES, STEP_QUANTIDADE_LABELS, STEP_QUANTIDADE_VALUES, type Produto } from "@/lib/produtos/types";
 import type { ProdutoFormState } from "./actions";
-import { Card, Field, Input, Textarea, Button, Icon } from "@/components/ds";
+import { Card, Field, Input, Textarea, Select, Toggle, Button, Icon } from "@/components/ds";
 
 type ProdutoFormAction = (prevState: ProdutoFormState, formData: FormData) => Promise<ProdutoFormState>;
 
@@ -95,11 +95,53 @@ export function ProdutoForm({
               />
             </Field>
 
+            <Field label="Categoria" htmlFor="f-categoria" hint="Usada no filtro do catálogo público, quando existir.">
+              <Select id="f-categoria" name="categoria" defaultValue={produto?.Categoria ?? ""}>
+                <option value="">Sem categoria</option>
+                {CATEGORIA_VALUES.map((categoria) => (
+                  <option key={categoria} value={categoria}>
+                    {categoria}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
+            <Field label="Prazo de produção" htmlFor="f-prazo" required hint="Em dias, contados a partir da confirmação do pedido.">
+              <Input
+                id="f-prazo"
+                name="prazo_producao_dias"
+                type="number"
+                min={1}
+                step={1}
+                placeholder="Ex.: 3"
+                defaultValue={produto?.prazo_producao_dias ?? 1}
+                required
+              />
+            </Field>
+
+            <Field label="Step de quantidade" htmlFor="f-step" required hint="Incremento aceito ao ajustar a quantidade no pedido.">
+              <Select id="f-step" name="step_quantidade" defaultValue={produto?.step_quantidade ?? "livre"} required>
+                {STEP_QUANTIDADE_VALUES.map((step) => (
+                  <option key={step} value={step}>
+                    {STEP_QUANTIDADE_LABELS[step]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
             <div style={{ gridColumn: "span 2" }}>
               <Field label="Descrição" htmlFor="f-desc" hint="Ingredientes, tamanho e prazo de produção.">
                 <Textarea id="f-desc" name="descricao" rows={4} placeholder="Conte o que torna esse produto especial." defaultValue={produto?.descricao ?? ""} />
               </Field>
             </div>
+
+            <Field label="Produto em destaque">
+              <Toggle name="destaque" defaultChecked={produto?.destaque ?? false} label="Exibir como destaque" />
+            </Field>
+
+            <Field label="Status do produto">
+              <Toggle name="ativo" defaultChecked={produto?.ativo ?? true} label="Produto ativo" />
+            </Field>
 
             <Field label="Foto" hint="JPG, PNG ou WebP, luz natural e foco no produto. Até 2 MB.">
               <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/supabase/dal";
+import { parseProdutoForm } from "@/lib/produtos/parse";
 
 // Nome do bucket público de storage onde ficam as fotos dos produtos.
 const BUCKET = "Pingo de Mell";
@@ -11,42 +12,6 @@ const BUCKET = "Pingo de Mell";
 export type ProdutoFormState = {
   error?: string;
 };
-
-type ParsedProduto = {
-  nome: string;
-  preco: number;
-  descricao: string;
-  pedido_minimo: number;
-};
-
-type ParseResult =
-  | { success: true; data: ParsedProduto }
-  | { success: false; error: string };
-
-function parseProdutoForm(formData: FormData): ParseResult {
-  const nome = String(formData.get("nome") ?? "").trim();
-  const descricao = String(formData.get("descricao") ?? "").trim();
-  const precoRaw = String(formData.get("preco") ?? "").replace(",", ".");
-  const pedidoMinimoRaw = String(formData.get("pedido_minimo") ?? "");
-
-  const preco = Number(precoRaw);
-  const pedido_minimo = Number(pedidoMinimoRaw);
-
-  if (!nome) {
-    return { success: false, error: "Informe o nome do produto." };
-  }
-  if (!Number.isFinite(preco) || preco <= 0) {
-    return { success: false, error: "Informe um preço válido." };
-  }
-  if (!Number.isInteger(pedido_minimo) || pedido_minimo < 1) {
-    return {
-      success: false,
-      error: "Informe um pedido mínimo válido (mínimo 1).",
-    };
-  }
-
-  return { success: true, data: { nome, preco, descricao, pedido_minimo } };
-}
 
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
@@ -86,7 +51,8 @@ export async function createProduto(
 
   const parsed = parseProdutoForm(formData);
   if (!parsed.success) return { error: parsed.error };
-  const { nome, preco, descricao, pedido_minimo } = parsed.data;
+  const { nome, preco, descricao, pedido_minimo, categoria, prazo_producao_dias, step_quantidade, destaque, ativo } =
+    parsed.data;
 
   const supabase = await createClient();
 
@@ -115,6 +81,11 @@ export async function createProduto(
     preco,
     descricao,
     pedido_minimo,
+    Categoria: categoria,
+    prazo_producao_dias,
+    step_quantidade,
+    destaque,
+    ativo,
     image_url,
   });
 
@@ -135,7 +106,8 @@ export async function updateProduto(
 
   const parsed = parseProdutoForm(formData);
   if (!parsed.success) return { error: parsed.error };
-  const { nome, preco, descricao, pedido_minimo } = parsed.data;
+  const { nome, preco, descricao, pedido_minimo, categoria, prazo_producao_dias, step_quantidade, destaque, ativo } =
+    parsed.data;
 
   const supabase = await createClient();
 
@@ -156,6 +128,11 @@ export async function updateProduto(
     preco,
     descricao,
     pedido_minimo,
+    Categoria: categoria,
+    prazo_producao_dias,
+    step_quantidade,
+    destaque,
+    ativo,
   };
 
   const foto = formData.get("foto");
