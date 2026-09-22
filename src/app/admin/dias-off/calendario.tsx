@@ -415,7 +415,7 @@ export function Calendario({ diasOff, reaberturas }: { diasOff: DiaOff[]; reaber
                   aria-label={
                     item.tipo === "dia_off"
                       ? `Remover dia off de ${formatDiaLabel(item.iso)}`
-                      : `Fechar novamente a segunda-feira ${formatDiaLabel(item.iso)}`
+                      : `Fechar novamente ${formatDiaLabel(item.iso)}`
                   }
                   onClick={() => setAcaoPendente({ tipo: item.tipo === "dia_off" ? "remover" : "fechar", iso: item.iso })}
                 >
