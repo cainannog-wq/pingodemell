@@ -97,6 +97,16 @@ Diagnóstico de lentidão pedido antes de qualquer otimização, sem mexer em c�
 
 Fonte renderiza visualmente igual (mesmo peso, mesmo fallback), conferido lado a lado local vs. preview. Não mexeu no descompasso de região Supabase/Netlify (fora do pedido). `npm run lint`, `npm run build` e os 15 testes automatizados seguem limpos.
 
+## Correções de contraste e cursor do preço, a partir da auditoria de acessibilidade (22/09/2026, PR #2 ainda aberto)
+
+Três achados de contraste da auditoria de 22/09/2026 corrigidos: trilho do toggle "Ativo" (dourado/bege → marrom/`--pdm-muted`, de ~1,3-1,4:1 pra 4,9-5,9:1), ícone de destaque (dourado claro → marrom, de 2,67:1 pra 5,9:1) e texto "Ativo"/"Salvo" (verde claro → verde escuro num token novo `--pdm-success-text`, de 3,75:1 pra 5,62:1). O token `--pdm-success` original não foi alterado — continua igual pra fundo de badge em outras telas, fora do escopo deste ajuste. Também corrigido o bug do cursor pulando pro fim ao editar uma posição no meio do valor no campo de preço mascarado.
+
+Duas pendências da auditoria ficam registradas aqui, para um prompt separado depois do merge deste PR, por pedido explícito do Cainan de não mexer nelas agora:
+- `aria-describedby` ausente em `Field.tsx`: o hint/instrução de qualquer campo do sistema (não só os desta entrega) não é lido por leitor de tela ao focar o input, só o rótulo.
+- Área de toque do toggle (44×26, abaixo do alvo de 44×44) e o fraseado do `aria-label` do toggle da listagem ("Desativar X" em vez de descrever o estado atual) — baixa prioridade, avaliar depois se vale a pena.
+
+Testes: 27 no total (10 novos — 7 confirmando as taxas de contraste via cálculo de luminância WCAG em `src/lib/design/contrast.ts`, 3 confirmando a posição do cursor no campo de preço). `npm run lint` e `npm run build` limpos.
+
 ## Próximo pedido ao Claude Code
 
 Exclusão de produto e a confirmação visual do CAPTCHA de produção estão fechadas (ver Retrato acima). Painel de pedidos está pronto e agora também auditado — falta só o Cainan revisar/mergear o PR #1. Depois disso, retomar a ordem do roadmap: catálogo público, carrinho, e por fim checkout (item 4), que vai reaproveitar a tabela `pedidos` e o Route Handler de rate limit já prontos (agora também protegidos pela correção do B12).

@@ -47,7 +47,12 @@ export function Toggle({
           height: 26,
           flex: "none",
           borderRadius: "var(--radius-pill)",
-          background: checked ? "var(--pdm-gold)" : "var(--pdm-disabled-bg)",
+          // Cores trocadas na auditoria de acessibilidade de 22/09/2026:
+          // --pdm-gold (ligado) e --pdm-disabled-bg (desligado) tinham só
+          // ~1,4:1 e ~1,3:1 de contraste contra fundo branco, abaixo do
+          // 3:1 exigido pra componente de interface (SC 1.4.11).
+          // --pdm-brown (5,9:1) e --pdm-muted (4,9:1) resolvem isso.
+          background: checked ? "var(--pdm-brown)" : "var(--pdm-muted)",
           transition: "var(--transition-base)",
         }}
       >

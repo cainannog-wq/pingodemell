@@ -9,12 +9,16 @@ import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 import { deleteProduto, updateProdutoAtivo } from "./actions";
 
 // Ícone de destaque, sem texto ao lado (só title/aria-label), reaproveitado
-// na tabela desktop e no card mobile.
+// na tabela desktop e no card mobile. tone="default" (não "accent"): a
+// auditoria de acessibilidade de 22/09/2026 mediu --pdm-gold-soft
+// (tone="accent") em 2,67:1 contra fundo branco, abaixo do 3:1 exigido
+// pra ícone com significado (SC 1.4.11). --icon-default (--pdm-brown)
+// tem 5,9:1.
 function DestaqueIndicator({ show }: { show: boolean }) {
   if (!show) return null;
   return (
     <span role="img" aria-label="Produto em destaque" title="Produto em destaque" style={{ display: "inline-flex" }}>
-      <Icon name="check_circle" size={22} tone="accent" />
+      <Icon name="check_circle" size={22} tone="default" />
     </span>
   );
 }
@@ -44,7 +48,11 @@ function AtivoToggleCell({
         disabled={saving}
         aria-label={ativo ? `Desativar ${nome}` : `Ativar ${nome}`}
       />
-      <span style={{ fontSize: 13, color: ativo ? "var(--pdm-success)" : "var(--pdm-muted)" }}>
+      {/* --pdm-success (texto): 3,75:1 contra branco, abaixo do 4,5:1
+          exigido pra texto pequeno (SC 1.4.3, achado da auditoria de
+          22/09/2026). --pdm-success-text é a mesma cor escurecida, 5,62:1,
+          só pra uso como texto — ver colors.css. */}
+      <span style={{ fontSize: 13, color: ativo ? "var(--pdm-success-text)" : "var(--pdm-muted)" }}>
         {ativo ? "Ativo" : "Inativo"}
       </span>
       {feedback === "erro" && (
@@ -53,7 +61,7 @@ function AtivoToggleCell({
         </span>
       )}
       {feedback === "ok" && (
-        <span role="status" style={{ fontSize: 12, color: "var(--pdm-success)" }}>
+        <span role="status" style={{ fontSize: 12, color: "var(--pdm-success-text)" }}>
           Salvo
         </span>
       )}
