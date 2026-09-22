@@ -13,13 +13,14 @@ const CANDIDATOS = [
 afterEach(() => cleanup());
 
 describe("SubitensPicker", () => {
-  it("busca, adiciona e remove um subitem, gerando um input hidden por item", () => {
+  it("escolhe no dropdown, adiciona e remove um subitem, gerando um input hidden por item", () => {
     const { container } = render(
       <SubitensPicker produtosDisponiveis={CANDIDATOS} initialSubitens={[]} nomeAtual="Cento de teste" />
     );
 
-    fireEvent.change(screen.getByPlaceholderText(/buscar produto/i), { target: { value: "Coxinha" } });
-    fireEvent.click(screen.getByRole("button", { name: "Coxinha de frango" }));
+    const select = screen.getByRole("combobox", { name: /escolher produto/i });
+    fireEvent.change(select, { target: { value: "Coxinha de frango" } });
+    fireEvent.click(screen.getByRole("button", { name: /adicionar/i }));
 
     expect(screen.getByText("Coxinha de frango")).toBeInTheDocument();
     const hiddenInputs = container.querySelectorAll('input[name="subitem_nome"]');
@@ -27,7 +28,10 @@ describe("SubitensPicker", () => {
     expect((hiddenInputs[0] as HTMLInputElement).value).toBe("Coxinha de frango");
 
     fireEvent.click(screen.getByRole("button", { name: /remover coxinha de frango da lista de subitens/i }));
-    expect(screen.queryByText("Coxinha de frango")).not.toBeInTheDocument();
+    // Depois de removido, "Coxinha de frango" volta a existir como opção do
+    // dropdown — a asserção certa é que ele não sobra na lista de
+    // escolhidos (nenhum <li>), não que o texto suma da página inteira.
+    expect(container.querySelectorAll("li")).toHaveLength(0);
     expect(container.querySelectorAll('input[name="subitem_nome"]')).toHaveLength(0);
   });
 
@@ -44,7 +48,7 @@ describe("SubitensPicker", () => {
     expect(screen.getByText("Produto inativo")).toBeInTheDocument();
   });
 
-  it("não lista o próprio produto em edição nem um subitem já adicionado como opção de busca", () => {
+  it("não lista o próprio produto em edição nem um subitem já adicionado como opção do dropdown", () => {
     render(
       <SubitensPicker
         produtosDisponiveis={[...CANDIDATOS, { nome: "Cento de teste", ativo: true }]}
@@ -53,10 +57,19 @@ describe("SubitensPicker", () => {
       />
     );
 
-    fireEvent.change(screen.getByPlaceholderText(/buscar produto/i), { target: { value: "" } });
-    fireEvent.change(screen.getByPlaceholderText(/buscar produto/i), { target: { value: "e" } });
+    const select = screen.getByRole("combobox", { name: /escolher produto/i });
+    const opcoes = Array.from(select.querySelectorAll("option")).map((o) => o.value);
 
-    expect(screen.queryByRole("button", { name: "Cento de teste" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Risole de carne" })).not.toBeInTheDocument();
+    expect(opcoes).not.toContain("Cento de teste");
+    expect(opcoes).not.toContain("Risole de carne");
+    expect(opcoes).toContain("Coxinha de frango");
+  });
+
+  it("mantém o botão Adicionar desabilitado sem nenhum produto selecionado no dropdown", () => {
+    render(
+      <SubitensPicker produtosDisponiveis={CANDIDATOS} initialSubitens={[]} nomeAtual="Cento de teste" />
+    );
+
+    expect(screen.getByRole("button", { name: /adicionar/i })).toBeDisabled();
   });
 });
