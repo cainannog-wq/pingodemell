@@ -3,3 +3,9 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Cabecalhos de seguranca (auditoria de 14/09/2026, item B20): NAO ficam
+# aqui. O @netlify/plugin-nextjs nao repassa o bloco [[headers]] do
+# netlify.toml pras respostas que o Next.js renderiza (confirmado testando
+# contra o deploy real) — ver headers() em next.config.ts, que e o
+# mecanismo que o plugin realmente honra.
