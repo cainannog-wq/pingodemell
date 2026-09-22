@@ -81,6 +81,10 @@ Três pontos de regra de negócio ficaram em aberto quando o checkout (Fase 2, i
 
 Essas três regras (as duas já fechadas, mais a que segue em aberto) valem como contexto obrigatório pra qualquer prompt futuro sobre o item 4 da Fase 2 (checkout).
 
+## Extensão do cadastro de produto registrada em 22/09/2026
+
+O item 1 da Fase 2 (Admin CRUD de produto) já estava marcado como concluído, mas ganhou um bloco novo de campos, só no CMS, sem tocar catálogo público, carrinho ou checkout: prazo de produção (dias, obrigatório, padrão 1), step de quantidade (livre/múltiplos de 5/múltiplos de 10, obrigatório, padrão livre — reverte a decisão de "fora de escopo" registrada no documento de escopo), produto em destaque (toggle, padrão desligado), status ativo/inativo (toggle, padrão ligado) e a categoria "Bebidas" somada à lista já existente (bolo, doce, salgado) numa coluna `Categoria` que já existia no banco mas nunca tinha sido exposta no formulário. Migração aplicada direto em produção via MCP do Supabase, com default nos quatro campos novos para não quebrar os produtos já cadastrados. Nenhum desses campos ainda tem efeito fora do CMS — isso é trabalho de quando catálogo, carrinho e checkout (itens 2 a 4 da Fase 2) forem retomados.
+
 ## Fase 3 — Testes
 
 Essa é a fase que mais importa pra quem não vai ler código, porque o teste automatizado é seu substituto pra revisão de código.

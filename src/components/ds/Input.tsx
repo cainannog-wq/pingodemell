@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties, type InputHTMLAttributes } from "react";
+import { useState, type CSSProperties, type InputHTMLAttributes, type Ref } from "react";
 import { Icon } from "./Icon";
 
 // Porta de components/forms/Input.jsx.
@@ -8,11 +8,13 @@ export function Input({
   icon,
   invalid,
   style,
+  ref,
   ...rest
 }: {
   icon?: string;
   invalid?: boolean;
   style?: CSSProperties;
+  ref?: Ref<HTMLInputElement>;
 } & InputHTMLAttributes<HTMLInputElement>) {
   const [focus, setFocus] = useState(false);
 
@@ -35,6 +37,7 @@ export function Input({
 
   const field = (
     <input
+      ref={ref}
       onFocus={() => setFocus(true)}
       onBlur={() => setFocus(false)}
       style={{

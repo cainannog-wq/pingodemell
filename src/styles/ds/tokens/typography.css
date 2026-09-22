@@ -1,7 +1,11 @@
 :root{
---font-display:"Yellowtail","Stars&Love",cursive;   /* H1 / assinaturas */
---font-heading:"Merriweather",Georgia,serif;        /* H2 / H3 */
---font-body:"Nunito","Segoe UI",sans-serif;         /* corpo, UI, dados */
+/* Nomes de família vêm do next/font/google (ver src/app/layout.tsx), que
+   gera as custom properties --font-yellowtail/--font-merriweather/--font-nunito
+   com a fonte auto-hospedada. Fallbacks continuam literais, pro caso raro
+   de a variável não estar disponível (ex.: página fora do RootLayout). */
+--font-display:var(--font-yellowtail),"Stars&Love",cursive;   /* H1 / assinaturas */
+--font-heading:var(--font-merriweather),Georgia,serif;        /* H2 / H3 */
+--font-body:var(--font-nunito),"Segoe UI",sans-serif;         /* corpo, UI, dados */
 
 --fs-h1:56px;   --fs-h1-mobile:34px;   --lh-h1:1.2; /* @kind font */
 --fs-h2:32px;   --fs-h2-mobile:24px;   --lh-h2:1.3; /* @kind font */

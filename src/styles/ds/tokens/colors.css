@@ -23,6 +23,14 @@
 --pdm-info:#5b7c99;
 --pdm-whatsapp:#25d366;
 
+/* Ajuste de contraste — auditoria de acessibilidade de 22/09/2026.
+   --pdm-success (#6b8e4e) tem 3,75:1 contra branco, abaixo do 4,5:1
+   exigido pra texto pequeno (SC 1.4.3). Este token escurece o mesmo tom
+   de verde só pra uso como cor de TEXTO (ex.: rótulo "Ativo"/"Salvo");
+   --pdm-success continua igual pra fundo de badge, que é outro uso, fora
+   do escopo deste ajuste. */
+--pdm-success-text:#52703a; /* 5,62:1 contra branco */
+
 /* --- Aliases semânticos --- */
 --surface-page:var(--pdm-cream);
 --surface-card:var(--pdm-cream);

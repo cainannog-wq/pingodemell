@@ -4,9 +4,70 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import type { Produto } from "@/lib/produtos/types";
-import { Card, Icon, Input, Button } from "@/components/ds";
+import { Card, Icon, Input, Button, Toggle } from "@/components/ds";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
-import { deleteProduto } from "./actions";
+import { deleteProduto, updateProdutoAtivo } from "./actions";
+
+// Ícone de destaque, sem texto ao lado (só title/aria-label), reaproveitado
+// na tabela desktop e no card mobile. tone="default" (não "accent"): a
+// auditoria de acessibilidade de 22/09/2026 mediu --pdm-gold-soft
+// (tone="accent") em 2,67:1 contra fundo branco, abaixo do 3:1 exigido
+// pra ícone com significado (SC 1.4.11). --icon-default (--pdm-brown)
+// tem 5,9:1.
+function DestaqueIndicator({ show }: { show: boolean }) {
+  if (!show) return null;
+  return (
+    <span role="img" aria-label="Produto em destaque" title="Produto em destaque" style={{ display: "inline-flex" }}>
+      <Icon name="check_circle" size={22} tone="default" />
+    </span>
+  );
+}
+
+// Toggle inline de status ativo/inativo na listagem. Sem estado próprio:
+// o estado vive no ProdutosList (única fonte de verdade), porque a mesma
+// linha renderiza duas vezes (tabela desktop + card mobile, alternadas via
+// CSS) e cada instância com estado próprio dessincronizaria da outra.
+function AtivoToggleCell({
+  nome,
+  ativo,
+  saving,
+  feedback,
+  onToggle,
+}: {
+  nome: string;
+  ativo: boolean;
+  saving: boolean;
+  feedback: "ok" | "erro" | undefined;
+  onToggle: (next: boolean) => void;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      <Toggle
+        checked={ativo}
+        onCheckedChange={onToggle}
+        disabled={saving}
+        aria-label={ativo ? `Desativar ${nome}` : `Ativar ${nome}`}
+      />
+      {/* --pdm-success (texto): 3,75:1 contra branco, abaixo do 4,5:1
+          exigido pra texto pequeno (SC 1.4.3, achado da auditoria de
+          22/09/2026). --pdm-success-text é a mesma cor escurecida, 5,62:1,
+          só pra uso como texto — ver colors.css. */}
+      <span style={{ fontSize: 13, color: ativo ? "var(--pdm-success-text)" : "var(--pdm-muted)" }}>
+        {ativo ? "Ativo" : "Inativo"}
+      </span>
+      {feedback === "erro" && (
+        <span role="alert" style={{ fontSize: 12, color: "var(--pdm-error)" }}>
+          Erro ao salvar
+        </span>
+      )}
+      {feedback === "ok" && (
+        <span role="status" style={{ fontSize: 12, color: "var(--pdm-success-text)" }}>
+          Salvo
+        </span>
+      )}
+    </div>
+  );
+}
 
 // Formatação manual (sem toLocaleString/Intl) para evitar divergência de
 // hidratação entre o ICU do servidor e o do navegador.
@@ -29,6 +90,32 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
   const [search, setSearch] = useState("");
   const [produtoParaExcluir, setProdutoParaExcluir] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const [ativoOverrides, setAtivoOverrides] = useState<Record<string, boolean>>({});
+  const [savingAtivo, setSavingAtivo] = useState<Record<string, boolean>>({});
+  const [feedbackAtivo, setFeedbackAtivo] = useState<Record<string, "ok" | "erro" | undefined>>({});
+  const [, startAtivoTransition] = useTransition();
+
+  function handleToggleAtivo(produto: Produto, next: boolean) {
+    const previous = ativoOverrides[produto.nome] ?? produto.ativo;
+    setAtivoOverrides((overrides) => ({ ...overrides, [produto.nome]: next }));
+    setSavingAtivo((saving) => ({ ...saving, [produto.nome]: true }));
+    setFeedbackAtivo((feedback) => ({ ...feedback, [produto.nome]: undefined }));
+
+    startAtivoTransition(async () => {
+      const result = await updateProdutoAtivo(produto.nome, next);
+      setSavingAtivo((saving) => ({ ...saving, [produto.nome]: false }));
+      if (result.error) {
+        setAtivoOverrides((overrides) => ({ ...overrides, [produto.nome]: previous }));
+        setFeedbackAtivo((feedback) => ({ ...feedback, [produto.nome]: "erro" }));
+      } else {
+        setFeedbackAtivo((feedback) => ({ ...feedback, [produto.nome]: "ok" }));
+      }
+      setTimeout(() => {
+        setFeedbackAtivo((feedback) => ({ ...feedback, [produto.nome]: undefined }));
+      }, 2500);
+    });
+  }
 
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -79,8 +166,11 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                 <tr style={{ background: "var(--pdm-cream)" }}>
                   <th style={{ ...thStyle, width: 96 }}>Foto</th>
                   <th style={thStyle}>Nome</th>
+                  <th style={{ ...thStyle, width: 120 }}>Categoria</th>
                   <th style={{ ...thStyle, textAlign: "right", width: 130 }}>Preço</th>
                   <th style={{ ...thStyle, textAlign: "right", width: 170 }}>Pedido mínimo</th>
+                  <th style={{ ...thStyle, width: 90, textAlign: "center" }}>Destaque</th>
+                  <th style={{ ...thStyle, width: 170 }}>Status</th>
                   <th style={{ ...thStyle, textAlign: "right", width: 170 }}>Ações</th>
                 </tr>
               </thead>
@@ -107,6 +197,9 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                       </div>
                     </td>
                     <td className="admin-table-title" style={{ padding: "16px 24px", fontWeight: 600 }}>{produto.nome}</td>
+                    <td data-label="Categoria" style={{ padding: "16px 24px", color: "var(--pdm-muted)" }}>
+                      {produto.Categoria ?? "—"}
+                    </td>
                     <td data-label="Preço" style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                       {formatPreco(produto.preco)}
                     </td>
@@ -115,6 +208,18 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                       style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: "var(--pdm-muted)" }}
                     >
                       {produto.pedido_minimo} un.
+                    </td>
+                    <td data-label="Destaque" style={{ padding: "16px 24px", textAlign: "center" }}>
+                      <DestaqueIndicator show={produto.destaque} />
+                    </td>
+                    <td data-label="Status" style={{ padding: "16px 24px" }}>
+                      <AtivoToggleCell
+                        nome={produto.nome}
+                        ativo={ativoOverrides[produto.nome] ?? produto.ativo}
+                        saving={savingAtivo[produto.nome] ?? false}
+                        feedback={feedbackAtivo[produto.nome]}
+                        onToggle={(next) => handleToggleAtivo(produto, next)}
+                      />
                     </td>
                     <td data-label="Ações" style={{ padding: "16px 24px" }}>
                       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -165,9 +270,22 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontWeight: 600 }}>{produto.nome}</div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
                       <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{formatPreco(produto.preco)}</span>
                       <span style={{ fontSize: 13, color: "var(--pdm-muted)" }}>{produto.pedido_minimo} un. mín.</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap", fontSize: 13, color: "var(--pdm-muted)" }}>
+                      <span>{produto.Categoria ?? "Sem categoria"}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
+                      <DestaqueIndicator show={produto.destaque} />
+                      <AtivoToggleCell
+                        nome={produto.nome}
+                        ativo={ativoOverrides[produto.nome] ?? produto.ativo}
+                        saving={savingAtivo[produto.nome] ?? false}
+                        feedback={feedbackAtivo[produto.nome]}
+                        onToggle={(next) => handleToggleAtivo(produto, next)}
+                      />
                     </div>
                   </div>
                 </div>
