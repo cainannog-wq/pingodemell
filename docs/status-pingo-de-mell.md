@@ -91,6 +91,12 @@ Diagnóstico de lentidão pedido antes de qualquer otimização, sem mexer em c�
 - **Descartado por enquanto**: paginação/índice — o banco tem só 5 produtos e 6 pedidos, volume não é a causa hoje (mas passa a valer a pena revisitar quando os 60 produtos reais forem cadastrados).
 - Nenhuma correção foi aplicada ainda — o Cainan decide se quer tratar isso como urgente (bug real de performance, ex.: trocar as tags de fonte por `next/font`) ou deixar pra a Fase 4 (SEO/Analytics/Lighthouse), que já tem otimização de performance registrada no roadmap.
 
+**Correção aplicada (22/09/2026):** Merriweather, Nunito e Yellowtail trocadas de `<link rel="stylesheet">` pra `next/font/google` (auto-hospedadas, sem round-trip pra fonts.googleapis.com). Material Symbols Rounded (ícone) não é suportada pelo carregador do next/font — continua como `<link>` externo, mas agora com `preconnect` e `display=swap` (antes sem nenhum dos dois). Medido no mesmo preview, antes e depois, no intervalo entre o HTML terminar de chegar e o DOM ficar interativo (o trecho que estava travado por causa da fonte bloqueante):
+- Antes: ~4.811ms parado (responseEnd 823ms → domInteractive 5.634ms), carregamento total (loadEventEnd) em 7.861ms
+- Depois: ~15ms (responseEnd 635ms → domInteractive 650ms), carregamento total em 1.028ms
+
+Fonte renderiza visualmente igual (mesmo peso, mesmo fallback), conferido lado a lado local vs. preview. Não mexeu no descompasso de região Supabase/Netlify (fora do pedido). `npm run lint`, `npm run build` e os 15 testes automatizados seguem limpos.
+
 ## Próximo pedido ao Claude Code
 
 Exclusão de produto e a confirmação visual do CAPTCHA de produção estão fechadas (ver Retrato acima). Painel de pedidos está pronto e agora também auditado — falta só o Cainan revisar/mergear o PR #1. Depois disso, retomar a ordem do roadmap: catálogo público, carrinho, e por fim checkout (item 4), que vai reaproveitar a tabela `pedidos` e o Route Handler de rate limit já prontos (agora também protegidos pela correção do B12).
