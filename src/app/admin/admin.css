@@ -352,6 +352,262 @@
   .admin-header-action-mobile {
     display: block;
   }
+
+  /* Busca + chips de categoria (listagem de produtos) fixos no topo
+     durante a rolagem no mobile — pedido explícito da reorganização de
+     22/09/2026. top = altura do topbar mobile (56px, ver .admin-header
+     acima). Só na listagem de produtos: a busca de pedidos não pediu isso. */
+  .produtos-toolbar-sticky {
+    position: sticky;
+    top: 56px;
+    z-index: 90;
+    background: var(--pdm-white);
+  }
+}
+
+/* Chips de categoria da listagem de produtos — linha com rolagem
+   horizontal, um selecionado por vez. Vale pro desktop e pro mobile (só a
+   busca+chips foram acrescentados ao layout desktop, o resto da tabela
+   continua igual). */
+.produtos-chip-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.produtos-chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+.produtos-chip {
+  flex: none;
+  white-space: nowrap;
+  padding: 8px 16px;
+  min-height: 36px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--pdm-brown);
+  background: transparent;
+  color: var(--pdm-brown);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.produtos-chip--active {
+  background: var(--pdm-brown);
+  color: var(--pdm-white);
+}
+
+/* Card de produto em formato de linha (listagem mobile, reorganização de
+   22/09/2026): foto + nome/preço/categoria numa linha só, card inteiro
+   tocável (link "esticado" por trás do conteúdo) e o menu de 3 pontinhos
+   sobreposto no canto — dois elementos irmãos, não um dentro do outro,
+   pra não aninhar elemento interativo dentro de link. */
+.produto-mobile-row-card {
+  position: relative;
+  background: var(--pdm-white);
+  border-radius: var(--radius);
+  padding: 12px;
+  transition: var(--transition-base);
+}
+
+.produto-mobile-row-card-link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+.produto-mobile-row-card-link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.produto-mobile-row-card-content {
+  display: flex;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.produto-mobile-row-card-nome {
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.produto-mobile-row-card-menu {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+}
+
+.produto-action-menu-wrap {
+  position: relative;
+}
+
+.produto-action-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--pdm-brown);
+  cursor: pointer;
+  border-radius: var(--radius);
+}
+
+.produto-action-menu-btn:hover {
+  background: rgba(139, 89, 42, 0.08);
+}
+
+.produto-action-menu-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 220px;
+  background: var(--pdm-white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-raised);
+  padding: 6px 0;
+  z-index: 10;
+}
+
+.produto-action-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-body);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.produto-action-menu-item:hover,
+.produto-action-menu-item:focus-visible {
+  background: rgba(139, 89, 42, 0.08);
+  outline: none;
+}
+
+.produto-action-menu-item--danger {
+  color: var(--pdm-error);
+}
+
+.produto-action-menu-divider {
+  border-top: 1px solid var(--border-subtle);
+  margin: 6px 0;
+}
+
+/* Cabeçalho de grupo do histórico de pedidos mobile (Atrasados / Hoje /
+   Amanhã / dia da semana / Finalizados) — reorganização de 22/09/2026. */
+.pedidos-group-header {
+  padding: 4px 4px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pdm-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pedidos-group-header--atrasado {
+  color: var(--pdm-error);
+}
+
+.pedidos-ver-mais-antigos {
+  align-self: center;
+  background: none;
+  border: none;
+  color: var(--pdm-brown);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  min-height: var(--tap-min);
+  padding: 8px;
+}
+
+/* Card de pedido mobile: o card inteiro é o link (sem divisória interna —
+   a separação entre cards é só o gap do .admin-mobile-cards). */
+.pedido-mobile-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  padding-right: 32px;
+}
+
+.pedido-mobile-card-row1 {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pedido-mobile-card-cliente {
+  font-weight: 700;
+  color: var(--pdm-brown);
+}
+
+.pedido-mobile-card-entrega {
+  margin-top: 6px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pedido-mobile-card-ocasiao {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--pdm-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pedido-mobile-card-row4 {
+  margin-top: 10px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pedido-mobile-card-meta {
+  font-size: 13px;
+  color: var(--pdm-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.pedido-mobile-card-total {
+  font-weight: 700;
+  color: var(--pdm-black);
+  font-variant-numeric: tabular-nums;
+}
+
+.pedido-mobile-card-chevron {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 /* Grade de itens no detalhe do pedido: coluna lateral empilha embaixo */

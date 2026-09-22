@@ -178,6 +178,26 @@ export async function updateProdutoAtivo(
   return {};
 }
 
+// Atualiza só o toggle de destaque, usado pelo menu de ações da listagem
+// (mesmo padrão de updateProdutoAtivo). Sem efeito no catálogo público
+// ainda, igual ao restante do campo "destaque".
+export async function updateProdutoDestaque(
+  nome: string,
+  destaque: boolean
+): Promise<{ error?: string }> {
+  await requireAuth();
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("produtos").update({ destaque }).eq("nome", nome);
+
+  if (error) {
+    return { error: `Não foi possível atualizar o destaque: ${error.message}` };
+  }
+
+  revalidatePath("/admin/produtos");
+  return {};
+}
+
 export async function deleteProduto(nome: string) {
   await requireAuth();
 

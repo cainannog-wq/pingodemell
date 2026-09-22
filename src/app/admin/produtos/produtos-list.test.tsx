@@ -17,10 +17,12 @@ vi.mock("next/link", () => ({
 }));
 
 const updateProdutoAtivoMock = vi.fn();
+const updateProdutoDestaqueMock = vi.fn();
 
 vi.mock("./actions", () => ({
   deleteProduto: vi.fn(),
   updateProdutoAtivo: (...args: unknown[]) => updateProdutoAtivoMock(...args),
+  updateProdutoDestaque: (...args: unknown[]) => updateProdutoDestaqueMock(...args),
 }));
 
 const PRODUTO: Produto = {
@@ -80,5 +82,54 @@ describe("AtivoToggleCell — feedback acessível", () => {
       expect(statuses.length).toBeGreaterThan(0);
       expect(statuses[0]).toHaveTextContent("Salvo");
     });
+  });
+});
+
+// Busca por nome ignorando acento/maiúscula, combinada com o chip de
+// categoria (reorganização mobile de 22/09/2026).
+describe("ProdutosList — busca e chips de categoria", () => {
+  afterEach(() => cleanup());
+
+  const PAO_DE_MEL: Produto = {
+    ...PRODUTO,
+    nome: "Pão de Mel",
+    Categoria: "Doces",
+  };
+  const BOLO: Produto = { ...PRODUTO, nome: "Bolo de Cenoura", Categoria: "Bolos" };
+  const SEM_CATEGORIA: Produto = { ...PRODUTO, nome: "Item Avulso", Categoria: null };
+
+  it('encontra "Pão de Mel" buscando "pao de mel" (sem acento, minúsculo)', () => {
+    render(<ProdutosList produtos={[PAO_DE_MEL, BOLO]} />);
+
+    const busca = screen.getByPlaceholderText("Buscar pelo nome do produto");
+    fireEvent.change(busca, { target: { value: "pao de mel" } });
+
+    expect(screen.getAllByText("Pão de Mel").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Bolo de Cenoura")).not.toBeInTheDocument();
+  });
+
+  it("combina busca com o chip de categoria selecionado", () => {
+    render(<ProdutosList produtos={[PAO_DE_MEL, BOLO]} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Bolos" }));
+
+    const busca = screen.getByPlaceholderText("Buscar pelo nome do produto");
+    fireEvent.change(busca, { target: { value: "pao de mel" } });
+
+    // "Pão de Mel" é Doces, não Bolos: some da lista mesmo batendo na busca.
+    expect(screen.queryByText("Pão de Mel")).not.toBeInTheDocument();
+
+    fireEvent.change(busca, { target: { value: "" } });
+    expect(screen.getAllByText("Bolo de Cenoura").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Pão de Mel")).not.toBeInTheDocument();
+  });
+
+  it('chip "Sem categoria" mostra só produtos com Categoria nula', () => {
+    render(<ProdutosList produtos={[PAO_DE_MEL, SEM_CATEGORIA]} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Sem categoria" }));
+
+    expect(screen.getAllByText("Item Avulso").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Pão de Mel")).not.toBeInTheDocument();
   });
 });

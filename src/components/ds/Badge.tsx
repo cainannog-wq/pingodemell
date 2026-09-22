@@ -10,7 +10,9 @@ export type BadgeVariant =
   | "success"
   | "error"
   | "warning"
-  | "info";
+  | "info"
+  | "successOutline"
+  | "errorOutline";
 
 const VARIANTS: Record<BadgeVariant, CSSProperties> = {
   accent: { background: "var(--pdm-gold-soft)", color: "var(--pdm-black)" },
@@ -25,6 +27,21 @@ const VARIANTS: Record<BadgeVariant, CSSProperties> = {
   error: { background: "var(--pdm-error)", color: "var(--pdm-white)" },
   warning: { background: "var(--pdm-warning)", color: "var(--pdm-black)" },
   info: { background: "var(--pdm-info)", color: "var(--pdm-white)" },
+  // Selo de contorno colorido, sem preenchimento sólido — usado nos status
+  // finalizados (Entregue/Cancelado) do histórico de pedidos no mobile, pra
+  // deixar a cor forte reservada aos status que ainda pedem ação (achado de
+  // UX registrado em 22/09/2026, sem token novo de cor: reaproveita as
+  // mesmas cores semânticas já usadas nas variantes "success"/"error").
+  successOutline: {
+    background: "transparent",
+    color: "var(--pdm-success-text)",
+    boxShadow: "inset 0 0 0 1.5px var(--pdm-success-text)",
+  },
+  errorOutline: {
+    background: "transparent",
+    color: "var(--pdm-error)",
+    boxShadow: "inset 0 0 0 1.5px var(--pdm-error)",
+  },
 };
 
 export function Badge({
