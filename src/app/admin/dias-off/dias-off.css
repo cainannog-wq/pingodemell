@@ -1,0 +1,53 @@
+/* Calendário de dias sem produção.
+
+   Base (mobile, sem query): célula quadrada (aspect-ratio: 1) — alvo de
+   toque generoso, como já estava antes desta mudança.
+
+   Desktop (min-width: 721px, mesmo ponto de corte de .admin-table-desktop-wrap
+   em admin.css): célula com altura fixa e baixa em vez de quadrada. Sem essa
+   regra, num monitor largo a largura de cada 1/7 do card facilmente passa de
+   150-190px e, com aspect-ratio 1, a altura acompanha — o mês inteiro passa
+   a ocupar a tela toda antes mesmo de chegar em "Datas marcadas" logo abaixo. */
+
+.dias-off-calendar-body {
+  padding: 24px;
+}
+
+.dias-off-weeks {
+  display: grid;
+  gap: 4px;
+}
+
+.dias-off-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.dias-off-day {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: var(--transition-base);
+}
+
+@media (min-width: 721px) {
+  .dias-off-calendar-body {
+    padding: 16px 24px 20px;
+  }
+
+  .dias-off-weeks,
+  .dias-off-week {
+    gap: 6px;
+  }
+
+  .dias-off-day {
+    aspect-ratio: unset;
+    height: 40px;
+    font-size: 13px;
+  }
+}
