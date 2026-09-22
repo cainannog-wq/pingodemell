@@ -184,7 +184,6 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               height: 36,
               borderRadius: "50%",
               background: "var(--pdm-gold)",
-              display: "grid",
               placeItems: "center",
               fontWeight: 700,
               fontSize: 14,
