@@ -82,6 +82,22 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <NavLink href="/admin/pedidos" icon="receipt_long">
             Histórico de pedidos
           </NavLink>
+
+          <div
+            style={{
+              fontSize: 13,
+              textTransform: "uppercase",
+              letterSpacing: ".05em",
+              fontWeight: 700,
+              color: "rgba(255,255,255,.8)",
+              padding: "16px 12px 4px",
+            }}
+          >
+            Calendário
+          </div>
+          <NavLink href="/admin/dias-off" icon="event_busy">
+            Dias sem produção
+          </NavLink>
         </nav>
 
         <div className="admin-sidebar-footer">
