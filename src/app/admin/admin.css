@@ -77,6 +77,19 @@
   padding: 32px;
 }
 
+/* Formulário de produto: cada seção (Identificação, Preço e pedido
+   mínimo, ...) tem seu próprio espaçamento e grade de colunas, em vez de
+   uma única grade auto-fit com todos os campos soltos — ver FormSection
+   em produto-form.tsx. */
+.produto-form-section {
+  padding: 32px 24px;
+}
+
+.produto-form-grid {
+  display: grid;
+  gap: 24px;
+}
+
 @media (max-width: 860px) {
   .admin-shell {
     grid-template-columns: minmax(0, 1fr);
@@ -257,13 +270,16 @@
     width: 100%;
   }
 
-  .produto-form-band {
+  .produto-form-section {
     padding: 20px 16px !important;
   }
 
-  .produto-form-body {
-    padding: 20px 16px !important;
-    gap: 20px !important;
+  /* Grade de cada seção do formulário: 1 coluna sempre no mobile,
+     independente de quantas colunas a seção usa no desktop (definidas
+     inline por FormSection em produto-form.tsx). */
+  .produto-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
 
   /* Cabeçalho das listas (Produtos / Histórico de pedidos): H1 encolhe e o
