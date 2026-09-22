@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
-import { STEP_QUANTIDADE_LABELS, type Produto } from "@/lib/produtos/types";
+import type { Produto } from "@/lib/produtos/types";
 import { Card, Icon, Input, Button, Toggle } from "@/components/ds";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 import { deleteProduto, updateProdutoAtivo } from "./actions";
@@ -169,8 +169,6 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                   <th style={{ ...thStyle, width: 120 }}>Categoria</th>
                   <th style={{ ...thStyle, textAlign: "right", width: 130 }}>Preço</th>
                   <th style={{ ...thStyle, textAlign: "right", width: 170 }}>Pedido mínimo</th>
-                  <th style={{ ...thStyle, textAlign: "right", width: 140 }}>Prazo</th>
-                  <th style={{ ...thStyle, width: 160 }}>Step</th>
                   <th style={{ ...thStyle, width: 90, textAlign: "center" }}>Destaque</th>
                   <th style={{ ...thStyle, width: 170 }}>Status</th>
                   <th style={{ ...thStyle, textAlign: "right", width: 170 }}>Ações</th>
@@ -210,15 +208,6 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                       style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: "var(--pdm-muted)" }}
                     >
                       {produto.pedido_minimo} un.
-                    </td>
-                    <td
-                      data-label="Prazo"
-                      style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: "var(--pdm-muted)" }}
-                    >
-                      {produto.prazo_producao_dias} {produto.prazo_producao_dias === 1 ? "dia" : "dias"}
-                    </td>
-                    <td data-label="Step" style={{ padding: "16px 24px", color: "var(--pdm-muted)" }}>
-                      {STEP_QUANTIDADE_LABELS[produto.step_quantidade]}
                     </td>
                     <td data-label="Destaque" style={{ padding: "16px 24px", textAlign: "center" }}>
                       <DestaqueIndicator show={produto.destaque} />
@@ -287,12 +276,6 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap", fontSize: 13, color: "var(--pdm-muted)" }}>
                       <span>{produto.Categoria ?? "Sem categoria"}</span>
-                      <span>·</span>
-                      <span>
-                        Prazo: {produto.prazo_producao_dias} {produto.prazo_producao_dias === 1 ? "dia" : "dias"}
-                      </span>
-                      <span>·</span>
-                      <span>{STEP_QUANTIDADE_LABELS[produto.step_quantidade]}</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
                       <DestaqueIndicator show={produto.destaque} />
