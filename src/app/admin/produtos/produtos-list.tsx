@@ -4,9 +4,54 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { STEP_QUANTIDADE_LABELS, type Produto } from "@/lib/produtos/types";
-import { Card, Icon, Input, Button, Badge } from "@/components/ds";
+import { Card, Icon, Input, Button, Toggle } from "@/components/ds";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
-import { deleteProduto } from "./actions";
+import { deleteProduto, updateProdutoAtivo } from "./actions";
+
+// Ícone de destaque, sem texto ao lado (só title/aria-label), reaproveitado
+// na tabela desktop e no card mobile.
+function DestaqueIndicator({ show }: { show: boolean }) {
+  if (!show) return null;
+  return (
+    <span role="img" aria-label="Produto em destaque" title="Produto em destaque" style={{ display: "inline-flex" }}>
+      <Icon name="check_circle" size={22} tone="accent" />
+    </span>
+  );
+}
+
+// Toggle inline de status ativo/inativo na listagem. Sem estado próprio:
+// o estado vive no ProdutosList (única fonte de verdade), porque a mesma
+// linha renderiza duas vezes (tabela desktop + card mobile, alternadas via
+// CSS) e cada instância com estado próprio dessincronizaria da outra.
+function AtivoToggleCell({
+  nome,
+  ativo,
+  saving,
+  feedback,
+  onToggle,
+}: {
+  nome: string;
+  ativo: boolean;
+  saving: boolean;
+  feedback: "ok" | "erro" | undefined;
+  onToggle: (next: boolean) => void;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      <Toggle
+        checked={ativo}
+        onCheckedChange={onToggle}
+        disabled={saving}
+        aria-label={ativo ? `Desativar ${nome}` : `Ativar ${nome}`}
+      />
+      <span style={{ fontSize: 13, color: ativo ? "var(--pdm-success)" : "var(--pdm-muted)" }}>
+        {ativo ? "Ativo" : "Inativo"}
+      </span>
+      {feedback === "erro" && <span style={{ fontSize: 12, color: "var(--pdm-error)" }}>Erro ao salvar</span>}
+      {feedback === "ok" && <span style={{ fontSize: 12, color: "var(--pdm-success)" }}>Salvo</span>}
+    </div>
+  );
+}
 
 // Formatação manual (sem toLocaleString/Intl) para evitar divergência de
 // hidratação entre o ICU do servidor e o do navegador.
@@ -29,6 +74,32 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
   const [search, setSearch] = useState("");
   const [produtoParaExcluir, setProdutoParaExcluir] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const [ativoOverrides, setAtivoOverrides] = useState<Record<string, boolean>>({});
+  const [savingAtivo, setSavingAtivo] = useState<Record<string, boolean>>({});
+  const [feedbackAtivo, setFeedbackAtivo] = useState<Record<string, "ok" | "erro" | undefined>>({});
+  const [, startAtivoTransition] = useTransition();
+
+  function handleToggleAtivo(produto: Produto, next: boolean) {
+    const previous = ativoOverrides[produto.nome] ?? produto.ativo;
+    setAtivoOverrides((overrides) => ({ ...overrides, [produto.nome]: next }));
+    setSavingAtivo((saving) => ({ ...saving, [produto.nome]: true }));
+    setFeedbackAtivo((feedback) => ({ ...feedback, [produto.nome]: undefined }));
+
+    startAtivoTransition(async () => {
+      const result = await updateProdutoAtivo(produto.nome, next);
+      setSavingAtivo((saving) => ({ ...saving, [produto.nome]: false }));
+      if (result.error) {
+        setAtivoOverrides((overrides) => ({ ...overrides, [produto.nome]: previous }));
+        setFeedbackAtivo((feedback) => ({ ...feedback, [produto.nome]: "erro" }));
+      } else {
+        setFeedbackAtivo((feedback) => ({ ...feedback, [produto.nome]: "ok" }));
+      }
+      setTimeout(() => {
+        setFeedbackAtivo((feedback) => ({ ...feedback, [produto.nome]: undefined }));
+      }, 2500);
+    });
+  }
 
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -84,8 +155,8 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                   <th style={{ ...thStyle, textAlign: "right", width: 170 }}>Pedido mínimo</th>
                   <th style={{ ...thStyle, textAlign: "right", width: 140 }}>Prazo</th>
                   <th style={{ ...thStyle, width: 160 }}>Step</th>
-                  <th style={{ ...thStyle, width: 120 }}>Destaque</th>
-                  <th style={{ ...thStyle, width: 110 }}>Status</th>
+                  <th style={{ ...thStyle, width: 90, textAlign: "center" }}>Destaque</th>
+                  <th style={{ ...thStyle, width: 170 }}>Status</th>
                   <th style={{ ...thStyle, textAlign: "right", width: 170 }}>Ações</th>
                 </tr>
               </thead>
@@ -133,11 +204,17 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                     <td data-label="Step" style={{ padding: "16px 24px", color: "var(--pdm-muted)" }}>
                       {STEP_QUANTIDADE_LABELS[produto.step_quantidade]}
                     </td>
-                    <td data-label="Destaque" style={{ padding: "16px 24px" }}>
-                      {produto.destaque ? <Badge variant="gold">Destaque</Badge> : <span style={{ color: "var(--pdm-muted)" }}>—</span>}
+                    <td data-label="Destaque" style={{ padding: "16px 24px", textAlign: "center" }}>
+                      <DestaqueIndicator show={produto.destaque} />
                     </td>
                     <td data-label="Status" style={{ padding: "16px 24px" }}>
-                      {produto.ativo ? <Badge variant="success">Ativo</Badge> : <Badge variant="outline">Inativo</Badge>}
+                      <AtivoToggleCell
+                        nome={produto.nome}
+                        ativo={ativoOverrides[produto.nome] ?? produto.ativo}
+                        saving={savingAtivo[produto.nome] ?? false}
+                        feedback={feedbackAtivo[produto.nome]}
+                        onToggle={(next) => handleToggleAtivo(produto, next)}
+                      />
                     </td>
                     <td data-label="Ações" style={{ padding: "16px 24px" }}>
                       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -201,9 +278,15 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                       <span>·</span>
                       <span>{STEP_QUANTIDADE_LABELS[produto.step_quantidade]}</span>
                     </div>
-                    <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-                      {produto.destaque ? <Badge variant="gold">Destaque</Badge> : null}
-                      {produto.ativo ? <Badge variant="success">Ativo</Badge> : <Badge variant="outline">Inativo</Badge>}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
+                      <DestaqueIndicator show={produto.destaque} />
+                      <AtivoToggleCell
+                        nome={produto.nome}
+                        ativo={ativoOverrides[produto.nome] ?? produto.ativo}
+                        saving={savingAtivo[produto.nome] ?? false}
+                        feedback={feedbackAtivo[produto.nome]}
+                        onToggle={(next) => handleToggleAtivo(produto, next)}
+                      />
                     </div>
                   </div>
                 </div>

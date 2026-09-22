@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
 import { CATEGORIA_VALUES, STEP_QUANTIDADE_LABELS, STEP_QUANTIDADE_VALUES, type Produto } from "@/lib/produtos/types";
 import type { ProdutoFormState } from "./actions";
-import { Card, Field, Input, Textarea, Select, Toggle, Button, Icon } from "@/components/ds";
+import { Card, Field, Input, PriceInput, Textarea, Select, Toggle, Button, Icon } from "@/components/ds";
 
 type ProdutoFormAction = (prevState: ProdutoFormState, formData: FormData) => Promise<ProdutoFormState>;
 
@@ -78,8 +78,8 @@ export function ProdutoForm({
               </Field>
             </div>
 
-            <Field label="Preço" htmlFor="f-preco" required hint="Só números, com no máximo duas casas depois da vírgula.">
-              <Input id="f-preco" name="preco" placeholder="R$ 0,00" defaultValue={produto?.preco} inputMode="decimal" required />
+            <Field label="Preço" htmlFor="f-preco" required hint="Digite só números — a formatação em reais é automática.">
+              <PriceInput id="f-preco" name="preco" defaultValue={produto?.preco} required />
             </Field>
 
             <Field label="Quantidade mínima" htmlFor="f-min" required hint="Menor quantidade aceita por encomenda, em unidades.">
@@ -106,12 +106,17 @@ export function ProdutoForm({
               </Select>
             </Field>
 
-            <Field label="Prazo de produção" htmlFor="f-prazo" required hint="Em dias, contados a partir da confirmação do pedido.">
+            <Field
+              label="Prazo de produção"
+              htmlFor="f-prazo"
+              required
+              hint="Em dias, a partir da confirmação do pedido. Use 0 para produto sempre disponível, sem prazo mínimo (ex.: uma bebida pronta)."
+            >
               <Input
                 id="f-prazo"
                 name="prazo_producao_dias"
                 type="number"
-                min={1}
+                min={0}
                 step={1}
                 placeholder="Ex.: 3"
                 defaultValue={produto?.prazo_producao_dias ?? 1}

@@ -157,6 +157,27 @@ export async function updateProduto(
   redirect("/admin/produtos");
 }
 
+// Atualiza só o status ativo/inativo, usado pelo toggle inline da
+// listagem (sem precisar abrir a edição completa do produto). Produto
+// inativo continua editável no CMS; o efeito de sumir do catálogo
+// público ainda não existe (catálogo não implementado nesta etapa).
+export async function updateProdutoAtivo(
+  nome: string,
+  ativo: boolean
+): Promise<{ error?: string }> {
+  await requireAuth();
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("produtos").update({ ativo }).eq("nome", nome);
+
+  if (error) {
+    return { error: `Não foi possível atualizar o status: ${error.message}` };
+  }
+
+  revalidatePath("/admin/produtos");
+  return {};
+}
+
 export async function deleteProduto(nome: string) {
   await requireAuth();
 

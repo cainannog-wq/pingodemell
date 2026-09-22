@@ -33,11 +33,19 @@ describe("parseProdutoForm", () => {
     }
   });
 
-  it("bloqueia prazo de produção zero ou negativo", () => {
-    const result = parseProdutoForm(buildFormData({ ...CAMPOS_VALIDOS, prazo_producao_dias: "0" }));
+  it("bloqueia prazo de produção negativo", () => {
+    const result = parseProdutoForm(buildFormData({ ...CAMPOS_VALIDOS, prazo_producao_dias: "-1" }));
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error).toMatch(/prazo de produção/i);
+    }
+  });
+
+  it("aceita prazo de produção igual a 0 (produto sempre disponível, ex.: bebida)", () => {
+    const result = parseProdutoForm(buildFormData({ ...CAMPOS_VALIDOS, prazo_producao_dias: "0" }));
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.prazo_producao_dias).toBe(0);
     }
   });
 
@@ -93,6 +101,30 @@ describe("parseProdutoForm", () => {
     if (result.success) {
       expect(result.data.destaque).toBe(true);
       expect(result.data.ativo).toBe(true);
+    }
+  });
+
+  it("lê o preço no formato decimal simples da máscara de moeda (campo oculto, ponto decimal)", () => {
+    const result = parseProdutoForm(buildFormData({ ...CAMPOS_VALIDOS, preco: "1234.56" }));
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.preco).toBe(1234.56);
+    }
+  });
+
+  it("lê o preço no formato brasileiro com separador de milhar", () => {
+    const result = parseProdutoForm(buildFormData({ ...CAMPOS_VALIDOS, preco: "1.234,56" }));
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.preco).toBe(1234.56);
+    }
+  });
+
+  it("lê o preço no formato brasileiro sem separador de milhar", () => {
+    const result = parseProdutoForm(buildFormData({ ...CAMPOS_VALIDOS, preco: "45,90" }));
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.preco).toBe(45.9);
     }
   });
 });

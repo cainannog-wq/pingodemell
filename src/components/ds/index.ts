@@ -4,6 +4,7 @@ export { Badge } from "./Badge";
 export { Button } from "./Button";
 export { Field } from "./Field";
 export { Input } from "./Input";
+export { PriceInput } from "./PriceInput";
 export { Textarea } from "./Textarea";
 export { Select } from "./Select";
 export { Toggle } from "./Toggle";

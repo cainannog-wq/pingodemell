@@ -29,3 +29,14 @@ comment on column public.produtos.prazo_producao_dias is 'Prazo de produção em
 comment on column public.produtos.step_quantidade is 'Passo de incremento de quantidade aceito no pedido (livre, múltiplos de 5 ou de 10). Ainda sem efeito no carrinho público.';
 comment on column public.produtos.destaque is 'Produto marcado como destaque no CMS. Ainda sem efeito no catálogo público.';
 comment on column public.produtos.ativo is 'Status do produto no CMS (ativo/inativo). Ainda sem efeito no catálogo público.';
+
+-- Ajuste registrado em 22/09/2026: prazo de produção passa a aceitar 0,
+-- significando "sempre disponível", sem prazo mínimo (ex.: uma bebida
+-- pronta como Coca-Cola). O cálculo de data mínima no calendário do
+-- checkout ainda não existe nesta etapa — quando for implementado, deve
+-- tratar prazo_producao_dias = 0 como "sem restrição de data", não como
+-- "produção instantânea com prazo de 0 dias a partir de agora".
+alter table public.produtos drop constraint produtos_prazo_producao_dias_check;
+alter table public.produtos add constraint produtos_prazo_producao_dias_check check (prazo_producao_dias >= 0);
+
+comment on column public.produtos.prazo_producao_dias is 'Prazo de produção em dias, editável no CMS. 0 = sempre disponível, sem prazo mínimo (ex.: bebidas prontas) — o cálculo de data mínima no calendário do checkout ainda não existe e deve tratar 0 como "sem restrição de prazo" quando for implementado.';

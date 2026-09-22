@@ -21,11 +21,24 @@ export type ParseProdutoResult =
   | { success: true; data: ParsedProduto }
   | { success: false; error: string };
 
+// Aceita tanto "1234.56" (campo oculto da máscara de moeda, sempre ponto
+// decimal e sem separador de milhar) quanto "1.234,56" ou "1234,56"
+// (formato brasileiro, por segurança caso o valor chegue sem passar pela
+// máscara). Vírgula presente é o sinal de que pontos são separador de
+// milhar, não decimal.
+function normalizePreco(raw: string): number {
+  const trimmed = raw.trim();
+  if (trimmed.includes(",")) {
+    return Number(trimmed.replace(/\./g, "").replace(",", "."));
+  }
+  return Number(trimmed);
+}
+
 // Função pura (sem I/O), testável sem precisar de credencial do Supabase.
 export function parseProdutoForm(formData: FormData): ParseProdutoResult {
   const nome = String(formData.get("nome") ?? "").trim();
   const descricao = String(formData.get("descricao") ?? "").trim();
-  const precoRaw = String(formData.get("preco") ?? "").replace(",", ".");
+  const precoRaw = String(formData.get("preco") ?? "");
   const pedidoMinimoRaw = String(formData.get("pedido_minimo") ?? "");
   const categoriaRaw = String(formData.get("categoria") ?? "").trim();
   const prazoRaw = String(formData.get("prazo_producao_dias") ?? "");
@@ -33,7 +46,7 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
   const destaque = formData.get("destaque") != null;
   const ativo = formData.get("ativo") != null;
 
-  const preco = Number(precoRaw);
+  const preco = normalizePreco(precoRaw);
   const pedido_minimo = Number(pedidoMinimoRaw);
   const prazo_producao_dias = Number(prazoRaw);
 
@@ -49,10 +62,10 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
       error: "Informe um pedido mínimo válido (mínimo 1).",
     };
   }
-  if (!Number.isInteger(prazo_producao_dias) || prazo_producao_dias < 1) {
+  if (prazoRaw.trim() === "" || !Number.isInteger(prazo_producao_dias) || prazo_producao_dias < 0) {
     return {
       success: false,
-      error: "Informe um prazo de produção válido, em dias (mínimo 1).",
+      error: "Informe um prazo de produção válido, em dias (0 ou mais). Use 0 para produto sempre disponível.",
     };
   }
   if (!STEP_QUANTIDADE_VALUES.includes(stepRaw as StepQuantidade)) {

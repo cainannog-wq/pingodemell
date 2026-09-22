@@ -2,21 +2,44 @@
 
 import { useState, type InputHTMLAttributes } from "react";
 
-// Switch on/off que manda "on"/ausente no FormData, igual um checkbox nativo.
+// Switch on/off. Uso não controlado (com `name`) manda "on"/ausente no
+// FormData, igual um checkbox nativo — é o modo usado dentro de formulário.
+// Uso controlado (com `checked` + `onCheckedChange`) serve pra ação
+// imediata fora de formulário, como o toggle inline da listagem.
 export function Toggle({
   name,
+  checked: checkedProp,
   defaultChecked = false,
+  onCheckedChange,
   label,
+  disabled,
   ...rest
 }: {
-  name: string;
+  name?: string;
+  checked?: boolean;
   defaultChecked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
   label?: string;
-} & Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "name" | "defaultChecked" | "checked" | "onChange">) {
-  const [checked, setChecked] = useState(defaultChecked);
+  disabled?: boolean;
+} & Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "type" | "name" | "defaultChecked" | "checked" | "onChange" | "disabled"
+>) {
+  const isControlled = checkedProp !== undefined;
+  const [internalChecked, setInternalChecked] = useState(defaultChecked);
+  const checked = isControlled ? checkedProp : internalChecked;
 
   return (
-    <label style={{ display: "inline-flex", alignItems: "center", gap: 12, cursor: "pointer", userSelect: "none" }}>
+    <label
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 12,
+        cursor: disabled ? "not-allowed" : "pointer",
+        userSelect: "none",
+        opacity: disabled ? 0.6 : 1,
+      }}
+    >
       <span
         style={{
           position: "relative",
@@ -32,8 +55,19 @@ export function Toggle({
           type="checkbox"
           name={name}
           checked={checked}
-          onChange={(e) => setChecked(e.target.checked)}
-          style={{ position: "absolute", inset: 0, margin: 0, opacity: 0, cursor: "pointer" }}
+          disabled={disabled}
+          onChange={(e) => {
+            const next = e.target.checked;
+            if (!isControlled) setInternalChecked(next);
+            onCheckedChange?.(next);
+          }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            margin: 0,
+            opacity: 0,
+            cursor: disabled ? "not-allowed" : "pointer",
+          }}
           {...rest}
         />
         <span
