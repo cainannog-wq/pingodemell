@@ -47,8 +47,16 @@ function AtivoToggleCell({
       <span style={{ fontSize: 13, color: ativo ? "var(--pdm-success)" : "var(--pdm-muted)" }}>
         {ativo ? "Ativo" : "Inativo"}
       </span>
-      {feedback === "erro" && <span style={{ fontSize: 12, color: "var(--pdm-error)" }}>Erro ao salvar</span>}
-      {feedback === "ok" && <span style={{ fontSize: 12, color: "var(--pdm-success)" }}>Salvo</span>}
+      {feedback === "erro" && (
+        <span role="alert" style={{ fontSize: 12, color: "var(--pdm-error)" }}>
+          Erro ao salvar
+        </span>
+      )}
+      {feedback === "ok" && (
+        <span role="status" style={{ fontSize: 12, color: "var(--pdm-success)" }}>
+          Salvo
+        </span>
+      )}
     </div>
   );
 }
