@@ -1,8 +1,10 @@
 import {
   CATEGORIA_VALUES,
   STEP_QUANTIDADE_VALUES,
+  TIPO_PRODUTO_VALUES,
   type CategoriaProduto,
   type StepQuantidade,
+  type TipoProduto,
 } from "./types";
 
 export type ParsedProduto = {
@@ -15,6 +17,11 @@ export type ParsedProduto = {
   step_quantidade: StepQuantidade;
   destaque: boolean;
   ativo: boolean;
+  tipo: TipoProduto;
+  // Nomes dos produtos usados como subitens, na ordem escolhida no
+  // formulário. Só tem efeito quando tipo === "cento"; para tipo
+  // "normal" vem sempre vazio, mesmo que o campo chegue preenchido.
+  subitens: string[];
 };
 
 export type ParseProdutoResult =
@@ -43,6 +50,7 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
   const categoriaRaw = String(formData.get("categoria") ?? "").trim();
   const prazoRaw = String(formData.get("prazo_producao_dias") ?? "");
   const stepRaw = String(formData.get("step_quantidade") ?? "");
+  const tipoRaw = String(formData.get("tipo") ?? "normal").trim();
   const destaque = formData.get("destaque") != null;
   const ativo = formData.get("ativo") != null;
 
@@ -74,6 +82,26 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
   if (categoriaRaw && !CATEGORIA_VALUES.includes(categoriaRaw as CategoriaProduto)) {
     return { success: false, error: "Selecione uma categoria válida." };
   }
+  if (!TIPO_PRODUTO_VALUES.includes(tipoRaw as TipoProduto)) {
+    return { success: false, error: "Selecione um tipo de produto válido." };
+  }
+
+  const tipo = tipoRaw as TipoProduto;
+
+  // Sem texto livre: cada subitem é o nome de um produto real, escolhido
+  // no seletor de busca do formulário (um input hidden "subitem_nome" por
+  // item, na ordem em que foi adicionado). Duplicata e autorreferência já
+  // são bloqueadas na UI, mas a validação aqui é o que realmente impede
+  // salvar um dado inconsistente.
+  const subitensRaw = formData.getAll("subitem_nome").map((v) => String(v).trim()).filter(Boolean);
+  const subitens = tipo === "cento" ? Array.from(new Set(subitensRaw)) : [];
+
+  if (tipo === "cento" && subitens.length === 0) {
+    return { success: false, error: "Um produto do tipo Cento precisa de pelo menos um subitem." };
+  }
+  if (tipo === "cento" && subitens.includes(nome)) {
+    return { success: false, error: "Um produto Cento não pode ter a si mesmo como subitem." };
+  }
 
   return {
     success: true,
@@ -87,6 +115,8 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
       step_quantidade: stepRaw as StepQuantidade,
       destaque,
       ativo,
+      tipo,
+      subitens,
     },
   };
 }

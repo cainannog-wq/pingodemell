@@ -35,6 +35,7 @@ const PRODUTO: Produto = {
   step_quantidade: "livre",
   destaque: false,
   ativo: true,
+  tipo: "normal",
 };
 
 // Achado #9 da auditoria de acessibilidade (22/09/2026): a mensagem de

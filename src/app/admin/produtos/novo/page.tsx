@@ -1,7 +1,14 @@
+import { createClient } from "@/lib/supabase/server";
 import { createProduto } from "../actions";
 import { ProdutoForm } from "../produto-form";
 
-export default function NovoProdutoPage() {
+export default async function NovoProdutoPage() {
+  const supabase = await createClient();
+  const { data: produtos } = await supabase
+    .from("produtos")
+    .select("nome, ativo")
+    .order("nome", { ascending: true });
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div>
@@ -12,7 +19,7 @@ export default function NovoProdutoPage() {
           Quanto mais completo o cadastro, mais fácil o cliente decidir.
         </p>
       </div>
-      <ProdutoForm action={createProduto} submitLabel="Cadastrar produto" />
+      <ProdutoForm action={createProduto} submitLabel="Cadastrar produto" produtosDisponiveis={produtos ?? []} />
     </div>
   );
 }

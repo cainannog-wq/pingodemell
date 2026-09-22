@@ -127,4 +127,81 @@ describe("parseProdutoForm", () => {
       expect(result.data.preco).toBe(45.9);
     }
   });
+
+  it("assume tipo 'normal' quando o campo não vem no formData", () => {
+    const result = parseProdutoForm(buildFormData(CAMPOS_VALIDOS));
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.tipo).toBe("normal");
+      expect(result.data.subitens).toEqual([]);
+    }
+  });
+
+  it("bloqueia um tipo de produto fora da lista permitida", () => {
+    const result = parseProdutoForm(buildFormData({ ...CAMPOS_VALIDOS, tipo: "combo" }));
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toMatch(/tipo de produto/i);
+    }
+  });
+});
+
+describe("parseProdutoForm — tipo Cento", () => {
+  function buildCentoFormData(subitens: string[], overrides: Record<string, string> = {}) {
+    const formData = buildFormData({ ...CAMPOS_VALIDOS, ...overrides, tipo: "cento" });
+    for (const subitem of subitens) {
+      formData.append("subitem_nome", subitem);
+    }
+    return formData;
+  }
+
+  it("aceita um cento com subitens referenciando produtos reais", () => {
+    const result = parseProdutoForm(
+      buildCentoFormData(["Coxinha de frango", "Risole de carne", "Empada de palmito"])
+    );
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.tipo).toBe("cento");
+      expect(result.data.subitens).toEqual(["Coxinha de frango", "Risole de carne", "Empada de palmito"]);
+    }
+  });
+
+  it("bloqueia salvar um cento sem nenhum subitem", () => {
+    const result = parseProdutoForm(buildCentoFormData([]));
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toMatch(/pelo menos um subitem/i);
+    }
+  });
+
+  it("bloqueia um cento que referencia a si mesmo como subitem", () => {
+    const result = parseProdutoForm(
+      buildCentoFormData(["Coxinha de frango", CAMPOS_VALIDOS.nome])
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toMatch(/não pode ter a si mesmo/i);
+    }
+  });
+
+  it("remove subitem duplicado mantendo só uma referência", () => {
+    const result = parseProdutoForm(
+      buildCentoFormData(["Coxinha de frango", "Coxinha de frango", "Risole de carne"])
+    );
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.subitens).toEqual(["Coxinha de frango", "Risole de carne"]);
+    }
+  });
+
+  it("ignora subitens enviados quando o tipo não é cento", () => {
+    const formData = buildFormData(CAMPOS_VALIDOS);
+    formData.append("subitem_nome", "Coxinha de frango");
+    const result = parseProdutoForm(formData);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.tipo).toBe("normal");
+      expect(result.data.subitens).toEqual([]);
+    }
+  });
 });

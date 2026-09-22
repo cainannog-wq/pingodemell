@@ -43,6 +43,42 @@ async function uploadFoto(
   return data.publicUrl;
 }
 
+// Substitui a lista inteira de subitens de um cento (delete + insert), mais
+// simples do que calcular diff porque o formulário sempre manda a lista
+// completa e já ordenada. Chamada só depois do produtos.insert/update ter
+// dado certo, então uma falha aqui não deixa o produto pela metade — só
+// sem subitens salvos, o que o admin percebe ao reabrir a edição.
+async function salvarSubitensCento(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  centoNome: string,
+  subitens: string[]
+) {
+  const { error: deleteError } = await supabase
+    .from("produto_cento_itens")
+    .delete()
+    .eq("cento_nome", centoNome);
+
+  if (deleteError) {
+    return `Produto salvo, mas não foi possível atualizar a lista de subitens: ${deleteError.message}`;
+  }
+
+  if (subitens.length === 0) return null;
+
+  const { error: insertError } = await supabase.from("produto_cento_itens").insert(
+    subitens.map((subitem_nome, index) => ({
+      cento_nome: centoNome,
+      subitem_nome,
+      ordem: index,
+    }))
+  );
+
+  if (insertError) {
+    return `Produto salvo, mas não foi possível atualizar a lista de subitens: ${insertError.message}`;
+  }
+
+  return null;
+}
+
 export async function createProduto(
   _prevState: ProdutoFormState,
   formData: FormData
@@ -51,8 +87,19 @@ export async function createProduto(
 
   const parsed = parseProdutoForm(formData);
   if (!parsed.success) return { error: parsed.error };
-  const { nome, preco, descricao, pedido_minimo, categoria, prazo_producao_dias, step_quantidade, destaque, ativo } =
-    parsed.data;
+  const {
+    nome,
+    preco,
+    descricao,
+    pedido_minimo,
+    categoria,
+    prazo_producao_dias,
+    step_quantidade,
+    destaque,
+    ativo,
+    tipo,
+    subitens,
+  } = parsed.data;
 
   const supabase = await createClient();
 
@@ -86,11 +133,17 @@ export async function createProduto(
     step_quantidade,
     destaque,
     ativo,
+    tipo,
     image_url,
   });
 
   if (error) {
     return { error: `Não foi possível salvar o produto: ${error.message}` };
+  }
+
+  if (tipo === "cento") {
+    const subitensError = await salvarSubitensCento(supabase, nome, subitens);
+    if (subitensError) return { error: subitensError };
   }
 
   revalidatePath("/admin/produtos");
@@ -106,8 +159,19 @@ export async function updateProduto(
 
   const parsed = parseProdutoForm(formData);
   if (!parsed.success) return { error: parsed.error };
-  const { nome, preco, descricao, pedido_minimo, categoria, prazo_producao_dias, step_quantidade, destaque, ativo } =
-    parsed.data;
+  const {
+    nome,
+    preco,
+    descricao,
+    pedido_minimo,
+    categoria,
+    prazo_producao_dias,
+    step_quantidade,
+    destaque,
+    ativo,
+    tipo,
+    subitens,
+  } = parsed.data;
 
   const supabase = await createClient();
 
@@ -133,6 +197,7 @@ export async function updateProduto(
     step_quantidade,
     destaque,
     ativo,
+    tipo,
   };
 
   const foto = formData.get("foto");
@@ -152,6 +217,13 @@ export async function updateProduto(
   if (error) {
     return { error: `Não foi possível salvar o produto: ${error.message}` };
   }
+
+  // A FK de produto_cento_itens tem "on update cascade": se o nome mudou,
+  // as linhas que já existiam (como cento_nome ou como subitem_nome de
+  // outro cento) já foram renomeadas automaticamente pelo banco no update
+  // acima. `nome` abaixo é sempre o nome atual (novo, se mudou).
+  const subitensError = await salvarSubitensCento(supabase, nome, tipo === "cento" ? subitens : []);
+  if (subitensError) return { error: subitensError };
 
   revalidatePath("/admin/produtos");
   redirect("/admin/produtos");

@@ -3,9 +3,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
-import { CATEGORIA_VALUES, STEP_QUANTIDADE_LABELS, STEP_QUANTIDADE_VALUES, type Produto } from "@/lib/produtos/types";
+import {
+  CATEGORIA_VALUES,
+  STEP_QUANTIDADE_LABELS,
+  STEP_QUANTIDADE_VALUES,
+  TIPO_PRODUTO_LABELS,
+  TIPO_PRODUTO_VALUES,
+  type Produto,
+  type TipoProduto,
+} from "@/lib/produtos/types";
 import type { ProdutoFormState } from "./actions";
 import { Card, Field, Input, PriceInput, Textarea, Select, Toggle, Button, Icon } from "@/components/ds";
+import { SubitensPicker, type SubitemCandidato } from "./subitens-picker";
 
 type ProdutoFormAction = (prevState: ProdutoFormState, formData: FormData) => Promise<ProdutoFormState>;
 
@@ -15,15 +24,23 @@ export function ProdutoForm({
   action,
   produto,
   submitLabel,
+  produtosDisponiveis = [],
+  initialSubitens = [],
 }: {
   action: ProdutoFormAction;
   produto?: Produto;
   submitLabel: string;
+  // Candidatos a subitem do tipo "Cento" — todo o catálogo, exceto o
+  // próprio produto em edição. Vem vazio na tela de cadastro de um produto
+  // "normal" comum sem custo de consulta extra desnecessária.
+  produtosDisponiveis?: SubitemCandidato[];
+  initialSubitens?: string[];
 }) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [tipo, setTipo] = useState<TipoProduto>(produto?.tipo ?? "normal");
 
   return (
     <div className="produto-form-root" style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 980 }}>
@@ -134,11 +151,52 @@ export function ProdutoForm({
               </Select>
             </Field>
 
+            <Field
+              label="Tipo de produto"
+              htmlFor="f-tipo"
+              required
+              hint={
+                tipo === "cento"
+                  ? "Cento: quantidade sempre fixa em 100 unidades, o preço é o preço normal deste cadastro (não soma o dos subitens)."
+                  : "Produto normal ou Cento, com lista de subitens (sabores) referenciando outros produtos do catálogo."
+              }
+            >
+              <Select
+                id="f-tipo"
+                name="tipo"
+                defaultValue={tipo}
+                onChange={(e) => setTipo(e.target.value as TipoProduto)}
+                required
+              >
+                {TIPO_PRODUTO_VALUES.map((valor) => (
+                  <option key={valor} value={valor}>
+                    {TIPO_PRODUTO_LABELS[valor]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+
             <div style={{ gridColumn: "span 2" }}>
               <Field label="Descrição" htmlFor="f-desc" hint="Ingredientes, tamanho e prazo de produção.">
                 <Textarea id="f-desc" name="descricao" rows={4} placeholder="Conte o que torna esse produto especial." defaultValue={produto?.descricao ?? ""} />
               </Field>
             </div>
+
+            {tipo === "cento" && (
+              <div style={{ gridColumn: "span 2" }}>
+                <Field
+                  label="Subitens (sabores)"
+                  required
+                  hint="Cada subitem é um produto já cadastrado no catálogo. Se um deles for marcado como inativo depois, ele continua aqui com um aviso, até você remover manualmente."
+                >
+                  <SubitensPicker
+                    produtosDisponiveis={produtosDisponiveis}
+                    initialSubitens={initialSubitens}
+                    nomeAtual={produto?.nome}
+                  />
+                </Field>
+              </div>
+            )}
 
             <Field label="Produto em destaque">
               <Toggle name="destaque" defaultChecked={produto?.destaque ?? false} label="Exibir como destaque" />
