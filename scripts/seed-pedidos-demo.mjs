@@ -180,6 +180,61 @@ const PEDIDOS_DEMO = [
     criado_em: bzTime(-12, 10, 0),
     status_atualizado_em: bzTime(-9, 9, 0),
   },
+  // Três pedidos acrescentados em 22/09/2026 pra dar cobertura de teste à
+  // reorganização mobile do histórico de pedidos: um em aberto com entrega
+  // hoje, um em aberto com entrega amanhã, e um em aberto com entrega já
+  // vencida (grupo "Atrasados"). bzTime(0, hora) e bzTime(1, hora) usam
+  // hora fixa (não relativa ao momento em que o script roda), então rodar
+  // este script tarde da noite pode, em teoria, deixar o pedido de "hoje"
+  // já com horário passado — mesma limitação aceita no restante da lista.
+  {
+    cliente_nome: "Larissa Ferraz",
+    cliente_whatsapp: "(41) 99123-4567",
+    cliente_email: "larissa.ferraz@gmail.com",
+    ocasiao: "Aniversário de namoro",
+    modo_entrega: "retirada",
+    endereco: null,
+    data_hora_entrega: bzTime(0, 18, 0),
+    forma_pagamento: "PIX",
+    observacoes: null,
+    itens: [{ nome: "Bolo de Chocolate com Ninho", variacao: "Tamanho 20cm", quantidade: 1, preco_unitario: 45.0 }],
+    valor_entrega: 0,
+    status: "aguardando_confirmacao",
+    criado_em: bzTime(0, 9, 0),
+  },
+  {
+    cliente_nome: "Eduardo Nogueira",
+    cliente_whatsapp: "(41) 99887-1234",
+    cliente_email: null,
+    ocasiao: "Café da manhã de equipe",
+    modo_entrega: "entrega",
+    endereco: "Alameda Dom Pedro II, 850 — Curitiba/PR",
+    data_hora_entrega: bzTime(1, 9, 0),
+    forma_pagamento: "PIX",
+    observacoes: null,
+    itens: [
+      { nome: "Coxinha de Frango (cento)", variacao: null, quantidade: 1, preco_unitario: 90.0 },
+      { nome: "Brigadeiro Gourmet (unidade)", variacao: null, quantidade: 30, preco_unitario: 3.5 },
+    ],
+    valor_entrega: 15,
+    status: "em_producao",
+    criado_em: bzTime(-1, 16, 0),
+  },
+  {
+    cliente_nome: "Bianca Teixeira",
+    cliente_whatsapp: "(41) 99765-4321",
+    cliente_email: "bianca.teixeira@gmail.com",
+    ocasiao: "Aniversário de casamento",
+    modo_entrega: "entrega",
+    endereco: "Rua Padre Anchieta, 1500 — Curitiba/PR",
+    data_hora_entrega: bzTime(-1, 19, 0),
+    forma_pagamento: "Cartão de crédito na entrega",
+    observacoes: "Cliente ainda não confirmou a produção, pedido ficou parado.",
+    itens: [{ nome: "Bolo de Chocolate com Ninho", variacao: "Tamanho 25cm, tema casamento", quantidade: 1, preco_unitario: 45.0 }],
+    valor_entrega: 20,
+    status: "em_producao",
+    criado_em: bzTime(-3, 10, 0),
+  },
 ];
 
 async function main() {

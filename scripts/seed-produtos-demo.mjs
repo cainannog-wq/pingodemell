@@ -55,18 +55,46 @@ const PRODUTOS_DEMO = [
     preco: 45.0,
     descricao: "Bolo inteiro de chocolate com recheio de creme de leite Ninho.",
     pedido_minimo: 1,
+    Categoria: "Bolos",
+    destaque: true,
   },
   {
     nome: "Brigadeiro Gourmet (unidade)",
     preco: 3.5,
     descricao: "Brigadeiro gourmet enrolado na hora, granulado belga.",
     pedido_minimo: 10,
+    Categoria: "Doces",
   },
   {
     nome: "Coxinha de Frango (cento)",
     preco: 90.0,
     descricao: "Coxinha de frango tradicional, massa de batata, vendida por cento.",
     pedido_minimo: 50,
+    Categoria: "Salgados",
+  },
+  // Produtos acrescentados em 22/09/2026 pra dar cobertura de teste à
+  // reorganização mobile da listagem: uma bebida (categoria nova), um
+  // produto inativo e um produto sem categoria.
+  {
+    nome: "Suco de Laranja Natural (1L)",
+    preco: 18.0,
+    descricao: "Suco de laranja natural, feito na hora, garrafa de 1 litro.",
+    pedido_minimo: 1,
+    Categoria: "Bebidas",
+  },
+  {
+    nome: "Torta de Limão (fatia)",
+    preco: 12.0,
+    descricao: "Torta de limão com merengue, vendida por fatia. Fora de produção no momento.",
+    pedido_minimo: 4,
+    Categoria: "Doces",
+    ativo: false,
+  },
+  {
+    nome: "Kit Festa Sortido",
+    preco: 150.0,
+    descricao: "Kit sortido com bolo, doces e salgados — combinação sob consulta, ainda sem categoria fixa.",
+    pedido_minimo: 1,
   },
 ];
 

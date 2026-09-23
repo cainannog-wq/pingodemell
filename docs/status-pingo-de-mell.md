@@ -107,6 +107,14 @@ Duas pendências da auditoria ficam registradas aqui, para um prompt separado de
 
 Testes: 27 no total (10 novos — 7 confirmando as taxas de contraste via cálculo de luminância WCAG em `src/lib/design/contrast.ts`, 3 confirmando a posição do cursor no campo de preço). `npm run lint` e `npm run build` limpos.
 
+## Reorganização mobile das listagens de produtos e pedidos (22/09/2026, PR #5 aberto)
+
+Pedido explícito do Cainan (front end puro, sem mudança de schema/RLS): busca por nome sem acento/maiúscula + chips de categoria na listagem de produtos (também no desktop), card de produto em formato de linha com menu de 3 pontinhos substituindo o toggle solto, e histórico de pedidos mobile agrupado (Atrasados / dia de entrega / Finalizados com corte de 7 dias, sem esse corte quando há busca ou filtro). A tabela desktop de pedidos ficou inteiramente igual — decisão registrada no corpo do PR #5, junto com as outras decisões de UI não descritas no pedido original.
+
+Dados de teste novos rodados contra produção: 3 pedidos (aberto vencido, entrega hoje, entrega amanhã) em `scripts/seed-pedidos-demo.mjs`, e 3 produtos (bebida, inativo, sem categoria) em `scripts/seed-produtos-demo.mjs`.
+
+**Sem prints desta vez**: gerar os prints pedidos exigiria logar no admin via navegador automatizado, e a tela de login tem Turnstile real — resolver esse CAPTCHA por automação está fora do que faço, mesmo em ambiente de desenvolvimento (é uma regra de segurança sem exceção de contexto). Criei e removi uma conta de admin descartável só pra tentar, sem sucesso, sem tocar em credencial real. `npm run lint`, `npm run build` e `npm run test` (71 testes, 5 novos) estão limpos, e o PR deve ganhar preview automático do Netlify assim que o build terminar — a validação visual (prints, menu, diálogo, empty state, grupo Atrasados) fica pro Cainan clicar direto lá com a conta real.
+
 ## Próximo pedido ao Claude Code
 
-Exclusão de produto e a confirmação visual do CAPTCHA de produção estão fechadas (ver Retrato acima). Painel de pedidos está pronto e agora também auditado — falta só o Cainan revisar/mergear o PR #1. Depois disso, retomar a ordem do roadmap: catálogo público, carrinho, e por fim checkout (item 4), que vai reaproveitar a tabela `pedidos` e o Route Handler de rate limit já prontos (agora também protegidos pela correção do B12).
+PR #5 (reorganização mobile de produtos e pedidos) e PR #4 (Cento com subitens, branch `admin-produto-cento`) estão abertos aguardando revisão/merge do Cainan — validar visualmente no preview do Netlify de cada um antes de mergear. Depois disso, retomar a ordem do roadmap: catálogo público, carrinho, e por fim checkout (item 4), que vai reaproveitar a tabela `pedidos` e o Route Handler de rate limit já prontos (agora também protegidos pela correção do B12).
