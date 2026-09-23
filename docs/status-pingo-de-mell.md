@@ -125,11 +125,13 @@ Site público usa os valores do handoff nos cinco tokens em conflito com a Fase 
 
 ## Lista de produtos (23/09/2026, branch `lista-produtos`, PR aberto)
 
-PR da Home (#9) mergeado. Página 2 do lado do cliente em `/produtos`, filtro na URL (`?categoria=bolos|doces|salgados|bebidas`; valor inválido mostra "Todos"). Só produto ativo, em qualquer visão — filtro na consulta e de novo no código, porque um admin logado navegando no site lê com a própria sessão, que vê inativos. "Todos" agrupado (Bolos, Doces, Salgados, Bebidas, Outros = sem categoria) com subtítulo H2 por grupo; dentro do grupo e na visão filtrada, ordem alfabética pt-BR (acento e maiúscula não separam). `atualizado_em` não entra na ordem da Lista (só na da Home). Card é o mesmo da Home, extraído para `src/components/site/CardProduto.tsx` (Home idêntica pixel a pixel).
+PR da Home (#9) mergeado. Página 2 do lado do cliente em `/produtos`, filtro na URL (`?categoria=bolos|doces|salgados|bebidas`; valor inválido mostra "Todos"). Só produto ativo, em qualquer visão — filtro na consulta e de novo no código, porque um admin logado navegando no site lê com a própria sessão, que vê inativos. Grade única, sem subtítulos (o agrupamento por categoria foi testado no preview e descartado pelo Cainan em 23/09/2026): primeiro os destaques pela mesma regra de "Os mais pedidos" da Home (destaque ligado, fora bebida; sem categoria conta como não bebida), com selo "Mais pedido"; depois todos os outros ativos. Nos dois blocos, ordem alfabética pt-BR (acento e maiúscula não separam). Mesma regra em "Todos" e em cada categoria. `atualizado_em` não entra na ordem da Lista (só na da Home): editar não muda a posição, só ligar/desligar o destaque. Card é o mesmo da Home, extraído para `src/components/site/CardProduto.tsx` (Home idêntica pixel a pixel).
 
 Migração de RLS **não-aditiva** (`supabase/produtos-rls-leitura-ativo.sql`: anônimo lê só ativo, logado lê todos) **ainda não aplicada** — só depois do merge, quando o Cainan pedir. Provada antes numa única execução dentro de transação desfeita (anônimo 13, inativo por id 0, logado 16; políticas idênticas antes e depois). `scripts/test-rls.mjs` ganhou os testes 4-7; 4, 5 e 6 falham até a aplicação — esperado. Consequência aceita: sabor inativo deixa de aparecer para o cliente na futura página do Cento.
 
 Fora do PR, registrados como diferença do layout: busca, "Ordenar por", "Carregar mais", "Mostrando X de Y", contagem por categoria, card "Prazos" e aviso de quantidade mínima (reavaliar na página 3).
+
+Pendência fora deste PR: `scripts/test-rls-produto-cento-itens.mjs` e `scripts/test-rls-pedidos.mjs` gravam dados temporários em produção (o do Cento cria dois produtos que aparecem na Lista por alguns segundos) — não rodar sem combinar antes.
 
 ## Próximo pedido ao Claude Code
 

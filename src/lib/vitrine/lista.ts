@@ -1,22 +1,17 @@
 import { CATEGORIA_VALUES, type CategoriaProduto } from "@/lib/produtos/types";
 import { categoriaParaParametro } from "@/lib/site/rotas";
-import type { ProdutoVitrine } from "./mais-pedidos";
+import { ehMaisPedido, type ProdutoVitrine } from "./mais-pedidos";
 
 // Regra da página Lista de produtos (/produtos), numa função pura coberta
 // por teste automatizado — a consulta ao banco só traz os dados.
 
-// Ordem dos grupos em "Todos" (e dos botões do filtro): as 4 categorias do
-// CMS, nesta ordem. Produto sem categoria vai para "Outros", no fim.
+// Categorias do filtro, na ordem dos botões.
 export const ORDEM_CATEGORIAS: readonly CategoriaProduto[] = CATEGORIA_VALUES;
-export const TITULO_SEM_CATEGORIA = "Outros";
 
-export type GrupoLista = {
-  // Categoria do grupo; null = produtos sem categoria ("Outros").
-  categoria: CategoriaProduto | null;
-  // Subtítulo visível do grupo. Só existe em "Todos"; na visão filtrada é
-  // null (a página não mostra subtítulo).
-  titulo: string | null;
-  produtos: ProdutoVitrine[];
+export type ItemLista = {
+  produto: ProdutoVitrine;
+  // true = bloco de destaques do topo, com selo "Mais pedido".
+  maisPedido: boolean;
 };
 
 // Lê o `?categoria=` da URL (formato de ROTAS.listaPorCategoria: categoria
@@ -41,37 +36,28 @@ export function compararPorNome(a: Pick<ProdutoVitrine, "nome">, b: Pick<Produto
   return a.nome < b.nome ? -1 : a.nome > b.nome ? 1 : 0;
 }
 
-// Monta o que a Lista mostra:
+// Monta a grade da Lista (única, sem subtítulos):
 // - só produto ativo, em qualquer visão (mesmo que o banco devolva
 //   inativo — ex.: admin logado navegando no site, cuja sessão lê todos);
-// - "Todos" (categoria null): grupos Bolos, Doces, Salgados, Bebidas e
-//   "Outros" (sem categoria) no fim, cada um com subtítulo; grupo sem
-//   produto ativo não aparece;
-// - categoria escolhida: um único grupo, sem subtítulo; "Outros" nunca
-//   aparece aqui;
-// - dentro de cada grupo, nome em ordem alfabética. atualizado_em não
-//   entra na ordem: editar um produto não muda a posição dele.
+// - categoria escolhida: só ela; "Todos" (null): todas, inclusive sem
+//   categoria;
+// - primeiro os destaques (ehMaisPedido), depois todos os outros;
+//   nos dois blocos, nome em ordem alfabética. atualizado_em não entra na
+//   ordem: editar um produto não muda a posição dele; só ligar ou desligar
+//   o destaque muda.
 // Retorna [] quando não há nada a mostrar (a página mostra a mensagem de
 // categoria vazia).
-export function montarLista(produtos: ProdutoVitrine[], categoria: CategoriaProduto | null): GrupoLista[] {
-  const ativos = produtos.filter((p) => p.ativo === true);
+export function montarLista(produtos: ProdutoVitrine[], categoria: CategoriaProduto | null): ItemLista[] {
+  const visiveis = produtos
+    .filter((p) => p.ativo === true)
+    .filter((p) => categoria === null || p.Categoria === categoria)
+    .sort(compararPorNome);
 
-  if (categoria) {
-    const daCategoria = ativos.filter((p) => p.Categoria === categoria).sort(compararPorNome);
-    return daCategoria.length > 0 ? [{ categoria, titulo: null, produtos: daCategoria }] : [];
-  }
+  const destaques = visiveis.filter(ehMaisPedido);
+  const demais = visiveis.filter((p) => !ehMaisPedido(p));
 
-  const grupos: GrupoLista[] = ORDEM_CATEGORIAS.map((c) => ({
-    categoria: c,
-    titulo: c,
-    produtos: ativos.filter((p) => p.Categoria === c).sort(compararPorNome),
-  }));
-  grupos.push({
-    categoria: null,
-    titulo: TITULO_SEM_CATEGORIA,
-    // Tudo que não é uma das 4 categorias conhecidas (na prática, null).
-    produtos: ativos.filter((p) => !p.Categoria || !ORDEM_CATEGORIAS.includes(p.Categoria)).sort(compararPorNome),
-  });
-
-  return grupos.filter((g) => g.produtos.length > 0);
+  return [
+    ...destaques.map((produto) => ({ produto, maisPedido: true })),
+    ...demais.map((produto) => ({ produto, maisPedido: false })),
+  ];
 }

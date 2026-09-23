@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { categoriaDoParametro, montarLista } from "./lista";
+import { categoriaDoParametro, montarLista, type ItemLista } from "./lista";
 import type { ProdutoVitrine } from "./mais-pedidos";
 
 // Dado simulado: nenhum destes testes lê ou altera o banco.
@@ -21,47 +21,99 @@ function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {
   };
 }
 
-const nomes = (lista: ProdutoVitrine[]) => lista.map((p) => p.nome);
-const todosOsNomes = (grupos: ReturnType<typeof montarLista>) => grupos.flatMap((g) => nomes(g.produtos));
+const nomes = (itens: ItemLista[]) => itens.map((i) => i.produto.nome);
+const comSelo = (itens: ItemLista[]) => itens.filter((i) => i.maisPedido).map((i) => i.produto.nome);
 
 // Catálogo simulado com um pouco de tudo, fora de ordem de propósito.
 const CATALOGO: ProdutoVitrine[] = [
   produto({ nome: "Suco de Laranja", Categoria: "Bebidas" }),
+  produto({ nome: "Coca-cola 2L", Categoria: "Bebidas", destaque: true }),
   produto({ nome: "Kit Festa", Categoria: null }),
   produto({ nome: "Risole de carne", Categoria: "Salgados" }),
   produto({ nome: "Morango Banhado", Categoria: "Doces" }),
-  produto({ nome: "Bolo de Chocolate", Categoria: "Bolos" }),
-  produto({ nome: "Coxinha", Categoria: "Salgados", ativo: false }),
-  produto({ nome: "Beijinho", Categoria: "Doces", tipo: "cento" }),
+  produto({ nome: "Brigadeiro Gourmet", Categoria: "Doces", destaque: true }),
+  produto({ nome: "Bolo de Chocolate", Categoria: "Bolos", destaque: true }),
+  produto({ nome: "Cento de salgados", Categoria: "Salgados", destaque: true, tipo: "cento" }),
+  produto({ nome: "Coxinha", Categoria: "Salgados", ativo: false, destaque: true }),
+  produto({ nome: "Beijinho", Categoria: "Doces", tipo: "cento", destaque: true }),
   produto({ nome: "Torta de Limão", Categoria: "Doces", ativo: false }),
   produto({ nome: "Teste", Categoria: null, ativo: false, destaque: true }),
-  produto({ nome: "Coca-cola 2L", Categoria: "Bebidas" }),
-  produto({ nome: "Bolo Inativo", Categoria: "Bolos", ativo: false }),
+  produto({ nome: "Empada", Categoria: "Salgados" }),
 ];
 
-describe("Lista — produto inativo nunca aparece", () => {
-  it("fica fora de 'Todos' e de cada categoria, inclusive quando é o único da categoria", () => {
-    const inativos = ["Coxinha", "Torta de Limão", "Teste", "Bolo Inativo"];
-    const visoes = [null, "Bolos", "Doces", "Salgados", "Bebidas"] as const;
-    for (const visao of visoes) {
-      const mostrados = todosOsNomes(montarLista(CATALOGO, visao));
-      for (const inativo of inativos) expect(mostrados).not.toContain(inativo);
-    }
+describe("Lista — destaques primeiro", () => {
+  it("'Todos': destaques (fora bebida) antes dos outros, alfabética dentro de cada bloco", () => {
+    const itens = montarLista(CATALOGO, null);
+    expect(nomes(itens)).toEqual([
+      // bloco de destaques
+      "Beijinho",
+      "Bolo de Chocolate",
+      "Brigadeiro Gourmet",
+      "Cento de salgados",
+      // bloco de baixo
+      "Coca-cola 2L",
+      "Empada",
+      "Kit Festa",
+      "Morango Banhado",
+      "Risole de carne",
+      "Suco de Laranja",
+    ]);
   });
 
-  it("categoria só com inativo vira categoria vazia", () => {
-    const soInativo = [produto({ nome: "Bolo Inativo", Categoria: "Bolos", ativo: false })];
-    expect(montarLista(soInativo, "Bolos")).toEqual([]);
-    expect(montarLista(soInativo, null)).toEqual([]);
+  it("selo só nos destaques que sobem", () => {
+    const itens = montarLista(CATALOGO, null);
+    expect(comSelo(itens)).toEqual(["Beijinho", "Bolo de Chocolate", "Brigadeiro Gourmet", "Cento de salgados"]);
+    // O bloco de cima é exatamente o dos itens com selo.
+    const primeiroSemSelo = itens.findIndex((i) => !i.maisPedido);
+    expect(itens.slice(primeiroSemSelo).every((i) => !i.maisPedido)).toBe(true);
+  });
+
+  it("bebida em destaque fica no bloco de baixo, em ordem alfabética, sem selo", () => {
+    const itens = montarLista(CATALOGO, null);
+    const coca = itens.find((i) => i.produto.nome === "Coca-cola 2L")!;
+    expect(coca.maisPedido).toBe(false);
+    expect(nomes(itens).indexOf("Coca-cola 2L")).toBeGreaterThan(nomes(itens).indexOf("Cento de salgados"));
+    expect(nomes(itens).indexOf("Coca-cola 2L")).toBeLessThan(nomes(itens).indexOf("Empada"));
+  });
+
+  it("produto sem categoria em destaque sobe, com selo", () => {
+    const itens = montarLista([...CATALOGO, produto({ nome: "Kit Aniversário", Categoria: null, destaque: true })], null);
+    expect(comSelo(itens)).toContain("Kit Aniversário");
+    expect(nomes(itens).indexOf("Kit Aniversário")).toBeLessThan(nomes(itens).indexOf("Coca-cola 2L"));
+  });
+
+  it("produto sem categoria sem destaque fica no bloco de baixo, na ordem alfabética (não vai pro fim)", () => {
+    const itens = montarLista(CATALOGO, null);
+    expect(nomes(itens).indexOf("Kit Festa")).toBeLessThan(nomes(itens).indexOf("Morango Banhado"));
+  });
+
+  it("em Bebidas nenhuma sobe: tudo em ordem alfabética, sem selo", () => {
+    const itens = montarLista(CATALOGO, "Bebidas");
+    expect(nomes(itens)).toEqual(["Coca-cola 2L", "Suco de Laranja"]);
+    expect(comSelo(itens)).toEqual([]);
   });
 });
 
-describe("Lista — filtro por categoria", () => {
-  it("mostra só a categoria escolhida", () => {
-    const grupos = montarLista(CATALOGO, "Doces");
-    expect(grupos).toHaveLength(1);
-    expect(grupos[0].produtos.every((p) => p.Categoria === "Doces")).toBe(true);
-    expect(nomes(grupos[0].produtos)).toEqual(["Beijinho", "Morango Banhado"]);
+describe("Lista — mesma regra na visão filtrada", () => {
+  it("Doces: destaques com selo primeiro, depois os outros", () => {
+    const itens = montarLista(CATALOGO, "Doces");
+    expect(nomes(itens)).toEqual(["Beijinho", "Brigadeiro Gourmet", "Morango Banhado"]);
+    expect(comSelo(itens)).toEqual(["Beijinho", "Brigadeiro Gourmet"]);
+  });
+
+  it("Salgados: destaque com selo primeiro, depois os outros", () => {
+    const itens = montarLista(CATALOGO, "Salgados");
+    expect(nomes(itens)).toEqual(["Cento de salgados", "Empada", "Risole de carne"]);
+    expect(comSelo(itens)).toEqual(["Cento de salgados"]);
+  });
+
+  it("mostra só a categoria escolhida; sem categoria só aparece em 'Todos'", () => {
+    for (const c of ["Bolos", "Doces", "Salgados", "Bebidas"] as const) {
+      const itens = montarLista(CATALOGO, c);
+      expect(itens.every((i) => i.produto.Categoria === c)).toBe(true);
+      expect(nomes(itens)).not.toContain("Kit Festa");
+    }
+    expect(nomes(montarLista(CATALOGO, null))).toContain("Kit Festa");
   });
 
   it("categoria sem produto ativo devolve lista vazia (a página mostra a mensagem)", () => {
@@ -70,66 +122,53 @@ describe("Lista — filtro por categoria", () => {
   });
 });
 
-describe("Lista — grupos e subtítulos", () => {
-  it("'Todos' agrupa na ordem Bolos, Doces, Salgados, Bebidas, Outros", () => {
-    const grupos = montarLista(CATALOGO, null);
-    expect(grupos.map((g) => g.titulo)).toEqual(["Bolos", "Doces", "Salgados", "Bebidas", "Outros"]);
-  });
-
-  it("produto sem categoria aparece só em 'Todos', no grupo 'Outros', no fim", () => {
-    const todos = montarLista(CATALOGO, null);
-    const ultimo = todos[todos.length - 1];
-    expect(ultimo.titulo).toBe("Outros");
-    expect(ultimo.categoria).toBeNull();
-    expect(nomes(ultimo.produtos)).toEqual(["Kit Festa"]);
-    expect(todosOsNomes(todos).at(-1)).toBe("Kit Festa");
-
-    for (const c of ["Bolos", "Doces", "Salgados", "Bebidas"] as const) {
-      expect(todosOsNomes(montarLista(CATALOGO, c))).not.toContain("Kit Festa");
+describe("Lista — produto inativo nunca aparece", () => {
+  it("fica fora de 'Todos' e de cada categoria, inclusive inativo com destaque", () => {
+    const inativos = ["Coxinha", "Torta de Limão", "Teste"];
+    for (const visao of [null, "Bolos", "Doces", "Salgados", "Bebidas"] as const) {
+      const mostrados = nomes(montarLista(CATALOGO, visao));
+      for (const inativo of inativos) expect(mostrados).not.toContain(inativo);
     }
   });
 
-  it("subtítulo só existe em 'Todos'; na visão filtrada não há subtítulo", () => {
-    expect(montarLista(CATALOGO, null).every((g) => g.titulo !== null)).toBe(true);
-    for (const c of ["Bolos", "Doces", "Salgados", "Bebidas"] as const) {
-      expect(montarLista(CATALOGO, c).every((g) => g.titulo === null)).toBe(true);
-    }
-  });
-
-  it("grupo sem produto ativo não aparece (nem o subtítulo)", () => {
-    // Sem Bebidas ativas e sem produto sem categoria.
-    const catalogo = CATALOGO.filter((p) => p.Categoria !== "Bebidas" && p.Categoria !== null);
-    expect(montarLista(catalogo, null).map((g) => g.titulo)).toEqual(["Bolos", "Doces", "Salgados"]);
+  it("categoria só com inativo vira categoria vazia", () => {
+    const soInativo = [produto({ nome: "Bolo Inativo", Categoria: "Bolos", ativo: false, destaque: true })];
+    expect(montarLista(soInativo, "Bolos")).toEqual([]);
+    expect(montarLista(soInativo, null)).toEqual([]);
   });
 });
 
-describe("Lista — ordem", () => {
-  it("'Todos': agrupado por categoria e alfabético dentro do grupo", () => {
-    expect(todosOsNomes(montarLista(CATALOGO, null))).toEqual([
-      "Bolo de Chocolate",
-      "Beijinho",
-      "Morango Banhado",
-      "Risole de carne",
-      "Coca-cola 2L",
-      "Suco de Laranja",
-      "Kit Festa",
-    ]);
+describe("Lista — ordem não depende de edição", () => {
+  it("produto editado mais recentemente não muda de posição (atualizado_em não entra na ordem)", () => {
+    const depois = CATALOGO.map((p) =>
+      p.nome === "Brigadeiro Gourmet" ? { ...p, preco: 2.4, atualizado_em: "2026-09-23T20:00:00.000Z" } : p
+    );
+    for (const visao of [null, "Doces"] as const) {
+      expect(nomes(montarLista(depois, visao))).toEqual(nomes(montarLista(CATALOGO, visao)));
+    }
   });
 
-  it("filtrada: só ordem alfabética", () => {
-    const salgados = [
-      produto({ nome: "Risole", Categoria: "Salgados" }),
-      produto({ nome: "Coxinha", Categoria: "Salgados" }),
-      produto({ nome: "Empada", Categoria: "Salgados" }),
-    ];
-    expect(nomes(montarLista(salgados, "Salgados")[0].produtos)).toEqual(["Coxinha", "Empada", "Risole"]);
+  it("ligar o destaque sobe o produto pro bloco de cima, com selo; desligar devolve ao lugar de antes", () => {
+    const antes = nomes(montarLista(CATALOGO, "Salgados"));
+    const ligado = CATALOGO.map((p) => (p.nome === "Risole de carne" ? { ...p, destaque: true } : p));
+    const itensLigado = montarLista(ligado, "Salgados");
+    expect(nomes(itensLigado)).toEqual(["Cento de salgados", "Risole de carne", "Empada"]);
+    expect(comSelo(itensLigado)).toContain("Risole de carne");
+    const desligado = ligado.map((p) => (p.nome === "Risole de carne" ? { ...p, destaque: false } : p));
+    expect(nomes(montarLista(desligado, "Salgados"))).toEqual(antes);
   });
 
+  it("a ordem de chegada do banco não importa", () => {
+    expect(nomes(montarLista([...CATALOGO].reverse(), null))).toEqual(nomes(montarLista(CATALOGO, null)));
+  });
+});
+
+describe("Lista — ordem alfabética em português", () => {
   it("acento e maiúscula não separam: 'Éclair' junto dos E, 'açaí' junto dos A", () => {
     const doces = ["Zebrinha", "Éclair", "bolo de pote", "açaí na tigela", "Empada doce", "Abacaxi", "Brigadeiro", "éclair de café"].map(
       (nome) => produto({ nome, Categoria: "Doces" })
     );
-    expect(nomes(montarLista(doces, "Doces")[0].produtos)).toEqual([
+    expect(nomes(montarLista(doces, "Doces"))).toEqual([
       "Abacaxi",
       "açaí na tigela",
       "bolo de pote",
@@ -141,30 +180,14 @@ describe("Lista — ordem", () => {
     ]);
   });
 
+  it("a mesma regra vale dentro do bloco de destaques", () => {
+    const doces = ["Éclair", "açaí", "Bolo"].map((nome) => produto({ nome, Categoria: "Doces", destaque: true }));
+    expect(nomes(montarLista(doces, null))).toEqual(["açaí", "Bolo", "Éclair"]);
+  });
+
   it("número dentro do nome em ordem numérica ('2L' antes de '10L')", () => {
     const bebidas = [produto({ nome: "Refri 10L", Categoria: "Bebidas" }), produto({ nome: "Refri 2L", Categoria: "Bebidas" })];
-    expect(nomes(montarLista(bebidas, "Bebidas")[0].produtos)).toEqual(["Refri 2L", "Refri 10L"]);
-  });
-
-  it("produto editado mais recentemente não muda de posição (atualizado_em não entra na ordem)", () => {
-    const antes = [
-      produto({ nome: "Beijinho", atualizado_em: "2026-09-23T10:00:00.000Z" }),
-      produto({ nome: "Brigadeiro Gourmet", atualizado_em: "2026-09-23T10:00:00.000Z" }),
-      produto({ nome: "Morango Banhado", atualizado_em: "2026-09-23T10:00:00.000Z" }),
-    ];
-    // Brigadeiro Gourmet editado agora (preço alterado e restaurado).
-    const depois = antes.map((p) =>
-      p.nome === "Brigadeiro Gourmet" ? { ...p, atualizado_em: "2026-09-23T18:00:00.000Z" } : p
-    );
-    const ordemAntes = nomes(montarLista(antes, "Doces")[0].produtos);
-    const ordemDepois = nomes(montarLista(depois, "Doces")[0].produtos);
-    expect(ordemDepois).toEqual(ordemAntes);
-    expect(todosOsNomes(montarLista(depois, null))).toEqual(todosOsNomes(montarLista(antes, null)));
-  });
-
-  it("a ordem de chegada do banco não importa", () => {
-    const invertido = [...CATALOGO].reverse();
-    expect(todosOsNomes(montarLista(invertido, null))).toEqual(todosOsNomes(montarLista(CATALOGO, null)));
+    expect(nomes(montarLista(bebidas, "Bebidas"))).toEqual(["Refri 2L", "Refri 10L"]);
   });
 });
 

@@ -23,7 +23,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 // bebidas); qualquer outro valor mostra "Todos".
 export default async function ListaPage({ searchParams }: Props) {
   const categoria = categoriaDoParametro((await searchParams).categoria);
-  const grupos = await buscarLista(categoria);
+  const itens = await buscarLista(categoria);
 
   return (
     <>
@@ -39,7 +39,7 @@ export default async function ListaPage({ searchParams }: Props) {
 
       <div className="site-container lista-corpo">
         <FiltroCategorias ativa={categoria} />
-        <ListaProdutos categoria={categoria} grupos={grupos} />
+        <ListaProdutos categoria={categoria} itens={itens} />
       </div>
     </>
   );

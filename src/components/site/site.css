@@ -1282,16 +1282,13 @@ body:has(.pdm-site) {
   color: var(--ink-900);
 }
 
-.lista-grupos {
-  display: flex;
-  flex-direction: column;
-  gap: 48px;
-}
-/* Subtítulo do grupo em "Todos": H2 com o tamanho de título de card
-   (escala H3), pra não competir com o H1. */
-.pdm-site .lista-grupo-titulo {
-  font-size: var(--fs-h3);
-  margin-bottom: 16px;
+/* Selo "Mais pedido" sobre a foto do card (canto superior esquerdo, como
+   no layout). */
+.site-selo-foto {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1;
 }
 .lista-grade {
   list-style: none;
@@ -1392,11 +1389,11 @@ body:has(.pdm-site) {
   .lista-corpo {
     padding-block: 12px 32px;
   }
-  .lista-grupos {
-    gap: 32px;
-  }
-  .pdm-site .lista-grupo-titulo {
-    margin-bottom: 12px;
+  .site-selo-foto {
+    top: 10px;
+    left: 10px;
+    padding: 5px 10px !important;
+    font-size: 12px !important;
   }
   .lista-grade {
     grid-template-columns: repeat(2, minmax(0, 1fr));

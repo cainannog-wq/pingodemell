@@ -74,17 +74,17 @@ describe("buscarLista — admin logado navegando no site", () => {
 
   it("mesmo que o banco devolva inativos, nenhum aparece em 'Todos'", async () => {
     const { buscarLista } = await import("./buscar");
-    const grupos = await buscarLista(null);
-    const nomes = grupos!.flatMap((g) => g.produtos.map((p) => p.nome));
+    const itens = await buscarLista(null);
+    const nomes = itens!.map((i) => i.produto.nome);
     expect(nomes).toEqual(["Brigadeiro Gourmet", "Empada de palmito", "Kit Festa Sortido"]);
   });
 
   it("mesmo que o banco devolva inativos, nenhum aparece na categoria filtrada", async () => {
     const { buscarLista } = await import("./buscar");
     for (const categoria of ["Doces", "Salgados"] as const) {
-      const grupos = await buscarLista(categoria);
-      const produtos = grupos!.flatMap((g) => g.produtos);
-      expect(produtos.every((p) => p.ativo)).toBe(true);
+      const itens = await buscarLista(categoria);
+      expect(itens!.length).toBeGreaterThan(0);
+      expect(itens!.every((i) => i.produto.ativo)).toBe(true);
       expect(chamadas).toContainEqual({ metodo: "eq", args: ["Categoria", categoria] });
     }
   });

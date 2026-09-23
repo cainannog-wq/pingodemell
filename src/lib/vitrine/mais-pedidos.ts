@@ -22,6 +22,13 @@ export const CAMPOS_VITRINE =
 
 export const LIMITE_MAIS_PEDIDOS = 10;
 
+// Produto que conta como "mais pedido": destaque ligado, fora bebida
+// (produto sem categoria conta como não bebida). Vale para a Home e para
+// o bloco de destaques do topo da Lista.
+export function ehMaisPedido(produto: Pick<ProdutoVitrine, "destaque" | "Categoria">): boolean {
+  return produto.destaque === true && produto.Categoria !== "Bebidas";
+}
+
 // Regra de "Os mais pedidos" da Home:
 // - só ativo E destaque (inativo não aparece em hipótese alguma);
 // - fora a categoria Bebidas (produto sem categoria conta como não bebida);
@@ -30,7 +37,7 @@ export const LIMITE_MAIS_PEDIDOS = 10;
 // - no máximo 10.
 export function selecionarMaisPedidos(produtos: ProdutoVitrine[]): ProdutoVitrine[] {
   return produtos
-    .filter((p) => p.ativo === true && p.destaque === true && p.Categoria !== "Bebidas")
+    .filter((p) => p.ativo === true && ehMaisPedido(p))
     .sort((a, b) => {
       const porData = Date.parse(b.atualizado_em) - Date.parse(a.atualizado_em);
       if (porData !== 0) return porData;

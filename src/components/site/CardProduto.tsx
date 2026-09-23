@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ButtonLink, ProductCard } from "@/components/ds";
+import { Badge, ButtonLink, ProductCard } from "@/components/ds";
 import { Hive } from "@/components/site/Hive";
 import { ROTAS } from "@/lib/site/rotas";
 import { formatarPrecoVitrine, type ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
@@ -30,7 +30,17 @@ export function FotoProduto({
   );
 }
 
-export function CardProduto({ produto, sizes }: { produto: ProdutoVitrine; sizes: string }) {
+// maisPedido: selo "Mais pedido" sobre a foto (bloco de destaques da
+// Lista). É texto de verdade, lido pelo leitor de tela junto com o nome.
+export function CardProduto({
+  produto,
+  sizes,
+  maisPedido = false,
+}: {
+  produto: ProdutoVitrine;
+  sizes: string;
+  maisPedido?: boolean;
+}) {
   const href = ROTAS.produto(produto.id);
   const tituloId = `produto-${produto.id}`;
   return (
@@ -39,7 +49,16 @@ export function CardProduto({ produto, sizes }: { produto: ProdutoVitrine; sizes
       title={produto.nome}
       titleId={tituloId}
       description={produto.descricao}
-      media={<FotoProduto produto={produto} sizes={sizes} />}
+      media={
+        <>
+          <FotoProduto produto={produto} sizes={sizes} />
+          {maisPedido ? (
+            <Badge variant="gold" className="site-selo-foto" style={{ textTransform: "none", letterSpacing: "normal" }}>
+              Mais pedido
+            </Badge>
+          ) : null}
+        </>
+      }
     >
       <span className="home-price">{formatarPrecoVitrine(produto)}</span>
       {/* Leva à interna do produto; nada é adicionado ao carrinho nesta
