@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ferramentas locais do Claude Code, não fazem parte do site
+/.claude/skills/
+/Claude outputs/
