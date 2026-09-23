@@ -123,6 +123,14 @@ Migração **aditiva** aplicada em produção antes do merge (23/09/2026, 14:29 
 
 Site público usa os valores do handoff nos cinco tokens em conflito com a Fase 1 (só dentro do site; admin não muda — decisão, não pendência) e fica sempre no tema claro.
 
+## Lista de produtos (23/09/2026, branch `lista-produtos`, PR aberto)
+
+PR da Home (#9) mergeado. Página 2 do lado do cliente em `/produtos`, filtro na URL (`?categoria=bolos|doces|salgados|bebidas`; valor inválido mostra "Todos"). Só produto ativo, em qualquer visão — filtro na consulta e de novo no código, porque um admin logado navegando no site lê com a própria sessão, que vê inativos. "Todos" agrupado (Bolos, Doces, Salgados, Bebidas, Outros = sem categoria) com subtítulo H2 por grupo; dentro do grupo e na visão filtrada, ordem alfabética pt-BR (acento e maiúscula não separam). `atualizado_em` não entra na ordem da Lista (só na da Home). Card é o mesmo da Home, extraído para `src/components/site/CardProduto.tsx` (Home idêntica pixel a pixel).
+
+Migração de RLS **não-aditiva** (`supabase/produtos-rls-leitura-ativo.sql`: anônimo lê só ativo, logado lê todos) **ainda não aplicada** — só depois do merge, quando o Cainan pedir. Provada antes numa única execução dentro de transação desfeita (anônimo 13, inativo por id 0, logado 16; políticas idênticas antes e depois). `scripts/test-rls.mjs` ganhou os testes 4-7; 4, 5 e 6 falham até a aplicação — esperado. Consequência aceita: sabor inativo deixa de aparecer para o cliente na futura página do Cento.
+
+Fora do PR, registrados como diferença do layout: busca, "Ordenar por", "Carregar mais", "Mostrando X de Y", contagem por categoria, card "Prazos" e aviso de quantidade mínima (reavaliar na página 3).
+
 ## Próximo pedido ao Claude Code
 
-PR da Home (`home-cliente`) aberto aguardando validação e merge do Cainan. Depois, seguir a sequência do lado do cliente: Lista de produtos (página 2), interna do produto (3), carrinho (4), checkout — reaproveitando as rotas acima, a tabela `pedidos` e o Route Handler de rate limit já prontos.
+PR da Lista (`lista-produtos`) aberto aguardando os testes de ordem e de inativo do Cainan no preview, validação e merge. Depois do merge, aplicar a migração de RLS em produção (quando o Cainan pedir) e rodar `scripts/test-rls.mjs` contra produção. Em seguida: interna do produto (página 3), carrinho (4), checkout.
