@@ -43,3 +43,6 @@ next-env.d.ts
 # ferramentas locais do Claude Code, não fazem parte do site
 /.claude/skills/
 /Claude outputs/
+
+# handoff do Claude Design (referência visual local, ~25 MB de prints)
+/design/handoff/

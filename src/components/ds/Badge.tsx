@@ -12,7 +12,8 @@ export type BadgeVariant =
   | "warning"
   | "info"
   | "successOutline"
-  | "errorOutline";
+  | "errorOutline"
+  | "soft";
 
 const VARIANTS: Record<BadgeVariant, CSSProperties> = {
   accent: { background: "var(--pdm-gold-soft)", color: "var(--pdm-black)" },
@@ -42,6 +43,9 @@ const VARIANTS: Record<BadgeVariant, CSSProperties> = {
     color: "var(--pdm-error)",
     boxShadow: "inset 0 0 0 1.5px var(--pdm-error)",
   },
+  // Selo suave do site público (tone "soft" do handoff): fundo dourado bem
+  // claro com texto marrom forte — ex.: "Desde 2009" no hero da Home.
+  soft: { background: "var(--gold-100)", color: "var(--brown-700)" },
 };
 
 export function Badge({

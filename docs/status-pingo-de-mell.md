@@ -115,6 +115,14 @@ Dados de teste novos rodados contra produção: 3 pedidos (aberto vencido, entre
 
 **Sem prints desta vez**: gerar os prints pedidos exigiria logar no admin via navegador automatizado, e a tela de login tem Turnstile real — resolver esse CAPTCHA por automação está fora do que faço, mesmo em ambiente de desenvolvimento (é uma regra de segurança sem exceção de contexto). Criei e removi uma conta de admin descartável só pra tentar, sem sucesso, sem tocar em credencial real. `npm run lint`, `npm run build` e `npm run test` (71 testes, 5 novos) estão limpos, e o PR deve ganhar preview automático do Netlify assim que o build terminar — a validação visual (prints, menu, diálogo, empty state, grupo Atrasados) fica pro Cainan clicar direto lá com a conta real.
 
+## Home do site público (23/09/2026, branch `home-cliente`, PR aberto)
+
+Página 1 do lado do cliente, a partir do handoff do Claude Design (pasta local `design/handoff/`, fora do git). Estrutura global reaproveitável: cabeçalho com menu mobile, rodapé com os dados reais da loja, botão flutuante do WhatsApp (número e mensagem numa configuração única em `src/lib/site/config.ts`), 404 própria e Política de privacidade **provisória**. "Os mais pedidos" lê do banco: ativo + destaque, sem bebida, ordem por `atualizado_em` (desempate por nome), máximo 10.
+
+Migração **aditiva** aplicada em produção antes do merge (23/09/2026, 14:29 UTC): `produtos.id` (uuid, único — a chave primária continua sendo o nome) e `produtos.atualizado_em` com gatilho BEFORE UPDATE. Prova do gatilho: o toggle de destaque do "Bolo de Chocolate com Ninho" feito pelo Cainan às 11:38 moveu só esse produto (14:29:18 → 14:38:07 UTC). Rotas definidas pro resto do site: `/produtos` (Lista, `?categoria=bolos|doces|salgados|bebidas`), `/produtos/{id}` (interna), `/carrinho`, `/quem-somos` e `/quem-somos#contato` — todas ainda caem na 404, esperado.
+
+Site público usa os valores do handoff nos cinco tokens em conflito com a Fase 1 (só dentro do site; admin não muda — decisão, não pendência) e fica sempre no tema claro.
+
 ## Próximo pedido ao Claude Code
 
-PR #5 (reorganização mobile de produtos e pedidos) e PR #4 (Cento com subitens, branch `admin-produto-cento`) estão abertos aguardando revisão/merge do Cainan — validar visualmente no preview do Netlify de cada um antes de mergear. Depois disso, retomar a ordem do roadmap: catálogo público, carrinho, e por fim checkout (item 4), que vai reaproveitar a tabela `pedidos` e o Route Handler de rate limit já prontos (agora também protegidos pela correção do B12).
+PR da Home (`home-cliente`) aberto aguardando validação e merge do Cainan. Depois, seguir a sequência do lado do cliente: Lista de produtos (página 2), interna do produto (3), carrinho (4), checkout — reaproveitando as rotas acima, a tabela `pedidos` e o Route Handler de rate limit já prontos.

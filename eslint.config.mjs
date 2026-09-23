@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Handoff do Claude Design: referência visual local, fora do git.
+    "design/handoff/**",
   ]),
 ]);
 

@@ -2,6 +2,15 @@
 
 import { useState, type CSSProperties, type ElementType, type ButtonHTMLAttributes } from "react";
 import { Icon } from "./Icon";
+import { WhatsAppMark } from "./WhatsAppMark";
+
+// iconLeft/iconRight recebem o nome de um ícone Material Symbols, ou o
+// valor especial "whatsapp", que desenha a marca oficial do WhatsApp
+// (usada no site público: "Peça pelo WhatsApp", "Fale conosco").
+function ButtonIcon({ name }: { name: string }) {
+  if (name === "whatsapp") return <WhatsAppMark size={20} />;
+  return <Icon name={name} size={20} tone="inherit" />;
+}
 
 // Porta de components/core/Button.jsx.
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "whatsapp";
@@ -50,6 +59,10 @@ export function Button({
   fullWidth?: boolean;
   as?: ElementType;
   style?: CSSProperties;
+  // Repassados quando `as` é um link (next/link ou "a").
+  href?: string;
+  target?: string;
+  rel?: string;
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
   const [hover, setHover] = useState(false);
   const [active, setActive] = useState(false);
@@ -97,9 +110,9 @@ export function Button({
       }}
       {...rest}
     >
-      {iconLeft ? <Icon name={iconLeft} size={20} tone="inherit" /> : null}
+      {iconLeft ? <ButtonIcon name={iconLeft} /> : null}
       {children}
-      {iconRight ? <Icon name={iconRight} size={20} tone="inherit" /> : null}
+      {iconRight ? <ButtonIcon name={iconRight} /> : null}
     </El>
   );
 }
