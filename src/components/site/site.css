@@ -1177,10 +1177,21 @@ body:has(.pdm-site) {
   }
 }
 
-/* O botão flutuante do WhatsApp (64px, a 24px da borda) não pode cobrir os
-   links do rodapé quando a página chega no fim. */
+/* O botão flutuante do WhatsApp (64px, a 24px da borda: ocupa os últimos
+   88px da tela) não pode cobrir os links do rodapé quando a página chega
+   no fim. Os links sobem pro topo do bloco e o rodapé ganha folga embaixo,
+   sem apertar o texto do endereço. */
 @media (min-width: 768px) {
+  .site-footer-inner {
+    align-items: flex-start;
+    padding-bottom: 72px;
+  }
   .site-footer-links {
-    margin-right: 88px;
+    justify-content: flex-end;
+  }
+}
+@media (min-width: 768px) {
+  .site-footer-brand {
+    flex-shrink: 0;
   }
 }
