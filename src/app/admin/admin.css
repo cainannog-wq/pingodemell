@@ -391,6 +391,12 @@
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  /* Mesmo motivo do width:100% na linha da busca logo acima: sem isso,
+     este item flex do toolbar em coluna mede a largura pelos 7 chips
+     (maior que a tela) em vez de encolher pro container e rolar
+     internamente — a barra inteira vazava pra fora da tela no mobile. */
+  width: 100%;
+  min-width: 0;
 }
 
 .produtos-chip-row::-webkit-scrollbar {

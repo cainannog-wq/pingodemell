@@ -226,7 +226,14 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
             borderTopRightRadius: "var(--radius)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          {/* width:100% + minWidth:0 explícitos: sem isso, esta linha (item
+              flex do toolbar em coluna) mede sua largura pelo conteúdo
+              intrínseco do Input+contador em vez de encolher pro container —
+              o cálculo de largura mínima de um item flex ignora width:100%
+              de filhos percentuais (percentual não resolve em contexto de
+              tamanho intrínseco), então o Input e o card inteiro vazavam pra
+              fora da tela no mobile. Bug relatado em 23/09/2026. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", width: "100%", minWidth: 0 }}>
             <div className="admin-table-search">
               <Input
                 icon="search"
