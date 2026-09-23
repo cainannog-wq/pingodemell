@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useMemo, useState, type CSSProperties } from "react";
 import type { Pedido, PedidoStatus } from "@/lib/pedidos/types";
 import { STATUS_BADGE_VARIANT, STATUS_LABEL, STATUS_OPTIONS } from "@/lib/pedidos/status";
-import { formatDataHoraCurta, formatMoeda } from "@/lib/pedidos/format";
+import { formatDataCurta, formatDataHoraCurta, formatHora, formatMoeda, brasiliaDiferencaDias, formatDiaGrupo } from "@/lib/pedidos/format";
 import { Card, Icon, Input, Button, Badge } from "@/components/ds";
+import type { BadgeVariant } from "@/components/ds/Badge";
 import { exportarPedidosCSV } from "./export-csv";
 
 const thStyle: CSSProperties = {
@@ -27,6 +28,23 @@ const selectStyle: CSSProperties = {
   border: "1.5px solid var(--border-subtle)",
   borderRadius: "var(--radius)",
 };
+
+const DIAS_CORTE_FINALIZADOS = 7;
+
+function isFinalizado(status: PedidoStatus): boolean {
+  return status === "entregue" || status === "cancelado";
+}
+
+// No card mobile, status que ainda pedem ação mantêm o selo forte (igual
+// ao desktop); Entregue/Cancelado usam contorno colorido, sem preenchimento
+// sólido — cor forte fica reservada pra quem precisa de atenção (mudança
+// de UX registrada em 22/09/2026, só no card mobile — a tabela desktop
+// continua com STATUS_BADGE_VARIANT como estava).
+function mobileBadgeVariant(status: PedidoStatus): BadgeVariant {
+  if (status === "entregue") return "successOutline";
+  if (status === "cancelado") return "errorOutline";
+  return STATUS_BADGE_VARIANT[status];
+}
 
 // Quantidade de ITENS DISTINTOS do pedido (ex.: bolo + brigadeiro +
 // coxinha = 3), não a soma das quantidades de cada um — é assim que a
@@ -54,6 +72,32 @@ function StatCard({ label, mobileLabel, value }: { label: string; mobileLabel?: 
   );
 }
 
+// Card individual do histórico mobile. O card inteiro é um link pro
+// detalhe do pedido (reorganização de 22/09/2026: antes era só o botão
+// "Ver pedido" dentro do card, ocupando quase metade da altura).
+function PedidoMobileCard({ pedido }: { pedido: Pedido }) {
+  const itens = contarItens(pedido);
+  return (
+    <Link href={`/admin/pedidos/${pedido.numero}`} className="admin-mobile-card pedido-mobile-card">
+      <div className="pedido-mobile-card-row1">
+        <span className="pedido-mobile-card-cliente">{pedido.cliente_nome}</span>
+        <Badge variant={mobileBadgeVariant(pedido.status)}>{STATUS_LABEL[pedido.status]}</Badge>
+      </div>
+      <div className="pedido-mobile-card-entrega">
+        Entrega {formatDataCurta(pedido.data_hora_entrega)} às {formatHora(pedido.data_hora_entrega)}
+      </div>
+      {pedido.ocasiao ? <div className="pedido-mobile-card-ocasiao">{pedido.ocasiao}</div> : null}
+      <div className="pedido-mobile-card-row4">
+        <span className="pedido-mobile-card-meta">
+          #{pedido.numero} · {itens} {itens === 1 ? "item" : "itens"}
+        </span>
+        <span className="pedido-mobile-card-total">{formatMoeda(pedido.total)}</span>
+      </div>
+      <Icon name="chevron_right" size={20} tone="default" className="pedido-mobile-card-chevron" />
+    </Link>
+  );
+}
+
 export function PedidosList({
   pedidos,
   stats,
@@ -63,6 +107,13 @@ export function PedidosList({
 }) {
   const [search, setSearch] = useState("");
   const [statusFiltro, setStatusFiltro] = useState<PedidoStatus | "todos">("todos");
+  const [mostrarFinalizadosAntigos, setMostrarFinalizadosAntigos] = useState(false);
+  // Instante "agora" travado no primeiro render (lazy initializer): evita
+  // chamar Date.now() dentro do corpo do useMemo abaixo, que a regra de
+  // pureza do React (react-hooks/purity) não permite. Não precisa reagir a
+  // passagem de tempo em tempo real — só recalcula se o componente
+  // remontar, igual a qualquer outra tela deste painel.
+  const [agora] = useState(() => Date.now());
 
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -77,6 +128,51 @@ export function PedidosList({
   const totalCount = pedidos.length;
   const hasFilter = search.trim().length > 0 || statusFiltro !== "todos";
   const resultLabel = rows.length === 1 ? "1 pedido" : `${rows.length} pedidos`;
+
+  // Agrupamento do histórico mobile (reorganização de 22/09/2026): pedidos
+  // em aberto vêm primeiro (atrasados no topo, depois por dia de entrega
+  // mais próximo), pedidos finalizados ficam num bloco abaixo, do mais
+  // recente pro mais antigo. O corte de 7 dias dos finalizados só vale na
+  // visualização padrão (sem busca, sem filtro de status) — com busca ou
+  // filtro ativos, considera todo o histórico (regra fechada com o
+  // Cainan). A tabela desktop não usa nada disso: mantém a ordem original
+  // vinda do Supabase (criado_em desc).
+  const mobileSections = useMemo(() => {
+    const abertos = rows.filter((p) => !isFinalizado(p.status));
+    const finalizados = rows.filter((p) => isFinalizado(p.status));
+
+    const atrasados = abertos
+      .filter((p) => new Date(p.data_hora_entrega).getTime() < agora)
+      .sort((a, b) => new Date(a.data_hora_entrega).getTime() - new Date(b.data_hora_entrega).getTime());
+
+    const emAberto = abertos
+      .filter((p) => new Date(p.data_hora_entrega).getTime() >= agora)
+      .sort((a, b) => new Date(a.data_hora_entrega).getTime() - new Date(b.data_hora_entrega).getTime());
+
+    const grupos: { label: string; pedidos: Pedido[] }[] = [];
+    for (const pedido of emAberto) {
+      const label = formatDiaGrupo(pedido.data_hora_entrega);
+      let grupo = grupos.find((g) => g.label === label);
+      if (!grupo) {
+        grupo = { label, pedidos: [] };
+        grupos.push(grupo);
+      }
+      grupo.pedidos.push(pedido);
+    }
+
+    const finalizadosOrdenados = [...finalizados].sort(
+      (a, b) => new Date(b.data_hora_entrega).getTime() - new Date(a.data_hora_entrega).getTime()
+    );
+
+    const aplicarCorte = !hasFilter && !mostrarFinalizadosAntigos;
+    const finalizadosVisiveis = aplicarCorte
+      ? finalizadosOrdenados.filter((p) => brasiliaDiferencaDias(p.data_hora_entrega) >= -DIAS_CORTE_FINALIZADOS)
+      : finalizadosOrdenados;
+
+    const temFinalizadosOcultos = aplicarCorte && finalizadosVisiveis.length < finalizadosOrdenados.length;
+
+    return { atrasados, grupos, finalizadosVisiveis, temFinalizadosOcultos };
+  }, [rows, hasFilter, mostrarFinalizadosAntigos, agora]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -180,43 +276,41 @@ export function PedidosList({
         ) : null}
 
         {rows.length > 0 ? (
-          <div className="admin-mobile-cards">
-            {rows.map((pedido) => (
-              <div key={pedido.id} className="admin-mobile-card">
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-                  <span style={{ fontWeight: 700, color: "var(--pdm-brown)" }}>#{pedido.numero}</span>
-                  <Badge variant={STATUS_BADGE_VARIANT[pedido.status]}>{STATUS_LABEL[pedido.status]}</Badge>
+          <div className="admin-mobile-cards pedidos-mobile-cards">
+            {mobileSections.atrasados.length > 0 ? (
+              <>
+                <div className="pedidos-group-header pedidos-group-header--atrasado">
+                  <Icon name="warning" size={16} color="var(--pdm-error)" />
+                  Atrasados
                 </div>
-                <div style={{ marginTop: 8, fontWeight: 600 }}>{pedido.cliente_nome}</div>
-                {pedido.ocasiao ? <div style={{ fontSize: 14, color: "var(--pdm-muted)" }}>{pedido.ocasiao}</div> : null}
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "4px 20px",
-                    marginTop: 8,
-                    fontSize: 14,
-                    color: "var(--pdm-muted)",
-                  }}
-                >
-                  <span style={{ fontVariantNumeric: "tabular-nums" }}>{formatDataHoraCurta(pedido.data_hora_entrega)}</span>
-                  <span style={{ fontVariantNumeric: "tabular-nums" }}>
-                    {contarItens(pedido)} {contarItens(pedido) === 1 ? "item" : "itens"}
-                  </span>
-                  <span style={{ fontWeight: 700, color: "var(--pdm-black)", fontVariantNumeric: "tabular-nums" }}>
-                    {formatMoeda(pedido.total)}
-                  </span>
-                </div>
+                {mobileSections.atrasados.map((pedido) => (
+                  <PedidoMobileCard key={pedido.id} pedido={pedido} />
+                ))}
+              </>
+            ) : null}
 
-                <div className="admin-mobile-card-divider" />
-
-                <Link href={`/admin/pedidos/${pedido.numero}`} className="admin-mobile-card-cta">
-                  <Button variant="secondary" size="sm" iconLeft="visibility" style={{ width: "100%" }}>
-                    Ver pedido
-                  </Button>
-                </Link>
+            {mobileSections.grupos.map((grupo) => (
+              <div key={grupo.label}>
+                <div className="pedidos-group-header">{grupo.label}</div>
+                {grupo.pedidos.map((pedido) => (
+                  <PedidoMobileCard key={pedido.id} pedido={pedido} />
+                ))}
               </div>
             ))}
+
+            {mobileSections.finalizadosVisiveis.length > 0 ? (
+              <>
+                <div className="pedidos-group-header">Finalizados</div>
+                {mobileSections.finalizadosVisiveis.map((pedido) => (
+                  <PedidoMobileCard key={pedido.id} pedido={pedido} />
+                ))}
+                {mobileSections.temFinalizadosOcultos ? (
+                  <button type="button" className="pedidos-ver-mais-antigos" onClick={() => setMostrarFinalizadosAntigos(true)}>
+                    Ver finalizados mais antigos
+                  </button>
+                ) : null}
+              </>
+            ) : null}
           </div>
         ) : null}
 

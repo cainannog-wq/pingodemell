@@ -56,6 +56,35 @@ export function brasiliaAnoMes(iso: string): string {
   return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}`;
 }
 
+function brasiliaDiaChave(iso: string): string {
+  const d = paraBrasilia(iso);
+  return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
+}
+
+// Diferença em dias de calendário (Brasília) entre a data do pedido e hoje
+// — 0 é hoje, 1 é amanhã, -1 é ontem. Usado pra agrupar o histórico de
+// pedidos do painel (reorganização mobile de 22/09/2026): "Atrasados" (dias
+// < 0 e ainda em aberto), cabeçalho de grupo por dia, e o corte de 7 dias
+// dos pedidos finalizados. Comparação por chave de calendário (não por
+// milissegundos) pra não depender do horário do dia, só da data.
+export function brasiliaDiferencaDias(iso: string): number {
+  const [ay, am, ad] = brasiliaDiaChave(iso).split("-").map(Number);
+  const [hy, hm, hd] = brasiliaDiaChave(new Date().toISOString()).split("-").map(Number);
+  return Math.round((Date.UTC(ay, am - 1, ad) - Date.UTC(hy, hm - 1, hd)) / 86_400_000);
+}
+
+const DIAS_SEMANA_CURTO = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+// Rótulo do cabeçalho de grupo de dia no histórico de pedidos: "Hoje",
+// "Amanhã" ou "Sáb, 27/09" pra qualquer outro dia.
+export function formatDiaGrupo(iso: string): string {
+  const dias = brasiliaDiferencaDias(iso);
+  if (dias === 0) return "Hoje";
+  if (dias === 1) return "Amanhã";
+  const d = paraBrasilia(iso);
+  return `${DIAS_SEMANA_CURTO[d.getUTCDay()]}, ${pad2(d.getUTCDate())}/${pad2(d.getUTCMonth() + 1)}`;
+}
+
 // Gera o link wa.me a partir do WhatsApp salvo no pedido (qualquer
 // formatação livre digitada, ex.: "(41) 99612-4477"). Assume DDD
 // brasileiro quando não há código de país (55) já incluso.

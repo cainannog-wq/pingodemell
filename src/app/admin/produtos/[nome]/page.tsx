@@ -20,6 +20,19 @@ export default async function EditarProdutoPage({
     .eq("nome", nomeDecodificado)
     .maybeSingle<Produto>();
 
+  const { data: produtos } = await supabase
+    .from("produtos")
+    .select("nome, ativo")
+    .order("nome", { ascending: true });
+
+  const { data: itensCento } = await supabase
+    .from("produto_cento_itens")
+    .select("subitem_nome")
+    .eq("cento_nome", nomeDecodificado)
+    .order("ordem", { ascending: true });
+
+  const initialSubitens = (itensCento ?? []).map((item) => item.subitem_nome as string);
+
   if (!produto) {
     return (
       <div className="admin-empty-state" style={{ padding: "80px 24px", display: "grid", placeItems: "center", textAlign: "center", background: "var(--pdm-cream-warm)", borderRadius: "var(--radius)" }}>
@@ -45,7 +58,13 @@ export default async function EditarProdutoPage({
         </h1>
         <p style={{ margin: "4px 0 0", color: "var(--pdm-muted)" }}>{produto.nome}</p>
       </div>
-      <ProdutoForm action={updateProduto.bind(null, produto.nome)} produto={produto} submitLabel="Salvar alterações" />
+      <ProdutoForm
+        action={updateProduto.bind(null, produto.nome)}
+        produto={produto}
+        submitLabel="Salvar alterações"
+        produtosDisponiveis={produtos ?? []}
+        initialSubitens={initialSubitens}
+      />
     </div>
   );
 }

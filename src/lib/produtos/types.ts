@@ -10,6 +10,14 @@ export const STEP_QUANTIDADE_LABELS: Record<StepQuantidade, string> = {
 export const CATEGORIA_VALUES = ["Bolos", "Doces", "Salgados", "Bebidas"] as const;
 export type CategoriaProduto = (typeof CATEGORIA_VALUES)[number];
 
+export const TIPO_PRODUTO_VALUES = ["normal", "cento"] as const;
+export type TipoProduto = (typeof TIPO_PRODUTO_VALUES)[number];
+
+export const TIPO_PRODUTO_LABELS: Record<TipoProduto, string> = {
+  normal: "Normal",
+  cento: "Cento (com subitens)",
+};
+
 export type Produto = {
   nome: string;
   preco: number;
@@ -24,4 +32,14 @@ export type Produto = {
   step_quantidade: StepQuantidade;
   destaque: boolean;
   ativo: boolean;
+  tipo: TipoProduto;
+};
+
+// Linha da tabela produto_cento_itens: um subitem (sabor) de um produto
+// tipo "cento", referenciando outro produto real do catálogo.
+export type ProdutoCentoItem = {
+  id: string;
+  cento_nome: string;
+  subitem_nome: string;
+  ordem: number;
 };
