@@ -59,3 +59,33 @@
 /* Degradê de proteção para legenda sobre foto */
 --gradient-caption:linear-gradient(to top,rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 60%); /* @kind color */
 }
+
+/* Cores que só existem no handoff do site público (Claude Design, 23/09/2026).
+   Tokens NOVOS, acrescentados sem alterar nenhum valor acima — o admin
+   continua igual. Nomes seguem os do handoff (_ds/.../tokens/colors.css). */
+:root{
+--gold-100:#fff8d9;
+--gold-300:#fde579;
+--gold-400:#c89552;
+--gold-500:#fed627;
+--brown-050:#f7f2ea;
+--brown-100:#eadcc9;
+--brown-200:#d9c1a1;
+--brown-300:#bc9b78;
+--brown-500:#8b592a;
+--brown-700:#92440f;
+--brown-800:#5a3410;
+--cream-050:#faf9f4;
+--cream-100:#f2f0e9;
+--cream-200:#e6e2d6;
+--ink-300:#9c968b;
+--ink-500:#6b655c;
+--ink-700:#3a3630;
+--ink-900:#000000;
+--whatsapp-500:#25d366;
+--whatsapp-600:#1da851;
+--footer-bg:#0f0b06;
+
+--border-default:var(--brown-100);
+--text-link-hover:var(--brown-700);
+}
