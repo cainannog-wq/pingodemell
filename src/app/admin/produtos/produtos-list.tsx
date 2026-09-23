@@ -206,10 +206,25 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
         </Link>
       </div>
 
-      <Card tone="white" padding="0">
+      {/* overflow:visible sobrescreve o overflow:hidden padrão do Card: a
+          barra de busca+chips logo abaixo usa position:sticky (rolagem no
+          mobile), e sticky não funciona dentro de um ancestral com overflow
+          diferente de visible — bug relatado em 23/09/2026 (primeiro item
+          cortado, chips não respondiam ao toque). Compensado com o
+          borderRadius no topo da própria barra, já que ela deixa de ser
+          clipada pelo cantos arredondados do Card. */}
+      <Card tone="white" padding="0" style={{ overflow: "visible" }}>
         <div
           className="admin-table-toolbar produtos-toolbar-sticky"
-          style={{ display: "flex", flexDirection: "column", gap: 16, padding: 24, borderBottom: "1px solid var(--border-subtle)" }}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+            padding: 24,
+            borderBottom: "1px solid var(--border-subtle)",
+            borderTopLeftRadius: "var(--radius)",
+            borderTopRightRadius: "var(--radius)",
+          }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
             <div className="admin-table-search">
@@ -415,7 +430,18 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
         ) : null}
 
         {rows.length === 0 && (
-          <div className="admin-empty-state" style={{ padding: "80px 24px", display: "grid", placeItems: "center", textAlign: "center", background: "var(--pdm-cream-warm)" }}>
+          <div
+            className="admin-empty-state"
+            style={{
+              padding: "80px 24px",
+              display: "grid",
+              placeItems: "center",
+              textAlign: "center",
+              background: "var(--pdm-cream-warm)",
+              borderBottomLeftRadius: "var(--radius)",
+              borderBottomRightRadius: "var(--radius)",
+            }}
+          >
             <div style={{ maxWidth: "46ch", display: "grid", justifyItems: "center", gap: 16 }}>
               <Icon name="cake" size={40} tone="accent" />
               <h3 className="admin-empty-state-title" style={{ fontFamily: "var(--font-heading)", fontSize: 24, lineHeight: 1.4, margin: 0, color: "var(--pdm-brown)" }}>
