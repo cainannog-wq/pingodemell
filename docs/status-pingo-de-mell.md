@@ -135,4 +135,4 @@ Pendência fora deste PR: `scripts/test-rls-produto-cento-itens.mjs` e `scripts/
 
 ## Próximo pedido ao Claude Code
 
-PR da Lista (`lista-produtos`) aberto aguardando os testes de ordem e de inativo do Cainan no preview, validação e merge. Depois do merge, aplicar a migração de RLS em produção (quando o Cainan pedir) e rodar `scripts/test-rls.mjs` contra produção. Em seguida: interna do produto (página 3), carrinho (4), checkout.
+PR da Lista (`lista-produtos`, #10) aberto aguardando validação e merge do Cainan. Testes com dado real feitos no preview em 23/09/2026 (ordem com o Brigadeiro Gourmet, inativo com a Empada de palmito, destaque com o Risole de carne, Lista vista com o admin logado), todos com o resultado esperado — detalhes na descrição do PR. Depois do merge, aplicar a migração de RLS em produção (quando o Cainan pedir) e rodar `scripts/test-rls.mjs` contra produção. Em seguida: interna do produto (página 3), carrinho (4), checkout.
