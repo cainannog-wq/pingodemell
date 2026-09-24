@@ -79,7 +79,9 @@ describe("Home — seção Os mais pedidos", () => {
         ]}
       />
     );
-    expect(screen.getByText("R$ 95,00 o cento")).toBeInTheDocument();
-    expect(screen.getByText("R$ 2,50")).toBeInTheDocument();
+    // Valor e "o cento" ficam em elementos separados (a unidade pode
+    // descer de linha): confere o texto completo do bloco de preço.
+    const precos = [...document.querySelectorAll(".home-price")].map((p) => p.textContent?.replace(/\s+/g, " "));
+    expect(precos).toEqual(["R$ 95,00 o cento", "R$ 2,50"]);
   });
 });

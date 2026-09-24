@@ -47,8 +47,19 @@ export function selecionarMaisPedidos(produtos: ProdutoVitrine[]): ProdutoVitrin
 }
 
 // Preço como aparece no card: cento ganha "o cento"; o resto, só o valor,
-// sem unidade (o banco não tem campo de unidade).
+// sem unidade (o banco não tem campo de unidade). Separado em partes pro
+// card poder manter o valor inteiro numa linha e descer só a unidade.
+export function partesPrecoVitrine(produto: Pick<ProdutoVitrine, "preco" | "tipo">): {
+  valor: string;
+  unidade: string | null;
+} {
+  return {
+    valor: formatMoeda(Number(produto.preco)),
+    unidade: produto.tipo === "cento" ? "o cento" : null,
+  };
+}
+
 export function formatarPrecoVitrine(produto: Pick<ProdutoVitrine, "preco" | "tipo">): string {
-  const valor = formatMoeda(Number(produto.preco));
-  return produto.tipo === "cento" ? `${valor} o cento` : valor;
+  const { valor, unidade } = partesPrecoVitrine(produto);
+  return unidade ? `${valor} ${unidade}` : valor;
 }

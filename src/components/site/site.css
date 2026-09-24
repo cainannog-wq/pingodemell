@@ -696,6 +696,23 @@ body:has(.pdm-site) {
   font-size: 20px;
   color: var(--brown-700);
 }
+/* Preço do card: o valor e "o cento" não quebram por dentro; o espaço
+   entre os dois é o único ponto de quebra. Se couber, fica tudo na mesma
+   linha (igual a antes); se não, "o cento" desce inteiro. */
+.site-preco-valor,
+.site-preco-unidade {
+  white-space: nowrap;
+}
+/* No celular (cards estreitos, onde a unidade desce), a unidade usa o
+   estilo de texto secundário do card (mesmo da descrição). */
+@media (max-width: 767px) {
+  .site-preco-unidade {
+    font-weight: var(--fw-regular);
+    font-size: var(--fs-small);
+    line-height: var(--lh-small);
+    color: var(--text-muted);
+  }
+}
 .home-product-fallback {
   position: absolute;
   inset: 0;

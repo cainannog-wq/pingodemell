@@ -158,11 +158,38 @@ describe("Página Lista — selo 'Mais pedido'", () => {
   });
 });
 
+// O preço tem o valor e "o cento" em elementos separados: procura o bloco
+// de preço pelo texto completo.
+const preco = (texto: string) =>
+  screen.getByText((_, el) => !!el?.classList.contains("home-price") && el.textContent?.replace(/\s+/g, " ") === texto);
+
 describe("Página Lista — card", () => {
   it("preço 'R$ X o cento' só para cento; os demais, só o preço", async () => {
     await renderLista("doces");
-    expect(screen.getByText("R$ 100,00 o cento")).toBeInTheDocument();
-    expect(screen.getByText("R$ 2,50")).toBeInTheDocument();
+    expect(preco("R$ 100,00 o cento")).toBeInTheDocument();
+    expect(preco("R$ 2,50")).toBeInTheDocument();
+  });
+
+  it("preço do cento: valor e 'o cento' em blocos separados, só o espaço entre eles pode quebrar", async () => {
+    await renderLista("doces");
+    const bloco = preco("R$ 100,00 o cento");
+    const valor = bloco.querySelector(".site-preco-valor")!;
+    const unidade = bloco.querySelector(".site-preco-unidade")!;
+    expect(valor.textContent?.replace(/\s+/g, " ")).toBe("R$ 100,00");
+    expect(unidade).toHaveTextContent("o cento");
+    // Entre os dois, um espaço comum (ponto de quebra); nenhum outro.
+    expect(valor.nextSibling?.textContent).toBe(" ");
+    // Produto comum: só o valor, sem bloco de unidade.
+    expect(preco("R$ 2,50").querySelector(".site-preco-unidade")).toBeNull();
+  });
+
+  // A quebra de linha em si depende de medida de layout, que o jsdom não
+  // calcula: aqui só se garante o CSS que faz a quebra acontecer.
+  it("CSS: valor e unidade não quebram por dentro; unidade secundária só no celular", async () => {
+    const { readFileSync } = await import("node:fs");
+    const css = readFileSync("src/components/site/site.css", "utf8");
+    expect(css).toMatch(/\.site-preco-valor,\s*\.site-preco-unidade\s*\{\s*white-space:\s*nowrap;/);
+    expect(css).toMatch(/@media \(max-width: 767px\)\s*\{\s*\.site-preco-unidade\s*\{[^}]*color:\s*var\(--text-muted\)/);
   });
 
   it("card sem foto usa o fundo da marca, com texto alternativo; com foto, a foto com texto alternativo", async () => {
