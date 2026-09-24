@@ -3,6 +3,20 @@
 //   1. SELECT é permitido (leitura pública)
 //   2. INSERT é bloqueado
 //   3. DELETE é bloqueado
+// E, a partir da migração supabase/produtos-rls-leitura-ativo.sql:
+//   4. anônimo lê produto ativo, e só ativo
+//   5. anônimo NÃO lê produto inativo, nem filtrando por ativo=false
+//   6. anônimo NÃO lê produto inativo nem buscando direto pelo id
+//   7. usuário logado (admin) lê todos, ativos e inativos
+//
+// Os testes 4-7 só leem: usam os produtos (fictícios) que já existem no
+// banco, sem criar nem alterar nenhum. A lista de referência (quais são os
+// inativos e quantos produtos existem) vem da service role, que ignora RLS.
+// A sessão logada vem de magic link via Admin API, mesmo mecanismo de
+// scripts/test-rls-pedidos.mjs (sem passar pelo CAPTCHA do login).
+//
+// Roda contra o banco de .env.local — hoje, o de produção (único banco).
+// Antes da migração ser aplicada, os testes 4-6 FALHAM (é o esperado).
 //
 // Uso: node scripts/test-rls.mjs
 
@@ -37,7 +51,18 @@ if (!supabaseUrl || !supabaseAnonKey) {
   process.exit(1);
 }
 
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const testAdminEmail = process.env.TEST_ADMIN_EMAIL;
+
+if (!serviceRoleKey || !testAdminEmail) {
+  console.error("Faltam SUPABASE_SERVICE_ROLE_KEY / TEST_ADMIN_EMAIL em .env.local (testes 4-7)");
+  process.exit(1);
+}
+
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const admin = createClient(supabaseUrl, serviceRoleKey, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
 
 const results = [];
 
@@ -146,13 +171,105 @@ async function testDelete(existingRows) {
   );
 }
 
+async function testLeituraSoAtivos() {
+  // Referência: o que existe de verdade (service role ignora RLS).
+  const { data: todos, error: refError } = await admin.from("produtos").select("id, nome, ativo");
+  if (refError || !todos) {
+    report("4-7. Leitura só de ativos", false, `Falha ao ler a referência via service role: ${refError?.message}`);
+    return;
+  }
+  const ativos = todos.filter((p) => p.ativo);
+  const inativos = todos.filter((p) => !p.ativo);
+  console.log(`
+Referência (service role): ${todos.length} produtos — ${ativos.length} ativos, ${inativos.length} inativos.`);
+  if (inativos.length === 0) {
+    report("4-7. Leitura só de ativos", false, "Nenhum produto inativo no banco — testes 5-7 inconclusivos.");
+    return;
+  }
+
+  // 4. Anônimo lê ativo, e só ativo.
+  {
+    const { data, error } = await supabase.from("produtos").select("id, ativo");
+    const lidos = data ?? [];
+    const passed = error === null && lidos.length === ativos.length && lidos.every((p) => p.ativo === true);
+    report(
+      "4. SELECT anônimo lê todos os ativos e só ativos",
+      passed,
+      error
+        ? `Erro inesperado: ${JSON.stringify(error)}`
+        : `Anônimo leu ${lidos.length} produto(s) (esperado ${ativos.length}); inativos entre eles: ${lidos.filter((p) => !p.ativo).length} (esperado 0).`
+    );
+  }
+
+  // 5. Anônimo filtrando por inativo não recebe nada.
+  {
+    const { data, error } = await supabase.from("produtos").select("id").eq("ativo", false);
+    const passed = error === null && (data?.length ?? 0) === 0;
+    report(
+      "5. SELECT anônimo com ativo=false não devolve nada",
+      passed,
+      error ? `Erro inesperado: ${JSON.stringify(error)}` : `Anônimo leu ${data.length} inativo(s) (esperado 0).`
+    );
+  }
+
+  // 6. Anônimo buscando cada inativo direto pelo id não recebe nada.
+  {
+    const vazados = [];
+    for (const p of inativos) {
+      const { data, error } = await supabase.from("produtos").select("id, nome").eq("id", p.id);
+      if (error || (data?.length ?? 0) > 0) vazados.push(p.nome);
+    }
+    report(
+      "6. SELECT anônimo pelo id de um inativo volta vazio",
+      vazados.length === 0,
+      vazados.length === 0
+        ? `OK — ${inativos.length} inativo(s) buscado(s) pelo id, todos vazios: ${inativos.map((p) => p.nome).join(", ")}.`
+        : `FALHA — anônimo leu pelo id: ${vazados.join(", ")}.`
+    );
+  }
+
+  // 7. Logado lê todos, ativos e inativos.
+  {
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+      type: "magiclink",
+      email: testAdminEmail,
+    });
+    if (linkError || !linkData?.properties?.hashed_token) {
+      report("7. SELECT logado lê ativos e inativos", false, `Não foi possível gerar sessão de teste: ${linkError?.message}`);
+      return;
+    }
+    const authed = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { error: verifyError } = await authed.auth.verifyOtp({
+      token_hash: linkData.properties.hashed_token,
+      type: "magiclink",
+    });
+    if (verifyError) {
+      report("7. SELECT logado lê ativos e inativos", false, `Falha ao trocar o magic link por sessão: ${verifyError.message}`);
+      return;
+    }
+    const { data, error } = await authed.from("produtos").select("id, ativo");
+    const lidos = data ?? [];
+    const passed = error === null && lidos.length === todos.length && lidos.filter((p) => !p.ativo).length === inativos.length;
+    report(
+      "7. SELECT logado lê ativos e inativos",
+      passed,
+      error
+        ? `Erro inesperado: ${JSON.stringify(error)}`
+        : `Logado leu ${lidos.length} produto(s) (esperado ${todos.length}), ${lidos.filter((p) => !p.ativo).length} inativo(s) (esperado ${inativos.length}).`
+    );
+  }
+}
+
 async function main() {
-  console.log(`Testando RLS de 'produtos' em ${supabaseUrl} (sem autenticação)\n`);
+  console.log(`Testando RLS de 'produtos' em ${supabaseUrl} (anônimo e logado)\n`);
   console.log("=".repeat(70));
 
   const rows = await testSelect();
   await testInsert();
   await testDelete(rows);
+  await testLeituraSoAtivos();
 
   console.log("\n" + "=".repeat(70));
   const failed = results.filter((r) => !r.passed);

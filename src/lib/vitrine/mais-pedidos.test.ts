@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatarPrecoVitrine, selecionarMaisPedidos, type ProdutoVitrine } from "./mais-pedidos";
+import { formatarPrecoVitrine, partesPrecoVitrine, selecionarMaisPedidos, type ProdutoVitrine } from "./mais-pedidos";
 
 // Dado simulado: nenhum destes testes lê ou altera o banco.
 let seq = 0;
@@ -117,5 +117,17 @@ describe("Preço do card", () => {
   it("demais tipos mostram só o preço, sem unidade", () => {
     expect(formatarPrecoVitrine({ preco: 2.35, tipo: "normal" })).toBe("R$ 2,35");
     expect(formatarPrecoVitrine({ preco: 1234.5, tipo: "normal" })).toBe("R$ 1.234,50");
+  });
+});
+
+describe("Preço do card em partes", () => {
+  it("cento separa o valor da unidade 'o cento'", () => {
+    const partes = partesPrecoVitrine({ preco: 95.99, tipo: "cento" });
+    expect(partes.unidade).toBe("o cento");
+    expect(partes.valor.replace(/s/g, " ")).toBe("R$ 95,99");
+  });
+
+  it("produto comum não tem unidade", () => {
+    expect(partesPrecoVitrine({ preco: 2.5, tipo: "normal" }).unidade).toBeNull();
   });
 });
