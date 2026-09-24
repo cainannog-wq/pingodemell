@@ -239,55 +239,73 @@ export function ProdutoForm({
             </Field>
           </FormSection>
 
-          <FormSection title="Mídia e visibilidade">
-            <div className="produto-form-grid" style={{ gridTemplateColumns: "2fr 1fr 1fr" }}>
-              <Field label="Foto" hint="JPG, PNG ou WebP, luz natural e foco no produto. Até 2 MB.">
-                <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-                  <div
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: "var(--radius)",
-                      background: "var(--pdm-cream-warm)",
-                      display: "grid",
-                      placeItems: "center",
-                      flex: "none",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {previewUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={previewUrl} alt="Prévia da foto selecionada" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    ) : produto?.image_url ? (
-                      <Image src={produto.image_url} alt={produto.nome} width={56} height={56} style={{ objectFit: "cover" }} />
-                    ) : (
-                      <Icon name="photo_camera" size={24} />
-                    )}
+          <FormSection title="Mídia e visibilidade" last>
+            <div className="produto-form-grid" style={{ gridTemplateColumns: "2fr 1fr 1fr", alignItems: "start" }}>
+              {/* Capa e fotos extras na mesma coluna: a galeria fica colada
+                  logo abaixo da capa, no desktop e no celular (onde os
+                  toggles vêm depois das duas). */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
+                <Field
+                  label="Foto de capa"
+                  hint="Uma foto só: é a que aparece nos cards do site. Para mais fotos, use Fotos extras, logo abaixo. JPG, PNG ou WebP, luz natural e foco no produto. Até 2 MB."
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                    <div
+                      style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: "var(--radius)",
+                        background: "var(--pdm-cream-warm)",
+                        display: "grid",
+                        placeItems: "center",
+                        flex: "none",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {previewUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={previewUrl} alt="Prévia da foto selecionada" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : produto?.image_url ? (
+                        <Image src={produto.image_url} alt={produto.nome} width={56} height={56} style={{ objectFit: "cover" }} />
+                      ) : (
+                        <Icon name="photo_camera" size={24} />
+                      )}
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      id="f-foto"
+                      name="foto"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) {
+                          setPreviewUrl(null);
+                          setFileName(null);
+                          return;
+                        }
+                        setFileName(file.name);
+                        setPreviewUrl(URL.createObjectURL(file));
+                      }}
+                    />
+                    <Button type="button" variant="secondary" size="sm" iconLeft="upload" onClick={() => fileInputRef.current?.click()}>
+                      Escolher foto
+                    </Button>
+                    {fileName && <span style={{ fontSize: "var(--fs-small)", color: "var(--pdm-muted)" }}>{fileName}</span>}
                   </div>
-                  <input
-                    ref={fileInputRef}
-                    id="f-foto"
-                    name="foto"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) {
-                        setPreviewUrl(null);
-                        setFileName(null);
-                        return;
-                      }
-                      setFileName(file.name);
-                      setPreviewUrl(URL.createObjectURL(file));
-                    }}
+                </Field>
+
+                <Field label="Fotos extras">
+                  <GaleriaFotosExtras
+                    fotos={fotos}
+                    onChange={setFotos}
+                    nomeProduto={nome}
+                    temCapa={Boolean(previewUrl || produto?.image_url)}
+                    desabilitado={salvando}
                   />
-                  <Button type="button" variant="secondary" size="sm" iconLeft="upload" onClick={() => fileInputRef.current?.click()}>
-                    Escolher foto
-                  </Button>
-                  {fileName && <span style={{ fontSize: "var(--fs-small)", color: "var(--pdm-muted)" }}>{fileName}</span>}
-                </div>
-              </Field>
+                </Field>
+              </div>
 
               <Field label="Produto em destaque">
                 <Toggle name="destaque" defaultChecked={produto?.destaque ?? false} label="Exibir como destaque" />
@@ -297,16 +315,6 @@ export function ProdutoForm({
                 <Toggle name="ativo" defaultChecked={produto?.ativo ?? true} label="Produto ativo" />
               </Field>
             </div>
-          </FormSection>
-
-          <FormSection title="Fotos extras" last>
-            <GaleriaFotosExtras
-              fotos={fotos}
-              onChange={setFotos}
-              nomeProduto={nome}
-              temCapa={Boolean(previewUrl || produto?.image_url)}
-              desabilitado={salvando}
-            />
           </FormSection>
 
           <div
