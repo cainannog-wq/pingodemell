@@ -133,10 +133,14 @@ Fora do PR, registrados como diferença do layout: busca, "Ordenar por", "Carreg
 
 Correção no mesmo PR (24/09/2026): preço do Cento no card (compartilhado com a Home) não quebra mais no meio no celular — o valor fica sempre inteiro e "o cento" desce inteiro quando não cabe, com estilo de texto secundário no celular; desktop sem mudança (Home 1280px idêntica pixel a pixel). Provas visuais do PR ficam na branch `provas/pr-10` (só imagens, não é para merge), referenciadas num comentário do PR #10.
 
+Decisão do Cainan (24/09/2026), alinhamento no celular: nos cards de 2 colunas os botões e as alturas dos cards ficam alinhados em cada linha, mas o preço de um Cento com "o cento" na linha de baixo fica ~27px mais alto que o do card vizinho. Aceito como está (opção 2), sem reservar a segunda linha nos outros cards.
+
+A branch `provas/pr-10` **não deve ser apagada**: as 16 imagens do comentário de provas do PR #10 apontam para o commit dela; sem a branch, as imagens quebram e a prova some.
+
 Achado fora deste PR: em 320px o texto do botão "+ Adicionar" encosta na borda direita do botão nos cards de 2 colunas (já existia antes, também na Home).
 
 Pendência fora deste PR: `scripts/test-rls-produto-cento-itens.mjs` e `scripts/test-rls-pedidos.mjs` gravam dados temporários em produção (o do Cento cria dois produtos que aparecem na Lista por alguns segundos) — não rodar sem combinar antes.
 
 ## Próximo pedido ao Claude Code
 
-PR da Lista (`lista-produtos`, #10) aberto aguardando validação e merge do Cainan. Testes com dado real feitos no preview em 23/09/2026 (ordem com o Brigadeiro Gourmet, inativo com a Empada de palmito, destaque com o Risole de carne, Lista vista com o admin logado), todos com o resultado esperado — detalhes na descrição do PR. Depois do merge, aplicar a migração de RLS em produção (quando o Cainan pedir) e rodar `scripts/test-rls.mjs` contra produção. Em seguida: interna do produto (página 3), carrinho (4), checkout.
+PR da Lista (`lista-produtos`, #10) mergeado em 24/09/2026, a pedido do Cainan. Migração de RLS (`supabase/produtos-rls-leitura-ativo.sql`) ainda **não aplicada** — aplicar só quando o Cainan pedir, em separado. Testes com dado real feitos no preview em 23/09/2026 (ordem com o Brigadeiro Gourmet, inativo com a Empada de palmito, destaque com o Risole de carne, Lista vista com o admin logado), todos com o resultado esperado — detalhes na descrição do PR. Depois do merge, aplicar a migração de RLS em produção (quando o Cainan pedir) e rodar `scripts/test-rls.mjs` contra produção. Em seguida: interna do produto (página 3), carrinho (4), checkout.
