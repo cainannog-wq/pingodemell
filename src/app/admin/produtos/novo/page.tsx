@@ -19,7 +19,14 @@ export default async function NovoProdutoPage() {
           Quanto mais completo o cadastro, mais fácil o cliente decidir.
         </p>
       </div>
-      <ProdutoForm action={createProduto} submitLabel="Cadastrar produto" produtosDisponiveis={produtos ?? []} />
+      {/* Id novo gerado aqui no servidor: as fotos extras sobem para
+          galeria/{id}/ antes de o produto existir (ver actions.ts). */}
+      <ProdutoForm
+        action={createProduto}
+        produtoId={crypto.randomUUID()}
+        submitLabel="Cadastrar produto"
+        produtosDisponiveis={produtos ?? []}
+      />
     </div>
   );
 }

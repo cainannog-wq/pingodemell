@@ -26,6 +26,7 @@ vi.mock("./actions", () => ({
 }));
 
 const PRODUTO: Produto = {
+  id: "5527626d-0ea2-40b3-ac8e-453df520d47d",
   nome: "Bolo de cenoura",
   preco: 45.9,
   descricao: null,

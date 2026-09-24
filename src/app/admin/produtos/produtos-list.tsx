@@ -103,6 +103,9 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
   const [search, setSearch] = useState("");
   const [chip, setChip] = useState<ChipValue>("Todos");
   const [produtoParaExcluir, setProdutoParaExcluir] = useState<string | null>(null);
+  // Produto já excluído, mas os arquivos das fotos extras não saíram do
+  // storage (ver deleteProduto).
+  const [avisoExclusao, setAvisoExclusao] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const [ativoOverrides, setAtivoOverrides] = useState<Record<string, boolean>>({});
@@ -192,6 +195,24 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {avisoExclusao && (
+        <div
+          role="alert"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            background: "var(--pdm-cream-warm)",
+            borderRadius: "var(--radius)",
+            boxShadow: "var(--shadow-rest)",
+            padding: "16px 24px",
+            color: "var(--pdm-error)",
+          }}
+        >
+          <Icon name="error" size={24} tone="inherit" />
+          <span>{avisoExclusao}</span>
+        </div>
+      )}
       <div className="admin-page-header" style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
         <div>
           <h1 className="admin-page-h1" style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
@@ -480,7 +501,8 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
           onCancel={() => setProdutoParaExcluir(null)}
           onConfirm={() => {
             startTransition(async () => {
-              await deleteProduto(produtoParaExcluir);
+              const { aviso } = await deleteProduto(produtoParaExcluir);
+              setAvisoExclusao(aviso ?? null);
               setProdutoParaExcluir(null);
             });
           }}

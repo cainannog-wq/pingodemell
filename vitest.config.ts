@@ -5,6 +5,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Nos testes (Node puro, sem a condição "react-server" do Next), o
+      // marcador server-only quebraria qualquer import de módulo de
+      // servidor. No build do Next ele continua valendo de verdade.
+      "server-only": path.resolve(__dirname, "./node_modules/server-only/empty.js"),
     },
   },
   test: {

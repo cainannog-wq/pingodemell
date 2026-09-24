@@ -19,6 +19,9 @@ export const TIPO_PRODUTO_LABELS: Record<TipoProduto, string> = {
 };
 
 export type Produto = {
+  // Identificador estável (uuid, único). A chave primária continua sendo o
+  // nome; é o id que as fotos extras (produto_fotos) referenciam.
+  id: string;
   nome: string;
   preco: number;
   descricao: string | null;

@@ -8,6 +8,15 @@ vi.mock("@/lib/supabase/dal", () => ({
   requireAuth: vi.fn().mockResolvedValue({ id: "user-1" }),
 }));
 
+// actions.ts importa as operações de storage da galeria (chave de serviço);
+// aqui elas não são o assunto do teste.
+vi.mock("@/lib/galeria/storage-servidor", () => ({
+  verificarArquivosNovos: vi.fn(async () => null),
+  limparArquivosSemLinha: vi.fn(async () => 0),
+  apagarPastaDoProduto: vi.fn(async () => 0),
+  criarEnviosAssinados: vi.fn(async () => []),
+}));
+
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));

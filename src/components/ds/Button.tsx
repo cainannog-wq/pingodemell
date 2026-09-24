@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties, type ElementType, type ButtonHTMLAttributes } from "react";
+import { useState, type CSSProperties, type ElementType, type ButtonHTMLAttributes, type Ref } from "react";
 import { Icon } from "./Icon";
 import { WhatsAppMark } from "./WhatsAppMark";
 
@@ -63,6 +63,9 @@ export function Button({
   href?: string;
   target?: string;
   rel?: string;
+  // React 19: ref chega como prop comum e segue no ...rest até o elemento
+  // (usado pela galeria de fotos para devolver o foco ao botão certo).
+  ref?: Ref<HTMLButtonElement>;
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
   const [hover, setHover] = useState(false);
   const [active, setActive] = useState(false);
