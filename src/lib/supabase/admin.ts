@@ -9,8 +9,10 @@ import { supabaseUrl } from "./env";
 // runtime, não só por convenção. Marcado com "server-only": o build falha
 // se algum Client Component importar este módulo, direta ou indiretamente.
 //
-// Usos: rate limit de POST /api/pedidos (tabela pedidos_rate_limit, sem
-// policy nenhuma — só acessível via service role) e os arquivos da galeria
+// Usos: POST /api/pedidos — limite por IP (função registrar_tentativa_pedido
+// e tabela pedidos_rate_limit, só a service role executa/acessa) e a
+// gravação do pedido (desde o PR seguranca-api, nenhum papel da API grava
+// direto em pedidos, só o servidor) — e os arquivos da galeria
 // de fotos extras no storage (src/lib/galeria/storage-servidor.ts): o admin
 // logado não enxerga storage.objects (não existe política de SELECT no
 // bucket), então não consegue listar nem apagar arquivo com a própria sessão.

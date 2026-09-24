@@ -2,14 +2,15 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PedidoModoEntrega } from "@/lib/pedidos/types";
 
-// Endpoint que o futuro formulário de checkout deve chamar em vez de
-// inserir direto na tabela `pedidos` pelo navegador. Ver explicação
-// completa em supabase/pedidos-schema.sql (seção "Rate limit por IP").
+// Único caminho de gravação de pedido: o futuro formulário de checkout
+// chama este endpoint (a cliente continua sem login). Desde o PR
+// seguranca-api (supabase/seguranca-api.sql), nenhum papel da API
+// (anon, authenticated) grava direto na tabela `pedidos` nem chama a
+// função do limite por IP — só a chave de serviço, aqui no servidor.
 //
-// A tabela `pedidos` continua com INSERT público via RLS (exigido pelo
-// checkout sem login) e é isso que scripts/test-rls-pedidos.mjs testa.
-// Este arquivo é a camada extra de proteção contra flood, testada
-// separadamente por scripts/test-rate-limit-pedidos.mjs.
+// Testes: route.test.ts (esta rota, com o banco simulado) e
+// scripts/banco/pedidos.mjs + scripts/banco/limite-pedidos.mjs (banco real,
+// em transação desfeita).
 
 const JANELA_SEGUNDOS = 10 * 60; // 10 minutos
 const LIMITE_POR_JANELA = 5; // 5 pedidos por IP a cada 10 minutos
@@ -214,16 +215,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: resultado.error }, { status: 400 });
   }
 
-  // Insert com a service role (mesmo client "admin" já usado pro rate
-  // limit acima) em vez da anon key. Motivo: a policy de SELECT de
-  // `pedidos` é restrita a authenticated, e o Postgres também aplica essa
-  // policy ao RETURNING de um INSERT — um insert anônimo pedindo o id/
-  // numero de volta (.select() depois de .insert()) falha com "new row
-  // violates row-level security policy", mesmo o insert em si sendo
-  // permitido. Não abre brecha nova: este endpoint já valida/sanitiza tudo
-  // acima antes de gravar, e o insert público direto na tabela (sem passar
-  // por aqui) continua funcionando e protegido só pelas policies + CHECK
-  // constraints, que é o que scripts/test-rls-pedidos.mjs testa.
+  // Insert com a service role (mesmo client "admin" do limite acima): é o
+  // único papel que pode gravar em `pedidos`. Este endpoint já validou e
+  // recalculou tudo acima; o gatilho pedidos_recalcular_totais recalcula
+  // os totais de novo no banco.
   const { data: pedido, error: insertError } = await admin
     .from("pedidos")
     .insert(resultado.data)

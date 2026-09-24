@@ -24,7 +24,7 @@ Checkout e pedido
 - Antes de fechar o pedido, formulário com nome, WhatsApp, email, ocasião, modo e endereço de entrega, data e hora, forma de pagamento e observações
 - Ao confirmar, o pedido é gravado na tabela de pedidos do Supabase e, na sequência, o WhatsApp abre com a mensagem formatada. O site não lê nem depende do conteúdo real da mensagem enviada, o registro nasce do clique de confirmação no site, não da conversa no WhatsApp
 - Sem pagamento processado no site, em nenhuma etapa
-- Validação de campo obrigatório no formulário e limite de taxa por IP no backend, para conter spam ou flood de pedido falso, já que a gravação aceita escrita sem login. Sem CAPTCHA visível nessa tela, para não acrescentar fricção ao cliente final
+- Validação de campo obrigatório no formulário e limite de taxa por IP no backend, para conter spam ou flood de pedido falso, já que o pedido é aceito sem login (a gravação é sempre feita pelo servidor, que aplica essa validação e esse limite). Sem CAPTCHA visível nessa tela, para não acrescentar fricção ao cliente final
 
 Painel de pedidos (CMS)
 - Histórico de pedidos: listagem com busca por cliente ou número do pedido, filtro por status, cards de resumo (pedidos no mês, aguardando confirmação, entregues, valor no mês)
@@ -41,8 +41,8 @@ CMS de produtos
 Segurança
 - RLS ativo desde a criação das tabelas
 - Produto: leitura pública, escrita restrita a usuário autenticado
-- Pedido: escrita (insert) pública sem autenticação, leitura e atualização (update) restritas a usuário autenticado
-- Teste automatizado provando que o bloqueio de RLS funciona nas duas tabelas, incluindo confirmar que um visitante anônimo consegue inserir pedido mas não consegue ler ou alterar pedido de outra pessoa
+- Pedido: a cliente pede sem login, mas o pedido só é gravado pelo servidor (POST /api/pedidos, com validação e limite por IP); nenhum papel da API grava direto na tabela. Leitura e atualização (update) restritas a usuário autenticado
+- Teste automatizado provando que o bloqueio de RLS funciona nas duas tabelas, incluindo confirmar que um visitante anônimo não consegue gravar, ler nem alterar pedido direto pela API, e que o servidor continua gravando o pedido
 
 SEO básico
 - Meta tags e sitemap
@@ -89,9 +89,13 @@ Essa lista incorpora, em 11/09/2026, o acréscimo de escopo do painel de pedidos
 
 O "step de quantidade" estava listado como fora de escopo nesta entrega (múltiplos fixos por pedido). Decisão revertida em 22/09/2026: o campo entrou no CRUD de produto do CMS, com três opções (livre, múltiplos de 5, múltiplos de 10), obrigatório, padrão "livre". Por enquanto o campo só existe e é editável no CMS — o carrinho público ainda não lê nem aplica esse valor, isso fica para quando o carrinho (Fase 2, item 3) for implementado.
 
+## Mudança de decisão registrada em 24/09/2026 — gravação de pedido
+
+A regra "Pedido: escrita (insert) pública sem autenticação" mudou no PR seguranca-api: a cliente continua pedindo sem login, mas o pedido só é gravado pelo servidor (POST /api/pedidos, com validação e limite por IP). Nenhum papel da API grava direto na tabela de pedidos — antes, um visitante podia pular o servidor e, com isso, o limite por IP. Ver roadmap.
+
 ## Decisões em aberto
 
-- Foto de referência do bolo personalizado (envio pelo cliente no checkout): ainda em aberto em 14/09/2026, precisa da resposta da cliente antes de fechar. Se for por upload no site, a imagem fica junto do pedido gravado no Supabase (aparece no histórico e no detalhe do pedido no painel), mas exige endurecer a proteção do insert público da tabela de pedido — tipo e tamanho de arquivo, limite de volume — além do que já existe hoje (rate limit por IP e campo obrigatório, sem CAPTCHA). Se for pelo WhatsApp, a foto fica fora do registro no Supabase e não aparece no painel. Ver detalhamento no roadmap.
+- Foto de referência do bolo personalizado (envio pelo cliente no checkout): ainda em aberto em 14/09/2026, precisa da resposta da cliente antes de fechar. Se for por upload no site, a imagem fica junto do pedido gravado no Supabase (aparece no histórico e no detalhe do pedido no painel), mas exige endurecer a proteção da gravação de pedido sem login (feita pelo servidor) — tipo e tamanho de arquivo, limite de volume — além do que já existe hoje (rate limit por IP e campo obrigatório, sem CAPTCHA). Se for pelo WhatsApp, a foto fica fora do registro no Supabase e não aparece no painel. Ver detalhamento no roadmap.
 
 ## Stack
 
