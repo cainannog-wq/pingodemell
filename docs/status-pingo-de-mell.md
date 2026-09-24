@@ -81,6 +81,7 @@ Todos rodam contra o banco único de produção (`SUPABASE_URL` do `.env.local`)
 | `npm run test` (vitest) | regras, telas e Server Actions com banco simulado | não (não acessa rede) |
 | `scripts/test-rls.mjs` | RLS de `produtos` (anon lê só ativo, logado lê todos, anon não escreve) | não (só se a RLS falhar) |
 | `scripts/test-rls-fotos.mjs` | RLS de `produto_fotos` com os produtos fixos de teste | não (só leitura) |
+| `scripts/ver-fotos-anonimo.mjs <id>` | lista, como anônimo, as fotos extras de um produto na ordem | não (só leitura) |
 | `scripts/test-rls-produto-cento-itens.mjs` | RLS de `produto_cento_itens` | **sim** (2 produtos + itens temporários) |
 | `scripts/test-rls-pedidos.mjs` | RLS de `pedidos` | **sim** (1 pedido temporário) |
 | `scripts/test-rls-dias-off.mjs` | RLS de `dias_off` e `segunda_reaberturas` | **sim** (registros temporários) |
