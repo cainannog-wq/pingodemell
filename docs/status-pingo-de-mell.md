@@ -131,6 +131,10 @@ Migração de RLS **não-aditiva** (`supabase/produtos-rls-leitura-ativo.sql`: a
 
 Fora do PR, registrados como diferença do layout: busca, "Ordenar por", "Carregar mais", "Mostrando X de Y", contagem por categoria, card "Prazos" e aviso de quantidade mínima (reavaliar na página 3).
 
+Correção no mesmo PR (24/09/2026): preço do Cento no card (compartilhado com a Home) não quebra mais no meio no celular — o valor fica sempre inteiro e "o cento" desce inteiro quando não cabe, com estilo de texto secundário no celular; desktop sem mudança (Home 1280px idêntica pixel a pixel). Provas visuais do PR ficam na branch `provas/pr-10` (só imagens, não é para merge), referenciadas num comentário do PR #10.
+
+Achado fora deste PR: em 320px o texto do botão "+ Adicionar" encosta na borda direita do botão nos cards de 2 colunas (já existia antes, também na Home).
+
 Pendência fora deste PR: `scripts/test-rls-produto-cento-itens.mjs` e `scripts/test-rls-pedidos.mjs` gravam dados temporários em produção (o do Cento cria dois produtos que aparecem na Lista por alguns segundos) — não rodar sem combinar antes.
 
 ## Próximo pedido ao Claude Code
