@@ -183,56 +183,57 @@ export function GaleriaFotosExtras({
                     style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                   />
                 </div>
+                {/* Título em cima e botões embaixo, ao lado da miniatura: no
+                    celular (375px) o título não cabe numa linha só ao lado
+                    de três botões de 44px. */}
                 <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={{ fontWeight: 600, color: "var(--text-strong)" }}>
-                    Foto extra {numero} de {fotos.length}
-                  </span>
-                  {foto.tipo === "nova" && (
-                    <span>
-                      <Badge variant="soft">Ainda não salva</Badge>
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 4 }}>
+                    <span style={{ fontWeight: 600, color: "var(--text-strong)", whiteSpace: "nowrap" }}>
+                      Foto extra {numero} de {fotos.length}
                     </span>
-                  )}
-                </div>
-                <div style={{ display: "flex", gap: 4, flex: "none" }}>
-                  <Button
-                    ref={registrar(foto.chave, "subir")}
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    iconLeft="arrow_upward"
-                    className="produto-galeria-botao"
-                    aria-label={`Mover foto extra ${numero} para cima`}
-                    title="Subir"
-                    disabled={desabilitado || i === 0}
-                    onClick={() => mover(i, -1)}
-                    style={BOTAO_ICONE}
-                  />
-                  <Button
-                    ref={registrar(foto.chave, "descer")}
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    iconLeft="arrow_downward"
-                    className="produto-galeria-botao"
-                    aria-label={`Mover foto extra ${numero} para baixo`}
-                    title="Descer"
-                    disabled={desabilitado || i === fotos.length - 1}
-                    onClick={() => mover(i, 1)}
-                    style={BOTAO_ICONE}
-                  />
-                  <Button
-                    ref={registrar(foto.chave, "remover")}
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    iconLeft="delete"
-                    className="produto-galeria-botao"
-                    aria-label={`Remover foto extra ${numero}`}
-                    title="Remover"
-                    disabled={desabilitado}
-                    onClick={() => remover(i)}
-                    style={{ ...BOTAO_ICONE, color: "var(--pdm-error)" }}
-                  />
+                    {foto.tipo === "nova" && <Badge variant="soft">Ainda não salva</Badge>}
+                  </div>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <Button
+                      ref={registrar(foto.chave, "subir")}
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      iconLeft="arrow_upward"
+                      className="produto-galeria-botao"
+                      aria-label={`Mover foto extra ${numero} para cima`}
+                      title="Subir"
+                      disabled={desabilitado || i === 0}
+                      onClick={() => mover(i, -1)}
+                      style={BOTAO_ICONE}
+                    />
+                    <Button
+                      ref={registrar(foto.chave, "descer")}
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      iconLeft="arrow_downward"
+                      className="produto-galeria-botao"
+                      aria-label={`Mover foto extra ${numero} para baixo`}
+                      title="Descer"
+                      disabled={desabilitado || i === fotos.length - 1}
+                      onClick={() => mover(i, 1)}
+                      style={BOTAO_ICONE}
+                    />
+                    <Button
+                      ref={registrar(foto.chave, "remover")}
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      iconLeft="delete"
+                      className="produto-galeria-botao"
+                      aria-label={`Remover foto extra ${numero}`}
+                      title="Remover"
+                      disabled={desabilitado}
+                      onClick={() => remover(i)}
+                      style={{ ...BOTAO_ICONE, color: "var(--pdm-error)" }}
+                    />
+                  </div>
                 </div>
               </li>
             );
