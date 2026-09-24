@@ -67,6 +67,21 @@ describe("GaleriaFotosExtras — limite de 9", () => {
   });
 });
 
+describe("GaleriaFotosExtras — adicionar uma de cada vez", () => {
+  it("cada foto nova entra no fim da lista, sem substituir a anterior", async () => {
+    render(<Galeria iniciais={[]} />);
+    const input = screen.getByTestId("galeria-input");
+    for (const nome of ["a.jpg", "b.jpg", "c.jpg"]) {
+      await act(async () => {
+        fireEvent.change(input, { target: { files: [new File(["x"], nome, { type: "image/jpeg" })] } });
+      });
+    }
+    expect(registro.lista).toHaveLength(3);
+    expect(screen.getAllByText("Ainda não salva")).toHaveLength(3);
+    expect(screen.getByText("3 de 9")).toBeInTheDocument();
+  });
+});
+
 describe("GaleriaFotosExtras — ordem e remoção", () => {
   it("subir desabilitado na primeira, descer na última, rótulos identificam a foto", () => {
     render(<Galeria iniciais={existentes(3)} />);
