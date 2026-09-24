@@ -5,7 +5,9 @@
 -- NÃO-ADITIVA: muda a política de RLS de uma tabela que já está em uso.
 -- Pela regra fechada com o Cainan em 22/09/2026 (ver CLAUDE.md), só vai
 -- para produção DEPOIS do merge do PR lista-produtos, quando o Cainan pedir.
--- Status: NÃO aplicada em produção.
+-- Status: JÁ APLICADA em produção, depois do merge do PR #10, como
+-- migração 20260924135256 "produtos_rls_leitura_ativo" (24/09/2026,
+-- 13:52:56 UTC).
 --
 -- Prova antes do merge (23/09/2026): executada uma única vez dentro de uma
 -- transação desfeita de propósito (erro no fim, lock_timeout 2s,
