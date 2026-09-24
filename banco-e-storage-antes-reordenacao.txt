@@ -1,0 +1,27 @@
+Morango Banhado (produto_id 8b4f3b06-7e38-4d9e-ad8e-3a6a4935e1a1)
+ANTES da reordenação — 24/09/2026, depois de salvar a 9ª foto (prints 08 e 09)
+
+produto_fotos (posição → arquivo em galeria/8b4f3b06-7e38-4d9e-ad8e-3a6a4935e1a1/):
+1  a86f1d82-e12e-4976-af5e-190833d495b6.webp
+2  3ba21a17-95da-4ab1-a437-bb8e57f3af6e.jpg
+3  b47fe1ce-8f1f-44a0-9a63-07cece6c9cb4.webp
+4  fb81b742-8637-4d86-b1d5-6f484137ee76.webp
+5  91adb232-598e-422e-8cd1-4bf50983c3e7.webp
+6  2363dac0-6450-458b-8235-32d6939f5493.webp
+7  4e56875a-9c55-4c39-b608-4a0920e04d20.webp
+8  8e4a918e-a7ca-4495-9455-9c2a5f107e22.jpg   (foto do iPhone)
+9  bdf2816f-b95c-4fe7-8a87-be3c7f6bd7c1.webp
+
+storage.objects na pasta (9 arquivos, todos com linha):
+2363dac0-6450-458b-8235-32d6939f5493.webp  126008 B
+3ba21a17-95da-4ab1-a437-bb8e57f3af6e.jpg  1017095 B
+4e56875a-9c55-4c39-b608-4a0920e04d20.webp   75120 B
+8e4a918e-a7ca-4495-9455-9c2a5f107e22.jpg   704265 B
+91adb232-598e-422e-8cd1-4bf50983c3e7.webp  131724 B
+a86f1d82-e12e-4976-af5e-190833d495b6.webp   67130 B
+b47fe1ce-8f1f-44a0-9a63-07cece6c9cb4.webp   18622 B
+bdf2816f-b95c-4fe7-8a87-be3c7f6bd7c1.webp   18622 B
+fb81b742-8637-4d86-b1d5-6f484137ee76.webp  173126 B
+
+Botão "Adicionar fotos": disabled=true; aria-describedby aponta para o texto
+"Limite de 9 fotos extras atingido (10 com a capa). Remova uma foto para adicionar outra."

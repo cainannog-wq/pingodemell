@@ -1,0 +1,18 @@
+Morango Banhado (produto_id 8b4f3b06-7e38-4d9e-ad8e-3a6a4935e1a1)
+DEPOIS da reordenação (última → primeira) e Salvar — 24/09/2026 (print 10)
+
+produto_fotos (posição → arquivo em galeria/8b4f3b06-7e38-4d9e-ad8e-3a6a4935e1a1/):
+1  bdf2816f-b95c-4fe7-8a87-be3c7f6bd7c1.webp   ← era a 9
+2  a86f1d82-e12e-4976-af5e-190833d495b6.webp
+3  3ba21a17-95da-4ab1-a437-bb8e57f3af6e.jpg
+4  b47fe1ce-8f1f-44a0-9a63-07cece6c9cb4.webp
+5  fb81b742-8637-4d86-b1d5-6f484137ee76.webp
+6  91adb232-598e-422e-8cd1-4bf50983c3e7.webp
+7  2363dac0-6450-458b-8235-32d6939f5493.webp
+8  4e56875a-9c55-4c39-b608-4a0920e04d20.webp
+9  8e4a918e-a7ca-4495-9455-9c2a5f107e22.jpg   (foto do iPhone)
+
+storage.objects na pasta: os mesmos 9 arquivos, todos com linha (nenhum criado, nenhum apagado).
+
+Texto alternativo no HTML do formulário (capa conta como foto 1):
+"Morango Banhado, foto 2 de 10" … "Morango Banhado, foto 10 de 10"
