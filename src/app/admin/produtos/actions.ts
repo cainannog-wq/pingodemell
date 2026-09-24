@@ -5,9 +5,17 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/supabase/dal";
 import { parseProdutoForm } from "@/lib/produtos/parse";
-
-// Nome do bucket público de storage onde ficam as fotos dos produtos.
-const BUCKET = "Pingo de Mell";
+import {
+  BUCKET_FOTOS as BUCKET,
+  MENSAGEM_LIMITE_SERVIDOR,
+  ehExtensaoFoto,
+  ehUuid,
+  lerGaleria,
+  type ExtensaoFoto,
+  type ItemGaleria,
+} from "@/lib/galeria/regras";
+import { apagarPastaDoProduto, criarEnviosAssinados, verificarArquivosNovos, type EnvioAssinado } from "@/lib/galeria/storage-servidor";
+import { galeriaMudou, gravarGaleria, lerFotosAtuais, limparSobras } from "./galeria-servidor";
 
 export type ProdutoFormState = {
   error?: string;
@@ -79,6 +87,21 @@ async function salvarSubitensCento(
   return null;
 }
 
+function fotosNovas(itens: ItemGaleria[]) {
+  return itens.filter((item): item is { novo: string; ext: ExtensaoFoto } => "novo" in item);
+}
+
+// Galeria de fotos extras ao Salvar, na ordem:
+// 1. o navegador já subiu as fotos novas (prepararEnvioFotos) para
+//    galeria/{id}/ — nada foi gravado no banco ainda;
+// 2. aqui o servidor confere as fotos novas (existem, até 2 MB, tipo real);
+// 3. grava o produto (como antes);
+// 4. subitens do Cento (como antes);
+// 5. grava a galeria inteira numa transação (salvar_produto_fotos);
+// 6. apaga da pasta todo arquivo sem linha no banco (removidas e sobras).
+// Falha em 2 ou 3: nada gravado, arquivos novos apagados. Falha em 4 ou 5:
+// produto salvo, galeria como estava, arquivos novos apagados. Falha em 6:
+// só vai para o log (o próximo Salvar que mexer na galeria limpa).
 export async function createProduto(
   _prevState: ProdutoFormState,
   formData: FormData
@@ -113,17 +136,35 @@ export async function createProduto(
     return { error: "Já existe um produto cadastrado com esse nome." };
   }
 
+  // O id do produto novo vem do formulário (gerado no navegador) porque as
+  // fotos extras sobem para galeria/{id}/ antes de o produto existir.
+  const produtoId = formData.get("id");
+  if (!ehUuid(produtoId)) return { error: "Formulário inválido. Recarregue a página e tente de novo." };
+
+  const galeria = lerGaleria(formData.get("galeria"));
+  if (!galeria.ok) return { error: galeria.erro };
+  if (galeria.itens.some((item) => "id" in item)) return { error: "Lista de fotos extras inválida." };
+  const novas = fotosNovas(galeria.itens);
+
+  const erroFotos = await verificarArquivosNovos(produtoId, novas);
+  if (erroFotos) {
+    await limparSobras(supabase, produtoId);
+    return { error: erroFotos };
+  }
+
   let image_url: string | null = null;
   const foto = formData.get("foto");
   if (foto instanceof File && foto.size > 0) {
     try {
       image_url = await uploadFoto(supabase, foto);
     } catch (err) {
+      if (novas.length > 0) await limparSobras(supabase, produtoId);
       return { error: err instanceof Error ? err.message : "Falha ao enviar a foto." };
     }
   }
 
   const { error } = await supabase.from("produtos").insert({
+    id: produtoId,
     nome,
     preco,
     descricao,
@@ -138,12 +179,27 @@ export async function createProduto(
   });
 
   if (error) {
+    if (novas.length > 0) await limparSobras(supabase, produtoId);
     return { error: `Não foi possível salvar o produto: ${error.message}` };
   }
 
   if (tipo === "cento") {
     const subitensError = await salvarSubitensCento(supabase, nome, subitens);
-    if (subitensError) return { error: subitensError };
+    if (subitensError) {
+      if (novas.length > 0) await limparSobras(supabase, produtoId);
+      return { error: subitensError };
+    }
+  }
+
+  if (novas.length > 0) {
+    const erroGaleria = await gravarGaleria(supabase, produtoId, galeria.itens);
+    if (erroGaleria) {
+      await limparSobras(supabase, produtoId);
+      return {
+        error: `Produto salvo, mas as fotos extras não foram salvas: ${erroGaleria} Abra o produto na listagem para adicioná-las de novo.`,
+      };
+    }
+    await limparSobras(supabase, produtoId);
   }
 
   revalidatePath("/admin/produtos");
@@ -187,6 +243,32 @@ export async function updateProduto(
     }
   }
 
+  const { data: atual } = await supabase
+    .from("produtos")
+    .select("id")
+    .eq("nome", nomeOriginal)
+    .maybeSingle<{ id: string }>();
+  if (!atual || !ehUuid(atual.id)) return { error: "Produto não encontrado. Ele pode ter sido excluído ou renomeado." };
+  const produtoId = atual.id;
+
+  // Sem o campo "galeria" no formulário, a galeria não é tocada. Com ele,
+  // só é regravada se mudou (foto nova, removida ou ordem diferente).
+  let itensGaleria: ItemGaleria[] | null = null;
+  if (formData.has("galeria")) {
+    const galeria = lerGaleria(formData.get("galeria"));
+    if (!galeria.ok) return { error: galeria.erro };
+    const atuais = await lerFotosAtuais(supabase, produtoId);
+    if (atuais === null) return { error: "Não foi possível ler as fotos extras atuais. Tente de novo." };
+    if (galeriaMudou(galeria.itens, atuais)) itensGaleria = galeria.itens;
+  }
+  const novas = itensGaleria ? fotosNovas(itensGaleria) : [];
+
+  const erroFotos = await verificarArquivosNovos(produtoId, novas);
+  if (erroFotos) {
+    await limparSobras(supabase, produtoId);
+    return { error: erroFotos };
+  }
+
   const update: Record<string, unknown> = {
     nome,
     preco,
@@ -205,6 +287,7 @@ export async function updateProduto(
     try {
       update.image_url = await uploadFoto(supabase, foto);
     } catch (err) {
+      if (novas.length > 0) await limparSobras(supabase, produtoId);
       return { error: err instanceof Error ? err.message : "Falha ao enviar a foto." };
     }
   }
@@ -215,6 +298,7 @@ export async function updateProduto(
     .eq("nome", nomeOriginal);
 
   if (error) {
+    if (novas.length > 0) await limparSobras(supabase, produtoId);
     return { error: `Não foi possível salvar o produto: ${error.message}` };
   }
 
@@ -223,7 +307,23 @@ export async function updateProduto(
   // outro cento) já foram renomeadas automaticamente pelo banco no update
   // acima. `nome` abaixo é sempre o nome atual (novo, se mudou).
   const subitensError = await salvarSubitensCento(supabase, nome, tipo === "cento" ? subitens : []);
-  if (subitensError) return { error: subitensError };
+  if (subitensError) {
+    if (novas.length > 0) await limparSobras(supabase, produtoId);
+    return { error: subitensError };
+  }
+
+  // Galeria por último entre as gravações: se ela falhar, nada depois
+  // dela ficou pela metade, e um novo Salvar reenvia tudo sem duplicar.
+  if (itensGaleria) {
+    const erroGaleria = await gravarGaleria(supabase, produtoId, itensGaleria);
+    if (erroGaleria) {
+      await limparSobras(supabase, produtoId);
+      return {
+        error: `Produto salvo, mas as fotos extras não foram atualizadas: ${erroGaleria} Suas alterações nas fotos continuam na tela; clique em Salvar de novo.`,
+      };
+    }
+    await limparSobras(supabase, produtoId);
+  }
 
   revalidatePath("/admin/produtos");
   redirect("/admin/produtos");
@@ -270,10 +370,20 @@ export async function updateProdutoDestaque(
   return {};
 }
 
-export async function deleteProduto(nome: string) {
+// Ordem: apaga o produto (o banco apaga em cascata as fotos extras e os
+// itens de Cento) e só depois os arquivos da pasta galeria/{id}/. Se
+// apagar os arquivos falhar, o produto já saiu: devolve um aviso para a
+// listagem e registra no log. A capa continua no storage, como antes.
+export async function deleteProduto(nome: string): Promise<{ aviso?: string }> {
   await requireAuth();
 
   const supabase = await createClient();
+  const { data: produto } = await supabase
+    .from("produtos")
+    .select("id")
+    .eq("nome", nome)
+    .maybeSingle<{ id: string }>();
+
   const { error } = await supabase.from("produtos").delete().eq("nome", nome);
 
   if (error) {
@@ -281,4 +391,45 @@ export async function deleteProduto(nome: string) {
   }
 
   revalidatePath("/admin/produtos");
+
+  if (produto && ehUuid(produto.id)) {
+    try {
+      await apagarPastaDoProduto(produto.id);
+    } catch (erro) {
+      console.error("Galeria: falha ao apagar a pasta do produto excluído", produto.id, erro);
+      return { aviso: "Produto excluído, mas algumas fotos extras não puderam ser apagadas do armazenamento. Avise o suporte." };
+    }
+  }
+  return {};
+}
+
+// Passo 1 do Salvar com fotos novas: autoriza o navegador a subir cada foto
+// para um caminho escolhido aqui (galeria/{id}/{uuid}.webp|jpg). Nada é
+// gravado no banco.
+export async function prepararEnvioFotos(
+  produtoId: string,
+  extensoes: string[]
+): Promise<{ envios?: EnvioAssinado[]; error?: string }> {
+  await requireAuth();
+
+  if (!ehUuid(produtoId)) return { error: "Formulário inválido. Recarregue a página e tente de novo." };
+  if (!Array.isArray(extensoes) || extensoes.length > 9) return { error: MENSAGEM_LIMITE_SERVIDOR };
+  if (!extensoes.every(ehExtensaoFoto)) return { error: "A foto precisa ser JPG ou WebP." };
+
+  try {
+    return { envios: await criarEnviosAssinados(produtoId, extensoes) };
+  } catch (erro) {
+    console.error("Galeria: falha ao autorizar envio de fotos", produtoId, erro);
+    return { error: "Não foi possível preparar o envio das fotos. Tente de novo." };
+  }
+}
+
+// Chamado pelo navegador quando o envio de uma foto falha no meio: apaga
+// da pasta do produto o que já tinha subido nesta tentativa (todo arquivo
+// sem linha no banco).
+export async function descartarEnviosFotos(produtoId: string): Promise<void> {
+  await requireAuth();
+  if (!ehUuid(produtoId)) return;
+  const supabase = await createClient();
+  await limparSobras(supabase, produtoId);
 }

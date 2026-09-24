@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Produto } from "@/lib/produtos/types";
+import { BUCKET_FOTOS } from "@/lib/galeria/regras";
 import { updateProduto } from "../actions";
 import { ProdutoForm } from "../produto-form";
 import { Icon, Button } from "@/components/ds";
@@ -33,6 +34,19 @@ export default async function EditarProdutoPage({
 
   const initialSubitens = (itensCento ?? []).map((item) => item.subitem_nome as string);
 
+  const { data: linhasFotos } = produto
+    ? await supabase
+        .from("produto_fotos")
+        .select("id, caminho")
+        .eq("produto_id", produto.id)
+        .order("posicao", { ascending: true })
+    : { data: [] };
+
+  const fotosIniciais = (linhasFotos ?? []).map((linha) => ({
+    id: linha.id as string,
+    url: supabase.storage.from(BUCKET_FOTOS).getPublicUrl(linha.caminho as string).data.publicUrl,
+  }));
+
   if (!produto) {
     return (
       <div className="admin-empty-state" style={{ padding: "80px 24px", display: "grid", placeItems: "center", textAlign: "center", background: "var(--pdm-cream-warm)", borderRadius: "var(--radius)" }}>
@@ -61,6 +75,8 @@ export default async function EditarProdutoPage({
       <ProdutoForm
         action={updateProduto.bind(null, produto.nome)}
         produto={produto}
+        produtoId={produto.id}
+        fotosIniciais={fotosIniciais}
         submitLabel="Salvar alterações"
         produtosDisponiveis={produtos ?? []}
         initialSubitens={initialSubitens}

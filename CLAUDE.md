@@ -23,3 +23,9 @@ outro caminho) neste projeto, não só para um PR específico.
 Todo PR que traga migração de schema informa na descrição do PR qual das duas
 categorias acima ela é (aditiva ou não-aditiva) e se ela já foi aplicada em
 produção antes do merge ou se só será aplicada depois.
+
+Todo PR que traga migração de schema também atualiza, no mesmo PR, o
+`docs/status-pingo-de-mell.md` (estado técnico): a linha da migração na
+tabela de migrações aplicadas (arquivo, registro no Supabase, data e
+categoria) e, se mudou, as políticas de RLS, funções, rotas e scripts de
+teste listados lá.

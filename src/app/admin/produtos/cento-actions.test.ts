@@ -12,8 +12,12 @@ function makeFromMock() {
   return vi.fn((table: string) => {
     if (table === "produtos") {
       return {
-        select: () => ({
-          eq: () => ({ maybeSingle: async () => ({ data: null }) }),
+        // select("nome"): checagem de nome repetido (nenhum). select("id"):
+        // id do produto em edição, usado pela galeria de fotos extras.
+        select: (colunas: string) => ({
+          eq: () => ({
+            maybeSingle: async () => ({ data: colunas === "id" ? { id: "c7b3f34c-6f8f-4b39-a8fb-31369f1c4aee" } : null }),
+          }),
         }),
         insert: async (payload: unknown) => {
           insertCalls.push({ table, payload });
@@ -51,6 +55,15 @@ vi.mock("@/lib/supabase/dal", () => ({
   requireAuth: vi.fn().mockResolvedValue({ id: "user-1" }),
 }));
 
+// actions.ts importa as operações de storage da galeria (chave de serviço);
+// aqui elas não são o assunto do teste.
+vi.mock("@/lib/galeria/storage-servidor", () => ({
+  verificarArquivosNovos: vi.fn(async () => null),
+  limparArquivosSemLinha: vi.fn(async () => 0),
+  apagarPastaDoProduto: vi.fn(async () => 0),
+  criarEnviosAssinados: vi.fn(async () => []),
+}));
+
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
@@ -77,6 +90,7 @@ function buildFormData(fields: Record<string, string>, subitens: string[] = []) 
 }
 
 const CAMPOS_CENTO = {
+  id: "c7b3f34c-6f8f-4b39-a8fb-31369f1c4aee",
   nome: "Cento de salgados sortidos",
   preco: "90,00",
   pedido_minimo: "1",
