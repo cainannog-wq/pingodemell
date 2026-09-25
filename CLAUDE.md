@@ -106,3 +106,48 @@ Decisão fechada com o Cainan em 24/09/2026, no PR noindex-homologacao:
 - **O Cainan só valida depois que o Claude disser "homologação = commit X do
   PR Y"**, conferido na lista de deploys da Netlify (deploy "Branch Deploy:
   homologacao@<commit>", pronto) contra `git rev-parse origin/homologacao`.
+- Enquanto valer o fluxo em lote (seção abaixo), "igual à produção" passa a
+  ser **"igual à `lote`"** (a próxima produção): depois do merge na `lote`,
+  `git push --force-with-lease origin origin/lote:homologacao`.
+
+## Regra de custo — créditos da Netlify e merges em lote
+
+Decisão fechada com o Cainan em 25/09/2026, no PR economia-deploys. Plano
+Free da Netlify: 300 créditos por ciclo (ciclo atual: 20/09 a 19/10/2026), divididos
+entre os 6 sites da conta. **Cada deploy de produção publicado custa 15
+créditos**; Deploy Preview, branch deploy (homologação), build pulado e build
+que falha não custam. Se os créditos acabam, **todos os sites da conta saem
+do ar** até o ciclo virar, não só o pingodemell. Saldo e histórico em
+`docs/status-pingo-de-mell.md`, seção "Créditos da Netlify".
+
+- **Só merge na `main` gera deploy pago.** Nada de push direto na `main`.
+  Validação sempre na homologação ou em Deploy Preview.
+- **Até 19/10/2026 (fim do ciclo atual), nenhum deploy de produção**, só
+  correção urgente com o ok explícito do Cainan.
+- **Commit que não deve publicar leva `[skip netlify]` na mensagem** (o
+  commit do heartbeat já leva). Não usar `[skip ci]`: também pula o GitHub
+  Actions.
+- **Regra de ignorar build** (`netlify.toml`, `scripts/netlify/ignorar-build.mjs`):
+  a Netlify pula o build quando só mudou `docs/`, `*.md`, `supabase/*.sql`,
+  `scripts/`, `.github/`, `heartbeat-log.txt` ou `.gitignore`. Qualquer
+  outro arquivo gera deploy.
+
+Fluxo de merges em lote (vale até o ciclo virar e depois, se continuar útil):
+
+1. A branch `lote` nasce igual à `main`. **Todo PR novo nasce da `lote` e é
+   aberto contra a `lote`**, não contra a `main`.
+2. A validação de cada PR continua na homologação, pelo fluxo acima
+   (gratuito). Depois do ok do Cainan, o PR é mergeado na `lote`, o que não
+   gera deploy nenhum, e a homologação volta a ficar igual à `lote`.
+3. **A `main` só recebe um PR da `lote` quando o Cainan pedir.** Esse PR é
+   conferido na homologação antes, e o merge gera um único deploy de
+   produção com tudo junto.
+4. Migração: aditiva pode ir para produção antes do merge da `lote` na
+   `main`, como hoje. Não aditiva só depois do merge da `lote` na `main`, na
+   ordem dos PRs, e cada PR que tiver uma informa isso na descrição.
+   Enquanto ela não é aplicada, o código na `lote` precisa funcionar com o
+   banco como está.
+5. Exceção: correção urgente em produção pode ir direto para a `main`, só
+   com o ok explícito do Cainan.
+6. **Antes de cada merge na `main`, o Claude diz quantos créditos restam e
+   quando o ciclo vira** (painel da Netlify, Usage & billing).

@@ -1,5 +1,9 @@
 [build]
   command = "npm run build"
+  # Pula o build quando só mudou o que não entra no site (docs, .md, .sql,
+  # scripts, .github, heartbeat-log.txt, .gitignore). Créditos da Netlify:
+  # ver scripts/netlify/ignorar-build.mjs e docs/status-pingo-de-mell.md.
+  ignore = "node scripts/netlify/ignorar-build.mjs"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
