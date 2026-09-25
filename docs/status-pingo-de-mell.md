@@ -2,7 +2,7 @@
 
 O status do projeto fica fora do repositório; este arquivo registra apenas o estado técnico.
 
-Todo PR que traz migração de schema atualiza este arquivo no mesmo PR (ver CLAUDE.md). Última atualização: 24/09/2026 (PR `seguranca-api`).
+Todo PR que traz migração de schema atualiza este arquivo no mesmo PR (ver CLAUDE.md). Última atualização: 25/09/2026 (aplicação de `seguranca-api.sql` em produção, depois do merge do PR #12).
 
 Banco único: o projeto Supabase `npervqefspmwmrekskcb` (região `sa-east-1`) atende produção, previews da Netlify e os scripts locais (`SUPABASE_URL` do `.env.local`). Não existe banco de staging.
 
@@ -25,7 +25,7 @@ As anteriores a 22/09/2026 foram aplicadas pelo editor SQL do Supabase, sem regi
 | `produtos-id-atualizado-em.sql` | `20260923142918 produtos_id_atualizado_em` | 23/09/2026 14:29 | aditiva (aplicada antes do merge) |
 | `produtos-rls-leitura-ativo.sql` | `20260924135256 produtos_rls_leitura_ativo` | 24/09/2026 13:52 | **não-aditiva** (aplicada depois do merge do PR #10) |
 | `produto-fotos.sql` | `20260924152541 produto_fotos` | 24/09/2026 15:25:41 | aditiva (aplicada antes do merge do PR `galeria-admin`) |
-| `seguranca-api.sql` | **ainda não aplicada** | — | **não-aditiva** (retira permissões e uma política de objetos em uso): só depois do merge do PR `seguranca-api`, com lock_timeout de 2s |
+| `seguranca-api.sql` | `20260924235504 seguranca_api` | 24/09/2026 23:55:04 | **não-aditiva** (retira permissões e uma política de objetos em uso); aplicada depois do merge do PR #12, uma vez, com lock_timeout de 2s; SQL registrado idêntico ao do merge (sha256 `2b428e8b…0292`) |
 
 ## Rotas
 
@@ -46,13 +46,13 @@ API: `POST /api/pedidos` — **único caminho de gravação de pedido** (a clien
 
 RLS ativa em todas as tabelas de `public` (e toda tabela nova nasce com RLS, pelo gatilho de evento `ensure_rls` → `rls_auto_enable`).
 
-**Atenção:** a coluna "depois" só vale quando `seguranca-api.sql` for aplicada (depois do merge). Até lá, produção está na coluna "hoje".
+Em vigor desde 24/09/2026 23:55 UTC (`seguranca-api.sql`); a coluna "antes" fica como registro.
 
 ### Permissões por papel (antes da RLS)
 
 S = ler, I = inserir, U = alterar, D = apagar, T = truncate (ignora a RLS).
 
-| Tabela | anon hoje | anon depois | authenticated hoje | authenticated depois |
+| Tabela | anon antes | anon agora | authenticated antes | authenticated agora |
 |---|---|---|---|---|
 | `produtos` | S I U D T | S | S I U D T | S I U D |
 | `produto_fotos` | S | S | S I U D | S I U D |
@@ -70,7 +70,7 @@ A chave de serviço (`service_role`) ignora a RLS e não muda.
 | `produtos` | anon: só `ativo = true`; authenticated: todos | insert/update/delete: authenticated |
 | `produto_cento_itens` | pública (todos) | insert/update/delete: authenticated |
 | `produto_fotos` | anon: só fotos de produto com `ativo = true` (condição na própria política); authenticated: todas | insert/update/delete: authenticated |
-| `pedidos` | authenticated | hoje: insert público com `status = 'aguardando_confirmacao'`. **Depois: sem política de insert — só o servidor grava** (chave de serviço). update/delete: authenticated |
+| `pedidos` | authenticated | **sem política de insert — só o servidor grava** (chave de serviço; a política de insert público foi removida em 24/09/2026). update/delete: authenticated |
 | `pedidos_rate_limit` | nenhuma política (só service role) | nenhuma política (só service role) |
 | `heartbeat` | nenhuma política (só service role) | nenhuma política (só service role) |
 | `dias_off`, `segunda_reaberturas` | pública | insert/update/delete: authenticated |
@@ -82,23 +82,23 @@ Limite aceito: a RLS de `produto_fotos` esconde a lista de fotos de produto inat
 
 ## Funções e gatilhos em `public`
 
-| Função | Segurança | Executável por (hoje → depois de `seguranca-api.sql`) | Uso |
+| Função | Segurança | Executável por (antes → agora, desde `seguranca-api.sql`) | Uso |
 |---|---|---|---|
 | `salvar_produto_fotos(uuid, jsonb)` | INVOKER | authenticated (não anon) | grava a galeria de um produto numa transação |
 | `registrar_tentativa_pedido(...)` | DEFINER | anon e authenticated → **só service_role** | limite por IP de `POST /api/pedidos` |
 | `produto_fotos_limite()` | INVOKER | ninguém direto (gatilho) | gatilho `produto_fotos_limite` (máx. 9 fotos extras) |
 | `produtos_set_atualizado_em()` | INVOKER | anon e authenticated → ninguém direto (gatilho) | gatilho `produtos_set_atualizado_em` (todo update em `produtos`) |
 | `pedidos_recalcular_totais()` | INVOKER | anon e authenticated → ninguém direto (gatilho) | gatilho `trg_pedidos_recalcular_totais` |
-| `pedidos_set_status_atualizado_em()` | INVOKER; `search_path` fixo só depois | anon e authenticated → ninguém direto (gatilho) | gatilho `trg_pedidos_status_atualizado_em` |
+| `pedidos_set_status_atualizado_em()` | INVOKER; `search_path` fixo (vazio) | anon e authenticated → ninguém direto (gatilho) | gatilho `trg_pedidos_status_atualizado_em` |
 | `rls_auto_enable()` | DEFINER | anon e authenticated → ninguém direto (gatilho de evento) | liga RLS em tabela nova |
 
-Padrão para objeto novo: hoje, toda função nova criada pelo papel `postgres` em `public` nasce executável por PUBLIC, anon e authenticated. Depois de `seguranca-api.sql`, nasce sem EXECUTE para eles (funções criadas pelo painel da Supabase, papel `supabase_admin`, continuam com o padrão antigo). Tabela nova continua nascendo com todas as permissões para anon e authenticated, protegida só pela RLS — a migração que cria a tabela tira o que não é preciso (ver CLAUDE.md).
+Padrão para objeto novo: desde `seguranca-api.sql`, toda função nova criada pelo papel `postgres` nasce sem EXECUTE para PUBLIC, anon e authenticated (antes nascia executável por eles) (funções criadas pelo painel da Supabase, papel `supabase_admin`, continuam com o padrão antigo). Tabela nova continua nascendo com todas as permissões para anon e authenticated, protegida só pela RLS — a migração que cria a tabela tira o que não é preciso (ver CLAUDE.md).
 
 ## Verificador de segurança do Supabase (security advisors)
 
-Hoje (24/09/2026): WARN `registrar_tentativa_pedido` e `rls_auto_enable` executáveis como DEFINER por anon e por authenticated; WARN `search_path` não fixo em `pedidos_set_status_atualizado_em`; WARN proteção de senha vazada desligada (Auth); INFO RLS sem política em `heartbeat` e `pedidos_rate_limit` (intencional: só a chave de serviço).
+Agora (24/09/2026 23:55 UTC, verificador real, depois de `seguranca-api.sql`): INFO RLS sem política em `heartbeat` e `pedidos_rate_limit` (intencional: só a chave de serviço, e anon/authenticated nem têm permissão nelas); WARN proteção de senha vazada desligada (configuração do Auth, fora da migração).
 
-Depois de `seguranca-api.sql` (simulado em transação desfeita, `node scripts/banco/permissoes.mjs --com-migracao`): só os dois INFO intencionais. O WARN da senha vazada continua (é configuração do Auth, fora da migração).
+Antes da migração havia também: WARN `registrar_tentativa_pedido` e `rls_auto_enable` executáveis como DEFINER por anon e por authenticated; WARN `search_path` não fixo em `pedidos_set_status_atualizado_em`.
 
 ## Auth
 
@@ -146,9 +146,9 @@ Testes de banco: `scripts/banco/`, cada um numa transação desfeita no fim, con
 | `scripts/check-service-key-bundle.mjs` | a service role key não aparece em `.next/static` (rodar depois do build) | nenhum (arquivos locais) | não |
 | `scripts/test-auth-rate-limit.mjs` | limite de tentativas de login do Supabase Auth | Auth de produção | não grava dados; **manual**: tentativas de login seguidas podem bloquear o login do seu IP por alguns minutos |
 
-Antes de `seguranca-api.sql` ser aplicada, os testes sem `--com-migracao` e o `http-sem-gravar.mjs` falham nas verificações das correções (brecha ainda aberta) — sem gravar nada.
+Última rodada contra produção (24/09/2026, depois da aplicação, sem `--com-migracao`): os 6 testes de banco 92/92, `http-sem-gravar.mjs` 15/15, banco idêntico antes e depois, contador de pedidos em 1047.
 
-Conexão com o banco: criptografada, mas sem conferir o certificado enquanto `supabase/prod-ca.crt` não existir (baixar no painel, Database > Settings > SSL Configuration; é público, pode ir para o repositório). `scripts/banco/lib.mjs` passa a conferir sozinho quando o arquivo existir.
+Conexão com o banco: TLS conferindo o certificado do servidor com `supabase/prod-ca.crt` (certificado público da Supabase, baixado no painel em Database > Settings > SSL Configuration). Provado em 24/09/2026: conecta com o certificado certo e é recusada com um certificado de outra autoridade (`SUPABASE_DB_CA=<arquivo>` troca o certificado para essa prova; se o arquivo não existir, o script para).
 
 Scripts de carga — **gravam em produção por definição, não são teste**: `scripts/seed-produtos-demo.mjs`, `scripts/seed-produto-cento-demo.mjs`, `scripts/seed-pedidos-demo.mjs`, `scripts/create-test-admin.mjs`.
 
@@ -163,4 +163,5 @@ Como fazer, com o ok: 6 requisições seguidas a `https://<deploy>/api/pedidos`,
 ## Registros
 
 - **Número de pedido 1047 gasto em 24/09/2026**, numa transação desfeita que provou que o anônimo gravava direto em `pedidos` (o contador não volta com o rollback). O próximo pedido real será o 1048; não existe pedido 1047.
-- **Limpeza pendente (depois do merge do PR `seguranca-api`, com ok):** as 4 linhas de `pedidos_rate_limit` (testes de 11 e 15/09) e o dia off de 22/09/2026 com observação "testeee" (teste manual pelo admin).
+- **Limpeza feita em 25/09/2026 ~00:00 UTC, com ok:** as 4 linhas de `pedidos_rate_limit` (testes de 11 e 15/09; 4 → 0) e o dia off de 22/09/2026 com observação "testeee" (teste manual pelo admin; `dias_off` 2 → 1).
+- **Erro de console no site público (visto em 24/09/2026, não corrigido):** React #418 (a página montada no navegador não bate com o HTML do servidor) na Home e na Lista, em produção. Não vem do banco (essas páginas buscam os dados no servidor). Suspeita não confirmada: o script que a Netlify injeta (`/.netlify/scripts/hud?variant=public`). Os 404 no console são pré-carregamento das rotas reservadas que ainda não existem.

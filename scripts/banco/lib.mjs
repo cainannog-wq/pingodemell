@@ -32,7 +32,9 @@ import pg from "pg";
 
 export const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 export const MIGRACAO = path.join(raiz, "supabase", "seguranca-api.sql");
-const CERTIFICADO = path.join(raiz, "supabase", "prod-ca.crt");
+// Certificado da autoridade da Supabase (público). SUPABASE_DB_CA troca o
+// arquivo — serve para provar que um certificado errado é recusado.
+const CERTIFICADO = process.env.SUPABASE_DB_CA || path.join(raiz, "supabase", "prod-ca.crt");
 
 // Usuário "logado" simulado. As políticas deste projeto só olham o papel
 // (authenticated), não o id do usuário, então qualquer uuid serve.
@@ -75,6 +77,10 @@ export async function conectar() {
     console.error("Falta SUPABASE_DB_URL no .env.local (conexão Session pooler do painel da Supabase).");
     process.exit(1);
   }
+  if (process.env.SUPABASE_DB_CA && !existsSync(CERTIFICADO)) {
+    console.error("SUPABASE_DB_CA aponta para um arquivo que não existe.");
+    process.exit(1);
+  }
   const url = new URL(env.SUPABASE_DB_URL);
   url.searchParams.delete("sslmode");
   // Com o certificado da Supabase salvo em supabase/prod-ca.crt, a conexão
@@ -90,7 +96,11 @@ export async function conectar() {
     console.error("Não conectou ao banco:", limpar(erro.message));
     process.exit(1);
   }
-  if (!existsSync(CERTIFICADO)) console.log("(conexão criptografada, sem conferir o certificado: supabase/prod-ca.crt ausente)");
+  console.log(
+    existsSync(CERTIFICADO)
+      ? `(conexão: TLS conferindo o certificado do servidor com ${path.relative(raiz, CERTIFICADO).split(path.sep).join("/")})`
+      : "(conexão: TLS sem conferir o certificado — supabase/prod-ca.crt ausente)"
+  );
   return db;
 }
 
