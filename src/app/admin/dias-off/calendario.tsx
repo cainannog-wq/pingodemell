@@ -5,6 +5,7 @@ import { Card, Icon, Button, Badge } from "@/components/ds";
 import { ConfirmDialog } from "./confirm-dialog";
 import { ObservacaoField } from "./observacao-field";
 import type { DiaOff, SegundaReabertura } from "@/lib/dias-off/types";
+import { diaDaSemana, diasNoMes, hojeBrasilia, lerDataIso, montarDataIso, somarMeses } from "@/lib/tempo/brasilia";
 import {
   createDiaOff,
   deleteDiaOff,
@@ -15,7 +16,7 @@ import {
 } from "./actions";
 import "./dias-off.css";
 
-const SEGUNDA_FEIRA = 1; // Date#getDay()
+const SEGUNDA_FEIRA = 1; // diaDaSemana(): 0 = domingo, 1 = segunda, ...
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MONTHS = [
@@ -27,23 +28,18 @@ const WEEKDAYS_FULL = [
   "quinta-feira", "sexta-feira", "sábado",
 ];
 
-function pad(n: number) {
-  return String(n).padStart(2, "0");
-}
-
+// month é 0 a 11 (índice de MONTHS), como o cursor do calendário.
 function toIso(year: number, month: number, day: number) {
-  return `${year}-${pad(month + 1)}-${pad(day)}`;
+  return montarDataIso(year, month + 1, day);
 }
 
 function isMondayIso(iso: string) {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d).getDay() === SEGUNDA_FEIRA;
+  return diaDaSemana(iso) === SEGUNDA_FEIRA;
 }
 
 function formatDiaLabel(iso: string) {
   const [y, m, d] = iso.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  return `${WEEKDAYS_FULL[date.getDay()]}, ${d} de ${MONTHS[m - 1].toLowerCase()} de ${y}`;
+  return `${WEEKDAYS_FULL[diaDaSemana(iso)]}, ${d} de ${MONTHS[m - 1].toLowerCase()} de ${y}`;
 }
 
 // Primeira letra maiúscula só no começo da frase inteira — o rótulo do dia
@@ -56,8 +52,8 @@ function capitalizeSentence(s: string) {
 type Cell = { day: number; iso: string } | null;
 
 function buildMonthGrid(year: number, month: number): Cell[][] {
-  const firstWeekday = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstWeekday = diaDaSemana(toIso(year, month, 1));
+  const daysInMonth = diasNoMes(year, month + 1);
 
   const cells: Cell[] = [];
   for (let i = 0; i < firstWeekday; i++) cells.push(null);
@@ -106,10 +102,16 @@ const DIALOG_TEXTO: Record<
 };
 
 export function Calendario({ diasOff, reaberturas }: { diasOff: DiaOff[]; reaberturas: SegundaReabertura[] }) {
-  const today = useMemo(() => new Date(), []);
-  const todayIso = toIso(today.getFullYear(), today.getMonth(), today.getDate());
+  // "Hoje" no calendário de Brasília, calculado igual no servidor (UTC) e no
+  // navegador (fuso do aparelho) — sem divergência de hidratação. Recalcula
+  // a cada vez que a tela monta (recarregar ou navegar).
+  const todayIso = useMemo(() => hojeBrasilia(), []);
+  const today = useMemo(() => {
+    const { ano, mes } = lerDataIso(todayIso)!;
+    return { year: ano, month: mes - 1 };
+  }, [todayIso]);
 
-  const [cursor, setCursor] = useState(() => ({ year: today.getFullYear(), month: today.getMonth() }));
+  const [cursor, setCursor] = useState(() => today);
 
   const [diasOffMap, setDiasOffMap] = useState<Record<string, string>>(() =>
     Object.fromEntries(diasOff.map((d) => [d.data, d.id]))
@@ -150,8 +152,8 @@ export function Calendario({ diasOff, reaberturas }: { diasOff: DiaOff[]; reaber
 
   function goToMonth(delta: number) {
     setCursor((c) => {
-      const date = new Date(c.year, c.month + delta, 1);
-      return { year: date.getFullYear(), month: date.getMonth() };
+      const { ano, mes } = somarMeses(c.year, c.month + 1, delta);
+      return { year: ano, month: mes - 1 };
     });
   }
 
@@ -269,7 +271,7 @@ export function Calendario({ diasOff, reaberturas }: { diasOff: DiaOff[]; reaber
               <Icon name="chevron_right" size={22} tone="inherit" />
             </Button>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => setCursor({ year: today.getFullYear(), month: today.getMonth() })}>
+          <Button variant="secondary" size="sm" onClick={() => setCursor(today)}>
             Hoje
           </Button>
         </div>

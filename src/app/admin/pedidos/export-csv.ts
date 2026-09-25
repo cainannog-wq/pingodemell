@@ -1,6 +1,7 @@
 import type { Pedido } from "@/lib/pedidos/types";
 import { STATUS_LABEL } from "@/lib/pedidos/status";
 import { formatDataHoraCurta } from "@/lib/pedidos/format";
+import { hojeBrasilia } from "@/lib/tempo/brasilia";
 
 // ";" como separador (não ",") porque o Excel em português do Brasil usa
 // vírgula como separador decimal — com "," como delimitador de coluna, o
@@ -78,8 +79,8 @@ export function exportarPedidosCSV(pedidos: Pedido[]): void {
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
 
-  const hoje = new Date();
-  const nomeArquivo = `pedidos-${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}.csv`;
+  // Data do calendário de Brasília, não do fuso do aparelho.
+  const nomeArquivo = `pedidos-${hojeBrasilia()}.csv`;
 
   const link = document.createElement("a");
   link.href = url;

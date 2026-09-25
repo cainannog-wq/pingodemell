@@ -112,7 +112,9 @@ export function PedidosList({
   // chamar Date.now() dentro do corpo do useMemo abaixo, que a regra de
   // pureza do React (react-hooks/purity) não permite. Não precisa reagir a
   // passagem de tempo em tempo real — só recalcula se o componente
-  // remontar, igual a qualquer outra tela deste painel.
+  // remontar, igual a qualquer outra tela deste painel. O mesmo instante
+  // decide "atrasado" e o grupo Hoje/Amanhã (no calendário de Brasília,
+  // pelo módulo src/lib/tempo/brasilia.ts).
   const [agora] = useState(() => Date.now());
 
   const rows = useMemo(() => {
@@ -151,7 +153,7 @@ export function PedidosList({
 
     const grupos: { label: string; pedidos: Pedido[] }[] = [];
     for (const pedido of emAberto) {
-      const label = formatDiaGrupo(pedido.data_hora_entrega);
+      const label = formatDiaGrupo(pedido.data_hora_entrega, agora);
       let grupo = grupos.find((g) => g.label === label);
       if (!grupo) {
         grupo = { label, pedidos: [] };
@@ -166,7 +168,7 @@ export function PedidosList({
 
     const aplicarCorte = !hasFilter && !mostrarFinalizadosAntigos;
     const finalizadosVisiveis = aplicarCorte
-      ? finalizadosOrdenados.filter((p) => brasiliaDiferencaDias(p.data_hora_entrega) >= -DIAS_CORTE_FINALIZADOS)
+      ? finalizadosOrdenados.filter((p) => brasiliaDiferencaDias(p.data_hora_entrega, agora) >= -DIAS_CORTE_FINALIZADOS)
       : finalizadosOrdenados;
 
     const temFinalizadosOcultos = aplicarCorte && finalizadosVisiveis.length < finalizadosOrdenados.length;

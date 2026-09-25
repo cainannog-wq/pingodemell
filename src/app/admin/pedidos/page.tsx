@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Pedido } from "@/lib/pedidos/types";
-import { brasiliaAnoMes } from "@/lib/pedidos/format";
+import { anoMesBrasilia } from "@/lib/tempo/brasilia";
 import { PedidosList } from "./pedidos-list";
 
 export default async function PedidosPage() {
@@ -24,8 +24,8 @@ export default async function PedidosPage() {
   // requisição) em vez de no client — evita recalcular "mês atual" nos
   // dois lados (servidor em UTC, navegador em horário de Brasília) e
   // arriscar um card piscando um número diferente na hidratação.
-  const mesAtual = brasiliaAnoMes(new Date().toISOString());
-  const pedidosDoMes = rows.filter((p) => brasiliaAnoMes(p.criado_em) === mesAtual);
+  const mesAtual = anoMesBrasilia();
+  const pedidosDoMes = rows.filter((p) => anoMesBrasilia(p.criado_em) === mesAtual);
 
   const stats = {
     pedidosNoMes: pedidosDoMes.length,

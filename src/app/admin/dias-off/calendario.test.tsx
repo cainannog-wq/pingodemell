@@ -1,9 +1,23 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import type { DiaOff, SegundaReabertura } from "@/lib/dias-off/types";
 import { Calendario } from "./calendario";
+
+// Relógio fixo (antes de qualquer data abaixo ser calculada): terça
+// 15/09/2026 ao meio-dia de Brasília. Assim o teste não depende do dia nem
+// da hora em que roda. O caso crítico (domingo 22h) tem teste próprio no fim.
+const MEIO_DIA_TERCA = vi.hoisted(() => {
+  const instante = new Date("2026-09-15T15:00:00Z");
+  vi.useFakeTimers({ toFake: ["Date"], shouldAdvanceTime: true });
+  vi.setSystemTime(instante);
+  return instante;
+});
+
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 const createDiaOffMock = vi.fn();
 const deleteDiaOffMock = vi.fn();
@@ -174,12 +188,48 @@ describe("Calendario de dias off", () => {
   it("não deixa clicar num dia no passado", () => {
     render(<Calendario diasOff={[]} reaberturas={[]} />);
 
-    const ontem = new Date(today);
-    ontem.setDate(ontem.getDate() - 1);
-    if (ontem.getMonth() !== today.getMonth()) return; // vira o mês: pula, sem mockar Date
-
-    const botaoOntem = botoesDoDia(ontem.getDate()).find((b) => b.getAttribute("aria-label")?.includes("indisponível"));
+    // Relógio fixo em 15/09: ontem é 14/09, no mesmo mês.
+    const botaoOntem = botoesDoDia(14).find((b) => b.getAttribute("aria-label")?.includes("indisponível"));
     expect(botaoOntem).toBeTruthy();
     expect(botaoOntem).toBeDisabled();
+  });
+});
+
+// Horário crítico: domingo 27/09/2026 às 22h de Brasília, quando em UTC
+// (fuso do servidor) já é segunda 28/09 às 01h. O calendário tem que mostrar
+// "Hoje" no dia 27 e deixar marcar o dia 27.
+describe("Calendario de dias off — domingo às 22h de Brasília", () => {
+  afterEach(() => {
+    cleanup();
+    createDiaOffMock.mockReset();
+    vi.setSystemTime(MEIO_DIA_TERCA);
+  });
+
+  it('mostra "Hoje" no dia 27 e deixa o dia 27 clicável', async () => {
+    vi.setSystemTime(new Date("2026-09-28T01:00:00Z"));
+    createDiaOffMock.mockResolvedValue({ id: "hoje-id" });
+    render(<Calendario diasOff={[]} reaberturas={[]} />);
+
+    expect(screen.getByText("Setembro de 2026")).toBeInTheDocument();
+
+    const [dia27] = botoesDoDia(27);
+    const [dia28] = botoesDoDia(28);
+    const [dia26] = botoesDoDia(26);
+
+    // "Hoje" é o dia com borda de 2px e negrito; só o 27.
+    expect(dia27).toHaveStyle({ fontWeight: "700" });
+    expect(dia28).not.toHaveStyle({ fontWeight: "700" });
+    expect(dia27).toBeEnabled();
+    expect(dia27.getAttribute("aria-label")).not.toContain("indisponível");
+    expect(dia26).toBeDisabled();
+
+    fireEvent.click(dia27);
+    const dialog = await screen.findByRole("alertdialog");
+    expect(dialog).toHaveTextContent(/domingo, 27 de setembro de 2026/i);
+    await confirmar(/^marcar$/i);
+
+    await waitFor(() => {
+      expect(createDiaOffMock).toHaveBeenCalledWith("2026-09-27");
+    });
   });
 });

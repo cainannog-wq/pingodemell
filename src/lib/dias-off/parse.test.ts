@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { parseDiaOffData, parseReaberturaData } from "./parse";
 
-const hoje = new Date(2026, 8, 22); // terça-feira, 22/09/2026
+// Terça-feira, 22/09/2026 ao meio-dia de Brasília — instante explícito, para
+// o teste dar o mesmo resultado em qualquer fuso em que rode.
+const hoje = new Date("2026-09-22T12:00:00-03:00");
 
 describe("parseDiaOffData", () => {
   it("aceita a data de hoje (terça-feira)", () => {
