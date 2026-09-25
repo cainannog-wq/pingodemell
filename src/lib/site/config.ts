@@ -44,3 +44,4 @@ export const TILES_CATEGORIA: TileCategoria[] = [
   { categoria: "Salgados", rotulo: "Salgados", imagem: "/fotos/cat-salgados.jpeg", alt: "Bandeja de empadas e mini pizzas" },
   { categoria: "Bebidas", rotulo: "Bebidas", imagem: null, alt: "" },
 ];
+// prova (b2) da regra de ignorar build: commit em src/, nunca mergeado
