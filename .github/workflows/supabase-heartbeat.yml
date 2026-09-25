@@ -62,6 +62,9 @@ jobs:
           # Commit próprio a cada execução conta como atividade no repositório,
           # o que evita que o GitHub desative este workflow agendado depois de
           # 60 dias sem nenhum commit (limite que é independente do Supabase).
+          # "[skip netlify]" na mensagem: a Netlify não faz deploy de produção
+          # por este commit (cada um custaria 15 créditos). Não usar
+          # "[skip ci]", que também faria o GitHub Actions pular.
           echo "Última execução do heartbeat: $NOW" > heartbeat-log.txt
 
           git config user.name "github-actions[bot]"
@@ -72,6 +75,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Nada para commitar."
           else
-            git commit -m "chore: heartbeat log $NOW"
+            git commit -m "chore: heartbeat log $NOW [skip netlify]"
             git push
           fi

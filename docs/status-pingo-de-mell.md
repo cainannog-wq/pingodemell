@@ -2,7 +2,7 @@
 
 O status do projeto fica fora do repositório; este arquivo registra apenas o estado técnico.
 
-Todo PR que traz migração de schema atualiza este arquivo no mesmo PR (ver CLAUDE.md). Última atualização: 25/09/2026 (aplicação de `seguranca-api.sql` em produção, depois do merge do PR #12).
+Todo PR que traz migração de schema atualiza este arquivo no mesmo PR (ver CLAUDE.md). Última atualização: 25/09/2026 (créditos da Netlify e fluxo em lote, PR economia-deploys).
 
 Banco único: o projeto Supabase `npervqefspmwmrekskcb` (região `sa-east-1`) atende produção, previews da Netlify e os scripts locais (`SUPABASE_URL` do `.env.local`). Não existe banco de staging.
 
@@ -141,6 +141,7 @@ Testes de banco: `scripts/banco/`, cada um numa transação desfeita no fim, con
 | `scripts/banco/limite-pedidos.mjs` | anon/logado não chamam `registrar_tentativa_pedido`; servidor: 6ª tentativa bloqueada, IPs independentes, janela recomeça | produção, transação desfeita | não |
 | `scripts/banco/http-sem-gravar.mjs` | camada HTTP com a chave anônima: chamadas que nunca gravam (função por GET, que roda só leitura; insert com valor inválido; update/delete de id inexistente) | produção, pela API | não |
 | `npm run test` (vitest) | regras, telas, Server Actions e `POST /api/pedidos` (IP da Netlify, X-Forwarded-For ignorado em produção, 429, gravação só pela chave de serviço) com banco simulado. Roda duas vezes, nos fusos UTC e America/Sao_Paulo; testes com "hoje" fixam o relógio (`RELOGIO_TESTE=<instante>` fixa o da suíte inteira) | nenhum (não acessa rede) | não |
+| `scripts/netlify/ignorar-build.mjs` | não é teste: regra de ignorar build da Netlify (roda antes de cada build). A regra é testada por `npm run test` (`scripts/netlify/ignorar-build.test.mjs`, com um repositório git temporário) | nenhum | não |
 | `scripts/ver-fotos-anonimo.mjs <id>` | lista, como anônimo, as fotos extras de um produto na ordem | produção, pela API | não (só leitura) |
 | `scripts/test-turnstile-verify.mjs` | secret key do Turnstile ativa | Cloudflare | não |
 | `scripts/check-service-key-bundle.mjs` | a service role key não aparece em `.next/static` (rodar depois do build) | nenhum (arquivos locais) | não |
@@ -169,7 +170,20 @@ Como fazer, com o ok: 6 requisições seguidas a `https://<deploy>/api/pedidos`,
 - Fluxo (regras no CLAUDE.md): a homologação está sempre com "o PR em validação" ou "igual à produção"; um PR por vez; o Cainan só valida depois de "homologação = commit X do PR Y", conferido na lista de deploys da Netlify.
   - Levar um PR: `git push --force-with-lease origin <branch-do-pr>:homologacao`
   - Voltar para a produção: `git push --force-with-lease origin origin/main:homologacao`
+  - Enquanto valer o fluxo em lote: "igual à produção" vira "igual à `lote`" (`git push --force-with-lease origin origin/lote:homologacao`).
 - Criada em 24/09/2026 igual à `main` (`a828567`), deploy `6ab5cf7f…`.
+- PRs contra a `lote` provavelmente não ganham Deploy Preview (a Netlify gera preview para PRs contra a `main`); a validação é na homologação de qualquer jeito.
+
+## Créditos da Netlify
+
+Regras no CLAUDE.md ("Regra de custo — créditos da Netlify e merges em lote").
+
+- Conta `cainannog-wq`, plano **Free: 300 créditos por ciclo**, sem cobrança extra: quando acabam, **os 6 sites da conta saem do ar** (pingodemell, restospsicanaliticos, dudatortatosite, reliable-pixie-4e7fd7, msclicksfotografia, dudatortato) até o ciclo virar. Todos dividem o mesmo saldo.
+- Ciclo atual: **20/09 a 19/10/2026**. Saldo em 25/09/2026 ~11:15 (Brasília): **45,3 de 300**.
+- Custo (documentação da Netlify): deploy de produção publicado = 15 créditos; Deploy Preview, branch deploy, build pulado e build que falha = 0. Também custam: requisições web (2 por 10 mil), banda (20 por GB) e compute (10 por GB-hora), inclusive nos previews e na homologação.
+- Gasto do ciclo até 25/09: 16 deploys de produção do pingodemell (240), banda 6,6, compute 4,9, requisições 3,3; total 254,7. Dos 16 deploys: 13 merges de PR (#1, #2, #3, #6 a #15) e 3 commits do heartbeat (1 agendado, 2 rodados à mão em 24/09). A regra de ignorar build teria pulado 5 deles: #7 (só `CLAUDE.md`), #8 (só `.gitignore`) e os 3 do heartbeat.
+- Heartbeat: agendado a cada 3 dias (dias 1, 4, 7… do mês, 06:00 UTC). Sem a marcação, cada execução fazia um deploy de produção (15 créditos); até 19/10 seriam mais 7 (105), o suficiente para zerar o saldo por volta de 04/10. Desligado com `gh workflow disable` em 25/09/2026 ~11:20 (Brasília), antes da correção.
+- Economia (PR economia-deploys): commit do heartbeat com `[skip netlify]`; regra de ignorar build em `netlify.toml` (`scripts/netlify/ignorar-build.mjs`, teste em `scripts/netlify/ignorar-build.test.mjs`). Continuam gerando deploy: `src/`, `public/`, `package.json`, `package-lock.json`, `next.config.ts`, `netlify.toml`, `tsconfig.json`, `eslint.config.mjs`, `vitest.config.ts`, `vitest.setup.ts`, arquivos de teste fora de `scripts/` (`*.test.ts(x)`) e `supabase/prod-ca.crt`. Sem commit anterior para comparar (primeiro build da branch, "Clear cache and deploy", "Trigger deploy" do mesmo commit) ou se o `git diff` falhar, a regra builda.
 
 ## Registros
 
