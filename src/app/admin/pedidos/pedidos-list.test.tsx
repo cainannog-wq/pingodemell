@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { Pedido } from "@/lib/pedidos/types";
 import { PedidosList } from "./pedidos-list";
 
@@ -17,13 +17,24 @@ vi.mock("./export-csv", () => ({
   exportarPedidosCSV: vi.fn(),
 }));
 
-// Datas relativas ao momento em que o teste roda (mesmo padrão de
-// scripts/seed-pedidos-demo.mjs), pra não depender de um dia fixo do
-// calendário — Brasília é UTC-3 fixo, sem horário de verão desde 2019.
+// Relógio fixo no horário crítico: domingo 27/09/2026 às 22h de Brasília,
+// quando em UTC já é segunda 28/09 às 01h. Antes do PR fuso-brasilia, as
+// datas vinham do relógio real e o teste falhava entre 21h e meia-noite.
+const AGORA = new Date("2026-09-28T01:00:00Z");
+const HOJE_BRASILIA = { ano: 2026, mes: 9, dia: 27 };
+
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(AGORA);
+});
+
+afterAll(() => {
+  vi.useRealTimers();
+});
+
+// Data de calendário de Brasília relativa ao "hoje" fixo, na hora pedida.
 function bz(diasOffset: number, hora = 12): string {
-  const now = new Date();
-  const base = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  base.setUTCDate(base.getUTCDate() + diasOffset);
+  const base = new Date(Date.UTC(HOJE_BRASILIA.ano, HOJE_BRASILIA.mes - 1, HOJE_BRASILIA.dia + diasOffset));
   const y = base.getUTCFullYear();
   const m = String(base.getUTCMonth() + 1).padStart(2, "0");
   const d = String(base.getUTCDate()).padStart(2, "0");
@@ -31,14 +42,9 @@ function bz(diasOffset: number, hora = 12): string {
   return `${y}-${m}-${d}T${hh}:00:00-03:00`;
 }
 
-// Deslocamento em horas a partir do instante real do teste — usado só pros
-// casos "hoje" e "atrasado" do teste de ordenação, porque um horário fixo
-// (ex.: bz(0, 14)) pode já ter passado se o teste rodar depois das 14h e
-// virar "atrasado" sem querer, tornando o teste dependente da hora do dia
-// em que roda. Dias >= 1 ou <= -1 de offset de calendário (bz) já são
-// seguros contra isso (sempre no futuro/passado independente da hora).
+// Deslocamento em horas a partir do instante fixo (domingo 22h).
 function bzHoras(horasDeAgora: number): string {
-  return new Date(Date.now() + horasDeAgora * 3_600_000).toISOString();
+  return new Date(AGORA.getTime() + horasDeAgora * 3_600_000).toISOString();
 }
 
 let contador = 0;
@@ -81,7 +87,8 @@ describe("PedidosList — agrupamento mobile", () => {
       pedido({ cliente_nome: "Cliente Amanhã", status: "em_producao", data_hora_entrega: bz(1, 10) }),
       pedido({ cliente_nome: "Cliente Finalizado Recente", status: "entregue", data_hora_entrega: bz(-2, 9) }),
       pedido({ cliente_nome: "Cliente Atrasado", status: "em_producao", data_hora_entrega: bzHoras(-20) }),
-      pedido({ cliente_nome: "Cliente Hoje", status: "aguardando_confirmacao", data_hora_entrega: bzHoras(3) }),
+      // Domingo 23h30 de Brasília: ainda é hoje, embora em UTC já seja segunda.
+      pedido({ cliente_nome: "Cliente Hoje", status: "aguardando_confirmacao", data_hora_entrega: bzHoras(1.5) }),
     ];
 
     const { container } = render(<PedidosList pedidos={pedidos} stats={STATS} />);

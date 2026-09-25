@@ -62,3 +62,24 @@ Decisão fechada com o Cainan em 24/09/2026, no PR seguranca-api:
   do merge, o "depois" das regras de banco sai de
   `node scripts/banco/permissoes.mjs --com-migracao`; o verificador de
   verdade roda de novo depois que a migração for aplicada.
+
+## Regra de fuso horário — "que dia é"
+
+Decisão fechada com o Cainan em 24/09/2026, no PR fuso-brasilia:
+
+- **Só `src/lib/tempo/brasilia.ts` decide "que dia é" ou "que dia da semana
+  é"**, sempre no fuso da loja (`America/Sao_Paulo`, explícito via Intl).
+  Fora dele, nenhum `new Date()`, `getDay()`, `getDate()`, `getMonth()`,
+  `getFullYear()`, `toISOString().slice(0, 10)`, `toLocaleDateString` ou
+  equivalente decide o dia. O servidor (Netlify) e o banco (Supabase) rodam
+  em UTC: entre 21h e meia-noite de Brasília, para eles já é o dia seguinte.
+  Comparar dois instantes (`getTime()`, "já passou do horário de entrega?")
+  não decide dia e pode ficar fora do módulo.
+- **O futuro checkout (antecedência de 1 dia; fim de semana até quinta)
+  decide no servidor e só com esse módulo**, nunca com o relógio do
+  navegador da cliente.
+- **Testes não dependem do relógio real nem do fuso da máquina.** A suíte
+  roda em dois fusos (UTC e America/Sao_Paulo, `vitest.config.ts`); teste
+  que envolve "hoje" fixa o relógio (`vi.setSystemTime`), de preferência num
+  horário crítico (depois das 21h de Brasília). `RELOGIO_TESTE=<instante>
+  npm run test` fixa o relógio da suíte inteira para provar isso.
