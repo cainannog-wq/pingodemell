@@ -160,8 +160,20 @@ Toda chamada a `POST /api/pedidos` grava uma linha no contador de tentativas (`p
 
 Como fazer, com o ok: 6 requisições seguidas a `https://<deploy>/api/pedidos`, cada uma com um `X-Forwarded-For` diferente e um corpo **inválido** (ex.: `itens: []`) — o limite é conferido antes da validação, então as 5 primeiras voltam 400 (nenhum pedido gravado) e a 6ª volta 429. Grava: 1 linha em `pedidos_rate_limit` (o IP de quem testou), que pode ser apagada depois, também com ok. A lógica da rota está coberta sem gravar em `src/app/api/pedidos/route.test.ts`, e a do banco em `scripts/banco/limite-pedidos.mjs`.
 
+## Homologação (Netlify)
+
+- Endereço fixo: `homologacao--pingodemell.netlify.app`, branch deploy da branch `homologacao`. Na Netlify (Project configuration > Developer settings > Branches and deploy contexts): production branch `main`; branch deploys só para `homologacao` (ligado em 24/09/2026); Deploy Previews para PRs contra a `main`.
+- Turnstile: `homologacao--pingodemell.netlify.app` liberado de forma permanente (24/09/2026). Deploy Previews não estão liberados: o CAPTCHA recusa login neles (erro 110200).
+- Banco: o mesmo de produção (as variáveis do contexto "Branch deploys" têm os mesmos valores de produção). Tudo que se grava lá é real.
+- Fora do Google: `X-Robots-Tag: noindex, nofollow` em todas as rotas, só quando `CONTEXT === "branch-deploy"` (`next.config.ts`, teste em `next-config.test.ts`). A Netlify já põe `noindex` nos Deploy Previews e nos links fixos de deploy, mas não no endereço da branch. Produção sem o cabeçalho.
+- Fluxo (regras no CLAUDE.md): a homologação está sempre com "o PR em validação" ou "igual à produção"; um PR por vez; o Cainan só valida depois de "homologação = commit X do PR Y", conferido na lista de deploys da Netlify.
+  - Levar um PR: `git push --force-with-lease origin <branch-do-pr>:homologacao`
+  - Voltar para a produção: `git push --force-with-lease origin origin/main:homologacao`
+- Criada em 24/09/2026 igual à `main` (`a828567`), deploy `6ab5cf7f…`.
+
 ## Registros
 
 - **Número de pedido 1047 gasto em 24/09/2026**, numa transação desfeita que provou que o anônimo gravava direto em `pedidos` (o contador não volta com o rollback). O próximo pedido real será o 1048; não existe pedido 1047.
 - **Limpeza feita em 25/09/2026 ~00:00 UTC, com ok:** as 4 linhas de `pedidos_rate_limit` (testes de 11 e 15/09; 4 → 0) e o dia off de 22/09/2026 com observação "testeee" (teste manual pelo admin; `dias_off` 2 → 1).
 - **Erro de console no site público (visto em 24/09/2026, não corrigido):** React #418 (a página montada no navegador não bate com o HTML do servidor) na Home e na Lista, em produção. Não vem do banco (essas páginas buscam os dados no servidor). Suspeita não confirmada: o script que a Netlify injeta (`/.netlify/scripts/hud?variant=public`). Os 404 no console são pré-carregamento das rotas reservadas que ainda não existem.
+- **Pendência da Fase 4 (SEO):** `main--pingodemell.netlify.app` serve o site de produção sem `X-Robots-Tag: noindex` (conteúdo duplicado para o Google). Registrado em 24/09/2026; não mexer antes da Fase 4.
