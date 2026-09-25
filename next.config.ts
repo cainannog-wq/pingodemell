@@ -34,16 +34,20 @@ const nextConfig: NextConfig = {
   // Fase 4 do roadmap, e definir CSP antes disso so pra refazer depois nao
   // vale a pena — revisitar quando essas tags entrarem.
   async headers() {
-    return [
-      {
-        source: "/:path*",
-        headers: [
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-        ],
-      },
+    const headers = [
+      { key: "X-Frame-Options", value: "DENY" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
     ];
+    // Homologação (branch deploy da Netlify, homologacao--pingodemell.netlify.app)
+    // fora do Google. A Netlify já põe noindex nos Deploy Previews e nos links
+    // fixos de deploy, mas não no endereço da branch. CONTEXT é definido pela
+    // Netlify no build ("production", "deploy-preview", "branch-deploy"); a
+    // produção nunca recebe este cabeçalho.
+    if (process.env.CONTEXT === "branch-deploy") {
+      headers.push({ key: "X-Robots-Tag", value: "noindex, nofollow" });
+    }
+    return [{ source: "/:path*", headers }];
   },
 };
 

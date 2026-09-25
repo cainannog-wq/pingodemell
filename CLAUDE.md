@@ -83,3 +83,26 @@ Decisão fechada com o Cainan em 24/09/2026, no PR fuso-brasilia:
   que envolve "hoje" fixa o relógio (`vi.setSystemTime`), de preferência num
   horário crítico (depois das 21h de Brasília). `RELOGIO_TESTE=<instante>
   npm run test` fixa o relógio da suíte inteira para provar isso.
+
+## Regra de processo — homologação dos PRs de admin
+
+Decisão fechada com o Cainan em 24/09/2026, no PR noindex-homologacao:
+
+- **Endereço fixo:** `homologacao--pingodemell.netlify.app`, branch deploy da
+  branch `homologacao` (única branch além da `main` com deploy na Netlify),
+  liberado uma vez no Turnstile. Usa o mesmo banco de produção, como os
+  previews: tudo que se grava lá é real. Fica fora do Google
+  (`X-Robots-Tag: noindex, nofollow`, só com `CONTEXT === "branch-deploy"`,
+  em `next.config.ts`).
+- **A homologação está sempre com "o PR em validação" ou "igual à
+  produção"**, nunca com código velho ou recusado. Para validar um PR:
+  `git push --force-with-lease origin <branch-do-pr>:homologacao`. Depois do
+  merge (ou se o PR for abandonado): `git push --force-with-lease origin
+  origin/main:homologacao`. Isso só move a branch `homologacao`; a `main` e a
+  produção não mudam. Nunca abrir PR a partir da `homologacao` nem para ela,
+  e só branches nossas vão para lá (o servidor da homologação tem a chave de
+  serviço).
+- **Um PR por vez em homologação.**
+- **O Cainan só valida depois que o Claude disser "homologação = commit X do
+  PR Y"**, conferido na lista de deploys da Netlify (deploy "Branch Deploy:
+  homologacao@<commit>", pronto) contra `git rev-parse origin/homologacao`.
