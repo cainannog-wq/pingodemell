@@ -4,7 +4,11 @@
 -- NÃO-ADITIVA: retira permissões e uma política de objetos que já estão em
 -- uso. Pela regra do CLAUDE.md, só vai para produção DEPOIS do merge do PR
 -- seguranca-api, quando o Cainan pedir, uma única vez, com lock_timeout de 2s.
--- Status: AINDA NÃO APLICADA em produção.
+-- Status: JÁ APLICADA em produção, depois do merge do PR #12, como migração
+-- 20260924235504 "seguranca_api" (24/09/2026, 23:55:04 UTC), uma vez, com
+-- lock_timeout de 2s. O conteúdo aplicado é exatamente este arquivo como
+-- estava no merge (sha256 2b428e8b...0292); só esta linha de status mudou
+-- depois.
 --
 -- Prova antes do merge: este arquivo roda inteiro dentro de uma transação
 -- desfeita, seguido de todas as verificações, com
