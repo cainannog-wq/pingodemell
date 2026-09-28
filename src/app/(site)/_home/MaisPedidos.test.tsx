@@ -36,6 +36,8 @@ const BASE: ProdutoVitrine = {
   Categoria: "Bolos",
   tipo: "normal",
   unidade_venda: null,
+  pedido_minimo: 1,
+  step_quantidade: "livre",
   ativo: true,
   destaque: true,
   atualizado_em: "2026-09-23T14:38:07.261Z",

@@ -6,7 +6,7 @@ import { WhatsAppMark } from "./WhatsAppMark";
 // Porta de components/core/WhatsAppFab.jsx (versão recolhida, 64×64):
 // botão flutuante fixo no canto inferior direito, presente em todas as
 // páginas do site público. Abre a conversa numa aba nova.
-export function WhatsAppFab({ href, label }: { href: string; label: string }) {
+export function WhatsAppFab({ href, label, className }: { href: string; label: string; className?: string }) {
   const [hover, setHover] = useState(false);
 
   return (
@@ -16,6 +16,7 @@ export function WhatsAppFab({ href, label }: { href: string; label: string }) {
       rel="noopener noreferrer"
       aria-label={`${label} pelo WhatsApp (abre em nova aba)`}
       title={label}
+      className={className}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{

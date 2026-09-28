@@ -50,6 +50,8 @@ function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {
     Categoria: "Doces",
     tipo: "normal",
     unidade_venda: null,
+    pedido_minimo: 1,
+    step_quantidade: "livre",
     ativo: true,
     destaque: true,
     atualizado_em: "2026-09-23T14:29:18.070Z",

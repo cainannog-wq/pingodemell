@@ -1,5 +1,5 @@
 import { formatMoeda } from "@/lib/pedidos/format";
-import type { CategoriaProduto, TipoProduto } from "@/lib/produtos/types";
+import type { CategoriaProduto, StepQuantidade, TipoProduto } from "@/lib/produtos/types";
 
 // Produto como a vitrine pública enxerga: só os campos que o site mostra
 // ou usa pra filtrar/ordenar. Referência interna sempre pelo `id` (uuid);
@@ -17,13 +17,17 @@ export type ProdutoVitrine = {
   tipo: TipoProduto;
   // Unidade do preço ("kg", "unidade"...), texto livre; null = só o valor.
   unidade_venda: string | null;
+  // Quantidade: mínimo e incremento do seletor da interna (produto avulso;
+  // o Cento ignora os dois e conta em número de centos).
+  pedido_minimo: number;
+  step_quantidade: StepQuantidade;
   ativo: boolean;
   destaque: boolean;
   atualizado_em: string;
 };
 
 export const CAMPOS_VITRINE =
-  "id, slug, nome, descricao, preco, image_url, Categoria, tipo, unidade_venda, ativo, destaque, atualizado_em";
+  "id, slug, nome, descricao, preco, image_url, Categoria, tipo, unidade_venda, pedido_minimo, step_quantidade, ativo, destaque, atualizado_em";
 
 export const LIMITE_MAIS_PEDIDOS = 10;
 
@@ -49,6 +53,15 @@ export function selecionarMaisPedidos(produtos: ProdutoVitrine[]): ProdutoVitrin
       return a.nome.localeCompare(b.nome, "pt-BR");
     })
     .slice(0, LIMITE_MAIS_PEDIDOS);
+}
+
+// "Combina com o seu pedido" (interna): sai da lista de "Os mais pedidos"
+// (já sem bebida, sem inativo e sem Cento indisponível), tirando o produto
+// que está na tela; mesma ordem, no máximo 3 (a grade do layout).
+export const LIMITE_RELACIONADOS = 3;
+
+export function selecionarRelacionados(maisPedidos: ProdutoVitrine[], produtoAtualId: string): ProdutoVitrine[] {
+  return maisPedidos.filter((p) => p.id !== produtoAtualId && ehMaisPedido(p)).slice(0, LIMITE_RELACIONADOS);
 }
 
 // Unidade do preço no card, com o artigo certo pras unidades sugeridas no

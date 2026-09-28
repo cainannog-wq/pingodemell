@@ -3,11 +3,13 @@ import { Badge, ButtonLink, ProductCard } from "@/components/ds";
 import { Hive } from "@/components/site/Hive";
 import { ROTAS } from "@/lib/site/rotas";
 import { partesPrecoVitrine, type ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
+import { textoMinimoCurto } from "@/lib/vitrine/minimo";
 
-// Card de produto do site público, igual na Home ("Os mais pedidos") e na
-// Lista: foto (ou fundo da marca), nome, descrição curta, preço e botão.
-// Card inteiro e botão levam à interna do produto pelo slug; nada vai para
-// o carrinho nesta entrega. As classes home-* vêm da Home e continuam com o
+// Card de produto do site público, igual na Home ("Os mais pedidos"), na
+// Lista e em "Combina com o seu pedido" (interna): foto (ou fundo da
+// marca), nome, descrição curta, preço (com o mínimo, quando > 1) e botão.
+// Card inteiro e botão levam à interna do produto pelo slug; o card não
+// põe nada no carrinho direto. As classes home-* vêm da Home e continuam com o
 // mesmo nome pra Home não mudar.
 
 // Foto do produto, ou o fundo da marca quando o produto ainda não tem foto.
@@ -69,6 +71,7 @@ export function CardProduto({
 }) {
   const href = hrefDoProduto(produto);
   const tituloId = `produto-${produto.id}`;
+  const minimo = textoMinimoCurto(produto);
   return (
     <ProductCard
       href={href}
@@ -86,9 +89,12 @@ export function CardProduto({
         </>
       }
     >
-      <PrecoProduto produto={produto} />
-      {/* Leva à interna do produto; nada é adicionado ao carrinho nesta
-          entrega. */}
+      <div className="site-preco-linha">
+        <PrecoProduto produto={produto} />
+        {minimo ? <span className="site-preco-minimo">{minimo}</span> : null}
+      </div>
+      {/* Leva à interna do produto, onde se escolhe a quantidade (e os
+          sabores, no Cento) antes de ir para o carrinho. */}
       <ButtonLink
         href={href}
         variant="primary"
