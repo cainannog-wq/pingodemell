@@ -6,8 +6,8 @@ import { partesPrecoVitrine, type ProdutoVitrine } from "@/lib/vitrine/mais-pedi
 
 // Card de produto do site público, igual na Home ("Os mais pedidos") e na
 // Lista: foto (ou fundo da marca), nome, descrição curta, preço e botão.
-// Card inteiro e botão levam à interna do produto pelo id; nada vai para o
-// carrinho nesta entrega. As classes home-* vêm da Home e continuam com o
+// Card inteiro e botão levam à interna do produto pelo slug; nada vai para
+// o carrinho nesta entrega. As classes home-* vêm da Home e continuam com o
 // mesmo nome pra Home não mudar.
 
 // Foto do produto, ou o fundo da marca quando o produto ainda não tem foto.
@@ -50,6 +50,12 @@ export function PrecoProduto({ produto }: { produto: Pick<ProdutoVitrine, "preco
   );
 }
 
+// Interna do produto pelo slug. Produto sem slug (não deve existir depois
+// da etapa 1 da migração do slug) leva para a Lista.
+export function hrefDoProduto(produto: Pick<ProdutoVitrine, "slug">): string {
+  return produto.slug ? ROTAS.produto(produto.slug) : ROTAS.lista;
+}
+
 // maisPedido: selo "Mais pedido" sobre a foto (bloco de destaques da
 // Lista). É texto de verdade, lido pelo leitor de tela junto com o nome.
 export function CardProduto({
@@ -61,7 +67,7 @@ export function CardProduto({
   sizes: string;
   maisPedido?: boolean;
 }) {
-  const href = ROTAS.produto(produto.id);
+  const href = hrefDoProduto(produto);
   const tituloId = `produto-${produto.id}`;
   return (
     <ProductCard

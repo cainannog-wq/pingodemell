@@ -2,7 +2,7 @@
 
 O status do projeto fica fora do repositório; este arquivo registra apenas o estado técnico.
 
-Todo PR que traz migração de schema atualiza este arquivo no mesmo PR (ver CLAUDE.md). Última atualização: 28/09/2026 (foto de capa no admin, PR capa-admin; sem migração).
+Todo PR que traz migração de schema atualiza este arquivo no mesmo PR (ver CLAUDE.md). Última atualização: 28/09/2026 (URL amigável do produto, PR slug; etapa 1 da migração aplicada, etapa 2 pendente).
 
 Banco único: o projeto Supabase `npervqefspmwmrekskcb` (região `sa-east-1`) atende produção, previews da Netlify e os scripts locais (`SUPABASE_URL` do `.env.local`). Não existe banco de staging.
 
@@ -26,6 +26,8 @@ As anteriores a 22/09/2026 foram aplicadas pelo editor SQL do Supabase, sem regi
 | `produtos-rls-leitura-ativo.sql` | `20260924135256 produtos_rls_leitura_ativo` | 24/09/2026 13:52 | **não-aditiva** (aplicada depois do merge do PR #10) |
 | `produto-fotos.sql` | `20260924152541 produto_fotos` | 24/09/2026 15:25:41 | aditiva (aplicada antes do merge do PR `galeria-admin`) |
 | `seguranca-api.sql` | `20260924235504 seguranca_api` | 24/09/2026 23:55:04 | **não-aditiva** (retira permissões e uma política de objetos em uso); aplicada depois do merge do PR #12, uma vez, com lock_timeout de 2s; SQL registrado idêntico ao do merge (sha256 `2b428e8b…0292`) |
+| `produtos-slug.sql` (slug, etapa 1) | `20260928050411 produtos_slug` | 28/09/2026 05:04:11 | aditiva (coluna opcional, 4 funções, 2 gatilhos, 2 restrições da coluna nova, preenchimento dos 15 existentes); aplicada **antes** do merge do PR `slug` na `lote`, exceção autorizada pelo Cainan, depois das provas em transação desfeita; uma vez, com lock_timeout de 2s; SQL registrado idêntico ao testado (sha256 `6574ae55…effacf`); `atualizado_em` dos 15 idêntico antes e depois |
+| `produtos-slug-obrigatorio.sql` (slug, etapa 2) | — (**não aplicada**) | — | **não-aditiva** (NOT NULL em tabela com linhas); só depois de o lote chegar à `main`, quando o Cainan pedir (ver "Quando o lote for para a main") |
 
 ## Rotas
 
@@ -36,7 +38,7 @@ Site público (`src/app/(site)`):
 | `/` | Home |
 | `/produtos` | Lista; filtro `?categoria=bolos\|doces\|salgados\|bebidas` |
 | `/politica-de-privacidade` | |
-| `/produtos/{id}`, `/carrinho`, `/quem-somos`, `/quem-somos#contato` | reservadas em `src/lib/site/rotas.ts`; ainda caem na 404 |
+| `/produtos/{slug}`, `/carrinho`, `/quem-somos`, `/quem-somos#contato` | reservadas em `src/lib/site/rotas.ts`; ainda caem na 404. Desde o PR `slug`, Home e Lista linkam a interna por `/produtos/{slug}` (antes, `/produtos/{id}`; o redirecionamento do endereço antigo fica fora) |
 
 Admin (exige login; `src/app/admin`): `/login`, `/admin`, `/admin/produtos`, `/admin/produtos/novo`, `/admin/produtos/{nome}`, `/admin/pedidos`, `/admin/pedidos/{numero}`, `/admin/dias-off`.
 
@@ -89,6 +91,29 @@ Sobras sem limpeza automática (só vão para o log do servidor): capa antiga da
 
 Limite aceito: a RLS de `produto_fotos` esconde a lista de fotos de produto inativo, não os arquivos; quem tem a URL do arquivo continua abrindo (como a capa).
 
+## Slug do produto (URL amigável)
+
+Desde o PR `slug` (28/09/2026). Migração: `supabase/produtos-slug.sql` (etapa 1, aplicada), `supabase/produtos-slug-obrigatorio.sql` (etapa 2, pendente), `supabase/produtos-slug-desfazer.sql` (desfaz a etapa 1; só com ok do Cainan, ou sozinho se o admin ou o site de produção quebrarem por causa dela).
+
+- **O slug é gerado e travado no banco.** O gatilho `produtos_slug_no_cadastro` gera o slug a partir do nome quando o cadastro chega sem slug; o gatilho `produtos_slug_imutavel` recusa qualquer mudança num slug preenchido (erro `23514`, mensagem "O endereço (slug) do produto ... é fixo"). Renomear continua permitido e não mexe no slug. Vale para o admin novo, o admin antigo de produção e qualquer script, sem código nenhum.
+- **Código e scripts nunca enviam slug**: gravam sem ele e leem o valor depois (provado por `capa-actions.test.ts` e `scripts/banco/slug.mjs`). O banco aceita um slug enviado no cadastro se ele estiver no formato e não se repetir; **o único uso legítimo é restaurar backup** (regravar os slugs originais para as URLs não mudarem).
+- **Regra**: minúsculas; `á à â ã ä é è ê ë í ì î ï ó ò ô õ ö ú ù û ü ç ñ` pela tabela fixa (sem a extensão `unaccent`); qualquer sequência fora de `a-z0-9` vira um hífen; sem hífen no começo nem no fim; até 80 caracteres antes do sufixo; nome sem caractere válido vira `produto`. Colisão com qualquer produto, ativo ou inativo: `-2`, `-3`... Formato garantido pela restrição `produtos_slug_formato`; único pela `produtos_slug_key`.
+- **Consequências aceitas:**
+  - produto recadastrado com o mesmo nome de um produto **desativado** ganha sufixo (`-2`) na URL, para sempre;
+  - se o produto antigo for **excluído**, o slug fica livre e o endereço antigo passa a abrir o produto novo. Por isso a documentação de uso do admin (Fase 5) reforça: **desativar, nunca excluir**.
+- **Leitura pelo slug fica no código do site**: `buscarProdutoPorSlug` (`src/lib/vitrine/buscar.ts`), só produto ativo, com o filtro de ativo na própria consulta (o admin logado navegando no site lê também os inativos). **Não existe e não deve ser criada função de banco pública para isso**; a interna usa essa função.
+- **Ordem dos gatilhos de edição** (etapa 1): `produtos_slug_imutavel` precisa rodar depois de `produtos_set_atualizado_em` (o Postgres roda em ordem alfabética de nome) para o preenchimento de slug vazio não mexer no `atualizado_em`. `scripts/banco/slug.mjs` (slug 13) falha se a ordem mudar. A etapa 2 tira esse ramo, e a dependência some.
+- **Requisito do script da carga dos 60 produtos (ainda não existe)**: faz o insert sem slug, lê o slug gravado (`.insert(p).select("id, slug")`), mostra o slug de cada produto e avisa quando algum ganhar sufixo.
+- Fora do PR `slug`: redirecionamento de `/produtos/{id}`, campo de slug no admin, endereço da tela de edição do admin (continua pelo nome).
+
+Os 15 produtos em 28/09/2026 05:04 UTC, depois da etapa 1 (todos com `atualizado_em` idêntico ao de antes): `beijinho`, `bolo-de-chocolate-com-ninho`, `brigadeiro-gourmet`, `brigadeiro-gourmet-unidade`, `cento-de-docinho`, `cento-de-salgados-sortidos`, `coca-cola-2l`, `coxinha-de-frango` (inativo), `coxinha-de-frango-cento`, `empada-de-palmito`, `kit-festa-sortido`, `morango-banhado`, `risole-de-carne`, `suco-de-laranja-natural-1l`, `torta-de-limao-fatia` (inativo).
+
+## Quando o lote for para a main
+
+Passos que dependem do merge da `lote` na `main`, na ordem dos PRs:
+
+1. **Slug, etapa 2** (PR `slug`), só quando o Cainan pedir: conferir que nenhum produto está sem slug (`select count(*) from public.produtos where slug is null or slug = ''` → 0; a própria migração também cancela se achar algum), rodar `node scripts/banco/slug-migracao.mjs` (prova a etapa 2 em transação desfeita), aplicar `supabase/produtos-slug-obrigatorio.sql` (NOT NULL e `produtos_slug_imutavel` recriado sem o ramo "vazio -> preenchido"), rodar `node scripts/banco/rodar-todos.mjs` e o verificador de segurança, e atualizar a tabela de migrações.
+
 ## Funções e gatilhos em `public`
 
 | Função | Segurança | Executável por (antes → agora, desde `seguranca-api.sql`) | Uso |
@@ -100,12 +125,16 @@ Limite aceito: a RLS de `produto_fotos` esconde a lista de fotos de produto inat
 | `pedidos_recalcular_totais()` | INVOKER | anon e authenticated → ninguém direto (gatilho) | gatilho `trg_pedidos_recalcular_totais` |
 | `pedidos_set_status_atualizado_em()` | INVOKER; `search_path` fixo (vazio) | anon e authenticated → ninguém direto (gatilho) | gatilho `trg_pedidos_status_atualizado_em` |
 | `rls_auto_enable()` | DEFINER | anon e authenticated → ninguém direto (gatilho de evento) | liga RLS em tabela nova |
+| `produto_slug_base(text)` | INVOKER, imutável | ninguém da API (nasceu assim, 28/09) | a regra do slug, pura |
+| `produto_slug_livre(text)` | INVOKER | ninguém da API | base livre ou `-2`, `-3`... contra todos os produtos (usada pelo gatilho de cadastro e pelo preenchimento) |
+| `produtos_slug_no_cadastro()` | **DEFINER** (dono `postgres`, que ignora a RLS: a busca de colisão enxerga todos os produtos, qualquer que seja o papel de quem salva) | ninguém direto (gatilho) | gatilho `produtos_slug_no_cadastro` (antes de insert em `produtos`) |
+| `produtos_slug_imutavel()` | INVOKER | ninguém direto (gatilho) | gatilho `produtos_slug_imutavel` (antes de update em `produtos`, depois de `produtos_set_atualizado_em`) |
 
 Padrão para objeto novo: desde `seguranca-api.sql`, toda função nova criada pelo papel `postgres` nasce sem EXECUTE para PUBLIC, anon e authenticated (antes nascia executável por eles) (funções criadas pelo painel da Supabase, papel `supabase_admin`, continuam com o padrão antigo). Tabela nova continua nascendo com todas as permissões para anon e authenticated, protegida só pela RLS — a migração que cria a tabela tira o que não é preciso (ver CLAUDE.md).
 
 ## Verificador de segurança do Supabase (security advisors)
 
-Agora (24/09/2026 23:55 UTC, verificador real, depois de `seguranca-api.sql`): INFO RLS sem política em `heartbeat` e `pedidos_rate_limit` (intencional: só a chave de serviço, e anon/authenticated nem têm permissão nelas); WARN proteção de senha vazada desligada (configuração do Auth, fora da migração).
+Agora (28/09/2026 05:04 UTC, verificador real, depois de `produtos-slug.sql`; igual ao de antes dela e ao de 24/09): INFO RLS sem política em `heartbeat` e `pedidos_rate_limit` (intencional: só a chave de serviço, e anon/authenticated nem têm permissão nelas); WARN proteção de senha vazada desligada (configuração do Auth, fora da migração).
 
 Antes da migração havia também: WARN `registrar_tentativa_pedido` e `rls_auto_enable` executáveis como DEFINER por anon e por authenticated; WARN `search_path` não fixo em `pedidos_set_status_atualizado_em`.
 
@@ -137,27 +166,31 @@ A coluna "Variáveis da Netlify" foi montada pelo que o código lê em produçã
 
 Regra (CLAUDE.md): **nenhum script de teste grava em produção**. O banco é um só.
 
-Testes de banco: `scripts/banco/`, cada um numa transação desfeita no fim, conectando direto no Postgres (`SUPABASE_DB_URL`, Session pooler). Simulam o papel da API (anon, authenticated, service_role) como o PostgREST faz, então valem para o que está de fato em produção. `--com-migracao` roda `supabase/seguranca-api.sql` dentro da mesma transação desfeita, antes das verificações (prova de migração antes de aplicar).
+Testes de banco: `scripts/banco/`, cada um numa transação desfeita no fim, conectando direto no Postgres (`SUPABASE_DB_URL`, Session pooler). Simulam o papel da API (anon, authenticated, service_role) como o PostgREST faz, então valem para o que está de fato em produção. `--com-migracao=<arquivo.sql>[,<outro.sql>]` roda esses arquivos, na ordem, dentro da mesma transação desfeita, antes das verificações (prova de migração antes de aplicar; ex.: `--com-migracao=supabase/produtos-slug.sql`).
 
 | Script | Prova | Banco | Grava? |
 |---|---|---|---|
-| `node scripts/banco/rodar-todos.mjs [--com-migracao]` | roda todos abaixo e compara o banco antes e depois (linhas e conteúdo de cada tabela de `public`, contagens de storage e auth, contadores) | produção, só leitura para a comparação | não (falha se algo mudar) |
+| `node scripts/banco/rodar-todos.mjs [--com-migracao=<arquivo.sql>]` | roda todos abaixo e compara o banco antes e depois (linhas e conteúdo de cada tabela de `public`, contagens de storage e auth, contadores) | produção, só leitura para a comparação | não (falha se algo mudar) |
 | `scripts/banco/permissoes.mjs` | permissões de cada papel em cada tabela e função, contador de pedido, padrão de função nova, RLS em tabela nova, storage sem política para anon, alertas de banco do verificador | produção, transação desfeita | não |
 | `scripts/banco/produtos.mjs` | RLS de `produtos` e `produto_fotos`; admin lê/insere/altera/apaga; gatilhos `produtos_set_atualizado_em` e `produto_fotos_limite`; `salvar_produto_fotos` | produção, transação desfeita | não |
 | `scripts/banco/produto-cento-itens.mjs` | RLS de `produto_cento_itens` | produção, transação desfeita | não |
 | `scripts/banco/dias-off.mjs` | RLS de `dias_off` e `segunda_reaberturas` | produção, transação desfeita | não |
 | `scripts/banco/pedidos.mjs` | ninguém da API grava direto; servidor grava (cópia da tabela, contador próprio); status inicial; totais recalculados; número não forjável; anon não lê/altera/apaga; admin lê/altera/apaga; gatilho de status | produção, transação desfeita | não (não usa o contador real) |
 | `scripts/banco/limite-pedidos.mjs` | anon/logado não chamam `registrar_tentativa_pedido`; servidor: 6ª tentativa bloqueada, IPs independentes, janela recomeça | produção, transação desfeita | não |
+| `scripts/banco/slug.mjs` | slug: regra com casos de borda, colisão `-2`/`-3` (inclusive contra inativo), admin e chave de serviço cadastram sem slug, editar/renomear mantém o slug, cascata do Cento, troca de slug recusada, slug enviado (restauração), funções fora do alcance de anon e logado, ordem dos gatilhos de edição, preenchimento sem mexer no `atualizado_em` | produção, transação desfeita | não |
+| `scripts/banco/slug-migracao.mjs` | etapa 1 sobre os produtos existentes (se ainda não aplicada: slugs, `atualizado_em`, "Os mais pedidos", tabelas e estrutura iguais), etapa 2 (e o cancelamento dela com produto sem slug) e desfazer (banco igual ao de antes da etapa 1) | produção, transação desfeita | não |
 | `scripts/banco/http-sem-gravar.mjs` | camada HTTP com a chave anônima: chamadas que nunca gravam (função por GET, que roda só leitura; insert com valor inválido; update/delete de id inexistente) | produção, pela API | não |
 | `npm run test` (vitest) | regras, telas, Server Actions e `POST /api/pedidos` (IP da Netlify, X-Forwarded-For ignorado em produção, 429, gravação só pela chave de serviço) com banco simulado. Roda duas vezes, nos fusos UTC e America/Sao_Paulo; testes com "hoje" fixam o relógio (`RELOGIO_TESTE=<instante>` fixa o da suíte inteira) | nenhum (não acessa rede) | não |
 | `scripts/netlify/ignorar-build.mjs` | não é teste: regra de ignorar build da Netlify (roda antes de cada build). A regra é testada por `npm run test` (`scripts/netlify/ignorar-build.test.mjs`, com um repositório git temporário) | nenhum | não |
 | `node scripts/arquivos-sem-dono.mjs` | todo arquivo do bucket sem linha no banco (raiz, `capa/`, `galeria/`), linha apontando para arquivo inexistente, arquivo usado por duas linhas e `capa/{id}/` com mais de um arquivo; sai com código 1 se achar algo. **Rodar antes da limpeza dos fictícios e antes da carga real** | produção, transação READ ONLY desfeita | não (só leitura) |
 | `scripts/ver-fotos-anonimo.mjs <id>` | lista, como anônimo, as fotos extras de um produto na ordem | produção, pela API | não (só leitura) |
+| `node scripts/ver-slugs.mjs` | busca cada produto pelo slug com a consulta de `buscarProdutoPorSlug`, como anônimo e com a chave de serviço (lê tudo, como o admin logado): ativo devolve, inativo e inexistente voltam vazios | produção, pela API | não (só leitura) |
+| `node scripts/ver-vitrine.mjs [endereço]` | "Os mais pedidos" da Home e os cards da Lista, na ordem da tela, com o link de cada card (padrão: produção; serve para a homologação) | site, por GET | não (só leitura) |
 | `scripts/test-turnstile-verify.mjs` | secret key do Turnstile ativa | Cloudflare | não |
 | `scripts/check-service-key-bundle.mjs` | a service role key não aparece em `.next/static` (rodar depois do build) | nenhum (arquivos locais) | não |
 | `scripts/test-auth-rate-limit.mjs` | limite de tentativas de login do Supabase Auth | Auth de produção | não grava dados; **manual**: tentativas de login seguidas podem bloquear o login do seu IP por alguns minutos |
 
-Última rodada contra produção (24/09/2026, depois da aplicação, sem `--com-migracao`): os 6 testes de banco 92/92, `http-sem-gravar.mjs` 15/15, banco idêntico antes e depois, contador de pedidos em 1047.
+Última rodada contra produção (28/09/2026, depois da etapa 1 do slug, sem `--com-migracao`): os 8 testes de banco 114/114, `http-sem-gravar.mjs` 17/17, banco idêntico antes e depois, contador de pedidos em 1047.
 
 Conexão com o banco: TLS conferindo o certificado do servidor com `supabase/prod-ca.crt` (certificado público da Supabase, baixado no painel em Database > Settings > SSL Configuration). Provado em 24/09/2026: conecta com o certificado certo e é recusada com um certificado de outra autoridade (`SUPABASE_DB_CA=<arquivo>` troca o certificado para essa prova; se o arquivo não existir, o script para).
 

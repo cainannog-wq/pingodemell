@@ -2,10 +2,13 @@ import { formatMoeda } from "@/lib/pedidos/format";
 import type { CategoriaProduto, TipoProduto } from "@/lib/produtos/types";
 
 // Produto como a vitrine pública enxerga: só os campos que o site mostra
-// ou usa pra filtrar/ordenar. Referência sempre pelo `id` (uuid), nunca
-// pelo nome, que o admin pode trocar.
+// ou usa pra filtrar/ordenar. Referência interna sempre pelo `id` (uuid);
+// na URL, pelo `slug`. Nunca pelo nome, que o admin pode trocar.
 export type ProdutoVitrine = {
   id: string;
+  // Gerado e travado no banco (supabase/produtos-slug.sql). Opcional no
+  // banco até a etapa 2 da migração; produto sem slug leva para a Lista.
+  slug: string | null;
   nome: string;
   descricao: string | null;
   preco: number;
@@ -18,7 +21,7 @@ export type ProdutoVitrine = {
 };
 
 export const CAMPOS_VITRINE =
-  "id, nome, descricao, preco, image_url, Categoria, tipo, ativo, destaque, atualizado_em";
+  "id, slug, nome, descricao, preco, image_url, Categoria, tipo, ativo, destaque, atualizado_em";
 
 export const LIMITE_MAIS_PEDIDOS = 10;
 

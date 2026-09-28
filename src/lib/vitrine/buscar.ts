@@ -43,3 +43,33 @@ export async function buscarLista(categoria: CategoriaProduto | null): Promise<I
 
   return montarLista((data ?? []) as ProdutoVitrine[], categoria);
 }
+
+// Formato do slug, igual à restrição produtos_slug_formato do banco.
+export const FORMATO_SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+// Produto da interna (/produtos/{slug}), pronta para a página que ainda
+// não existe. A leitura por slug fica AQUI, no código do site — não existe
+// (e não deve ser criada) função de banco pública para isso. Só produto
+// ativo, com o filtro na própria consulta E aqui: o admin logado navegando
+// no site lê do banco também os inativos. Retorna null quando não há o que
+// mostrar: slug fora do formato (nem consulta o banco), inexistente,
+// inativo ou falha do banco (registrada no log).
+export async function buscarProdutoPorSlug(slug: string): Promise<ProdutoVitrine | null> {
+  if (!FORMATO_SLUG.test(slug)) return null;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("produtos")
+    .select(CAMPOS_VITRINE)
+    .eq("slug", slug)
+    .eq("ativo", true)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Falha ao buscar o produto pelo slug:", slug, error.message);
+    return null;
+  }
+
+  const produto = data as ProdutoVitrine | null;
+  return produto?.ativo === true ? produto : null;
+}

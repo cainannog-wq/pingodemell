@@ -13,9 +13,11 @@
 // aqui é a camada HTTP — ela é coberta por scripts/banco/http-sem-gravar.mjs,
 // com chamadas que nunca gravam.
 //
-// --com-migracao: roda supabase/seguranca-api.sql dentro da mesma
-// transação desfeita, antes das verificações. Serve para provar uma
-// migração antes de aplicá-la. Depois de aplicada em produção, rode sem.
+// --com-migracao=<arquivo.sql>[,<outro.sql>...]: roda esses arquivos, na
+// ordem, dentro da mesma transação desfeita, antes das verificações. Serve
+// para provar uma migração antes de aplicá-la (ex.:
+// --com-migracao=supabase/produtos-slug.sql). Depois de aplicada em
+// produção, rode sem.
 //
 // Único efeito que um ROLLBACK não desfaz: contadores (sequences). Nenhum
 // cenário aqui usa o contador real de número de pedido — a gravação de
@@ -31,7 +33,6 @@ import path from "node:path";
 import pg from "pg";
 
 export const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-export const MIGRACAO = path.join(raiz, "supabase", "seguranca-api.sql");
 // Certificado da autoridade da Supabase (público). SUPABASE_DB_CA troca o
 // arquivo — serve para provar que um certificado errado é recusado.
 const CERTIFICADO = process.env.SUPABASE_DB_CA || path.join(raiz, "supabase", "prod-ca.crt");
@@ -70,7 +71,44 @@ export function limpar(texto) {
   return s;
 }
 
-export const comMigracao = process.argv.includes("--com-migracao");
+// Arquivos de --com-migracao=..., já conferidos (existem). Vazio = sem
+// migração simulada.
+function lerMigracoes(argv) {
+  const arg = argv.find((a) => a === "--com-migracao" || a.startsWith("--com-migracao="));
+  if (!arg) return [];
+  const lista = arg.includes("=")
+    ? arg.slice(arg.indexOf("=") + 1).split(",").map((a) => a.trim()).filter(Boolean)
+    : [];
+  if (lista.length === 0) {
+    console.error("Use --com-migracao=<arquivo.sql> (ex.: --com-migracao=supabase/produtos-slug.sql).");
+    process.exit(1);
+  }
+  return lista.map((a) => {
+    const arquivo = path.resolve(raiz, a);
+    if (!existsSync(arquivo)) {
+      console.error(`Migração não encontrada: ${a}`);
+      process.exit(1);
+    }
+    return arquivo;
+  });
+}
+
+export const MIGRACOES = lerMigracoes(process.argv);
+export const comMigracao = MIGRACOES.length > 0;
+
+export function relativo(arquivo) {
+  return path.relative(raiz, arquivo).split(path.sep).join("/");
+}
+
+// Roda um arquivo de migração na conexão, dentro da transação já aberta.
+export async function rodarMigracao(db, arquivo) {
+  const sql = readFileSync(arquivo, "utf8");
+  // "end;" sozinho fica de fora: é o fim de todo corpo de função plpgsql.
+  if (/^\s*(begin|start\s+transaction|commit|rollback)\s*;/im.test(sql)) {
+    throw new Error(`A migração ${relativo(arquivo)} não pode ter begin/commit próprios.`);
+  }
+  await db.query(sql);
+}
 
 export async function conectar() {
   if (!env.SUPABASE_DB_URL) {
@@ -121,11 +159,9 @@ export async function emTransacaoDesfeita(titulo, corpo) {
     await db.query("begin");
     await db.query("set local lock_timeout = '2s'");
     await db.query("set local statement_timeout = '5s'");
-    if (comMigracao) {
-      const sql = readFileSync(MIGRACAO, "utf8");
-      if (/^\s*(begin|commit|end)\s*;/im.test(sql)) throw new Error("A migração não pode ter begin/commit próprios.");
-      await db.query(sql);
-      console.log(`Migração ${path.relative(raiz, MIGRACAO).split(path.sep).join("/")} aplicada DENTRO da transação desfeita.`);
+    for (const arquivo of MIGRACOES) {
+      await rodarMigracao(db, arquivo);
+      console.log(`Migração ${relativo(arquivo)} aplicada DENTRO da transação desfeita.`);
     }
     await corpo(db);
   } catch (erro) {

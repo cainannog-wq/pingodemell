@@ -296,3 +296,18 @@ describe("login e preparo do envio da capa", () => {
     expect(storage.limparPastaDaCapa).toHaveBeenCalledWith(PRODUTO, CAPA_ANTIGA);
   });
 });
+
+// Slug (URL amigável): gerado e travado no banco. O admin nunca envia slug,
+// nem quando o formulário chega com um campo "slug" forjado.
+describe("slug: o admin nunca envia", () => {
+  it("cadastro e edição com renomeação gravam sem a coluna slug (os toggles de ativo e destaque: actions.test.ts)", async () => {
+    produto = null;
+    await createProduto({}, form(undefined, { id: "f3888633-c9d7-4eeb-83a9-396d48eb7fe6", slug: "forjado" }));
+    produto = { id: PRODUTO, nome: "Brigadeiro Gourmet", image_url: CAPA_ANTIGA };
+    await updateProduto("Brigadeiro Gourmet", {}, form(undefined, { nome: "Brigadeiro Gourmet 2", slug: "forjado" }));
+    expect(inserts).toHaveLength(1);
+    expect(updates).toHaveLength(1);
+    for (const payload of [...inserts, ...updates]) expect(payload).not.toHaveProperty("slug");
+    expect(updates[0].nome).toBe("Brigadeiro Gourmet 2");
+  });
+});

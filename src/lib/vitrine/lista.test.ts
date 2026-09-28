@@ -8,6 +8,7 @@ function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {
   seq += 1;
   return {
     id: `id-${seq}`,
+    slug: `produto-${seq}`,
     nome: `Produto ${seq}`,
     descricao: null,
     preco: 10,

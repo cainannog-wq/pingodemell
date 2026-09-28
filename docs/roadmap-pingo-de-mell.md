@@ -120,7 +120,7 @@ Registro e configuração do domínio definitivo são ação sua, fora do Claude
 
 ## Fase 5 — Lançamento e handoff
 
-- Documentação de uso do admin em prints, não em termos técnicos
+- Documentação de uso do admin em prints, não em termos técnicos. Reforçar: produto que sai do catálogo é **desativado, nunca excluído** — excluir libera o endereço (slug), e o endereço antigo passa a abrir o próximo produto cadastrado com o mesmo nome (registrado em 28/09/2026, PR slug)
 - Backup dos dados dos 60 produtos que você vai cadastrar na carga inicial
 - Deixar claro que reset de senha, se o cliente esquecer, é manual por você via painel do Supabase
 - Verificação de domínio no Google Search Console e envio do sitemap (ação manual sua ou do cliente, feita fora do Claude Code, com a conta Google do próprio negócio)

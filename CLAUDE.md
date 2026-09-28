@@ -60,8 +60,26 @@ Decisão fechada com o Cainan em 24/09/2026, no PR seguranca-api:
   (security advisors) e mostra a saída na descrição do PR**, antes e depois
   da migração, com uma justificativa para cada alerta que continuar. Antes
   do merge, o "depois" das regras de banco sai de
-  `node scripts/banco/permissoes.mjs --com-migracao`; o verificador de
-  verdade roda de novo depois que a migração for aplicada.
+  `node scripts/banco/permissoes.mjs --com-migracao=<arquivo.sql>`; o
+  verificador de verdade roda de novo depois que a migração for aplicada.
+
+## Regra do slug do produto (URL amigável)
+
+Decisão fechada com o Cainan em 28/09/2026, no PR slug:
+
+- **O slug é gerado e travado no banco** (`supabase/produtos-slug.sql`): um
+  gatilho gera o slug a partir do nome no cadastro, e outro recusa qualquer
+  mudança num slug já preenchido. Renomear o produto não mexe no slug.
+- **Código e scripts nunca enviam slug**: gravam sem ele e leem o valor
+  depois. O banco aceita um slug enviado (no formato e sem repetir) só para
+  o único uso legítimo: restaurar backup com as URLs originais.
+- **A leitura do produto pelo slug fica no código do site**
+  (`buscarProdutoPorSlug`, em `src/lib/vitrine/buscar.ts`, só ativo, com o
+  filtro na consulta). Não criar função de banco pública para isso.
+- Consequências aceitas: produto recadastrado com o nome de um produto
+  desativado ganha `-2` na URL, para sempre; produto excluído libera o slug,
+  e o endereço antigo passa a abrir o produto novo (por isso: desativar,
+  nunca excluir). Detalhes em `docs/status-pingo-de-mell.md`.
 
 ## Regra de fuso horário — "que dia é"
 

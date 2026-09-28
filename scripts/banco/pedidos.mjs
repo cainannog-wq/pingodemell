@@ -16,7 +16,7 @@
 //   - o pedido usado pelo logado entra com número explícito (-1), sem usar
 //     o contador.
 //
-// Uso: node scripts/banco/pedidos.mjs [--com-migracao]
+// Uso: node scripts/banco/pedidos.mjs [--com-migracao=<arquivo.sql>]
 
 import { cenario, descrever, emTransacaoDesfeita, registrar, SEM_PERMISSAO } from "./lib.mjs";
 
