@@ -116,7 +116,11 @@
   font-size: 12px !important;
   padding: 5px 11px !important;
 }
+/* O layout da interna usa a serifada (Merriweather) no nome do produto,
+   não a manuscrita dos outros H1 do site. */
 .pdm-site .interna-cabeca h1 {
+  font-family: var(--font-heading);
+  font-weight: var(--fw-bold);
   font-size: 36px;
   line-height: 1.25;
 }
@@ -607,7 +611,8 @@ input.interna-seletor-valor {
   }
   /* O botão do WhatsApp sobe para não cobrir o "Adicionar". */
   .pdm-site:has(.interna-barra) .site-fab {
-    bottom: calc(100px + env(safe-area-inset-bottom)) !important;
+    /* Barra com a linha de aviso: ~110px. */
+    bottom: calc(128px + env(safe-area-inset-bottom)) !important;
   }
 
   .interna-relacionados {
