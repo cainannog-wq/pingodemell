@@ -80,6 +80,12 @@ Decisão fechada com o Cainan em 28/09/2026, no PR slug:
   desativado ganha `-2` na URL, para sempre; produto excluído libera o slug,
   e o endereço antigo passa a abrir o produto novo (por isso: desativar,
   nunca excluir). Detalhes em `docs/status-pingo-de-mell.md`.
+- **Todo PR que mexe em gatilho ou função de `produtos` roda
+  `node scripts/banco/rodar-todos.mjs` antes do merge** (com
+  `--com-migracao=<arquivo.sql>` se a mudança ainda não estiver aplicada) e
+  mostra a saída no PR. A proteção da ordem dos gatilhos de edição (teste
+  `slug 13` em `scripts/banco/slug.mjs`) só existe nessa bateria de banco,
+  não no `npm run test`; sem rodá-la, ela não vale.
 
 ## Regra de fuso horário — "que dia é"
 
