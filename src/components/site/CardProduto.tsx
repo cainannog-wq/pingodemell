@@ -31,11 +31,11 @@ export function FotoProduto({
 }
 
 // Preço do card. O valor ("R$ 95,99") nunca quebra no meio; a unidade
-// ("o cento") é um bloco à parte que fica na mesma linha quando cabe e
+// ("o kg", "o cento") é um bloco à parte que fica na mesma linha quando cabe e
 // desce inteiro para a linha de baixo quando não cabe (o espaço entre os
 // dois é o único ponto de quebra).
 // No celular a unidade usa o estilo de texto secundário.
-export function PrecoProduto({ produto }: { produto: Pick<ProdutoVitrine, "preco" | "tipo"> }) {
+export function PrecoProduto({ produto }: { produto: Pick<ProdutoVitrine, "preco" | "tipo" | "unidade_venda"> }) {
   const { valor, unidade } = partesPrecoVitrine(produto);
   return (
     <span className="home-price">

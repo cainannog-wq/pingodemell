@@ -103,6 +103,7 @@ const CAMPOS_CENTO = {
   pedido_minimo: "1",
   prazo_producao_dias: "2",
   step_quantidade: "livre",
+  categoria: "Doces",
   tipo: "cento",
 };
 

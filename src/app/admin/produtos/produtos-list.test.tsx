@@ -39,6 +39,7 @@ const PRODUTO: Produto = {
   destaque: false,
   ativo: true,
   tipo: "normal",
+  unidade_venda: null,
 };
 
 // Achado #9 da auditoria de acessibilidade (22/09/2026): a mensagem de

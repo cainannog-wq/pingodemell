@@ -119,6 +119,7 @@ const CAMPOS = {
   pedido_minimo: "1",
   prazo_producao_dias: "1",
   step_quantidade: "livre",
+  categoria: "Doces",
   tipo: "normal",
 };
 

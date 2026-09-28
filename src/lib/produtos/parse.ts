@@ -2,6 +2,7 @@ import {
   CATEGORIA_VALUES,
   STEP_QUANTIDADE_VALUES,
   TIPO_PRODUTO_VALUES,
+  UNIDADE_VENDA_MAX,
   type CategoriaProduto,
   type StepQuantidade,
   type TipoProduto,
@@ -12,7 +13,8 @@ export type ParsedProduto = {
   preco: number;
   descricao: string;
   pedido_minimo: number;
-  categoria: CategoriaProduto | null;
+  categoria: CategoriaProduto;
+  unidade_venda: string | null;
   prazo_producao_dias: number;
   step_quantidade: StepQuantidade;
   destaque: boolean;
@@ -51,6 +53,8 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
   const prazoRaw = String(formData.get("prazo_producao_dias") ?? "");
   const stepRaw = String(formData.get("step_quantidade") ?? "");
   const tipoRaw = String(formData.get("tipo") ?? "normal").trim();
+  // Texto livre; espaços repetidos viram um só. Vazio vira null.
+  const unidadeVenda = String(formData.get("unidade_venda") ?? "").trim().replace(/\s+/g, " ");
   const destaque = formData.get("destaque") != null;
   const ativo = formData.get("ativo") != null;
 
@@ -79,8 +83,19 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
   if (!STEP_QUANTIDADE_VALUES.includes(stepRaw as StepQuantidade)) {
     return { success: false, error: "Selecione um step de quantidade." };
   }
-  if (categoriaRaw && !CATEGORIA_VALUES.includes(categoriaRaw as CategoriaProduto)) {
+  // Categoria obrigatória no formulário (a coluna ainda aceita nulo no
+  // banco: o NOT NULL fica para quando o lote for para a main).
+  if (!categoriaRaw) {
+    return { success: false, error: "Selecione a categoria do produto." };
+  }
+  if (!CATEGORIA_VALUES.includes(categoriaRaw as CategoriaProduto)) {
     return { success: false, error: "Selecione uma categoria válida." };
+  }
+  if (unidadeVenda.length > UNIDADE_VENDA_MAX) {
+    return {
+      success: false,
+      error: `A unidade de venda tem no máximo ${UNIDADE_VENDA_MAX} caracteres (ex.: kg, unidade, litro).`,
+    };
   }
   if (!TIPO_PRODUTO_VALUES.includes(tipoRaw as TipoProduto)) {
     return { success: false, error: "Selecione um tipo de produto válido." };
@@ -110,7 +125,8 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
       preco,
       descricao,
       pedido_minimo,
-      categoria: categoriaRaw ? (categoriaRaw as CategoriaProduto) : null,
+      categoria: categoriaRaw as CategoriaProduto,
+      unidade_venda: unidadeVenda || null,
       prazo_producao_dias,
       step_quantidade: stepRaw as StepQuantidade,
       destaque,

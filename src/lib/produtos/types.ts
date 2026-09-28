@@ -7,7 +7,9 @@ export const STEP_QUANTIDADE_LABELS: Record<StepQuantidade, string> = {
   multiplos_10: "Múltiplos de 10",
 };
 
-export const CATEGORIA_VALUES = ["Bolos", "Doces", "Salgados", "Bebidas"] as const;
+// Mesma ordem do filtro da Lista e do cadastro. Espelha o enum
+// categoria_produto do banco (Kits entrou em supabase/categoria-kits.sql).
+export const CATEGORIA_VALUES = ["Bolos", "Doces", "Salgados", "Bebidas", "Kits"] as const;
 export type CategoriaProduto = (typeof CATEGORIA_VALUES)[number];
 
 export const TIPO_PRODUTO_VALUES = ["normal", "cento"] as const;
@@ -17,6 +19,12 @@ export const TIPO_PRODUTO_LABELS: Record<TipoProduto, string> = {
   normal: "Normal",
   cento: "Cento (com subitens)",
 };
+
+// Unidades sugeridas no campo "Unidade de venda" do cadastro. O banco
+// aceita outro texto: unidade_venda é texto livre, não enum, pra não
+// precisar mudar o banco a cada unidade nova do catálogo.
+export const UNIDADES_VENDA_SUGERIDAS = ["kg", "unidade", "cento", "litro"] as const;
+export const UNIDADE_VENDA_MAX = 20;
 
 export type Produto = {
   // Identificador estável (uuid, único). A chave primária continua sendo o
@@ -36,6 +44,9 @@ export type Produto = {
   destaque: boolean;
   ativo: boolean;
   tipo: TipoProduto;
+  // Unidade em que o preço é dado ("kg", "unidade"...), texto livre e
+  // opcional. Vazio: o card mostra só o preço, como antes.
+  unidade_venda: string | null;
 };
 
 // Linha da tabela produto_cento_itens: um subitem (sabor) de um produto

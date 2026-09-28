@@ -35,6 +35,7 @@ const BASE: ProdutoVitrine = {
   image_url: null,
   Categoria: "Bolos",
   tipo: "normal",
+  unidade_venda: null,
   ativo: true,
   destaque: true,
   atualizado_em: "2026-09-23T14:38:07.261Z",

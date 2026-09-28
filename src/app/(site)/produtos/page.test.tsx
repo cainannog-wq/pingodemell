@@ -51,6 +51,7 @@ function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {
     image_url: null,
     Categoria: "Doces",
     tipo: "normal",
+    unidade_venda: null,
     ativo: true,
     destaque: false,
     atualizado_em: "2026-09-23T14:29:18.070Z",
@@ -66,6 +67,7 @@ const CATALOGO = [
   produto({ nome: "Coca-cola 2L", Categoria: "Bebidas", preco: 11, destaque: true }),
   produto({ nome: "Morango Banhado", Categoria: "Doces", preco: 2.5 }),
   produto({ nome: "Empada", Categoria: "Salgados", preco: 4.5 }),
+  produto({ nome: "Kit Aniversário", Categoria: "Kits", preco: 180 }),
   produto({ nome: "Kit Festa", Categoria: null, preco: 150 }),
   produto({ nome: "Torta Inativa", Categoria: "Doces", ativo: false }),
 ];
@@ -99,7 +101,7 @@ describe("Página Lista — estrutura", () => {
     expect(h2s).toHaveLength(1);
     expect(h2s[0]).toHaveTextContent("Todos os produtos");
     expect(h2s[0]).toHaveClass("site-visually-hidden");
-    expect(cardsNaOrdem()).toEqual(["Beijinho", "Bolo de Chocolate", "Coca-cola 2L", "Empada", "Kit Festa", "Morango Banhado"]);
+    expect(cardsNaOrdem()).toEqual(["Beijinho", "Bolo de Chocolate", "Coca-cola 2L", "Empada", "Kit Aniversário", "Kit Festa", "Morango Banhado"]);
     expect(filtroAtual()).toHaveAttribute("href", "/produtos");
     expect(screen.queryByText("Torta Inativa")).not.toBeInTheDocument();
   });
@@ -112,13 +114,20 @@ describe("Página Lista — estrutura", () => {
     expect(cardsNaOrdem()).toEqual(["Beijinho", "Morango Banhado"]);
   });
 
+  it("?categoria=kits: só os produtos da categoria Kits, filtro Kits marcado", async () => {
+    await renderLista("kits");
+    expect(screen.getByRole("heading", { level: 2, name: "Kits" })).toHaveClass("site-visually-hidden");
+    expect(filtroAtual()).toHaveAttribute("href", "/produtos?categoria=kits");
+    expect(cardsNaOrdem()).toEqual(["Kit Aniversário"]);
+  });
+
   it("categoria inválida na URL mostra 'Todos', sem erro", async () => {
     await renderLista("kits-festa");
     expect(filtroAtual()).toHaveAttribute("href", "/produtos");
-    expect(cardsNaOrdem()).toHaveLength(6);
+    expect(cardsNaOrdem()).toHaveLength(7);
   });
 
-  it("filtro tem as 4 categorias do CMS mais 'Todos', como links da URL", async () => {
+  it("filtro tem as 5 categorias do CMS (com Kits) mais 'Todos', como links da URL", async () => {
     await renderLista();
     const links = within(screen.getByRole("navigation", { name: "Categorias" })).getAllByRole("link");
     expect(links.map((a) => a.getAttribute("href"))).toEqual([
@@ -127,6 +136,7 @@ describe("Página Lista — estrutura", () => {
       "/produtos?categoria=doces",
       "/produtos?categoria=salgados",
       "/produtos?categoria=bebidas",
+      "/produtos?categoria=kits",
     ]);
     expect(links.filter((a) => a.getAttribute("aria-current") === "page")).toHaveLength(1);
   });
@@ -169,6 +179,18 @@ describe("Página Lista — card", () => {
     await renderLista("doces");
     expect(preco("R$ 100,00 o cento")).toBeInTheDocument();
     expect(preco("R$ 2,50")).toBeInTheDocument();
+  });
+
+  it("card com unidade de venda: 'R$ X o kg'; sem unidade (produto de hoje), só o preço", async () => {
+    doBanco = [
+      produto({ nome: "Bolo de Cenoura", Categoria: "Bolos", preco: 90, unidade_venda: "kg" }),
+      produto({ nome: "Bolo Antigo", Categoria: "Bolos", preco: 45 }),
+    ];
+    await renderLista("bolos");
+    const kg = preco("R$ 90,00 o kg");
+    expect(within(cardDe("Bolo de Cenoura")).getByText("o kg")).toHaveClass("site-preco-unidade");
+    expect(kg.querySelector(".site-preco-valor")?.textContent?.replace(/\s+/g, " ")).toBe("R$ 90,00");
+    expect(preco("R$ 45,00").querySelector(".site-preco-unidade")).toBeNull();
   });
 
   it("preço do cento: valor e 'o cento' em blocos separados, só o espaço entre eles pode quebrar", async () => {

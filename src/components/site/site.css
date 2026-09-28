@@ -582,7 +582,7 @@ body:has(.pdm-site) {
 /* Categorias */
 .home-cats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 20px;
 }
 .pdm-site .home-cat {
@@ -628,6 +628,10 @@ body:has(.pdm-site) {
   .home-cats {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
+  }
+  /* 5 quadrados em 2 colunas: o último (sozinho) ocupa a linha inteira. */
+  .home-cats > li:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
   .pdm-site .home-cat {
     height: 120px;

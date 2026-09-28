@@ -15,6 +15,7 @@ const CAMPOS_VALIDOS = {
   pedido_minimo: "1",
   prazo_producao_dias: "2",
   step_quantidade: "livre",
+  categoria: "Doces",
 };
 
 describe("parseProdutoForm", () => {
@@ -67,11 +68,80 @@ describe("parseProdutoForm", () => {
     }
   });
 
-  it("aceita produto sem categoria selecionada", () => {
-    const result = parseProdutoForm(buildFormData(CAMPOS_VALIDOS));
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.categoria).toBeNull();
+  it("recusa salvar sem categoria (campo ausente ou vazio)", () => {
+    const semCategoria = { ...CAMPOS_VALIDOS } as Record<string, string>;
+    delete semCategoria.categoria;
+    for (const campos of [semCategoria, { ...CAMPOS_VALIDOS, categoria: "" }, { ...CAMPOS_VALIDOS, categoria: "  " }]) {
+      const result = parseProdutoForm(buildFormData(campos));
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe("Selecione a categoria do produto.");
+      }
+    }
+  });
+
+  it("aceita as 5 categorias, incluindo Kits", () => {
+    for (const categoria of ["Bolos", "Doces", "Salgados", "Bebidas", "Kits"]) {
+      const result = parseProdutoForm(buildFormData({ ...CAMPOS_VALIDOS, categoria }));
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.categoria).toBe(categoria);
+      }
+    }
+  });
+
+  it("unidade de venda: vazio vira null", () => {
+    for (const unidade_venda of [undefined, "", "   "]) {
+      const campos = unidade_venda === undefined ? CAMPOS_VALIDOS : { ...CAMPOS_VALIDOS, unidade_venda };
+      const result = parseProdutoForm(buildFormData(campos));
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.unidade_venda).toBeNull();
+      }
+    }
+  });
+
+  it("unidade de venda: aceita as sugeridas e texto livre, sem espaços sobrando", () => {
+    for (const [digitado, gravado] of [
+      ["kg", "kg"],
+      ["unidade", "unidade"],
+      ["litro", "litro"],
+      ["  caixa   com 6 ", "caixa com 6"],
+    ]) {
+      const result = parseProdutoForm(buildFormData({ ...CAMPOS_VALIDOS, unidade_venda: digitado }));
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.unidade_venda).toBe(gravado);
+      }
+    }
+  });
+
+  it("unidade de venda: recusa mais de 20 caracteres", () => {
+    const result = parseProdutoForm(buildFormData({ ...CAMPOS_VALIDOS, unidade_venda: "x".repeat(21) }));
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toMatch(/unidade de venda/i);
+    }
+  });
+
+  // Bolo só em quilos inteiros: com unidade kg, a quantidade mínima é em kg
+  // e só aceita número inteiro — meio quilo não tem como ser cadastrado.
+  it("bolo em kg: quantidade mínima 1,5 (ou 1.5) é recusada; 1 e 2 são aceitas", () => {
+    const bolo = { ...CAMPOS_VALIDOS, categoria: "Bolos", unidade_venda: "kg" };
+    for (const pedido_minimo of ["1,5", "1.5", "0,5", "0"]) {
+      const result = parseProdutoForm(buildFormData({ ...bolo, pedido_minimo }));
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toMatch(/pedido mínimo/i);
+      }
+    }
+    for (const pedido_minimo of ["1", "2"]) {
+      const result = parseProdutoForm(buildFormData({ ...bolo, pedido_minimo }));
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.pedido_minimo).toBe(Number(pedido_minimo));
+        expect(result.data.unidade_venda).toBe("kg");
+      }
     }
   });
 

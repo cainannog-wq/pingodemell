@@ -15,13 +15,15 @@ export type ProdutoVitrine = {
   image_url: string | null;
   Categoria: CategoriaProduto | null;
   tipo: TipoProduto;
+  // Unidade do preço ("kg", "unidade"...), texto livre; null = só o valor.
+  unidade_venda: string | null;
   ativo: boolean;
   destaque: boolean;
   atualizado_em: string;
 };
 
 export const CAMPOS_VITRINE =
-  "id, slug, nome, descricao, preco, image_url, Categoria, tipo, ativo, destaque, atualizado_em";
+  "id, slug, nome, descricao, preco, image_url, Categoria, tipo, unidade_venda, ativo, destaque, atualizado_em";
 
 export const LIMITE_MAIS_PEDIDOS = 10;
 
@@ -49,20 +51,37 @@ export function selecionarMaisPedidos(produtos: ProdutoVitrine[]): ProdutoVitrin
     .slice(0, LIMITE_MAIS_PEDIDOS);
 }
 
-// Preço como aparece no card: cento ganha "o cento"; o resto, só o valor,
-// sem unidade (o banco não tem campo de unidade). Separado em partes pro
-// card poder manter o valor inteiro numa linha e descer só a unidade.
-export function partesPrecoVitrine(produto: Pick<ProdutoVitrine, "preco" | "tipo">): {
+// Unidade do preço no card, com o artigo certo pras unidades sugeridas no
+// cadastro ("o kg", "a unidade"); qualquer outro texto vira "por {texto}"
+// ("por caixa"). Produto tipo cento é sempre "o cento", com ou sem unidade.
+const ARTIGO_UNIDADE: Record<string, string> = {
+  kg: "o kg",
+  unidade: "a unidade",
+  cento: "o cento",
+  litro: "o litro",
+};
+
+export function textoUnidadeVenda(produto: Pick<ProdutoVitrine, "tipo" | "unidade_venda">): string | null {
+  if (produto.tipo === "cento") return "o cento";
+  const unidade = produto.unidade_venda?.trim();
+  if (!unidade) return null;
+  return ARTIGO_UNIDADE[unidade.toLowerCase()] ?? `por ${unidade}`;
+}
+
+// Preço como aparece no card: valor mais a unidade de venda (sem unidade,
+// só o valor). Separado em partes pro card poder manter o valor inteiro
+// numa linha e descer só a unidade.
+export function partesPrecoVitrine(produto: Pick<ProdutoVitrine, "preco" | "tipo" | "unidade_venda">): {
   valor: string;
   unidade: string | null;
 } {
   return {
     valor: formatMoeda(Number(produto.preco)),
-    unidade: produto.tipo === "cento" ? "o cento" : null,
+    unidade: textoUnidadeVenda(produto),
   };
 }
 
-export function formatarPrecoVitrine(produto: Pick<ProdutoVitrine, "preco" | "tipo">): string {
+export function formatarPrecoVitrine(produto: Pick<ProdutoVitrine, "preco" | "tipo" | "unidade_venda">): string {
   const { valor, unidade } = partesPrecoVitrine(produto);
   return unidade ? `${valor} ${unidade}` : valor;
 }
