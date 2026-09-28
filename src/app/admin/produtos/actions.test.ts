@@ -15,6 +15,11 @@ vi.mock("@/lib/galeria/storage-servidor", () => ({
   limparArquivosSemLinha: vi.fn(async () => 0),
   apagarPastaDoProduto: vi.fn(async () => 0),
   criarEnviosAssinados: vi.fn(async () => []),
+  criarEnvioCapa: vi.fn(),
+  verificarCapaNova: vi.fn(async () => null),
+  urlDaCapa: vi.fn(),
+  limparPastaDaCapa: vi.fn(async () => 0),
+  apagarCapaAntiga: vi.fn(async () => "sem-capa"),
 }));
 
 vi.mock("next/cache", () => ({

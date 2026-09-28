@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY,
+    // Registro de tempo do Salvar no console (src/lib/admin/tempos.ts): "1"
+    // só no build da homologação (branch deploy da Netlify). Na produção
+    // fica vazio e o build elimina o código do registro.
+    MEDIR_TEMPOS_ADMIN: process.env.CONTEXT === "branch-deploy" ? "1" : "",
   },
   images: {
     remotePatterns: supabaseHostname

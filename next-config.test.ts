@@ -36,6 +36,20 @@ describe("X-Robots-Tag por contexto da Netlify", () => {
     }
   });
 
+  it('registro de tempo do Salvar (MEDIR_TEMPOS_ADMIN) só é ligado no build da homologação', async () => {
+    for (const [contexto, esperado] of [
+      ["production", ""],
+      ["deploy-preview", ""],
+      [undefined, ""],
+      ["branch-deploy", "1"],
+    ] as const) {
+      vi.stubEnv("CONTEXT", contexto);
+      vi.resetModules();
+      const { default: config } = await import("./next.config");
+      expect(config.env?.MEDIR_TEMPOS_ADMIN, String(contexto)).toBe(esperado);
+    }
+  });
+
   it("os outros cabeçalhos de segurança continuam em todos os contextos", async () => {
     for (const contexto of ["production", "branch-deploy"]) {
       vi.stubEnv("CONTEXT", contexto);

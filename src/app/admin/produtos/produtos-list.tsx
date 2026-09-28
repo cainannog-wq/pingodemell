@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import type { CategoriaProduto, Produto } from "@/lib/produtos/types";
 import { CATEGORIA_VALUES } from "@/lib/produtos/types";
 import { Card, Icon, Input, Button, Badge, Toggle } from "@/components/ds";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 import { ProductActionMenu } from "./product-action-menu";
 import { deleteProduto, updateProdutoAtivo, updateProdutoDestaque } from "./actions";
+import { concluirSalvarPendente } from "@/lib/admin/tempos";
 
 // Ícone de destaque, sem texto ao lado (só title/aria-label), reaproveitado
 // na tabela desktop. tone="default" (não "accent"): a auditoria de
@@ -103,7 +104,10 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
   const [search, setSearch] = useState("");
   const [chip, setChip] = useState<ChipValue>("Todos");
   const [produtoParaExcluir, setProdutoParaExcluir] = useState<string | null>(null);
-  // Produto já excluído, mas os arquivos das fotos extras não saíram do
+  // Registro de tempo (só na homologação): esta tela confirma o Salvar.
+  useEffect(() => concluirSalvarPendente("salvo"), []);
+
+  // Produto já excluído, mas os arquivos das fotos não saíram do
   // storage (ver deleteProduto).
   const [avisoExclusao, setAvisoExclusao] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();

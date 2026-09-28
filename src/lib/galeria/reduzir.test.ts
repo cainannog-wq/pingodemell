@@ -42,6 +42,21 @@ function arquivo(nome: string, bytes: number, tipo = "image/jpeg") {
 }
 
 describe("reduzirFoto", () => {
+  it("o que sobe é sempre a foto recodificada, nunca o arquivo original: metadados (inclusive GPS) ficam para trás", async () => {
+    const { motor } = motorFalso({ largura: 4032, altura: 3024 });
+    const comGps = new File([new TextEncoder().encode("\xff\xd8\xff\xe1Exif\0\0GPSLatitude-25.63GPSLongitude-49.31")], "IMG_GPS.jpg", {
+      type: "image/jpeg",
+    });
+    const r = await reduzirFoto(comGps, motor);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.foto.blob).not.toBe(comGps);
+    expect(motor.codificar).toHaveBeenCalled();
+    const bytes = new TextDecoder("latin1").decode(await r.foto.blob.arrayBuffer());
+    expect(bytes).not.toContain("GPS");
+    expect(bytes).not.toContain("Exif");
+  });
+
   it("foto grande de celular (4032x3024, 6 MB) sai com no máximo 2000px e menos de 2 MB, em WebP", async () => {
     const { motor } = motorFalso({ largura: 4032, altura: 3024 });
     const r = await reduzirFoto(arquivo("IMG_1234.jpg", 6 * 1024 * 1024), motor);
