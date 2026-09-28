@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { mensagemIlegivel, mensagemMuitoGrande, reduzirFoto, type MotorImagem } from "./reduzir";
+import { mensagemIlegivel, mensagemMuitoGrande, reduzirFoto, semMetadadosJpeg, type MotorImagem } from "./reduzir";
 import { MAX_BYTES_FOTO } from "./regras";
 
 // O ambiente de teste não tem canvas: o motor falso simula um navegador
@@ -41,7 +41,79 @@ function arquivo(nome: string, bytes: number, tipo = "image/jpeg") {
   return f;
 }
 
+// JPEG com a mesma estrutura do que o Safari do iPhone gerou na prova da
+// homologação (28/09/2026): APP0 JFIF, APP1 Exif (espaço de cor e
+// dimensões), APP13 IPTC vazio, depois tabelas, quadro e dados da imagem.
+function segmento(marcador: number, conteudo: string) {
+  const dados = new TextEncoder().encode(conteudo);
+  const n = dados.length + 2;
+  return [0xff, marcador, n >> 8, n & 0xff, ...dados];
+}
+const JPEG_DO_SAFARI = new Uint8Array([
+  0xff, 0xd8,
+  ...segmento(0xe0, "JFIF\0\x01\x01"),
+  ...segmento(0xe1, "Exif\0\0MM\0*ColorSpace PixelXDimension 828"),
+  ...segmento(0xed, "Photoshop 3.0\x008BIM"),
+  ...segmento(0xfe, "comentario"),
+  ...segmento(0xdb, "tabela"),
+  ...segmento(0xc0, "quadro"),
+  0xff, 0xda, 0x00, 0x04, 0x01, 0x02, 0x11, 0x22, 0x33, 0xff, 0xd9,
+]);
+
+describe("semMetadadosJpeg", () => {
+  it("tira Exif, IPTC e comentário do JPEG do Safari e mantém JFIF, tabelas, quadro e imagem", async () => {
+    const limpo = new Uint8Array(await (await semMetadadosJpeg(new Blob([JPEG_DO_SAFARI], { type: "image/jpeg" }))).arrayBuffer());
+    const texto = new TextDecoder("latin1").decode(limpo);
+    expect(texto).not.toContain("Exif");
+    expect(texto).not.toContain("Photoshop");
+    expect(texto).not.toContain("comentario");
+    expect(texto).toContain("JFIF");
+    expect(texto).toContain("tabela");
+    expect(texto).toContain("quadro");
+    expect([...limpo.slice(0, 2)]).toEqual([0xff, 0xd8]);
+    expect([...limpo.slice(-2)]).toEqual([0xff, 0xd9]);
+  });
+
+  it("arquivo que não é JPEG, ou quebrado, volta como está", async () => {
+    const webp = new Blob(["RIFF\0\0\0\0WEBPVP8 "], { type: "image/webp" });
+    expect(await semMetadadosJpeg(webp)).toBe(webp);
+    const quebrado = new Blob([JPEG_DO_SAFARI.slice(0, 12)], { type: "image/jpeg" });
+    expect(await semMetadadosJpeg(quebrado)).toBe(quebrado);
+  });
+});
+
 describe("reduzirFoto", () => {
+  it("no navegador que só gera JPEG (Safari do iPhone), a foto sobe sem os blocos de metadados do próprio navegador", async () => {
+    const motor: MotorImagem = {
+      decodificar: vi.fn(async () => ({ largura: 3024, altura: 4032, liberar: vi.fn() })),
+      codificar: vi.fn(async (_img, _l, _a, tipo) =>
+        tipo === "image/webp" ? new Blob(["png"], { type: "image/png" }) : new Blob([JPEG_DO_SAFARI], { type: "image/jpeg" })
+      ),
+    };
+    const r = await reduzirFoto(arquivo("IMG_0001.HEIC", 3 * 1024 * 1024), motor);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.foto.ext).toBe("jpg");
+    const texto = new TextDecoder("latin1").decode(await r.foto.blob.arrayBuffer());
+    expect(texto).not.toContain("Exif");
+    expect(texto).not.toContain("Photoshop");
+  });
+
+  it("o que sobe é sempre a foto recodificada, nunca o arquivo original: metadados (inclusive GPS) ficam para trás", async () => {
+    const { motor } = motorFalso({ largura: 4032, altura: 3024 });
+    const comGps = new File([new TextEncoder().encode("\xff\xd8\xff\xe1Exif\0\0GPSLatitude-25.63GPSLongitude-49.31")], "IMG_GPS.jpg", {
+      type: "image/jpeg",
+    });
+    const r = await reduzirFoto(comGps, motor);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.foto.blob).not.toBe(comGps);
+    expect(motor.codificar).toHaveBeenCalled();
+    const bytes = new TextDecoder("latin1").decode(await r.foto.blob.arrayBuffer());
+    expect(bytes).not.toContain("GPS");
+    expect(bytes).not.toContain("Exif");
+  });
+
   it("foto grande de celular (4032x3024, 6 MB) sai com no máximo 2000px e menos de 2 MB, em WebP", async () => {
     const { motor } = motorFalso({ largura: 4032, altura: 3024 });
     const r = await reduzirFoto(arquivo("IMG_1234.jpg", 6 * 1024 * 1024), motor);

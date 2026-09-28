@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { startTransition, useActionState, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   CATEGORIA_VALUES,
   STEP_QUANTIDADE_LABELS,
@@ -13,10 +13,12 @@ import {
   type TipoProduto,
 } from "@/lib/produtos/types";
 import { descartarEnviosFotos, prepararEnvioFotos, type ProdutoFormState } from "./actions";
-import { Card, Field, Input, PriceInput, Textarea, Select, Toggle, Button, Icon } from "@/components/ds";
+import { Badge, Card, Field, Input, PriceInput, Textarea, Select, Toggle, Button, Icon } from "@/components/ds";
 import { SubitensPicker, type SubitemCandidato } from "./subitens-picker";
 import { createClient } from "@/lib/supabase/client";
 import { BUCKET_FOTOS } from "@/lib/galeria/regras";
+import { reduzirFoto, type FotoReduzida } from "@/lib/galeria/reduzir";
+import { concluirSalvarPendente, guardarSalvarPendente, type TempoReducao } from "@/lib/admin/tempos";
 import { GaleriaFotosExtras } from "./galeria-fotos";
 import { enviarFotosNovas, type DependenciasEnvio, type FotoNaTela } from "./galeria-envio";
 
@@ -39,6 +41,10 @@ const DEPENDENCIAS_ENVIO: DependenciasEnvio = {
 };
 
 export type FotoExtraSalva = { id: string; url: string };
+
+// Capa escolhida e ainda não salva: arquivo já reduzido, só na memória do
+// navegador até o Salvar.
+type CapaNaTela = { foto: FotoReduzida; previewUrl: string; arquivo: string; reducao: TempoReducao };
 
 export function ProdutoForm({
   action,
@@ -65,8 +71,9 @@ export function ProdutoForm({
 }) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [capaNova, setCapaNova] = useState<CapaNaTela | null>(null);
+  const [preparandoCapa, setPreparandoCapa] = useState(false);
+  const [erroCapa, setErroCapa] = useState<string | null>(null);
   const [tipo, setTipo] = useState<TipoProduto>(produto?.tipo ?? "normal");
   const [nome, setNome] = useState(produto?.nome ?? "");
   const [fotos, setFotos] = useState<FotoNaTela[]>(() =>
@@ -77,20 +84,74 @@ export function ProdutoForm({
   const salvando = pending || enviandoFotos;
   const erro = erroEnvio ?? state?.error;
 
-  // Salvar: primeiro sobe as fotos extras novas (nada antes disso), depois
-  // manda o formulário para a Server Action com a lista final da galeria.
+  // Registro de tempo (só na homologação): Salvar que voltou com erro.
+  useEffect(() => {
+    if (state?.error) concluirSalvarPendente("erro");
+  }, [state]);
+
+  // Capa escolhida: reduzida aqui mesmo, antes de qualquer envio. Se a foto
+  // for recusada, a escolha anterior (ou a capa salva) continua.
+  async function escolherCapa(arquivo: File | undefined) {
+    if (!arquivo) return;
+    setErroCapa(null);
+    setPreparandoCapa(true);
+    const inicio = performance.now();
+    const resultado = await reduzirFoto(arquivo);
+    const ms = performance.now() - inicio;
+    setPreparandoCapa(false);
+    if (!resultado.ok) {
+      setErroCapa(resultado.erro);
+      return;
+    }
+    if (capaNova) URL.revokeObjectURL(capaNova.previewUrl);
+    const { foto } = resultado;
+    setCapaNova({
+      foto,
+      previewUrl: URL.createObjectURL(foto.blob),
+      arquivo: arquivo.name,
+      reducao: {
+        arquivo: arquivo.name,
+        bytesOriginal: arquivo.size,
+        bytesFinal: foto.blob.size,
+        largura: foto.largura,
+        altura: foto.altura,
+        ms,
+      },
+    });
+  }
+
+  function descartarCapaEscolhida() {
+    if (capaNova) URL.revokeObjectURL(capaNova.previewUrl);
+    setCapaNova(null);
+    setErroCapa(null);
+  }
+
+  // Salvar: primeiro sobe a capa e as fotos extras novas (nada antes disso),
+  // depois manda o formulário para a Server Action com a capa nova e a lista
+  // final da galeria.
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const inicio = Date.now();
     const formData = new FormData(event.currentTarget);
     setErroEnvio(null);
     setEnviandoFotos(true);
-    const envio = await enviarFotosNovas(produtoId, fotos, DEPENDENCIAS_ENVIO);
+    const envio = await enviarFotosNovas(produtoId, fotos, DEPENDENCIAS_ENVIO, capaNova?.foto ?? null);
     setEnviandoFotos(false);
     if (!envio.ok) {
       setErroEnvio(envio.erro);
       return;
     }
     formData.set("galeria", JSON.stringify(envio.itens));
+    if (envio.capa) formData.set("capa", JSON.stringify(envio.capa));
+    guardarSalvarPendente({
+      produtoId,
+      nome: String(formData.get("nome") ?? ""),
+      inicio,
+      prepararMs: envio.tempos.prepararMs,
+      enviarMs: envio.tempos.enviarMs,
+      inicioGravar: Date.now(),
+      reducao: capaNova?.reducao ?? null,
+    });
     startTransition(() => formAction(formData));
   }
 
@@ -114,7 +175,7 @@ export function ProdutoForm({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} encType="multipart/form-data">
+      <form onSubmit={handleSubmit}>
         {!produto && <input type="hidden" name="id" value={produtoId} />}
         <Card tone="white" padding="0">
           <FormSection title="Identificação">
@@ -247,52 +308,77 @@ export function ProdutoForm({
               <div style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
                 <Field
                   label="Foto de capa"
-                  hint="Uma foto só: é a que aparece nos cards do site. Para mais fotos, use Fotos extras, logo abaixo. JPG, PNG ou WebP, luz natural e foco no produto. Até 2 MB."
+                  hint="Uma foto só: é a que aparece nos cards do site. Para mais fotos, use Fotos extras, logo abaixo. JPG, PNG ou WebP de até 20 MB: a foto é reduzida automaticamente antes de salvar. Luz natural e foco no produto. Nada é gravado até você clicar em Salvar."
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-                    <div
-                      style={{
-                        width: 56,
-                        height: 56,
-                        borderRadius: "var(--radius)",
-                        background: "var(--pdm-cream-warm)",
-                        display: "grid",
-                        placeItems: "center",
-                        flex: "none",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {previewUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={previewUrl} alt="Prévia da foto selecionada" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      ) : produto?.image_url ? (
-                        <Image src={produto.image_url} alt={produto.nome} width={56} height={56} style={{ objectFit: "cover" }} />
-                      ) : (
-                        <Icon name="photo_camera" size={24} />
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+                      <div
+                        style={{
+                          width: 56,
+                          height: 56,
+                          borderRadius: "var(--radius)",
+                          background: "var(--pdm-cream-warm)",
+                          display: "grid",
+                          placeItems: "center",
+                          flex: "none",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {capaNova ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- prévia local (blob:)
+                          <img src={capaNova.previewUrl} alt="Prévia da nova foto de capa" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : produto?.image_url ? (
+                          <Image src={produto.image_url} alt={produto.nome} width={56} height={56} style={{ objectFit: "cover" }} />
+                        ) : (
+                          <Icon name="photo_camera" size={24} />
+                        )}
+                      </div>
+                      {/* Sem name: o arquivo nunca vai no formulário para a
+                          Server Action (limite de 1 MB); sobe direto para o
+                          storage no Salvar. */}
+                      <input
+                        ref={fileInputRef}
+                        id="f-foto"
+                        type="file"
+                        accept="image/*"
+                        aria-hidden="true"
+                        tabIndex={-1}
+                        data-testid="capa-input"
+                        style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+                        onChange={async (e) => {
+                          const alvo = e.target;
+                          await escolherCapa(alvo.files?.[0]);
+                          alvo.value = "";
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        iconLeft="upload"
+                        disabled={salvando || preparandoCapa}
+                        onClick={() => fileInputRef.current?.click()}
+                        style={{ minHeight: 44 }}
+                      >
+                        {preparandoCapa ? "Preparando foto…" : produto?.image_url || capaNova ? "Trocar foto" : "Escolher foto"}
+                      </Button>
+                      {capaNova && (
+                        <>
+                          <Badge variant="soft">Ainda não salva</Badge>
+                          <Button type="button" variant="ghost" size="sm" disabled={salvando} onClick={descartarCapaEscolhida} style={{ minHeight: 44 }}>
+                            {produto?.image_url ? "Manter a capa atual" : "Remover foto escolhida"}
+                          </Button>
+                        </>
                       )}
                     </div>
-                    <input
-                      ref={fileInputRef}
-                      id="f-foto"
-                      name="foto"
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) {
-                          setPreviewUrl(null);
-                          setFileName(null);
-                          return;
-                        }
-                        setFileName(file.name);
-                        setPreviewUrl(URL.createObjectURL(file));
-                      }}
-                    />
-                    <Button type="button" variant="secondary" size="sm" iconLeft="upload" onClick={() => fileInputRef.current?.click()}>
-                      Escolher foto
-                    </Button>
-                    {fileName && <span style={{ fontSize: "var(--fs-small)", color: "var(--pdm-muted)" }}>{fileName}</span>}
+                    {capaNova && (
+                      <span style={{ fontSize: "var(--fs-small)", color: "var(--pdm-muted)", overflowWrap: "anywhere" }}>{capaNova.arquivo}</span>
+                    )}
+                    {erroCapa && (
+                      <p role="alert" style={{ margin: 0, fontSize: "var(--fs-small)", color: "var(--pdm-error)" }}>
+                        {erroCapa}
+                      </p>
+                    )}
                   </div>
                 </Field>
 
@@ -301,7 +387,7 @@ export function ProdutoForm({
                     fotos={fotos}
                     onChange={setFotos}
                     nomeProduto={nome}
-                    temCapa={Boolean(previewUrl || produto?.image_url)}
+                    temCapa={Boolean(capaNova || produto?.image_url)}
                     desabilitado={salvando}
                   />
                 </Field>
@@ -329,7 +415,7 @@ export function ProdutoForm({
               flexWrap: "wrap",
             }}
           >
-            <Button type="submit" iconLeft="check" disabled={salvando}>
+            <Button type="submit" iconLeft="check" disabled={salvando || preparandoCapa}>
               {enviandoFotos ? "Enviando fotos…" : pending ? "Salvando…" : submitLabel}
             </Button>
             <Link href="/admin/produtos" className="produto-form-cancel-link">

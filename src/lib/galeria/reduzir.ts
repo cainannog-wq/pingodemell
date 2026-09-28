@@ -5,11 +5,14 @@ import {
   type ExtensaoFoto,
 } from "./regras";
 
-// Redução de uma foto extra no navegador, antes de subir: lado maior em
-// até 2000px, recodificada em WebP (ou JPEG onde o navegador não gera
-// WebP), qualidade ~0,85. Recodificar pelo canvas descarta todos os
+// Redução de uma foto (capa ou extra) no navegador, antes de subir: lado
+// maior em até 2000px, recodificada em WebP (ou JPEG onde o navegador não
+// gera WebP), qualidade ~0,85. Recodificar pelo canvas descarta todos os
 // metadados do arquivo original, inclusive a localização GPS — desejado:
-// foto tirada na cozinha não publica onde fica a cozinha.
+// foto tirada na cozinha não publica onde fica a cozinha. O Safari do
+// iPhone (que não gera WebP) ainda escreve no JPEG um bloco técnico
+// próprio (Exif com espaço de cor e dimensões, IPTC vazio); esses blocos
+// saem em semMetadadosJpeg antes do envio.
 //
 // A decodificação e a codificação ficam num "motor" injetável: no
 // navegador, <img> + <canvas>; nos testes automatizados, um motor falso
@@ -87,7 +90,8 @@ export async function reduzirFoto(arquivo: File, motor: MotorImagem = motorDoNav
     for (const [i, qualidade] of QUALIDADES.entries()) {
       const blob = i === 0 && usaWebp ? teste : await motor.codificar(imagem, largura, altura, tipo, qualidade);
       if (blob && blob.type === tipo && blob.size <= MAX_BYTES_FOTO) {
-        return { ok: true, foto: { blob, ext, largura, altura } };
+        const final = ext === "jpg" ? await semMetadadosJpeg(blob) : blob;
+        return { ok: true, foto: { blob: final, ext, largura, altura } };
       }
     }
     return { ok: false, erro: mensagemNaoReduziu(arquivo.name) };
@@ -96,6 +100,33 @@ export async function reduzirFoto(arquivo: File, motor: MotorImagem = motorDoNav
   } finally {
     imagem.liberar();
   }
+}
+
+// Tira de um JPEG os blocos de metadados (APP1 a APP15: Exif, XMP, IPTC,
+// perfis do fabricante; e comentários), mantendo o APP0 (JFIF) e tudo o
+// que é imagem. Se o arquivo não tiver a estrutura esperada, devolve o
+// mesmo arquivo (o que sobe continua sendo a foto recodificada pelo canvas).
+export async function semMetadadosJpeg(blob: Blob): Promise<Blob> {
+  const b = new Uint8Array(await blob.arrayBuffer());
+  if (b.length < 4 || b[0] !== 0xff || b[1] !== 0xd8) return blob;
+
+  const partes: Uint8Array[] = [b.subarray(0, 2)];
+  let i = 2;
+  while (i + 4 <= b.length) {
+    if (b[i] !== 0xff) return blob;
+    const marcador = b[i + 1];
+    if (marcador === 0xda) {
+      // Início dos dados da imagem: daqui até o fim fica como está.
+      partes.push(b.subarray(i));
+      return new Blob(partes as BlobPart[], { type: blob.type });
+    }
+    const tamanho = (b[i + 2] << 8) | b[i + 3];
+    if (tamanho < 2 || i + 2 + tamanho > b.length) return blob;
+    const metadado = (marcador >= 0xe1 && marcador <= 0xef) || marcador === 0xfe;
+    if (!metadado) partes.push(b.subarray(i, i + 2 + tamanho));
+    i += 2 + tamanho;
+  }
+  return blob;
 }
 
 // Motor real do navegador. <img> em vez de createImageBitmap: todo

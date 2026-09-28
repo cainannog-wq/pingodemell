@@ -26,6 +26,8 @@ const storage = {
   limparArquivosSemLinha: vi.fn<(id: string, manter: Iterable<string>) => Promise<number>>(async () => 0),
   apagarPastaDoProduto: vi.fn<(id: string) => Promise<number>>(async () => 0),
   criarEnviosAssinados: vi.fn(async () => []),
+  limparPastaDaCapa: vi.fn(async () => 0),
+  apagarCapaAntiga: vi.fn(async () => "sem-capa" as const),
 };
 
 vi.mock("@/lib/supabase/dal", () => ({ requireAuth: () => requireAuth() }));
@@ -36,6 +38,11 @@ vi.mock("@/lib/galeria/storage-servidor", () => ({
   limparArquivosSemLinha: (...a: [string, Iterable<string>]) => storage.limparArquivosSemLinha(...a),
   apagarPastaDoProduto: (id: string) => storage.apagarPastaDoProduto(id),
   criarEnviosAssinados: (...a: unknown[]) => storage.criarEnviosAssinados(...(a as [])),
+  limparPastaDaCapa: (...a: unknown[]) => storage.limparPastaDaCapa(...(a as [])),
+  apagarCapaAntiga: (...a: unknown[]) => storage.apagarCapaAntiga(...(a as [])),
+  criarEnvioCapa: vi.fn(),
+  verificarCapaNova: vi.fn(async () => null),
+  urlDaCapa: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -44,7 +51,7 @@ vi.mock("@/lib/supabase/server", () => ({
       if (tabela === "produtos") {
         return {
           select: (colunas: string) => ({
-            eq: () => ({ maybeSingle: async () => ({ data: colunas === "id" ? { id: PRODUTO } : null }) }),
+            eq: () => ({ maybeSingle: async () => ({ data: colunas.startsWith("id") ? { id: PRODUTO, image_url: null } : null }) }),
           }),
           insert: async () => ({ error: null }),
           update: (payload: unknown) => ({
@@ -252,7 +259,7 @@ describe("deleteProduto", () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const r = await deleteProduto("Morango Banhado");
     expect(produtosDeletes).toEqual(["Morango Banhado"]);
-    expect(r.aviso).toMatch(/Produto excluído, mas algumas fotos extras não puderam ser apagadas/);
+    expect(r.aviso).toMatch(/Produto excluído, mas algumas fotos não puderam ser apagadas/);
     log.mockRestore();
   });
 });
