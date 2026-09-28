@@ -2,7 +2,7 @@
 
 O status do projeto fica fora do repositório; este arquivo registra apenas o estado técnico.
 
-Todo PR que traz migração de schema atualiza este arquivo no mesmo PR (ver CLAUDE.md). Última atualização: 28/09/2026 (URL amigável do produto, PR slug; etapa 1 da migração aplicada, etapa 2 pendente).
+Todo PR que traz migração de schema atualiza este arquivo no mesmo PR (ver CLAUDE.md). Última atualização: 28/09/2026 (PR 2d: unidade de venda, categoria Kits e categoria obrigatória no formulário; as duas migrações aplicadas).
 
 Banco único: o projeto Supabase `npervqefspmwmrekskcb` (região `sa-east-1`) atende produção, previews da Netlify e os scripts locais (`SUPABASE_URL` do `.env.local`). Não existe banco de staging.
 
@@ -28,6 +28,8 @@ As anteriores a 22/09/2026 foram aplicadas pelo editor SQL do Supabase, sem regi
 | `seguranca-api.sql` | `20260924235504 seguranca_api` | 24/09/2026 23:55:04 | **não-aditiva** (retira permissões e uma política de objetos em uso); aplicada depois do merge do PR #12, uma vez, com lock_timeout de 2s; SQL registrado idêntico ao do merge (sha256 `2b428e8b…0292`) |
 | `produtos-slug.sql` (slug, etapa 1) | `20260928050411 produtos_slug` | 28/09/2026 05:04:11 | aditiva (coluna opcional, 4 funções, 2 gatilhos, 2 restrições da coluna nova, preenchimento dos 15 existentes); aplicada **antes** do merge do PR `slug` na `lote`, exceção autorizada pelo Cainan, depois das provas em transação desfeita; uma vez, com lock_timeout de 2s; SQL registrado idêntico ao testado (sha256 `6574ae55…effacf`); `atualizado_em` dos 15 idêntico antes e depois |
 | `produtos-slug-obrigatorio.sql` (slug, etapa 2) | — (**não aplicada**) | — | **não-aditiva** (NOT NULL em tabela com linhas); só depois de o lote chegar à `main`, quando o Cainan pedir (ver "Quando o lote for para a main") |
+| `produtos-unidade-venda.sql` (PR 2d) | `20260928134401 produtos_unidade_venda` | 28/09/2026 13:44:01 | aditiva (coluna `unidade_venda` texto, opcional, sem default, restrição `produtos_unidade_venda_formato` só nela); aplicada **antes** do merge do PR 2d na `lote`, depois da prova em transação desfeita; sha256 `e467a09c…931f`; `atualizado_em` dos 15 idêntico antes e depois |
+| `categoria-kits.sql` (PR 2d) | `20260928134708 categoria_kits` | 28/09/2026 13:47:08 | valor novo `Kits` no enum `categoria_produto` (muda o tipo em uso, sem tocar em nenhuma linha); **exceção consciente** à regra, aplicada antes do merge do PR 2d na `lote`, só depois do ok escrito do Cainan; **sem desfazer limpo** (o Postgres não remove valor de enum); contagem por categoria e `atualizado_em` iguais antes e depois |
 
 ## Rotas
 
@@ -36,7 +38,7 @@ Site público (`src/app/(site)`):
 | Rota | Observação |
 |---|---|
 | `/` | Home |
-| `/produtos` | Lista; filtro `?categoria=bolos\|doces\|salgados\|bebidas` |
+| `/produtos` | Lista; filtro `?categoria=bolos\|doces\|salgados\|bebidas\|kits` |
 | `/politica-de-privacidade` | |
 | `/produtos/{slug}`, `/carrinho`, `/quem-somos`, `/quem-somos#contato` | reservadas em `src/lib/site/rotas.ts`; ainda caem na 404. Desde o PR `slug`, Home e Lista linkam a interna por `/produtos/{slug}` (antes, `/produtos/{id}`; o redirecionamento do endereço antigo fica fora) |
 
@@ -108,11 +110,21 @@ Desde o PR `slug` (28/09/2026). Migração: `supabase/produtos-slug.sql` (etapa 
 
 Os 15 produtos em 28/09/2026 05:04 UTC, depois da etapa 1 (todos com `atualizado_em` idêntico ao de antes): `beijinho`, `bolo-de-chocolate-com-ninho`, `brigadeiro-gourmet`, `brigadeiro-gourmet-unidade`, `cento-de-docinho`, `cento-de-salgados-sortidos`, `coca-cola-2l`, `coxinha-de-frango` (inativo), `coxinha-de-frango-cento`, `empada-de-palmito`, `kit-festa-sortido`, `morango-banhado`, `risole-de-carne`, `suco-de-laranja-natural-1l`, `torta-de-limao-fatia` (inativo).
 
+## Unidade de venda e categoria Kits (PR 2d)
+
+- **`produtos.unidade_venda`**: texto livre, opcional, até 20 caracteres, sem espaço sobrando (restrição `produtos_unidade_venda_formato`; o formulário também junta espaços repetidos). Texto e não enum para a lista crescer com o catálogo sem mudar o banco. O admin sugere `kg`, `unidade`, `cento`, `litro`. Card: `R$ X o kg`, `a unidade`, `o litro`, `o cento`; outro texto vira `por {texto}`; vazio mostra só o preço (como antes); produto tipo cento é sempre `o cento` (`textoUnidadeVenda`, `src/lib/vitrine/mais-pedidos.ts`).
+- **Quilo inteiro**: não há trava própria. Vale porque `pedido_minimo` é inteiro (banco e formulário recusam `1,5`) e o step é livre/5/10; com unidade `kg`, 1 = 1 kg. **Requisito do carrinho futuro:** quantidade sempre inteira na unidade de venda; se o carrinho aceitar fração, meio quilo de bolo passa a ser possível.
+- **Kits**: quinto valor de `categoria_produto` (depois de Bebidas na ordem do enum; nenhuma consulta ordena por categoria). Filtro `?categoria=kits` na Lista, quinto quadrado na Home (sem foto, como Bebidas). Kits conta como "não bebida" em "Os mais pedidos".
+- **Categoria obrigatória só no formulário** (admin do lote e servidor, em `parseProdutoForm`); a coluna continua aceitando nulo.
+- **Risco até o lote chegar à `main`:** o admin de produção (código da `main`) só conhece 4 categorias. Um produto em Kits aberto e salvo ali volta para "Sem categoria" sem aviso (o campo mostra a primeira opção e grava vazio). Por isso **nenhum produto real vai para Kits antes disso**; o Kit Festa Sortido continua sem categoria. O site de produção lê um produto em Kits sem quebrar (aparece em "Todos"; `?categoria=kits` cai em "Todos").
+
 ## Quando o lote for para a main
 
 Passos que dependem do merge da `lote` na `main`, na ordem dos PRs:
 
 1. **Slug, etapa 2** (PR `slug`), só quando o Cainan pedir: conferir que nenhum produto está sem slug (`select count(*) from public.produtos where slug is null or slug = ''` → 0; a própria migração também cancela se achar algum), rodar `node scripts/banco/slug-migracao.mjs` (prova a etapa 2 em transação desfeita), aplicar `supabase/produtos-slug-obrigatorio.sql` (NOT NULL e `produtos_slug_imutavel` recriado sem o ramo "vazio -> preenchido"), rodar `node scripts/banco/rodar-todos.mjs` e o verificador de segurança, e atualizar a tabela de migrações.
+2. **Mover o Kit Festa Sortido para Kits** (PR 2d), pelo Salvar normal do admin, com o Cainan acompanhando, só com o admin novo já em produção (antes disso o admin de produção apagaria a categoria sem aviso). Muda o `atualizado_em` dele (efeito aceito); conferir que nenhum outro produto mudou.
+3. **Categoria obrigatória no banco** (PR 2d), junto da etapa 2 do slug: migração **não-aditiva** ainda não escrita (`alter table public.produtos alter column "Categoria" set not null`), só depois do passo 2 e de conferir `select count(*) from public.produtos where "Categoria" is null` → 0. Provar antes em transação desfeita (`rodar-todos.mjs --com-migracao=...`).
 
 ## Funções e gatilhos em `public`
 
@@ -134,7 +146,7 @@ Padrão para objeto novo: desde `seguranca-api.sql`, toda função nova criada p
 
 ## Verificador de segurança do Supabase (security advisors)
 
-Agora (28/09/2026 05:04 UTC, verificador real, depois de `produtos-slug.sql`; igual ao de antes dela e ao de 24/09): INFO RLS sem política em `heartbeat` e `pedidos_rate_limit` (intencional: só a chave de serviço, e anon/authenticated nem têm permissão nelas); WARN proteção de senha vazada desligada (configuração do Auth, fora da migração).
+Agora (28/09/2026 13:47 UTC, verificador real, depois de `categoria-kits.sql`; igual ao de antes e depois de `produtos-unidade-venda.sql`, ao de `produtos-slug.sql` e ao de 24/09): INFO RLS sem política em `heartbeat` e `pedidos_rate_limit` (intencional: só a chave de serviço, e anon/authenticated nem têm permissão nelas); WARN proteção de senha vazada desligada (configuração do Auth, fora da migração).
 
 Antes da migração havia também: WARN `registrar_tentativa_pedido` e `rls_auto_enable` executáveis como DEFINER por anon e por authenticated; WARN `search_path` não fixo em `pedidos_set_status_atualizado_em`.
 
@@ -179,6 +191,7 @@ Testes de banco: `scripts/banco/`, cada um numa transação desfeita no fim, con
 | `scripts/banco/limite-pedidos.mjs` | anon/logado não chamam `registrar_tentativa_pedido`; servidor: 6ª tentativa bloqueada, IPs independentes, janela recomeça | produção, transação desfeita | não |
 | `scripts/banco/slug.mjs` | slug: regra com casos de borda, colisão `-2`/`-3` (inclusive contra inativo), admin e chave de serviço cadastram sem slug, editar/renomear mantém o slug, cascata do Cento, troca de slug recusada, slug enviado (restauração), funções fora do alcance de anon e logado, ordem dos gatilhos de edição, preenchimento sem mexer no `atualizado_em` | produção, transação desfeita | não |
 | `scripts/banco/slug-migracao.mjs` | etapa 1 sobre os produtos existentes (se ainda não aplicada: slugs, `atualizado_em`, "Os mais pedidos", tabelas e estrutura iguais), etapa 2 (e o cancelamento dela com produto sem slug) e desfazer (banco igual ao de antes da etapa 1) | produção, transação desfeita | não |
+| `scripts/banco/unidade-venda-kits.mjs` | coluna `unidade_venda` (texto, nulo, sem default), nenhum gatilho novo em `produtos`, logado grava kg/texto livre/nulo, banco recusa vazio/espaço sobrando/mais de 20, anônimo lê; enum com os 5 valores, logado cadastra em Kits e o anônimo acha pelo filtro (a parte de Kits é pulada com aviso se o valor ainda não existir) | produção, transação desfeita | não |
 | `scripts/banco/http-sem-gravar.mjs` | camada HTTP com a chave anônima: chamadas que nunca gravam (função por GET, que roda só leitura; insert com valor inválido; update/delete de id inexistente) | produção, pela API | não |
 | `npm run test` (vitest) | regras, telas, Server Actions e `POST /api/pedidos` (IP da Netlify, X-Forwarded-For ignorado em produção, 429, gravação só pela chave de serviço) com banco simulado. Roda duas vezes, nos fusos UTC e America/Sao_Paulo; testes com "hoje" fixam o relógio (`RELOGIO_TESTE=<instante>` fixa o da suíte inteira) | nenhum (não acessa rede) | não |
 | `scripts/netlify/ignorar-build.mjs` | não é teste: regra de ignorar build da Netlify (roda antes de cada build). A regra é testada por `npm run test` (`scripts/netlify/ignorar-build.test.mjs`, com um repositório git temporário) | nenhum | não |
@@ -190,7 +203,7 @@ Testes de banco: `scripts/banco/`, cada um numa transação desfeita no fim, con
 | `scripts/check-service-key-bundle.mjs` | a service role key não aparece em `.next/static` (rodar depois do build) | nenhum (arquivos locais) | não |
 | `scripts/test-auth-rate-limit.mjs` | limite de tentativas de login do Supabase Auth | Auth de produção | não grava dados; **manual**: tentativas de login seguidas podem bloquear o login do seu IP por alguns minutos |
 
-Última rodada contra produção (28/09/2026, depois da etapa 1 do slug, sem `--com-migracao`): os 8 testes de banco 114/114, `http-sem-gravar.mjs` 17/17, banco idêntico antes e depois, contador de pedidos em 1047.
+Última rodada contra produção (28/09/2026 ~13:48 UTC, depois de `categoria-kits.sql`, sem `--com-migracao`): os 9 testes de banco 121/121, `http-sem-gravar.mjs` 17/17, banco idêntico antes e depois, contador de pedidos em 1047.
 
 Conexão com o banco: TLS conferindo o certificado do servidor com `supabase/prod-ca.crt` (certificado público da Supabase, baixado no painel em Database > Settings > SSL Configuration). Provado em 24/09/2026: conecta com o certificado certo e é recusada com um certificado de outra autoridade (`SUPABASE_DB_CA=<arquivo>` troca o certificado para essa prova; se o arquivo não existir, o script para).
 
@@ -224,7 +237,7 @@ Como fazer, com o ok: 6 requisições seguidas a `https://<deploy>/api/pedidos`,
 Regras no CLAUDE.md ("Regra de custo — créditos da Netlify e merges em lote").
 
 - Conta `cainannog-wq`, plano **Free: 300 créditos por ciclo**, sem cobrança extra: quando acabam, **os 6 sites da conta saem do ar** (pingodemell, restospsicanaliticos, dudatortatosite, reliable-pixie-4e7fd7, msclicksfotografia, dudatortato) até o ciclo virar. Todos dividem o mesmo saldo.
-- Ciclo atual: **20/09 a 19/10/2026**. Saldo em 25/09/2026 ~11:15 (Brasília): **45,3 de 300**; em 27/09/2026, lido pelo Cainan no painel: **29**; em 28/09/2026, no início do PR `slug`, lido pelo Cainan no painel: **28**. O **28 do fechamento do PR `slug` (28/09/2026) foi uma dedução, não uma leitura do painel**: o PR não gerou deploy de produção (só branch deploys da homologação, que não custam), então o saldo foi dado como igual ao do início. A próxima leitura do painel confirma ou corrige.
+- Ciclo atual: **20/09 a 19/10/2026**. Saldo em 25/09/2026 ~11:15 (Brasília): **45,3 de 300**; em 27/09/2026, lido pelo Cainan no painel: **29**; em 28/09/2026, no início do PR `slug`, lido pelo Cainan no painel: **28**. O **28 do fechamento do PR `slug` (28/09/2026) foi uma dedução, não uma leitura do painel**: o PR não gerou deploy de produção (só branch deploys da homologação, que não custam), então o saldo foi dado como igual ao do início. A próxima leitura do painel confirma ou corrige. Em 28/09/2026, no início do PR 2d, lido pelo Cainan no painel: **27,5**.
 - Custo (documentação da Netlify): deploy de produção publicado = 15 créditos; Deploy Preview, branch deploy, build pulado e build que falha = 0. Também custam: requisições web (2 por 10 mil), banda (20 por GB) e compute (10 por GB-hora), inclusive nos previews e na homologação.
 - Gasto do ciclo até 25/09: 16 deploys de produção do pingodemell (240), banda 6,6, compute 4,9, requisições 3,3; total 254,7. Dos 16 deploys: 13 merges de PR (#1, #2, #3, #6 a #15) e 3 commits do heartbeat (1 agendado, 2 rodados à mão em 24/09). A regra de ignorar build teria pulado 5 deles: #7 (só `CLAUDE.md`), #8 (só `.gitignore`) e os 3 do heartbeat.
 - Heartbeat: agendado a cada 3 dias (dias 1, 4, 7… do mês, 06:00 UTC). Sem a marcação, cada execução fazia um deploy de produção (15 créditos); até 19/10 seriam mais 7 (105), o suficiente para zerar o saldo por volta de 04/10. Desligado com `gh workflow disable` em 25/09/2026 ~11:20 (Brasília), antes da correção.
