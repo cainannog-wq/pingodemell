@@ -1,7 +1,10 @@
 @AGENTS.md
-@docs/escopo-pingo-de-mell.md
-@docs/roadmap-pingo-de-mell.md
 @docs/status-pingo-de-mell.md
+
+Este arquivo guarda só regras técnicas (schema, RLS, rotas, scripts, testes,
+fluxo de homologação e de lote). Escopo, roadmap e regras de negócio ficam
+fora do repositório e chegam no prompt de cada PR; não copiar para cá nem
+para `docs/`. Decisão do Cainan em 28/09/2026, no PR 2d.
 
 ## Regra de processo — migração de schema x merge do PR
 
@@ -99,9 +102,9 @@ Decisão fechada com o Cainan em 24/09/2026, no PR fuso-brasilia:
   em UTC: entre 21h e meia-noite de Brasília, para eles já é o dia seguinte.
   Comparar dois instantes (`getTime()`, "já passou do horário de entrega?")
   não decide dia e pode ficar fora do módulo.
-- **O futuro checkout (antecedência de 1 dia; fim de semana até quinta)
-  decide no servidor e só com esse módulo**, nunca com o relógio do
-  navegador da cliente.
+- **O futuro checkout decide a antecedência da data no servidor e só com
+  esse módulo**, nunca com o relógio do navegador da cliente (a regra de
+  antecedência em si chega no prompt do PR do checkout).
 - **Testes não dependem do relógio real nem do fuso da máquina.** A suíte
   roda em dois fusos (UTC e America/Sao_Paulo, `vitest.config.ts`); teste
   que envolve "hoje" fixa o relógio (`vi.setSystemTime`), de preferência num

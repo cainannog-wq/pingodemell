@@ -5,7 +5,8 @@ import { Hive } from "@/components/site/Hive";
 import { TILES_CATEGORIA } from "@/lib/site/config";
 import { ROTAS } from "@/lib/site/rotas";
 
-// "O que você vai encontrar": as 4 categorias do CMS (não as 5 do layout).
+// "O que você vai encontrar": as 5 categorias do CMS. Desktop: uma linha de
+// 5; celular: 2 + 2 e o último na largura inteira (site.css).
 // Foto de cada tile vem de TILES_CATEGORIA (config única); sem foto, o
 // tile usa o fundo da marca.
 export function Categorias() {
@@ -30,7 +31,7 @@ export function Categorias() {
             <li key={tile.categoria}>
               <Link href={ROTAS.listaPorCategoria(tile.categoria)} className="home-cat">
                 {tile.imagem ? (
-                  <Image src={tile.imagem} alt={tile.alt} fill sizes="(max-width: 767px) 50vw, 285px" />
+                  <Image src={tile.imagem} alt={tile.alt} fill sizes="(max-width: 767px) 50vw, 230px" />
                 ) : (
                   <Hive />
                 )}

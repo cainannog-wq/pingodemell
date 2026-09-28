@@ -9,6 +9,8 @@ import {
   STEP_QUANTIDADE_VALUES,
   TIPO_PRODUTO_LABELS,
   TIPO_PRODUTO_VALUES,
+  UNIDADE_VENDA_MAX,
+  UNIDADES_VENDA_SUGERIDAS,
   type Produto,
   type TipoProduto,
 } from "@/lib/produtos/types";
@@ -192,9 +194,11 @@ export function ProdutoForm({
               </Field>
             </div>
             <div className="produto-form-grid" style={{ gridTemplateColumns: "1fr 1fr", marginTop: 24 }}>
-              <Field label="Categoria" htmlFor="f-categoria" hint="Usada no filtro do catálogo público, quando existir.">
-                <Select id="f-categoria" name="categoria" defaultValue={produto?.Categoria ?? ""}>
-                  <option value="">Sem categoria</option>
+              <Field label="Categoria" htmlFor="f-categoria" required hint="Usada no filtro do catálogo público.">
+                <Select id="f-categoria" name="categoria" defaultValue={produto?.Categoria ?? ""} required>
+                  <option value="" disabled>
+                    Selecione a categoria
+                  </option>
                   {CATEGORIA_VALUES.map((categoria) => (
                     <option key={categoria} value={categoria}>
                       {categoria}
@@ -236,7 +240,7 @@ export function ProdutoForm({
                 <PriceInput id="f-preco" name="preco" defaultValue={produto?.preco} required />
               </Field>
 
-              <Field label="Quantidade mínima" htmlFor="f-min" required hint="Menor quantidade aceita por encomenda, em unidades.">
+              <Field label="Quantidade mínima" htmlFor="f-min" required hint="Menor quantidade aceita por encomenda, sempre número inteiro, na unidade de venda (em kg: 1 = 1 kg).">
                 <Input
                   id="f-min"
                   name="pedido_minimo"
@@ -275,6 +279,28 @@ export function ProdutoForm({
                   defaultValue={produto?.prazo_producao_dias ?? 1}
                   required
                 />
+              </Field>
+            </div>
+            <div className="produto-form-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginTop: 24 }}>
+              <Field
+                label="Unidade de venda"
+                htmlFor="f-unidade"
+                hint="Aparece no preço do card (ex.: R$ 90,00 o kg). Vazio mostra só o preço. Quantidade é sempre inteira: em kg, sem meio quilo."
+              >
+                <Input
+                  id="f-unidade"
+                  name="unidade_venda"
+                  list="f-unidade-sugestoes"
+                  maxLength={UNIDADE_VENDA_MAX}
+                  placeholder="Ex.: kg"
+                  defaultValue={produto?.unidade_venda ?? ""}
+                  autoComplete="off"
+                />
+                <datalist id="f-unidade-sugestoes">
+                  {UNIDADES_VENDA_SUGERIDAS.map((unidade) => (
+                    <option key={unidade} value={unidade} />
+                  ))}
+                </datalist>
               </Field>
             </div>
           </FormSection>

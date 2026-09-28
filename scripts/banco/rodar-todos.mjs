@@ -22,6 +22,7 @@ const TESTES_DE_BANCO = [
   "pedidos.mjs",
   "limite-pedidos.mjs",
   "slug.mjs",
+  "unidade-venda-kits.mjs",
 ];
 // Aplica a própria migração quando ela falta; não recebe --com-migracao.
 const TESTES_SEM_ARGUMENTO = ["slug-migracao.mjs"];

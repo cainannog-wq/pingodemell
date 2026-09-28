@@ -1,0 +1,21 @@
+-- Categoria "Kits" (PR 2d): quinto valor do enum categoria_produto.
+--
+-- Isolada numa migração própria: o Postgres não deixa usar um valor novo de
+-- enum na mesma transação em que ele foi criado.
+--
+-- Exceção consciente à regra do CLAUDE.md, autorizada pelo Cainan em
+-- 28/09/2026: muda o próprio tipo (em uso pela tabela produtos), mas não
+-- altera nem invalida nenhuma linha existente. Aplicada antes do lote ir
+-- para a main, só depois do ok escrito do Cainan para esta instrução.
+-- Status: ver docs/status-pingo-de-mell.md (tabela de migrações).
+--
+-- Sem desfazer limpo: o Postgres não remove valor de enum. Desfazer de
+-- verdade exige recriar o tipo sem 'Kits' e reescrever a coluna Categoria
+-- em todas as linhas.
+--
+-- Risco conhecido até o lote chegar à main: o admin de produção (main) não
+-- conhece 'Kits'. Abrir e salvar ali um produto em Kits grava "Sem
+-- categoria" sem avisar. Por isso nenhum produto real vai para Kits antes
+-- disso (o Kit Festa Sortido continua sem categoria).
+
+alter type public.categoria_produto add value 'Kits';

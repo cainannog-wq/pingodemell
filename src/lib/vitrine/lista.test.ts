@@ -15,6 +15,7 @@ function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {
     image_url: null,
     Categoria: "Doces",
     tipo: "normal",
+    unidade_venda: null,
     ativo: true,
     destaque: false,
     atualizado_em: "2026-09-23T14:29:18.070Z",
@@ -193,11 +194,13 @@ describe("Lista — ordem alfabética em português", () => {
 });
 
 describe("Lista — categoria na URL", () => {
-  it("aceita as 4 categorias no formato de ROTAS.listaPorCategoria", () => {
+  it("aceita as 5 categorias no formato de ROTAS.listaPorCategoria", () => {
     expect(categoriaDoParametro("bolos")).toBe("Bolos");
     expect(categoriaDoParametro("doces")).toBe("Doces");
     expect(categoriaDoParametro("salgados")).toBe("Salgados");
     expect(categoriaDoParametro("bebidas")).toBe("Bebidas");
+    expect(categoriaDoParametro("kits")).toBe("Kits");
+    expect(categoriaDoParametro("KITS")).toBe("Kits");
   });
 
   it("categoria inválida, vazia ou ausente cai em 'Todos' (null), sem erro", () => {
