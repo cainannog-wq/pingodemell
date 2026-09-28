@@ -3,6 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { LinhaSabor } from "@/lib/vitrine/cento";
 import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
 
 vi.mock("next/image", () => ({
@@ -24,20 +25,28 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-// "Banco" simulado: devolve o que estiver em `doBanco`, sem ler nada real.
+// "Banco" simulado: devolve o que estiver em `doBanco` (produtos) e em
+// `saboresDoBanco` (produto_cento_itens), sem ler nada real.
 let doBanco: ProdutoVitrine[] = [];
+let saboresDoBanco: LinhaSabor[] = [];
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(async () => ({
-    from: () => {
+    from: (tabela: string) => {
+      const dados = tabela === "produto_cento_itens" ? saboresDoBanco : doBanco;
       const b = {
         select: () => b,
         eq: () => b,
-        then: (ok: (v: unknown) => unknown) => Promise.resolve({ data: doBanco, error: null }).then(ok),
+        in: () => b,
+        then: (ok: (v: unknown) => unknown) => Promise.resolve({ data: dados, error: null }).then(ok),
       };
       return b;
     },
   })),
 }));
+
+function sabor(cento_nome: string, subitem_nome: string, ativo = true): LinhaSabor {
+  return { cento_nome, subitem_nome, ordem: 0, sabor: { nome: subitem_nome, ativo } };
+}
 
 let seq = 0;
 function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {
@@ -52,6 +61,8 @@ function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {
     Categoria: "Doces",
     tipo: "normal",
     unidade_venda: null,
+    pedido_minimo: 1,
+    step_quantidade: "livre",
     ativo: true,
     destaque: false,
     atualizado_em: "2026-09-23T14:29:18.070Z",
@@ -84,6 +95,7 @@ const filtroAtual = () => within(screen.getByRole("navigation", { name: "Categor
 
 beforeEach(() => {
   doBanco = CATALOGO;
+  saboresDoBanco = [sabor("Beijinho", "Morango Banhado")];
 });
 afterEach(cleanup);
 
@@ -231,5 +243,44 @@ describe("Página Lista — card", () => {
     expect(empada.slug).toBeTruthy();
     for (const link of links) expect(link).toHaveAttribute("href", `/produtos/${empada.slug}`);
     expect(document.querySelector('a[href="/carrinho"]')).toBeNull();
+  });
+});
+
+describe("Página Lista — Cento sem sabor ativo (dado simulado)", () => {
+  it("some da Lista, como produto inativo; com 1 sabor ativo continua", async () => {
+    doBanco = [
+      produto({ nome: "Cento Sem Sabor", Categoria: "Doces", tipo: "cento" }),
+      produto({ nome: "Cento Um Sabor", Categoria: "Doces", tipo: "cento" }),
+      produto({ nome: "Morango Banhado", Categoria: "Doces" }),
+    ];
+    // Sabor inativo chega com ativo = false (admin logado) ou null
+    // (anônimo, escondido pela RLS): nos dois casos não conta.
+    saboresDoBanco = [
+      sabor("Cento Sem Sabor", "Torta Inativa", false),
+      { cento_nome: "Cento Sem Sabor", subitem_nome: "Coxinha Inativa", ordem: 1, sabor: null },
+      sabor("Cento Um Sabor", "Morango Banhado"),
+      sabor("Cento Um Sabor", "Torta Inativa", false),
+    ];
+    await renderLista("doces");
+    expect(cardsNaOrdem()).toEqual(["Cento Um Sabor", "Morango Banhado"]);
+  });
+});
+
+describe("Página Lista — mínimo no card", () => {
+  it("aparece só com pedido_minimo > 1, com a unidade quando preenchida; vazio não quebra", async () => {
+    doBanco = [
+      produto({ nome: "Morango Banhado", Categoria: "Doces", preco: 2.5, pedido_minimo: 10, unidade_venda: "unidade" }),
+      produto({ nome: "Brigadeiro", Categoria: "Doces", preco: 3.5, pedido_minimo: 10 }),
+      produto({ nome: "Pudim", Categoria: "Doces", preco: 45, pedido_minimo: 1, unidade_venda: "kg" }),
+      produto({ nome: "Beijinho", Categoria: "Doces", preco: 5, tipo: "cento", pedido_minimo: 20 }),
+    ];
+    saboresDoBanco = [sabor("Beijinho", "Brigadeiro")];
+    await renderLista("doces");
+    expect(within(cardDe("Morango Banhado")).getByText("mín. 10 un")).toHaveClass("site-preco-minimo");
+    expect(within(cardDe("Brigadeiro")).getByText("mín. 10")).toBeInTheDocument();
+    expect(cardDe("Pudim").querySelector(".site-preco-minimo")).toBeNull();
+    // Cento ignora pedido_minimo.
+    expect(cardDe("Beijinho").querySelector(".site-preco-minimo")).toBeNull();
+    expect(document.body.textContent).not.toMatch(/null|undefined|None/);
   });
 });

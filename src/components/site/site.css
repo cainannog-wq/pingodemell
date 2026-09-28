@@ -1421,3 +1421,39 @@ body:has(.pdm-site) {
     gap: 12px;
   }
 }
+
+/* Contador da sacola no cabeçalho (número de itens do carrinho). */
+.site-sacola {
+  position: relative;
+}
+.site-sacola-contador {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: var(--radius-pill);
+  background: var(--gold-500);
+  color: var(--ink-900);
+  font-weight: var(--fw-bold);
+  font-size: 12px;
+  line-height: 21px;
+  text-align: center;
+}
+
+/* Linha de preço do card: preço à esquerda, mínimo à direita (quando o
+   produto tem mínimo > 1). Sem espaço, o mínimo desce. */
+.site-preco-linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 8px;
+}
+.site-preco-minimo {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}

@@ -2,7 +2,7 @@
 
 O status do projeto fica fora do repositório; este arquivo registra apenas o estado técnico.
 
-Todo PR que traz migração de schema atualiza este arquivo no mesmo PR (ver CLAUDE.md). Última atualização: 28/09/2026 (PR #20, item 2d: unidade de venda, categoria Kits e categoria obrigatória no formulário; concluído na `lote` em 28/09/2026, squash; as duas migrações aplicadas antes do merge).
+Todo PR que traz migração de schema atualiza este arquivo no mesmo PR (ver CLAUDE.md). Última atualização: 28/09/2026 (PR `interna-produto`, item 3: interna do produto avulso e do Cento, carrinho no navegador; sem migração de schema).
 
 Banco único: o projeto Supabase `npervqefspmwmrekskcb` (região `sa-east-1`) atende produção, previews da Netlify e os scripts locais (`SUPABASE_URL` do `.env.local`). Não existe banco de staging.
 
@@ -40,7 +40,8 @@ Site público (`src/app/(site)`):
 | `/` | Home |
 | `/produtos` | Lista; filtro `?categoria=bolos\|doces\|salgados\|bebidas\|kits` |
 | `/politica-de-privacidade` | |
-| `/produtos/{slug}`, `/carrinho`, `/quem-somos`, `/quem-somos#contato` | reservadas em `src/lib/site/rotas.ts`; ainda caem na 404. Desde o PR `slug`, Home e Lista linkam a interna por `/produtos/{slug}` (antes, `/produtos/{id}`; o redirecionamento do endereço antigo fica fora) |
+| `/produtos/{slug}` | Interna do produto (PR `interna-produto`): avulso ou Cento; produto inexistente, inativo ou Cento sem sabor ativo → 404 (`app/(site)/not-found.tsx`). Home e Lista linkam por aqui desde o PR `slug` (o redirecionamento de `/produtos/{id}` fica fora) |
+| `/carrinho`, `/quem-somos`, `/quem-somos#contato` | reservadas em `src/lib/site/rotas.ts`; ainda caem na 404 (a sacola do cabeçalho já aponta para `/carrinho`) |
 
 Admin (exige login; `src/app/admin`): `/login`, `/admin`, `/admin/produtos`, `/admin/produtos/novo`, `/admin/produtos/{nome}`, `/admin/pedidos`, `/admin/pedidos/{numero}`, `/admin/dias-off`.
 
@@ -113,10 +114,22 @@ Os 15 produtos em 28/09/2026 05:04 UTC, depois da etapa 1 (todos com `atualizado
 ## Unidade de venda e categoria Kits (PR #20, 2d)
 
 - **`produtos.unidade_venda`**: texto livre, opcional, até 20 caracteres, sem espaço sobrando (restrição `produtos_unidade_venda_formato`; o formulário também junta espaços repetidos). Texto e não enum para a lista crescer com o catálogo sem mudar o banco. O admin sugere `kg`, `unidade`, `cento`, `litro`. Card: `R$ X o kg`, `a unidade`, `o litro`, `o cento`; outro texto vira `por {texto}`; vazio mostra só o preço (como antes); produto tipo cento é sempre `o cento` (`textoUnidadeVenda`, `src/lib/vitrine/mais-pedidos.ts`).
-- **Quilo inteiro**: não há trava própria. Vale porque `pedido_minimo` é inteiro (banco e formulário recusam `1,5`) e o step é livre/5/10; com unidade `kg`, 1 = 1 kg. **Requisito do carrinho futuro:** quantidade sempre inteira na unidade de venda; se o carrinho aceitar fração, meio quilo de bolo passa a ser possível.
+- **Quilo inteiro**: não há trava própria. Vale porque `pedido_minimo` é inteiro (banco e formulário recusam `1,5`) e o step é livre/5/10; com unidade `kg`, 1 = 1 kg. **Requisito do carrinho futuro:** quantidade sempre inteira na unidade de venda; se o carrinho aceitar fração, meio quilo de bolo passa a ser possível. Atendido no PR `interna-produto`: a interna e a leitura do carrinho só aceitam inteiro (`src/lib/vitrine/quantidade.ts`, `lerCarrinho`).
 - **Kits**: quinto valor de `categoria_produto` (depois de Bebidas na ordem do enum; nenhuma consulta ordena por categoria). Filtro `?categoria=kits` na Lista, quinto quadrado na Home (sem foto, como Bebidas). Kits conta como "não bebida" em "Os mais pedidos".
 - **Categoria obrigatória só no formulário** (admin do lote e servidor, em `parseProdutoForm`); a coluna continua aceitando nulo.
+- **Preenchimento nos produtos de teste (PR `interna-produto`)**: `supabase/dados-unidade-venda-teste.sql` (só dados, não é migração): `kg` no Bolo de Chocolate com Ninho; `unidade` em Morango Banhado, Brigadeiro Gourmet, Suco de Laranja Natural (1L) e nos 3 Centos. Preserva o `atualizado_em` desligando o gatilho `produtos_set_atualizado_em` só dentro da transação (o papel `postgres` não pode usar `session_replication_role`). Prova em transação desfeita: `node scripts/banco/unidade-venda-dados.mjs` (6/6 em 28/09/2026 ~17:49 UTC; banco conferido igual depois). **Ainda não aplicado em produção** (aguarda o ok do Cainan; ver "Registros" quando for).
 - **Risco até o lote chegar à `main`:** o admin de produção (código da `main`) só conhece 4 categorias. Um produto em Kits aberto e salvo ali volta para "Sem categoria" sem aviso (o campo mostra a primeira opção e grava vazio). Por isso **nenhum produto real vai para Kits antes disso**; o Kit Festa Sortido continua sem categoria. O site de produção lê um produto em Kits sem quebrar (aparece em "Todos"; `?categoria=kits` cai em "Todos").
+
+## Interna do produto e carrinho (PR `interna-produto`, item 3)
+
+- **Leitura**: `buscarInterna` (`src/lib/vitrine/buscar.ts`): produto ativo pelo slug (`lerProdutoPorSlug`, a mesma consulta de `buscarProdutoPorSlug`), sabores do Cento e fotos (`buscarFotosProduto`: capa + extras por `posicao`; se as extras falharem, só a capa). Falha do banco no produto ou nos sabores mostra aviso de falha (não a 404). `generateMetadata` e a página dividem a mesma busca (`cache` do React).
+- **Sabores do Cento**: `produto_cento_itens` com o produto do sabor embutido pela chave `produto_cento_itens_subitem_nome_fkey` (`CAMPOS_SABOR`, `src/lib/vitrine/cento.ts`). A leitura de `produto_cento_itens` é pública, inclusive a linha de sabor inativo: quem esconde o sabor inativo é a RLS de `produtos`, e só do anônimo (o embutido volta `null`); o admin logado recebe `ativo = false`. **O filtro de ativo do sabor fica no código** (`saboresAtivos`). Conferência em produção, só leitura: `node scripts/ver-sabores-cento.mjs`.
+- **Cento sem sabor ativo = indisponível**: 404 na interna e fora da Home, da Lista e de "Combina com o seu pedido" (`semCentoIndisponivel`). Home e Lista fazem uma consulta a mais (`produto_cento_itens ... in cento_nome`) só quando há Cento na lista; se ela falhar, a Home esconde "Os mais pedidos" e a Lista mostra o aviso de falha. Nenhum estado novo no banco.
+- **Cento na interna**: `pedido_minimo` e `step_quantidade` do cadastro não valem; conta em centos (1 a `MAX_CENTOS` = 50), 100 unidades por cento, distribuídas numa combinação só em passos de 5 (`composicaoValida`). Avulso: `src/lib/vitrine/quantidade.ts` (mínimo subindo até o múltiplo do step; teto `MAX_QUANTIDADE` = 9999).
+- **"Combina com o seu pedido"**: `buscarRelacionados` = "Os mais pedidos" (ativo + destaque, sem bebida, sem Cento indisponível, por `atualizado_em`) sem o produto da página, no máximo 3 (`LIMITE_RELACIONADOS`).
+- **404 do site**: `app/(site)/not-found.tsx` atende o `notFound()` das páginas do site, sem montar de novo cabeçalho e rodapé (o layout do grupo já monta); `app/not-found.tsx` continua atendendo endereço inexistente, com o `SiteChrome`. Conteúdo comum em `src/components/site/PaginaNaoEncontrada.tsx`.
+- **Carrinho**: no navegador, `localStorage`, chave `pdm-carrinho-v1` (`{ versao: 1, linhas }`), lido pelo `CarrinhoProvider` (montado no `SiteChrome`) com `useSyncExternalStore`: no HTML do servidor o carrinho é vazio e o contador aparece depois de carregar (sem erro de hidratação); abas abertas ficam iguais (evento `storage`); se o `localStorage` falhar, fica só na memória da aba. Nada vai para o banco nem para cookie; sem dado pessoal. Linha: `produtoId`, `slug`, `nome`/`preco`/`unidade_venda` (só para exibir), `quantidade` (Cento: número de centos), `sabores` (Cento), `observacao` (até 300). Leitura confere cada linha e descarta a inválida (`lerCarrinho`, `src/lib/carrinho/regras.ts`); até 50 linhas. Contador do cabeçalho = número de linhas.
+- **Requisito do checkout (não feito aqui)**: `POST /api/pedidos` hoje aceita `preco_unitario`, quantidade e composição como vêm do navegador. O carrinho guarda o `produtoId` para o servidor conferir tudo no banco no checkout (ativo, preço atual, mínimo, step, soma do Cento, sabores ativos); o que está no navegador nunca vale como verdade.
 
 ## Quando o lote for para a main
 
@@ -198,6 +211,8 @@ Testes de banco: `scripts/banco/`, cada um numa transação desfeita no fim, con
 | `node scripts/arquivos-sem-dono.mjs` | todo arquivo do bucket sem linha no banco (raiz, `capa/`, `galeria/`), linha apontando para arquivo inexistente, arquivo usado por duas linhas e `capa/{id}/` com mais de um arquivo; sai com código 1 se achar algo. **Rodar antes da limpeza dos fictícios e antes da carga real** | produção, transação READ ONLY desfeita | não (só leitura) |
 | `scripts/ver-fotos-anonimo.mjs <id>` | lista, como anônimo, as fotos extras de um produto na ordem | produção, pela API | não (só leitura) |
 | `node scripts/ver-slugs.mjs` | busca cada produto pelo slug com a consulta de `buscarProdutoPorSlug`, como anônimo e com a chave de serviço (lê tudo, como o admin logado): ativo devolve, inativo e inexistente voltam vazios | produção, pela API | não (só leitura) |
+| `node scripts/ver-sabores-cento.mjs` | sabores de cada Cento com a consulta do site, como anônimo (sabor inativo volta `null`) e com a chave de serviço (volta `ativo = false`, como o admin logado); lista os ativos e aponta Cento indisponível | produção, pela API | não (só leitura) |
+| `node scripts/banco/unidade-venda-dados.mjs` | prova de `supabase/dados-unidade-venda-teste.sql`: só os 7 produtos mudam, só em `unidade_venda`; `atualizado_em` e "Os mais pedidos" iguais; gatilho religado e funcionando. Fora de `rodar-todos.mjs` (depois de aplicado não muda mais nada) | produção, transação desfeita | não |
 | `node scripts/ver-vitrine.mjs [endereço]` | "Os mais pedidos" da Home e os cards da Lista, na ordem da tela, com o link de cada card (padrão: produção; serve para a homologação) | site, por GET | não (só leitura) |
 | `scripts/test-turnstile-verify.mjs` | secret key do Turnstile ativa | Cloudflare | não |
 | `scripts/check-service-key-bundle.mjs` | a service role key não aparece em `.next/static` (rodar depois do build) | nenhum (arquivos locais) | não |
