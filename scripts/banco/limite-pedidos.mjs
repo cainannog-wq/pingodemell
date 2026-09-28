@@ -8,7 +8,7 @@
 // A janela e o limite são lidos de src/app/api/pedidos/route.ts, para o
 // teste acompanhar a rota se os números mudarem.
 //
-// Uso: node scripts/banco/limite-pedidos.mjs [--com-migracao]
+// Uso: node scripts/banco/limite-pedidos.mjs [--com-migracao=<arquivo.sql>]
 
 import { readFileSync } from "node:fs";
 import path from "node:path";

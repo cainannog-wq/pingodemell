@@ -14,8 +14,10 @@ export const ROTAS = {
   lista: "/produtos",
   listaPorCategoria: (categoria: CategoriaProduto) =>
     `/produtos?categoria=${categoriaParaParametro(categoria)}`,
-  // Interna do produto pelo id (uuid) — nunca pelo nome, que pode mudar.
-  produto: (id: string) => `/produtos/${id}`,
+  // Interna do produto pelo slug (produtos.slug): gerado pelo banco a partir
+  // do nome no cadastro e fixo depois, mesmo que o produto seja renomeado.
+  // Nunca pelo nome nem pelo id.
+  produto: (slug: string) => `/produtos/${slug}`,
   // Reservada pra página 4 (Carrinho): a sacola do cabeçalho já aponta pra
   // cá e cai na 404 até a página existir.
   carrinho: "/carrinho",

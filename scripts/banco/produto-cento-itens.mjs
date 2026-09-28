@@ -3,7 +3,7 @@
 // scripts/test-rls-produto-cento-itens.mjs, que criava produtos e itens
 // temporários em produção.
 //
-// Uso: node scripts/banco/produto-cento-itens.mjs [--com-migracao]
+// Uso: node scripts/banco/produto-cento-itens.mjs [--com-migracao=<arquivo.sql>]
 
 import { cenario, descrever, emTransacaoDesfeita, registrar } from "./lib.mjs";
 

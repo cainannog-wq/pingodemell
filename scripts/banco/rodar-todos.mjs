@@ -5,9 +5,10 @@
 //
 // A fotografia é tirada numa conexão só de leitura.
 //
-// Uso: node scripts/banco/rodar-todos.mjs [--com-migracao]
-//   --com-migracao é repassado aos testes de banco (ver lib.mjs). O teste
-//   HTTP sempre olha o estado real de produção.
+// Uso: node scripts/banco/rodar-todos.mjs [--com-migracao=<arquivo.sql>]
+//   --com-migracao=... é repassado aos testes de banco (ver lib.mjs), menos
+//   à slug-migracao.mjs, que aplica a etapa 1 do slug sozinha quando ela
+//   falta. O teste HTTP sempre olha o estado real de produção.
 
 import { spawnSync } from "node:child_process";
 import path from "node:path";
@@ -20,9 +21,13 @@ const TESTES_DE_BANCO = [
   "dias-off.mjs",
   "pedidos.mjs",
   "limite-pedidos.mjs",
+  "slug.mjs",
 ];
+// Aplica a própria migração quando ela falta; não recebe --com-migracao.
+const TESTES_SEM_ARGUMENTO = ["slug-migracao.mjs"];
 const TESTE_HTTP = "http-sem-gravar.mjs";
-const comMigracao = process.argv.includes("--com-migracao");
+const argMigracao = process.argv.find((a) => a.startsWith("--com-migracao"));
+const comMigracao = Boolean(argMigracao);
 
 async function fotografar() {
   const db = await conectar();
@@ -64,7 +69,8 @@ function rodar(arquivo, args) {
 const antes = await fotografar();
 
 const resultados = [];
-for (const arquivo of TESTES_DE_BANCO) resultados.push([arquivo, rodar(arquivo, comMigracao ? ["--com-migracao"] : [])]);
+for (const arquivo of TESTES_DE_BANCO) resultados.push([arquivo, rodar(arquivo, comMigracao ? [argMigracao] : [])]);
+for (const arquivo of TESTES_SEM_ARGUMENTO) resultados.push([arquivo, rodar(arquivo, [])]);
 resultados.push([TESTE_HTTP, rodar(TESTE_HTTP, [])]);
 
 const depois = await fotografar();

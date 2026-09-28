@@ -110,5 +110,12 @@ for (const tabela of ["produto_fotos", "produto_cento_itens", "dias_off", "segun
   const r = await chamar("GET", `${tabela}?select=id&limit=1`);
   registrar(`http 11. anônimo lê ${tabela} (leitura pública)`, r.status === 200, limpar(resumo(r)));
 }
+// Slug (supabase/produtos-slug.sql). Antes da etapa 1 aplicada, a função
+// não existe e a resposta é 404 (PGRST202): falha, como as outras
+// verificações de correção ainda não aplicada.
+for (const funcao of ["produto_slug_base", "produto_slug_livre"]) {
+  const r = await chamar("GET", `rpc/${funcao}?p_nome=Prova`);
+  registrar(`http 12. anônimo não executa ${funcao} (sem permissão)`, semPermissao(r), resumo(r));
+}
 
 resumir("Nada foi gravado.");

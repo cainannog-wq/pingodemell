@@ -5,14 +5,14 @@
 //
 // Também repete, com as mesmas regras, os alertas de segurança do
 // verificador da Supabase que dependem só do banco (0008, 0011, 0013,
-// 0028, 0029). Com --com-migracao, isso mostra como o verificador vai ficar
-// depois de aplicar a migração; o verificador de verdade só enxerga o que
-// já está em produção.
+// 0028, 0029). Com --com-migracao=<arquivo.sql>, isso mostra como o
+// verificador vai ficar depois de aplicar a migração; o verificador de
+// verdade só enxerga o que já está em produção.
 //
 // Tabela ou função nova em public que não esteja listada aqui faz o teste
 // falhar de propósito: quem cria o objeto decide e registra o esperado.
 //
-// Uso: node scripts/banco/permissoes.mjs [--com-migracao]
+// Uso: node scripts/banco/permissoes.mjs [--com-migracao=<arquivo.sql>]
 
 import { cenario, emTransacaoDesfeita, registrar } from "./lib.mjs";
 
@@ -38,6 +38,12 @@ const FUNCOES = {
   produtos_set_atualizado_em: { anon: false, authenticated: false },
   pedidos_recalcular_totais: { anon: false, authenticated: false },
   pedidos_set_status_atualizado_em: { anon: false, authenticated: false },
+  // Slug do produto (supabase/produtos-slug.sql): regra e gatilhos; ninguém
+  // da API executa.
+  produto_slug_base: { anon: false, authenticated: false },
+  produto_slug_livre: { anon: false, authenticated: false },
+  produtos_slug_no_cadastro: { anon: false, authenticated: false },
+  produtos_slug_imutavel: { anon: false, authenticated: false },
 };
 
 // Sem política de propósito: só a chave de serviço acessa.

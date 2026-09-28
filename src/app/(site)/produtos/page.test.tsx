@@ -44,6 +44,7 @@ function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {
   seq += 1;
   return {
     id: `00000000-0000-4000-8000-${String(seq).padStart(12, "0")}`,
+    slug: `produto-${seq}`,
     nome: `Produto ${seq}`,
     descricao: null,
     preco: 10,
@@ -199,13 +200,14 @@ describe("Página Lista — card", () => {
     expect(screen.getByRole("img", { name: "Foto de Bolo de Chocolate" })).toHaveAttribute("src", COM_FOTO);
   });
 
-  it("card e botão levam à interna pelo id; nada vai para o carrinho", async () => {
+  it("card e botão levam à interna pelo slug; nada vai para o carrinho", async () => {
     await renderLista("salgados");
     const empada = CATALOGO.find((p) => p.nome === "Empada")!;
     const card = screen.getByRole("heading", { level: 3, name: "Empada" }).closest("article")!;
     const links = within(card).getAllByRole("link");
     expect(links.length).toBeGreaterThanOrEqual(2);
-    for (const link of links) expect(link).toHaveAttribute("href", `/produtos/${empada.id}`);
+    expect(empada.slug).toBeTruthy();
+    for (const link of links) expect(link).toHaveAttribute("href", `/produtos/${empada.slug}`);
     expect(document.querySelector('a[href="/carrinho"]')).toBeNull();
   });
 });
