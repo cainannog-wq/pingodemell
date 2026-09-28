@@ -139,18 +139,25 @@ Decisão fechada com o Cainan em 24/09/2026, no PR noindex-homologacao:
 
 ## Regra de custo — créditos da Netlify e merges em lote
 
-Decisão fechada com o Cainan em 25/09/2026, no PR economia-deploys. Plano
-Free da Netlify: 300 créditos por ciclo (ciclo atual: 20/09 a 19/10/2026), divididos
-entre os 6 sites da conta. **Cada deploy de produção publicado custa 15
-créditos**; Deploy Preview, branch deploy (homologação), build pulado e build
-que falha não custam. Se os créditos acabam, **todos os sites da conta saem
-do ar** até o ciclo virar, não só o pingodemell. Saldo e histórico em
-`docs/status-pingo-de-mell.md`, seção "Créditos da Netlify".
+Decisão fechada com o Cainan em 25/09/2026, no PR economia-deploys;
+atualizada em 28/09/2026 com a troca de plano. Plano **Personal** da
+Netlify desde 28/09/2026: 1.000 créditos por ciclo (ciclo atual: 28/09 a
+27/10/2026), divididos entre os sites da conta. **Cada deploy de produção
+publicado custa 15 créditos**; Deploy Preview, branch deploy (homologação),
+build pulado e build que falha não custam. Se os créditos acabam, **todos os
+sites da conta saem do ar** até o ciclo virar, não só o pingodemell. Saldo e
+histórico em `docs/status-pingo-de-mell.md`, seção "Créditos da Netlify".
 
 - **Só merge na `main` gera deploy pago.** Nada de push direto na `main`.
   Validação sempre na homologação ou em Deploy Preview.
-- **Até 19/10/2026 (fim do ciclo atual), nenhum deploy de produção**, só
-  correção urgente com o ok explícito do Cainan.
+- **Deploy de produção liberado** com o plano Personal (a trava "nenhum
+  deploy de produção até 19/10/2026" do plano Free caiu em 28/09/2026). A
+  `main` continua recebendo só o PR da `lote`, quando o Cainan pedir.
+- **Piso de segurança: abaixo de 15 créditos, nenhum push em nenhuma
+  branch** até o Cainan decidir, mesmo com o plano pago.
+- **Nunca usar "Trigger deploy" nem "Clear cache and deploy site" da página
+  de Deploys** para forçar a homologação: publicam a produção (28/09/2026,
+  15 créditos).
 - **Commit que não deve publicar leva `[skip netlify]` na mensagem** (o
   commit do heartbeat já leva). Não usar `[skip ci]`: também pula o GitHub
   Actions.
