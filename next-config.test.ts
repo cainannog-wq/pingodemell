@@ -36,6 +36,19 @@ describe("X-Robots-Tag por contexto da Netlify", () => {
     }
   });
 
+  it("commit servido aparece em X-Homologacao-Commit só na homologação", async () => {
+    vi.stubEnv("COMMIT_REF", "c18a492c693f5e38f29aaf043ec6fdd40d72c49a");
+    for (const [contexto, esperado] of [
+      ["production", null],
+      ["deploy-preview", null],
+      ["branch-deploy", "c18a492c693f5e38f29aaf043ec6fdd40d72c49a"],
+    ] as const) {
+      vi.stubEnv("CONTEXT", contexto);
+      const resposta = await unstable_getResponseFromNextConfig({ url: "https://pingodemell.netlify.app/", nextConfig });
+      expect(resposta.headers.get("x-homologacao-commit"), contexto).toBe(esperado);
+    }
+  });
+
   it('registro de tempo do Salvar (MEDIR_TEMPOS_ADMIN) só é ligado no build da homologação', async () => {
     for (const [contexto, esperado] of [
       ["production", ""],

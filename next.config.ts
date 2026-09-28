@@ -50,6 +50,10 @@ const nextConfig: NextConfig = {
     // produção nunca recebe este cabeçalho.
     if (process.env.CONTEXT === "branch-deploy") {
       headers.push({ key: "X-Robots-Tag", value: "noindex, nofollow" });
+      // Commit que a homologação está servindo (COMMIT_REF é definido pela
+      // Netlify no build): prova "homologação = commit X" com um curl -I,
+      // sem abrir o painel. Só na homologação.
+      if (process.env.COMMIT_REF) headers.push({ key: "X-Homologacao-Commit", value: process.env.COMMIT_REF });
     }
     return [{ source: "/:path*", headers }];
   },
