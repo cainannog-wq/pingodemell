@@ -1,0 +1,28 @@
+Prova de que o checkout NÃO reconfere as linhas do carrinho (PR checkout-de-verdade)
+======================================================================================
+
+Carrinho de teste gravado no localStorage do navegador (pdm-carrinho-v1), com
+ids reais do banco e duas divergências de propósito em relação ao que está no
+banco no momento da prova (29/09/2026, lido só com SELECT):
+
+1. Brigadeiro Gourmet (197d31af-...): linha gravada a R$ 1,99 a unidade.
+   No banco: preco = 2.35. Simula "preço mudou depois de entrar no carrinho".
+   O checkout mostra R$ 1,99 e subtotal R$ 59,70 (30 x 1,99), sem aviso.
+
+2. Bento Cake Flork (demo) (99917f88-...): linha gravada com o recheio
+   "TESTE Chrome editado (demo)" (f27160a6-...).
+   No banco: recheios.ativo = false. Simula "recheio desativado depois de
+   entrar no carrinho". O checkout mostra o recheio e R$ 120,00, sem aviso.
+
+Total mostrado: R$ 505,69 = 59,70 + 95,99 + 160,00 + 70,00 + 120,00
+(depois de somar a Coca-cola pela oferta: R$ 516,69).
+
+Nada foi gravado no banco: as divergências foram criadas no navegador, não
+desativando nem mudando preço em produção. Os prints 01, 08 e 14 mostram o
+resumo. O teste automatizado src/app/(site)/checkout/checkout.test.tsx faz a
+mesma prova com o banco simulado (preço mudado e produto/recheio fora do
+catálogo) e confere que nenhuma consulta filtra pelas linhas do carrinho.
+
+Servidor: next dev local (localhost:3000) lendo o Supabase de produção só
+para leitura (dias_off, produtos ativos, sabores e recheios das ofertas).
+"Hoje" dos prints: terça 29/09/2026 (Brasília).
