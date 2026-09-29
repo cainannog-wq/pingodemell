@@ -198,7 +198,7 @@ export function Calendario({
               const sufixo = bloqueio
                 ? `, indisponível: ${TEXTO_MOTIVO[bloqueio]}`
                 : marcaCurta
-                  ? ", prazo curto: fale com a gente no WhatsApp"
+                  ? ", prazo curto"
                   : "";
               return (
                 <span role="gridcell" key={j} aria-selected={escolhida}>

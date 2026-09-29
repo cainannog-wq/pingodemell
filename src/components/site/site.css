@@ -66,6 +66,14 @@ html:has(.pdm-site) {
   color-scheme: light;
   background: var(--surface-page);
 }
+/* globals.css põe overflow-x: hidden em html e body. Com os dois assim, o
+   body vira um contêiner de rolagem que não rola, e position: sticky para de
+   funcionar (resumo do carrinho e do checkout). `clip` corta a rolagem
+   lateral do mesmo jeito, sem criar contêiner de rolagem. */
+html:has(.pdm-site),
+body:has(.pdm-site) {
+  overflow-x: clip;
+}
 body:has(.pdm-site) {
   background: var(--surface-page);
   color: var(--text-body);

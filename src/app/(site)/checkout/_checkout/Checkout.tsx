@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Button, ButtonLink, Icon, Input, Select, Textarea, TextLink } from "@/components/ds";
+import { Button, Icon, Input, Select, Textarea, TextLink } from "@/components/ds";
 import { useCarrinho } from "@/components/site/CarrinhoProvider";
 import { Hive } from "@/components/site/Hive";
 import { PilhaDeAvisos, type Aviso } from "@/components/site/PilhaDeAvisos";
@@ -33,7 +33,6 @@ import { quantidadeDaOferta, selecionarOfertas, type Oferta } from "@/lib/checko
 import { carregarRascunho, salvarRascunho } from "@/lib/checkout/rascunho";
 import { LOJA } from "@/lib/site/config";
 import { ROTAS } from "@/lib/site/rotas";
-import { linkWhatsApp } from "@/lib/site/whatsapp";
 import { diaDaSemana, hojeBrasilia, somarDias } from "@/lib/tempo/brasilia";
 import { nomeDaUnidade, textoQuantidadeNaUnidade } from "@/lib/vitrine/minimo";
 import { CarrinhoVazio } from "../../carrinho/_carrinho/CarrinhoVazio";
@@ -55,15 +54,18 @@ import { ResumoPedido } from "./ResumoPedido";
 //   não existe (404 até o próximo item).
 
 export const TEXTO_ARTESANAL =
-  "Seu doce é feito artesanalmente. Pode haver diferenças em relação à imagem enviada, a gente capricha, mas cada peça é única.";
+  "Pode haver diferenças em relação à imagem enviada, a gente capricha, mas cada peça é única.";
 
 const ids: Record<Campo, string> = {
   nome: "checkout-nome",
   whatsapp: "checkout-whatsapp",
   email: "checkout-email",
+  aceite: "checkout-aceite",
   data: "checkout-data",
   hora: "checkout-hora",
   modo: "checkout-modo",
+  cidade: "checkout-cidade",
+  bairro: "checkout-bairro",
   rua: "checkout-rua",
   numero: "checkout-numero",
   complemento: "checkout-complemento",
@@ -74,12 +76,15 @@ const ids: Record<Campo, string> = {
 const idErro = (c: Campo) => `${ids[c]}-erro`;
 
 const ROTULOS: Record<Campo, string> = {
-  nome: "Seu nome",
+  nome: "Seu nome completo",
   whatsapp: "Seu WhatsApp",
   email: "Seu e-mail",
+  aceite: "Política de Privacidade",
   data: "Data",
   hora: "Horário",
   modo: "Como receber",
+  cidade: "Cidade",
+  bairro: "Bairro",
   rua: "Endereço",
   numero: "Número",
   complemento: "Complemento",
@@ -299,7 +304,7 @@ function Formulario({
                     onChange={(e) => mudar("whatsapp", mascararWhatsApp(e.target.value))}
                   />
                 </CampoTexto>
-                <CampoTexto aoSair={tocar} campo="email" erro={erroVisivel("email")}>
+                <CampoTexto aoSair={tocar} campo="email" semOpcional erro={erroVisivel("email")}>
                   <Input
                     id={ids.email}
                     data-campo="email"
@@ -315,6 +320,38 @@ function Formulario({
                     onChange={(e) => mudar("email", e.target.value)}
                   />
                 </CampoTexto>
+              </div>
+
+              {/* Consentimento: nasce desmarcado e é obrigatório. Os dados
+                  podem ser usados também para marketing no futuro, por isso
+                  não há mais a frase "usados só para este pedido". */}
+              <div className="checkout-aceite" data-invalido={erroVisivel("aceite") ? true : undefined}>
+                <label className="checkout-aceite-caixa">
+                  <input
+                    id={ids.aceite}
+                    data-campo="aceite"
+                    type="checkbox"
+                    checked={dados.aceite}
+                    aria-required="true"
+                    aria-invalid={Boolean(erroVisivel("aceite"))}
+                    aria-describedby={idErro("aceite")}
+                    onChange={(e) => {
+                      mudar("aceite", e.target.checked);
+                      tocar("aceite");
+                    }}
+                  />
+                  <span>
+                    Concordo em compartilhar meus dados e estou de acordo com a{" "}
+                    <a href={ROTAS.privacidade} target="_blank" rel="noopener noreferrer">
+                      Política de Privacidade
+                      <span className="site-visually-hidden"> (abre em nova aba)</span>
+                    </a>
+                    .<span aria-hidden="true"> *</span>
+                  </span>
+                </label>
+                <p id={idErro("aceite")} className="checkout-erro" aria-live="polite">
+                  {erroVisivel("aceite")}
+                </p>
               </div>
             </div>
           </Secao>
@@ -352,31 +389,9 @@ function Formulario({
                 </p>
               </div>
 
-              <div className="checkout-quando-painel">
-                <div aria-live="polite" className="checkout-quando-status">
-                  {dados.data && curto && maisDemorado ? (
-                    <AvisoPrazo data={dados.data} hoje={hoje} item={maisDemorado} />
-                  ) : dados.data ? (
-                    <div className="checkout-caixa" data-tom="ok">
-                      <Icon name="event_available" size={22} color="var(--pdm-success-text)" />
-                      <div>
-                        <p className="checkout-caixa-titulo">{dataPorExtenso(dados.data)}</p>
-                        <p>{textoDentroDoPrazo(dados.data)}</p>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="checkout-caixa" data-tom="info" id="checkout-data-porque">
-                  <div>
-                    <p className="checkout-caixa-titulo">Por que algumas datas ficam bloqueadas</p>
-                    <p>
-                      Não atendemos na segunda-feira. Dias de semana: 1 dia de antecedência; fins de semana: pedidos até
-                      quinta-feira. Dias sem produção também ficam bloqueados.
-                    </p>
-                  </div>
-                </div>
-
+              {/* Horário logo depois do calendário: no celular fica embaixo
+                  dele; no desktop o CSS o põe no fim da coluna da direita. */}
+              <div className="checkout-quando-hora">
                 <CampoTexto
                   aoSair={tocar}
                   campo="hora"
@@ -408,6 +423,30 @@ function Formulario({
                   </Select>
                 </CampoTexto>
               </div>
+
+              <div aria-live="polite" className="checkout-quando-status">
+                {dados.data && curto && maisDemorado ? (
+                  <AvisoPrazo data={dados.data} hoje={hoje} item={maisDemorado} />
+                ) : dados.data ? (
+                  <div className="checkout-caixa" data-tom="ok">
+                    <Icon name="event_available" size={22} color="var(--pdm-success-text)" />
+                    <div>
+                      <p className="checkout-caixa-titulo">{dataPorExtenso(dados.data)}</p>
+                      <p>{textoDentroDoPrazo(dados.data)}</p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="checkout-caixa checkout-quando-porque" data-tom="info" id="checkout-data-porque">
+                <div>
+                  <p className="checkout-caixa-titulo">Por que algumas datas ficam bloqueadas</p>
+                  <p>
+                    Não atendemos na segunda-feira. Dias de semana: 1 dia de antecedência; fins de semana: pedidos até
+                    quinta-feira. Dias sem produção também ficam bloqueados.
+                  </p>
+                </div>
+              </div>
             </div>
           </Secao>
 
@@ -415,7 +454,7 @@ function Formulario({
             numero={3}
             id="checkout-secao-receber"
             titulo="Como você quer receber?"
-            sub="Retirada na loja ou entrega em Fazenda Rio Grande."
+            sub="Retirada na loja ou entrega no endereço que você escolher."
           >
             <fieldset className="checkout-grupo" data-campo="modo">
               <legend className="site-visually-hidden">Como você quer receber? (obrigatório)</legend>
@@ -440,7 +479,7 @@ function Formulario({
                   escolhido={dados.modo === "entrega"}
                   icone="local_shipping"
                   titulo="Entrega"
-                  texto="Em Fazenda Rio Grande · acréscimo a combinar no WhatsApp"
+                  texto="Acréscimo a combinar no WhatsApp"
                   descricaoId={idErro("modo")}
                   invalido={Boolean(erroVisivel("modo"))}
                   aoEscolher={() => {
@@ -456,12 +495,44 @@ function Formulario({
 
             {dados.modo === "entrega" ? (
               <div className="checkout-campos checkout-endereco">
-                <CampoTexto aoSair={tocar} campo="rua" rotulo="Endereço (rua e bairro)" obrigatorio erro={erroVisivel("rua")}>
+                <div className="checkout-campos-dupla">
+                  <CampoTexto aoSair={tocar} campo="cidade" obrigatorio erro={erroVisivel("cidade")}>
+                    <Input
+                      id={ids.cidade}
+                      data-campo="cidade"
+                      placeholder="Ex.: Fazenda Rio Grande"
+                      autoComplete="address-level2"
+                      value={dados.cidade}
+                      maxLength={MAXIMO.cidade}
+                      aria-required="true"
+                      aria-invalid={Boolean(erroVisivel("cidade"))}
+                      aria-describedby={idErro("cidade")}
+                      invalid={Boolean(erroVisivel("cidade"))}
+                      onChange={(e) => mudar("cidade", e.target.value)}
+                    />
+                  </CampoTexto>
+                  <CampoTexto aoSair={tocar} campo="bairro" obrigatorio erro={erroVisivel("bairro")}>
+                    <Input
+                      id={ids.bairro}
+                      data-campo="bairro"
+                      placeholder="Ex.: Nações"
+                      autoComplete="address-level3"
+                      value={dados.bairro}
+                      maxLength={MAXIMO.bairro}
+                      aria-required="true"
+                      aria-invalid={Boolean(erroVisivel("bairro"))}
+                      aria-describedby={idErro("bairro")}
+                      invalid={Boolean(erroVisivel("bairro"))}
+                      onChange={(e) => mudar("bairro", e.target.value)}
+                    />
+                  </CampoTexto>
+                </div>
+                <CampoTexto aoSair={tocar} campo="rua" rotulo="Endereço (rua)" obrigatorio erro={erroVisivel("rua")}>
                   <Input
                     id={ids.rua}
                     data-campo="rua"
-                    placeholder="Rua e nome do bairro"
-                    autoComplete="street-address"
+                    placeholder="Nome da rua"
+                    autoComplete="address-line1"
                     value={dados.rua}
                     maxLength={MAXIMO.rua}
                     aria-required="true"
@@ -500,7 +571,7 @@ function Formulario({
                 </div>
                 <div className="checkout-caixa" data-tom="info">
                   <Icon name="info" size={22} color="var(--brown-700)" />
-                  <p>A entrega tem um acréscimo que depende do bairro. A gente confirma o valor no WhatsApp antes de fechar.</p>
+                  <p>A entrega tem um acréscimo que depende da cidade e do bairro. A gente confirma o valor no WhatsApp antes de fechar.</p>
                 </div>
               </div>
             ) : null}
@@ -584,12 +655,6 @@ function Formulario({
             <Button type="submit" variant="primary" size="lg" fullWidth iconRight="arrow_forward">
               Revisar e enviar
             </Button>
-            <div className="checkout-privacidade">
-              <p>Seus dados são usados só para cuidar deste pedido.</p>
-              <TextLink href={ROTAS.privacidade} icon="arrow_forward">
-                Política de Privacidade
-              </TextLink>
-            </div>
             <p className="checkout-sem-pagamento">
               <Icon name="payments" size={18} color="var(--brown-500)" />
               Nenhum pagamento é feito aqui no site.
@@ -631,7 +696,8 @@ function textoDentroDoPrazo(data: string): string {
 
 function AvisoPrazo({ data, hoje, item }: { data: string; hoje: string; item: { nome: string; dias: number } }) {
   const pronto = prontoEm(hoje, item.dias);
-  const mensagem = `Olá! Estou fazendo um pedido pelo site para ${dataPorExtenso(data).toLowerCase()} e queria confirmar o prazo de ${item.nome}.`;
+  // Sem botão de WhatsApp: a cliente envia o pedido normalmente e o prazo
+  // é combinado no WhatsApp depois do envio.
   return (
     <div className="checkout-caixa" data-tom="alerta">
       <Icon name="schedule" size={22} color="var(--brown-700)" />
@@ -639,20 +705,9 @@ function AvisoPrazo({ data, hoje, item }: { data: string; hoje: string; item: { 
         <p className="checkout-caixa-titulo">{dataPorExtenso(data)}: prazo curto para {item.nome}</p>
         <p>
           {item.nome} leva {item.dias} {item.dias === 1 ? "dia" : "dias"} para ficar pronto (a partir de{" "}
-          {dataPorExtenso(pronto).toLowerCase()}). Chama a gente no WhatsApp que a gente faz o possível pra te atender 💛.
-          Você pode seguir com o pedido normalmente.
+          {dataPorExtenso(pronto).toLowerCase()}). Pode seguir com o pedido: depois do envio, a gente combina o prazo
+          com você pelo WhatsApp e faz o possível pra te atender 💛.
         </p>
-        <ButtonLink
-          href={linkWhatsApp(mensagem)}
-          variant="whatsapp"
-          size="md"
-          iconLeft="whatsapp"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ marginTop: 12 }}
-        >
-          Falar com a gente
-        </ButtonLink>
       </div>
     </div>
   );
@@ -719,6 +774,7 @@ function CampoTexto({
   campo,
   rotulo,
   obrigatorio = false,
+  semOpcional = false,
   erro,
   dica,
   aoSair,
@@ -727,6 +783,8 @@ function CampoTexto({
   campo: Campo;
   rotulo?: string;
   obrigatorio?: boolean;
+  // Campo opcional sem a marca "(opcional)" (e-mail, decisão do Cainan).
+  semOpcional?: boolean;
   erro: string | undefined;
   dica?: string;
   // Saiu do campo: o erro dele passa a aparecer. Fica no contêiner (o blur
@@ -744,7 +802,7 @@ function CampoTexto({
             <span aria-hidden="true"> *</span>
             <span className="site-visually-hidden"> (obrigatório)</span>
           </>
-        ) : (
+        ) : semOpcional ? null : (
           <span className="checkout-opcional"> (opcional)</span>
         )}
       </label>

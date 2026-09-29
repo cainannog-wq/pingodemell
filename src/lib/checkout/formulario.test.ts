@@ -5,6 +5,7 @@ import {
   enderecoCompleto,
   mascararWhatsApp,
   MENSAGENS,
+  nomeCompleto,
   validarCheckout,
   VAZIO,
   whatsAppValido,
@@ -18,6 +19,7 @@ const valido: DadosCheckout = {
   ...VAZIO,
   nome: "Juliana Ribeiro",
   whatsapp: "(41) 99712-4408",
+  aceite: true,
   data: "2026-10-03",
   hora: "14:00",
   modo: "retirada",
@@ -32,20 +34,24 @@ describe("validação do formulário do checkout", () => {
   it("formulário vazio: cada campo obrigatório aponta o seu erro, na ordem da tela", () => {
     const erros = validarCheckout(VAZIO, HOJE, SEM_DIAS_OFF);
     expect(erros).toEqual({
-      nome: MENSAGENS.nome,
+      nome: MENSAGENS.nomeVazio,
       whatsapp: MENSAGENS.whatsappVazio,
+      aceite: MENSAGENS.aceite,
       data: MENSAGENS.dataVazia,
       hora: MENSAGENS.horaSemData,
       modo: MENSAGENS.modo,
       pagamento: MENSAGENS.pagamento,
     });
-    expect(camposComErro(erros)).toEqual(["nome", "whatsapp", "data", "hora", "modo", "pagamento"]);
+    expect(camposComErro(erros)).toEqual(["nome", "whatsapp", "aceite", "data", "hora", "modo", "pagamento"]);
   });
 
   it.each([
-    ["nome", { nome: "   " }, MENSAGENS.nome],
+    ["nome", { nome: "   " }, MENSAGENS.nomeVazio],
+    ["nome", { nome: "Juliana" }, MENSAGENS.nomeIncompleto],
+    ["nome", { nome: "  Juliana   " }, MENSAGENS.nomeIncompleto],
     ["whatsapp", { whatsapp: "" }, MENSAGENS.whatsappVazio],
     ["whatsapp", { whatsapp: "(41) 9971" }, MENSAGENS.whatsappInvalido],
+    ["aceite", { aceite: false }, MENSAGENS.aceite],
     ["data", { data: "", hora: "" }, MENSAGENS.dataVazia],
     ["data", { data: "2026-10-05", hora: "" }, MENSAGENS.dataBloqueada], // segunda
     ["hora", { hora: "" }, MENSAGENS.horaVazia],
@@ -57,19 +63,35 @@ describe("validação do formulário do checkout", () => {
     expect(erros[campo]).toBe(mensagem);
   });
 
+  it("nome completo: pelo menos nome e sobrenome", () => {
+    expect(nomeCompleto("Juliana Ribeiro")).toBe(true);
+    expect(nomeCompleto("Ana Maria de Souza")).toBe(true);
+    expect(nomeCompleto("Juliana")).toBe(false);
+    expect(nomeCompleto("   ")).toBe(false);
+  });
+
   it("e-mail é opcional; preenchido, precisa estar no formato", () => {
     expect(validarCheckout({ ...valido, email: "" }, HOJE, SEM_DIAS_OFF).email).toBeUndefined();
     expect(validarCheckout({ ...valido, email: "juliana@" }, HOJE, SEM_DIAS_OFF).email).toBe(MENSAGENS.email);
     expect(validarCheckout({ ...valido, email: "juliana@email.com" }, HOJE, SEM_DIAS_OFF).email).toBeUndefined();
   });
 
-  it("endereço só é exigido na entrega: rua e número obrigatórios, complemento opcional", () => {
-    expect(validarCheckout({ ...valido, modo: "retirada" }, HOJE, SEM_DIAS_OFF).rua).toBeUndefined();
+  it("endereço só é exigido na entrega: cidade, bairro, rua e número obrigatórios; complemento opcional", () => {
+    expect(validarCheckout({ ...valido, modo: "retirada" }, HOJE, SEM_DIAS_OFF).cidade).toBeUndefined();
     const entrega = validarCheckout({ ...valido, modo: "entrega" }, HOJE, SEM_DIAS_OFF);
+    expect(entrega.cidade).toBe(MENSAGENS.cidade);
+    expect(entrega.bairro).toBe(MENSAGENS.bairro);
     expect(entrega.rua).toBe(MENSAGENS.rua);
     expect(entrega.numero).toBe(MENSAGENS.numero);
     expect(entrega.complemento).toBeUndefined();
-    expect(validarCheckout({ ...valido, modo: "entrega", rua: "Rua X, Nações", numero: "412" }, HOJE, SEM_DIAS_OFF)).toEqual({});
+    expect(camposComErro(entrega)).toEqual(["cidade", "bairro", "rua", "numero"]);
+    expect(
+      validarCheckout(
+        { ...valido, modo: "entrega", cidade: "Mandirituba", bairro: "Centro", rua: "Rua X", numero: "412" },
+        HOJE,
+        SEM_DIAS_OFF
+      )
+    ).toEqual({});
   });
 
   it("formas de pagamento aceitas: Pix, crédito e débito", () => {
@@ -109,8 +131,12 @@ describe("e-mail e endereço", () => {
     expect(emailValido("a b@c.com")).toBe(false);
   });
 
-  it("endereço em um texto só", () => {
-    expect(enderecoCompleto({ rua: " Rua das Acácias, Nações ", numero: "412", complemento: "" })).toBe("Rua das Acácias, Nações, 412");
-    expect(enderecoCompleto({ rua: "Rua X", numero: "s/n", complemento: "Casa 2" })).toBe("Rua X, s/n - Casa 2");
+  it("endereço em um texto só, com bairro e cidade", () => {
+    expect(
+      enderecoCompleto({ rua: " Rua das Acácias ", numero: "412", complemento: "", bairro: "Nações", cidade: "Fazenda Rio Grande" })
+    ).toBe("Rua das Acácias, 412, Nações, Fazenda Rio Grande");
+    expect(enderecoCompleto({ rua: "Rua X", numero: "s/n", complemento: "Casa 2", bairro: "Centro", cidade: "Mandirituba" })).toBe(
+      "Rua X, s/n - Casa 2, Centro, Mandirituba"
+    );
   });
 });

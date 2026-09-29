@@ -224,26 +224,80 @@
 
 /* ---------- Quando ---------- */
 
+/* Desktop: calendário à esquerda; à direita, de cima para baixo, a
+   confirmação (ou o aviso de prazo), o "por que bloqueia" e o horário. No
+   HTML o horário vem logo depois do calendário, que é a ordem do celular. */
 .checkout-quando {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 24px;
+  grid-template-rows: auto auto 1fr;
+  grid-template-areas:
+    "cal status"
+    "cal porque"
+    "cal hora";
+  gap: 16px 24px;
   align-items: start;
 }
 .checkout-quando-cal {
+  grid-area: cal;
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-width: 0;
 }
-.checkout-quando-painel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+.checkout-quando-hora {
+  grid-area: hora;
   min-width: 0;
+}
+.checkout-quando-status {
+  grid-area: status;
+  min-width: 0;
+}
+.checkout-quando-porque {
+  grid-area: porque;
 }
 .checkout-quando-status:empty {
   display: none;
+}
+
+/* ---------- Consentimento (Seus dados) ---------- */
+
+.checkout-aceite {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 4px;
+}
+.checkout-aceite-caixa {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: var(--tap-min);
+  padding: 12px 14px;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--surface-card);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-700);
+  cursor: pointer;
+}
+.checkout-aceite[data-invalido] .checkout-aceite-caixa {
+  border-color: var(--pdm-error);
+}
+.checkout-aceite-caixa input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
+  accent-color: var(--brown-500);
+  cursor: pointer;
+}
+.pdm-site .checkout-aceite-caixa a {
+  font-weight: var(--fw-semibold);
+  color: var(--text-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .checkout-cal {
@@ -497,15 +551,21 @@
 
 /* ---------- Resumo e envio ---------- */
 
+/* Desktop: resumo e botão acompanham a rolagem. A coluna nunca passa da
+   altura da tela: com muitos itens, só a lista de itens rola por dentro, e
+   o total, o aviso e o botão ficam sempre à vista. */
 .checkout-coluna-resumo {
   position: sticky;
   top: 24px;
+  max-height: calc(100dvh - 48px);
   display: flex;
   flex-direction: column;
   gap: 16px;
   min-width: 0;
 }
 .checkout-resumo {
+  flex: 0 1 auto;
+  min-height: 0;
   background: var(--surface-raised);
   border-radius: var(--radius);
   box-shadow: var(--shadow-raised);
@@ -513,6 +573,9 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+.checkout-enviar {
+  flex: none;
 }
 .checkout-resumo-cabeca {
   display: flex;
@@ -524,9 +587,12 @@
   font-size: 26px;
 }
 .checkout-resumo-itens {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   list-style: none;
   margin: 0;
-  padding: 0 0 16px;
+  padding: 0 4px 16px 0;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -633,14 +699,6 @@
   flex: none;
   margin-top: 1px;
 }
-.checkout-privacidade {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  font-size: 14px;
-  color: var(--text-muted);
-}
 .checkout-sem-pagamento {
   display: flex;
   align-items: center;
@@ -705,6 +763,12 @@
   margin-top: 8px;
 }
 
+/* Sem o WhatsApp flutuante no checkout (decisão do Cainan): ele cobria os
+   campos e o botão final. O WhatsApp segue no rodapé. */
+.pdm-site:has(.checkout, .checkout-falha) .site-fab {
+  display: none !important;
+}
+
 /* ---------- Tablet e celular ---------- */
 
 @media (max-width: 1023px) {
@@ -714,6 +778,10 @@
   }
   .checkout-coluna-resumo {
     position: static;
+    max-height: none;
+  }
+  .checkout-resumo-itens {
+    overflow: visible;
   }
   .checkout-ofertas-lista {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -756,9 +824,18 @@
     font-size: 21px;
   }
   .checkout-campos-dupla,
-  .checkout-quando,
   .checkout-opcoes {
     grid-template-columns: minmax(0, 1fr);
+  }
+  /* Celular: horário logo abaixo do calendário. */
+  .checkout-quando {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      "cal"
+      "hora"
+      "status"
+      "porque";
   }
   /* O calendário avança sobre o respiro da seção para cada dia ter pelo
      menos 44px de largura em 375px. */

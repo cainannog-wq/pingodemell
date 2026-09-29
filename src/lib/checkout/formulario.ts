@@ -17,13 +17,19 @@ export const FORMAS_PAGAMENTO: { valor: FormaPagamento; rotulo: string }[] = [
 ];
 
 export type DadosCheckout = {
-  nome: string;
+  nome: string; // completo: pelo menos nome e sobrenome
   whatsapp: string;
   email: string;
+  // Concordou em compartilhar os dados e com a Política de Privacidade
+  // (obrigatório; nasce desmarcado).
+  aceite: boolean;
   data: string; // AAAA-MM-DD, calendário de Brasília
   hora: string; // HH:MM
   modo: ModoEntrega | "";
-  rua: string; // rua e bairro
+  // Entrega: pode ser em cidade próxima, por isso a cidade é um campo.
+  cidade: string;
+  bairro: string;
+  rua: string;
   numero: string;
   complemento: string;
   ocasiao: string;
@@ -32,14 +38,18 @@ export type DadosCheckout = {
 };
 
 export type Campo = keyof DadosCheckout;
+type CampoDeTexto = Exclude<Campo, "aceite" | "data" | "hora" | "modo" | "pagamento">;
 
 export const VAZIO: DadosCheckout = {
   nome: "",
   whatsapp: "",
   email: "",
+  aceite: false,
   data: "",
   hora: "",
   modo: "",
+  cidade: "",
+  bairro: "",
   rua: "",
   numero: "",
   complemento: "",
@@ -49,10 +59,12 @@ export const VAZIO: DadosCheckout = {
 };
 
 // Tamanho máximo de cada campo de texto (o campo não deixa passar disso).
-export const MAXIMO: Record<Exclude<Campo, "data" | "hora" | "modo" | "pagamento">, number> = {
+export const MAXIMO: Record<CampoDeTexto, number> = {
   nome: 100,
   whatsapp: 16, // "(41) 99999-9999"
   email: 120,
+  cidade: 80,
+  bairro: 80,
   rua: 150,
   numero: 20,
   complemento: 80,
@@ -65,9 +77,12 @@ export const ORDEM_DOS_CAMPOS: Campo[] = [
   "nome",
   "whatsapp",
   "email",
+  "aceite",
   "data",
   "hora",
   "modo",
+  "cidade",
+  "bairro",
   "rua",
   "numero",
   "complemento",
@@ -75,6 +90,13 @@ export const ORDEM_DOS_CAMPOS: Campo[] = [
   "pagamento",
   "observacoes",
 ];
+
+// ---------- Nome ----------
+
+// Nome completo: pelo menos duas palavras (nome e sobrenome).
+export function nomeCompleto(texto: string): boolean {
+  return texto.trim().split(/\s+/).filter(Boolean).length >= 2;
+}
 
 // ---------- WhatsApp ----------
 
@@ -113,11 +135,15 @@ export function emailValido(texto: string): boolean {
 
 // ---------- Endereço ----------
 
-// Texto único gravado em pedidos.endereco: "Rua X, Bairro, 412 - Apto 3".
-export function enderecoCompleto(dados: Pick<DadosCheckout, "rua" | "numero" | "complemento">): string {
-  const principal = [dados.rua.trim(), dados.numero.trim()].filter(Boolean).join(", ");
+// Texto único gravado em pedidos.endereco:
+// "Rua X, 412 - Casa 2, Nações, Fazenda Rio Grande".
+export function enderecoCompleto(
+  dados: Pick<DadosCheckout, "rua" | "numero" | "complemento" | "bairro" | "cidade">
+): string {
+  const ruaNumero = [dados.rua.trim(), dados.numero.trim()].filter(Boolean).join(", ");
   const complemento = dados.complemento.trim();
-  return complemento ? `${principal} - ${complemento}` : principal;
+  const primeiro = complemento ? `${ruaNumero} - ${complemento}` : ruaNumero;
+  return [primeiro, dados.bairro.trim(), dados.cidade.trim()].filter(Boolean).join(", ");
 }
 
 // ---------- Validação ----------
@@ -125,17 +151,21 @@ export function enderecoCompleto(dados: Pick<DadosCheckout, "rua" | "numero" | "
 export type Erros = Partial<Record<Campo, string>>;
 
 export const MENSAGENS = {
-  nome: "Conta pra gente o seu nome.",
+  nomeVazio: "Conta pra gente o seu nome completo.",
+  nomeIncompleto: "Informe o nome completo, com nome e sobrenome.",
   whatsappVazio: "Ops, esse campo ficou em branco. É por aqui que a gente te responde.",
   whatsappInvalido: "Confira o número: DDD + número, por exemplo (41) 99999-9999.",
   email: "Confira o e-mail: ele precisa ter @ e o domínio, por exemplo nome@email.com.",
+  aceite: "Para continuar, marque que concorda com o compartilhamento dos dados e com a Política de Privacidade.",
   dataVazia: "Escolha a data no calendário.",
   dataBloqueada: "Essa data não está mais disponível. Escolha outra no calendário.",
   horaVazia: "Escolha o horário em que precisa.",
   horaSemData: "Escolha a data primeiro, depois o horário.",
   horaInvalida: "Escolha um horário da lista.",
   modo: "Escolha se vai retirar na loja ou receber por entrega.",
-  rua: "Informe a rua e o bairro da entrega.",
+  cidade: "Informe a cidade da entrega.",
+  bairro: "Informe o bairro da entrega.",
+  rua: "Informe a rua da entrega.",
   numero: "Informe o número (ou s/n).",
   pagamento: "Escolha a forma de pagamento.",
 } as const;
@@ -143,13 +173,16 @@ export const MENSAGENS = {
 export function validarCheckout(dados: DadosCheckout, hoje: string, diasOff: DiasOff): Erros {
   const erros: Erros = {};
 
-  if (!dados.nome.trim()) erros.nome = MENSAGENS.nome;
+  if (!dados.nome.trim()) erros.nome = MENSAGENS.nomeVazio;
+  else if (!nomeCompleto(dados.nome)) erros.nome = MENSAGENS.nomeIncompleto;
 
   if (!soDigitos(dados.whatsapp)) erros.whatsapp = MENSAGENS.whatsappVazio;
   else if (!whatsAppValido(dados.whatsapp)) erros.whatsapp = MENSAGENS.whatsappInvalido;
 
   // E-mail é opcional; se preenchido, precisa estar no formato.
   if (dados.email.trim() && !emailValido(dados.email)) erros.email = MENSAGENS.email;
+
+  if (dados.aceite !== true) erros.aceite = MENSAGENS.aceite;
 
   if (!dados.data) erros.data = MENSAGENS.dataVazia;
   else if (!dataPermitida(dados.data, hoje, diasOff)) erros.data = MENSAGENS.dataBloqueada;
@@ -159,6 +192,8 @@ export function validarCheckout(dados: DadosCheckout, hoje: string, diasOff: Dia
 
   if (dados.modo !== "retirada" && dados.modo !== "entrega") erros.modo = MENSAGENS.modo;
   if (dados.modo === "entrega") {
+    if (!dados.cidade.trim()) erros.cidade = MENSAGENS.cidade;
+    if (!dados.bairro.trim()) erros.bairro = MENSAGENS.bairro;
     if (!dados.rua.trim()) erros.rua = MENSAGENS.rua;
     if (!dados.numero.trim()) erros.numero = MENSAGENS.numero;
   }

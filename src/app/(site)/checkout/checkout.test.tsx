@@ -225,10 +225,12 @@ function dia(rotulo: RegExp) {
 }
 const enviar = () => screen.getByRole("button", { name: "Revisar e enviar" });
 const alerta = () => document.querySelector<HTMLElement>(".checkout-erros")!;
+const aceite = () => screen.getByRole("checkbox", { name: /Concordo em compartilhar meus dados/ });
 
 async function preencherTudo(user: ReturnType<typeof userEvent.setup>, data = /^sábado, 3 de outubro/) {
   await user.type(screen.getByLabelText(/^Seu nome/), "Juliana Ribeiro");
   await user.type(screen.getByLabelText(/^Seu WhatsApp/), "41997124408");
+  await user.click(aceite());
   await user.click(dia(data));
   await user.selectOptions(screen.getByLabelText(/^Horário em que precisa/), "14:00");
   await user.click(screen.getByRole("radio", { name: /Retirar na loja/ }));
@@ -324,10 +326,14 @@ describe("Checkout — validação do formulário", () => {
     await user.click(enviar());
 
     expect(alerta()).toHaveAttribute("role", "alert");
-    expect(alerta()).toHaveTextContent("Faltam 6 campos para continuar.");
-    const nome = screen.getByLabelText(/^Seu nome/);
+    expect(alerta()).toHaveTextContent("Faltam 7 campos para continuar.");
+    const nome = screen.getByLabelText(/^Seu nome completo/);
     expect(nome).toHaveFocus();
-    expect(nome).toHaveAccessibleDescription("Conta pra gente o seu nome.");
+    expect(nome).toHaveAccessibleDescription("Conta pra gente o seu nome completo.");
+    expect(aceite()).not.toBeChecked();
+    expect(aceite()).toHaveAccessibleDescription(
+      "Para continuar, marque que concorda com o compartilhamento dos dados e com a Política de Privacidade."
+    );
     expect(screen.getByLabelText(/^Seu WhatsApp/)).toHaveAccessibleDescription(
       "Ops, esse campo ficou em branco. É por aqui que a gente te responde."
     );
@@ -361,20 +367,76 @@ describe("Checkout — validação do formulário", () => {
     expect(push).toHaveBeenCalledWith("/confirmacao");
   });
 
-  it("endereço aparece só na entrega e é obrigatório nela", async () => {
+  it("endereço aparece só na entrega: cidade, bairro, rua e número obrigatórios", async () => {
     const user = userEvent.setup();
     await abrir();
-    expect(screen.queryByLabelText(/^Endereço/)).toBeNull();
+    expect(screen.queryByLabelText(/^Cidade/)).toBeNull();
     await preencherTudo(user);
-    await user.click(screen.getByRole("radio", { name: /Entrega/ }));
+    const entrega = screen.getByRole("radio", { name: /Entrega/ });
+    // Sem o nome da cidade no cartão: a entrega pode ser em cidade próxima.
+    expect(entrega.closest("label")).toHaveTextContent("EntregaAcréscimo a combinar no WhatsApp");
+    await user.click(entrega);
     await user.click(enviar());
-    expect(alerta()).toHaveTextContent("Faltam 2 campos para continuar.");
-    expect(screen.getByLabelText(/^Endereço/)).toHaveFocus();
+    expect(alerta()).toHaveTextContent("Faltam 4 campos para continuar.");
+    expect(screen.getByLabelText(/^Cidade/)).toHaveFocus();
 
-    await user.type(screen.getByLabelText(/^Endereço/), "Rua das Flores, Nações");
+    await user.type(screen.getByLabelText(/^Cidade/), "Mandirituba");
+    await user.type(screen.getByLabelText(/^Bairro/), "Centro");
+    await user.type(screen.getByLabelText(/^Endereço/), "Rua das Flores");
     await user.type(screen.getByLabelText(/^Número/), "100");
     await user.click(enviar());
     expect(push).toHaveBeenCalledWith("/confirmacao");
+    expect(JSON.parse(window.sessionStorage.getItem(CHAVE_CHECKOUT)!).dados).toMatchObject({
+      cidade: "Mandirituba",
+      bairro: "Centro",
+      rua: "Rua das Flores",
+      numero: "100",
+    });
+  });
+
+  it("nome precisa ser completo (nome e sobrenome)", async () => {
+    const user = userEvent.setup();
+    await abrir();
+    await preencherTudo(user);
+    await user.clear(screen.getByLabelText(/^Seu nome completo/));
+    await user.type(screen.getByLabelText(/^Seu nome completo/), "Juliana");
+    await user.click(enviar());
+    expect(screen.getByLabelText(/^Seu nome completo/)).toHaveAccessibleDescription(
+      "Informe o nome completo, com nome e sobrenome."
+    );
+    expect(push).not.toHaveBeenCalled();
+    await user.type(screen.getByLabelText(/^Seu nome completo/), " Ribeiro");
+    await user.click(enviar());
+    expect(push).toHaveBeenCalledWith("/confirmacao");
+  });
+
+  it("consentimento nasce desmarcado e é obrigatório; o link da política fica em Seus dados", async () => {
+    const user = userEvent.setup();
+    await abrir();
+    const dados = screen.getByRole("region", { name: "Seus dados" });
+    expect(within(dados).getByRole("link", { name: /Política de Privacidade/ })).toHaveAttribute(
+      "href",
+      "/politica-de-privacidade"
+    );
+    // A frase antiga e o link no resumo saíram.
+    expect(document.body).not.toHaveTextContent("Seus dados são usados só para cuidar deste pedido.");
+    expect(screen.getAllByRole("link", { name: /Política de Privacidade/ })).toHaveLength(1);
+
+    await preencherTudo(user);
+    await user.click(aceite()); // desmarca
+    await user.click(enviar());
+    expect(alerta()).toHaveTextContent("Falta 1 campo para continuar.");
+    expect(aceite()).toHaveFocus();
+    expect(push).not.toHaveBeenCalled();
+    await user.click(aceite());
+    await user.click(enviar());
+    expect(push).toHaveBeenCalledWith("/confirmacao");
+  });
+
+  it("e-mail continua opcional, sem a marca (opcional)", async () => {
+    await abrir();
+    const rotulo = document.querySelector('label[for="checkout-email"]')!;
+    expect(rotulo).toHaveTextContent(/^Seu e-mail$/);
   });
 
   it("completo: o botão final só navega para a confirmação, sem gravar nada", async () => {
@@ -401,14 +463,22 @@ describe("Checkout — validação do formulário", () => {
     expect(dia(/^sábado, 3 de outubro/)).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("aviso artesanal com o texto exato e link para a Política de Privacidade antes do botão", async () => {
+  it("aviso com o texto exato antes do botão", async () => {
     await abrir();
     const artesanal = screen.getByText(
-      "Seu doce é feito artesanalmente. Pode haver diferenças em relação à imagem enviada, a gente capricha, mas cada peça é única."
+      "Pode haver diferenças em relação à imagem enviada, a gente capricha, mas cada peça é única."
     );
-    const privacidade = screen.getByRole("link", { name: /Política de Privacidade/ });
-    expect(privacidade).toHaveAttribute("href", "/politica-de-privacidade");
+    expect(document.body).not.toHaveTextContent("Seu doce é feito artesanalmente");
     expect(artesanal.compareDocumentPosition(enviar()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("horário vem logo depois do calendário no HTML (ordem do celular)", async () => {
+    await abrir();
+    const grade = screen.getByRole("grid");
+    const hora = screen.getByLabelText(/^Horário em que precisa/);
+    const porque = screen.getByText("Por que algumas datas ficam bloqueadas");
+    expect(grade.compareDocumentPosition(hora) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(hora.compareDocumentPosition(porque) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
 
@@ -448,15 +518,15 @@ describe("Checkout — data e hora (hoje: quinta 01/10, 22h30 em Brasília)", ()
     expect(hora).toHaveValue("");
   });
 
-  it("prazo curto (Cento de 3 dias para sexta) avisa com WhatsApp e NÃO bloqueia o envio", async () => {
+  it("prazo curto (Cento de 3 dias para sexta) avisa, sem botão de WhatsApp, e NÃO bloqueia o envio", async () => {
     const user = userEvent.setup();
     await abrir();
-    expect(dia(/^sexta-feira, 2 de outubro/)).toHaveAccessibleName(/prazo curto/);
+    expect(dia(/^sexta-feira, 2 de outubro/)).toHaveAccessibleName(/prazo curto$/);
     await preencherTudo(user, /^sexta-feira, 2 de outubro/);
 
     expect(screen.getByText(/prazo curto para Cento de salgados sortidos/)).toBeInTheDocument();
-    const whats = screen.getByRole("link", { name: /Falar com a gente/ });
-    expect(whats.getAttribute("href")).toMatch(/^https:\/\/wa\.me\/5541988002315\?text=/);
+    expect(screen.getByText(/depois do envio, a gente combina o prazo/)).toBeInTheDocument();
+    expect(document.querySelector('a[href^="https://wa.me/"]')).toBeNull();
 
     await user.click(enviar());
     expect(push).toHaveBeenCalledWith("/confirmacao");

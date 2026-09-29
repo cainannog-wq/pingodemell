@@ -6,10 +6,13 @@ const cheio: DadosCheckout = {
   nome: "Juliana",
   whatsapp: "(41) 99712-4408",
   email: "ju@email.com",
+  aceite: true,
   data: "2026-10-03",
   hora: "14:00",
   modo: "entrega",
-  rua: "Rua X, Nações",
+  cidade: "Fazenda Rio Grande",
+  bairro: "Nações",
+  rua: "Rua X",
   numero: "412",
   complemento: "Casa",
   ocasiao: "Aniversário",
@@ -32,9 +35,9 @@ describe("rascunho do checkout (sessionStorage)", () => {
     const lido = lerRascunho(
       JSON.stringify({
         versao: 1,
-        dados: { ...cheio, nome: 42, data: "amanhã", hora: "2pm", modo: "drone", pagamento: "boleto", observacoes: "x".repeat(501) },
+        dados: { ...cheio, aceite: "sim", nome: 42, data: "amanhã", hora: "2pm", modo: "drone", pagamento: "boleto", observacoes: "x".repeat(501) },
       })
     );
-    expect(lido).toEqual({ ...cheio, nome: "", data: "", hora: "", modo: "", pagamento: "", observacoes: "" });
+    expect(lido).toEqual({ ...cheio, aceite: false, nome: "", data: "", hora: "", modo: "", pagamento: "", observacoes: "" });
   });
 });
