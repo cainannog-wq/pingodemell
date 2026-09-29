@@ -1,0 +1,21 @@
+-- Categoria "Bento Cake" (PR bolo-bento): sexto valor do enum
+-- categoria_produto.
+--
+-- Isolada numa migração própria: o Postgres não deixa usar um valor novo de
+-- enum na mesma transação em que ele foi criado.
+--
+-- Mesma classificação do categoria-kits.sql: valor novo de enum não está na
+-- lista literal de "aditiva" do CLAUDE.md (altera um tipo em uso), mas não
+-- altera nem invalida nenhuma linha existente. Cainan confirmou em
+-- 28/09/2026 que vale como aditiva. Só é aplicada em produção com o ok dele
+-- para esta instrução.
+-- Status: ver docs/status-pingo-de-mell.md (tabela de migrações).
+--
+-- Sem desfazer limpo: o Postgres não remove valor de enum.
+--
+-- Risco conhecido até o lote chegar à main: o admin de produção (main) não
+-- conhece 'Bento Cake'. Abrir e salvar ali um produto dessa categoria grava
+-- "Sem categoria" sem avisar. Por isso nenhum produto real vai para Bento
+-- Cake antes disso (só os de demonstração, marcados no nome).
+
+alter type public.categoria_produto add value 'Bento Cake';

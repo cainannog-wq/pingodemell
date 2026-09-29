@@ -73,6 +73,14 @@ function AtivoToggleCell({
 
 // Formatação manual (sem toLocaleString/Intl) para evitar divergência de
 // hidratação entre o ICU do servidor e o do navegador.
+// Bolo não tem preço no cadastro (vem do recheio × kg) nem pedido mínimo.
+function textoPreco(produto: Produto) {
+  return produto.tipo === "bolo" ? "Por recheio" : formatPreco(produto.preco);
+}
+function textoMinimo(produto: Produto) {
+  return produto.tipo === "bolo" ? "—" : `${produto.pedido_minimo} un.`;
+}
+
 function formatPreco(preco: number) {
   const [intPart, decPart] = preco.toFixed(2).split(".");
   const withThousands = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -328,13 +336,13 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                       {produto.Categoria ?? "—"}
                     </td>
                     <td data-label="Preço" style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
-                      {formatPreco(produto.preco)}
+                      {textoPreco(produto)}
                     </td>
                     <td
                       data-label="Pedido mínimo"
                       style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: "var(--pdm-muted)" }}
                     >
-                      {produto.pedido_minimo} un.
+                      {textoMinimo(produto)}
                     </td>
                     <td data-label="Destaque" style={{ padding: "16px 24px", textAlign: "center" }}>
                       <DestaqueIndicator show={destaqueOverrides[produto.nome] ?? produto.destaque} />
@@ -419,8 +427,10 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                       ) : null}
 
                       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-                        <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{formatPreco(produto.preco)}</span>
-                        <span style={{ fontSize: 13, color: "var(--pdm-muted)" }}>{produto.pedido_minimo} un. mín.</span>
+                        <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{textoPreco(produto)}</span>
+                        {produto.tipo === "bolo" ? null : (
+                          <span style={{ fontSize: 13, color: "var(--pdm-muted)" }}>{produto.pedido_minimo} un. mín.</span>
+                        )}
                       </div>
 
                       <div style={{ marginTop: 4, fontSize: 13 }}>

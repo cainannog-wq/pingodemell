@@ -41,8 +41,10 @@ export function textoQuantidadeNaUnidade(quantidade: number, unidadeVenda: strin
 
 type ProdutoMinimo = Pick<ProdutoVitrine, "tipo" | "pedido_minimo" | "unidade_venda">;
 
+// O Cento conta em centos e o Bolo em kg (de 1 kg, sem o mínimo do
+// cadastro): nenhum dos dois usa pedido_minimo.
 export function temMinimo(produto: ProdutoMinimo): boolean {
-  return produto.tipo !== "cento" && Number(produto.pedido_minimo) > 1;
+  return produto.tipo !== "cento" && produto.tipo !== "bolo" && Number(produto.pedido_minimo) > 1;
 }
 
 // Interna: "Pedido mínimo: 10 unidades". null quando não mostra.

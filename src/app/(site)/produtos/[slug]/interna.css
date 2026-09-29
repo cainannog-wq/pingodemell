@@ -640,3 +640,96 @@ input.interna-seletor-valor {
     scroll-snap-align: start;
   }
 }
+
+/* Bolo e Bento Cake: recheio (uma opção), formato e avisos. */
+.interna-recheio-legenda {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 24px;
+}
+.interna-recheio-grupo {
+  border-top: 1px solid var(--border-subtle);
+  padding: 12px 24px 4px;
+}
+.interna-recheio-grupo-titulo {
+  margin: 0 0 4px;
+  font-weight: var(--fw-bold);
+  font-size: 15px;
+  color: var(--brown-700);
+}
+.interna-opcoes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.interna-opcao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.interna-opcao input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--brown-500);
+}
+.interna-opcao-nome {
+  flex: 1;
+  font-weight: var(--fw-semibold);
+  font-size: 16px;
+  color: var(--ink-900);
+}
+.interna-opcao-detalhe {
+  font-size: 15px;
+  color: var(--ink-700);
+  white-space: nowrap;
+}
+.interna-opcao:has(input:focus-visible) {
+  outline: 2px solid var(--brown-500);
+  outline-offset: 2px;
+}
+.interna-formato {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.interna-formatos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.interna-opcao-pilula {
+  padding: 0 18px;
+  border: 2px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+}
+.interna-opcao-pilula[data-marcada="true"] {
+  border-color: var(--border-strong);
+}
+.interna-opcao-pilula .interna-opcao-nome {
+  flex: none;
+}
+.interna-aviso,
+.interna-nota {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: var(--gold-100);
+  color: var(--brown-800);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.interna-aviso .material-symbols-outlined,
+.interna-nota .material-symbols-outlined {
+  flex: none;
+}

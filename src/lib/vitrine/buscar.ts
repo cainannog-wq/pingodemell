@@ -1,6 +1,7 @@
 import type { CategoriaProduto } from "@/lib/produtos/types";
 import { createClient } from "@/lib/supabase/server";
-import { CAMPOS_SABOR, centosComSabor, saboresAtivos, semCentoIndisponivel, type LinhaSabor } from "./cento";
+import { CAMPOS_SABOR, centosComSabor, saboresAtivos, type LinhaSabor } from "./cento";
+import { CAMPOS_RECHEIO_VITRINE, comPrecoAPartirDe, semIndisponiveis, type RecheioVitrine } from "./disponibilidade";
 import { buscarFotosProduto, montarFotos, type FotoProduto } from "./fotos";
 import { montarLista, type ItemLista } from "./lista";
 import {
@@ -9,6 +10,7 @@ import {
   selecionarRelacionados,
   type ProdutoVitrine,
 } from "./mais-pedidos";
+import { variacaoDoProduto } from "./variacao";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -26,6 +28,33 @@ async function centosDisponiveis(supabase: Supabase, produtos: ProdutoVitrine[])
     return null;
   }
   return centosComSabor((data ?? []) as unknown as LinhaSabor[]);
+}
+
+// Recheios do catálogo (Bolo grande e Bento Cake), só quando há Bolo ou
+// Bento Cake entre os produtos recebidos. Sem nenhum, nem consulta. O
+// inativo que o admin logado enxerga é filtrado pelas regras (recheios/
+// regras.ts). Retorna null em caso de erro.
+async function recheiosDaVitrine(supabase: Supabase, produtos: ProdutoVitrine[]): Promise<RecheioVitrine[] | null> {
+  const precisa = produtos.some((p) => {
+    const v = variacaoDoProduto(p);
+    return v === "bolo" || v === "bento";
+  });
+  if (!precisa) return [];
+
+  const { data, error } = await supabase.from("recheios").select(CAMPOS_RECHEIO_VITRINE).eq("ativo", true);
+  if (error) {
+    console.error("Falha ao buscar os recheios:", error.message);
+    return null;
+  }
+  return (data ?? []) as unknown as RecheioVitrine[];
+}
+
+// Sabores dos Centos e recheios do catálogo, o que decide se um produto está
+// disponível. null em caso de erro em qualquer uma das duas consultas.
+async function dependencias(supabase: Supabase, produtos: ProdutoVitrine[]) {
+  const [comSabor, recheios] = await Promise.all([centosDisponiveis(supabase, produtos), recheiosDaVitrine(supabase, produtos)]);
+  if (!comSabor || !recheios) return null;
+  return { comSabor, recheios };
 }
 
 // Busca os candidatos a "Os mais pedidos" (ativo + destaque) e aplica a
@@ -46,9 +75,9 @@ export async function buscarMaisPedidos(): Promise<ProdutoVitrine[]> {
   }
 
   const produtos = (data ?? []) as ProdutoVitrine[];
-  const comSabor = await centosDisponiveis(supabase, produtos);
-  if (!comSabor) return [];
-  return selecionarMaisPedidos(semCentoIndisponivel(produtos, comSabor));
+  const dep = await dependencias(supabase, produtos);
+  if (!dep) return [];
+  return selecionarMaisPedidos(comPrecoAPartirDe(semIndisponiveis(produtos, dep.comSabor, dep.recheios), dep.recheios));
 }
 
 // Busca os produtos da Lista (/produtos) e aplica a regra em montarLista
@@ -71,9 +100,9 @@ export async function buscarLista(categoria: CategoriaProduto | null): Promise<I
   }
 
   const produtos = (data ?? []) as ProdutoVitrine[];
-  const comSabor = await centosDisponiveis(supabase, produtos);
-  if (!comSabor) return null;
-  return montarLista(semCentoIndisponivel(produtos, comSabor), categoria);
+  const dep = await dependencias(supabase, produtos);
+  if (!dep) return null;
+  return montarLista(comPrecoAPartirDe(semIndisponiveis(produtos, dep.comSabor, dep.recheios), dep.recheios), categoria);
 }
 
 // Formato do slug, igual à restrição produtos_slug_formato do banco.
@@ -109,7 +138,7 @@ export async function buscarProdutoPorSlug(slug: string): Promise<ProdutoVitrine
 }
 
 export type Interna =
-  | { estado: "ok"; produto: ProdutoVitrine; sabores: string[]; fotos: FotoProduto[] }
+  | { estado: "ok"; produto: ProdutoVitrine; sabores: string[]; recheios: RecheioVitrine[]; fotos: FotoProduto[] }
   | { estado: "nao-encontrado" }
   | { estado: "erro" };
 
@@ -118,6 +147,9 @@ export type Interna =
 //   → "nao-encontrado" (a página cai na 404);
 // - Cento: os sabores ativos, na ordem do cadastro; sem nenhum sabor ativo,
 //   o Cento é indisponível → "nao-encontrado", como produto inativo;
+// - Bolo e Bento Cake: os recheios do catálogo (o Bolo, agrupados; o Bento,
+//   em lista simples); sem nenhum recheio ativo do lado dele, o produto é
+//   indisponível → "nao-encontrado", como o Cento sem sabor;
 // - fotos: capa e extras na ordem (se as extras falharem, só a capa);
 // - falha do banco no produto ou nos sabores → "erro" (a página mostra
 //   aviso de falha, não a 404).
@@ -144,8 +176,18 @@ export async function buscarInterna(slug: string): Promise<Interna> {
     if (sabores.length === 0) return { estado: "nao-encontrado" };
   }
 
+  let recheios: RecheioVitrine[] = [];
+  const variacao = variacaoDoProduto(produto);
+  if (variacao === "bolo" || variacao === "bento") {
+    const doCatalogo = await recheiosDaVitrine(supabase, [produto]);
+    if (!doCatalogo) return { estado: "erro" };
+    // semIndisponiveis dá a mesma resposta da Home e da Lista.
+    if (semIndisponiveis([produto], new Set(), doCatalogo).length === 0) return { estado: "nao-encontrado" };
+    recheios = doCatalogo;
+  }
+
   const fotos = (await buscarFotosProduto(produto.id)) ?? montarFotos(produto, [], (c) => c);
-  return { estado: "ok", produto, sabores, fotos };
+  return { estado: "ok", produto: comPrecoAPartirDe([produto], recheios)[0], sabores, recheios, fotos };
 }
 
 // "Combina com o seu pedido" da interna: os mesmos produtos de "Os mais

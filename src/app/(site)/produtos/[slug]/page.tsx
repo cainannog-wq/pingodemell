@@ -10,7 +10,10 @@ import { buscarInterna, buscarRelacionados } from "@/lib/vitrine/buscar";
 import { UNIDADES_POR_CENTO } from "@/lib/vitrine/cento";
 import { ehMaisPedido } from "@/lib/vitrine/mais-pedidos";
 import { textoMinimo } from "@/lib/vitrine/minimo";
+import { variacaoDoProduto } from "@/lib/vitrine/variacao";
 import { ConfigAvulso } from "./_interna/ConfigAvulso";
+import { ConfigBento } from "./_interna/ConfigBento";
+import { ConfigBolo } from "./_interna/ConfigBolo";
 import { ConfigCento } from "./_interna/ConfigCento";
 import { Galeria } from "./_interna/Galeria";
 import "./interna.css";
@@ -34,9 +37,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 // Interna do produto (página 3 do site), pelo slug. Produto inexistente,
-// inativo ou Cento sem sabor ativo → 404. O Cento monta a combinação de
-// sabores; o avulso escolhe a quantidade. Os dois gravam no carrinho do
-// navegador ("Adicionar ao pedido") e atualizam o contador do cabeçalho.
+// inativo, Cento sem sabor ativo, Bolo sem recheio de Bolo ativo ou Bento
+// Cake sem recheio de Bento ativo → 404. Quem decide a tela é o tipo do
+// produto (variacaoDoProduto): o Cento monta a combinação de sabores; o
+// Bolo escolhe tamanho, formato e recheio; o Bento Cake escolhe o recheio e
+// a quantidade; o avulso (inclusive o Smash Cake) escolhe a quantidade.
+// Todos gravam no carrinho do navegador ("Adicionar ao pedido") e atualizam
+// o contador do cabeçalho.
 export default async function ProdutoPage({ params }: Props) {
   const interna = await carregar((await params).slug);
   if (interna.estado === "nao-encontrado") notFound();
@@ -52,9 +59,10 @@ export default async function ProdutoPage({ params }: Props) {
     );
   }
 
-  const { produto, sabores, fotos } = interna;
+  const { produto, sabores, recheios, fotos } = interna;
   const relacionados = await buscarRelacionados(produto.id);
-  const cento = produto.tipo === "cento";
+  const variacao = variacaoDoProduto(produto);
+  const cento = variacao === "cento";
   const minimo = textoMinimo(produto);
 
   return (
@@ -112,7 +120,15 @@ export default async function ProdutoPage({ params }: Props) {
 
           <div className="interna-divisor" />
 
-          {cento ? <ConfigCento produto={produto} sabores={sabores} /> : <ConfigAvulso produto={produto} />}
+          {variacao === "cento" ? (
+            <ConfigCento produto={produto} sabores={sabores} />
+          ) : variacao === "bolo" ? (
+            <ConfigBolo produto={produto} recheios={recheios} />
+          ) : variacao === "bento" ? (
+            <ConfigBento produto={produto} recheios={recheios} />
+          ) : (
+            <ConfigAvulso produto={produto} />
+          )}
 
           <div className="interna-prazo">
             <h2 className="interna-prazo-titulo">Prazo e como receber</h2>

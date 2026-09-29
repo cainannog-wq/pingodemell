@@ -1,3 +1,4 @@
+import { formatoValido, kgValido, type FormatoBolo } from "@/lib/vitrine/bolo";
 import { centosValidos, PASSO_SABOR, totalDoCento } from "@/lib/vitrine/cento";
 import { MAX_QUANTIDADE } from "@/lib/vitrine/quantidade";
 
@@ -42,8 +43,36 @@ export type LinhaCento = LinhaBase & {
   sabores: { nome: string; quantidade: number }[];
 };
 
-export type LinhaCarrinho = LinhaAvulso | LinhaCento;
-export type NovaLinha = Omit<LinhaAvulso, "id"> | Omit<LinhaCento, "id">;
+// Recheio escolhido (Bolo e Bento Cake). O nome é só para exibir; o id
+// aponta para public.recheios, que o servidor do checkout confere de novo
+// (ativo, vale_bolo / vale_bento, preço atual).
+export type RecheioEscolhido = { id: string; nome: string };
+
+// Bolo: quantidade em kg (inteiro) e preco = R$/kg do recheio escolhido,
+// então quantidade × preco é o preço do bolo (a mesma conta do pedido).
+// O acréscimo de decoração é orçado à parte, nunca entra aqui.
+export type LinhaBolo = LinhaBase & {
+  tipo: "bolo";
+  quantidade: number;
+  recheio: RecheioEscolhido;
+  formato: FormatoBolo;
+};
+
+// Bento Cake: quantidade de bentos, um recheio só para todos (informativo,
+// sem efeito no preço), preco = preço fixo do produto-tema. O Smash Cake
+// não tem linha própria: é um avulso.
+export type LinhaBento = LinhaBase & {
+  tipo: "bento";
+  quantidade: number;
+  recheio: RecheioEscolhido;
+};
+
+export type LinhaCarrinho = LinhaAvulso | LinhaCento | LinhaBolo | LinhaBento;
+export type NovaLinha =
+  | Omit<LinhaAvulso, "id">
+  | Omit<LinhaCento, "id">
+  | Omit<LinhaBolo, "id">
+  | Omit<LinhaBento, "id">;
 
 export function normalizarObservacao(texto: string | null | undefined): string | null {
   const limpo = (texto ?? "").trim().slice(0, OBSERVACAO_MAX);
@@ -62,19 +91,30 @@ function mesmaCombinacao(a: LinhaCento, b: Omit<LinhaCento, "id">): boolean {
 // - avulso: mesmo produto e mesma observação (soma a quantidade; somar dois
 //   múltiplos do step continua múltiplo, e continua acima do mínimo);
 // - Cento: mesmo produto, mesma observação e a mesma combinação por cento
-//   (soma centos e sabores).
+//   (soma centos e sabores);
+// - Bento Cake: mesmo produto, mesmo recheio e mesma observação (soma as
+//   quantidades);
+// - Bolo: nunca junta. Dois bolos de 2 kg não são um de 4 kg: cada
+//   "adicionar" é um bolo (uma linha).
 // Senão, linha nova no fim. Passar do teto não junta (vira linha nova, e a
 // página do carrinho acerta).
 export function adicionarLinha(linhas: LinhaCarrinho[], nova: NovaLinha, novoId: () => string): LinhaCarrinho[] {
   const observacao = normalizarObservacao(nova.observacao);
   const alvo = { ...nova, observacao } as NovaLinha;
 
-  const indice = linhas.findIndex((l) => {
-    if (l.produtoId !== alvo.produtoId || l.tipo !== alvo.tipo || l.observacao !== observacao) return false;
-    if (l.tipo === "normal") return l.quantidade + alvo.quantidade <= MAX_QUANTIDADE;
-    const cento = alvo as Omit<LinhaCento, "id">;
-    return mesmaCombinacao(l, cento) && centosValidos(l.quantidade + cento.quantidade);
-  });
+  const indice =
+    alvo.tipo === "bolo"
+      ? -1
+      : linhas.findIndex((l) => {
+          if (l.produtoId !== alvo.produtoId || l.tipo !== alvo.tipo || l.observacao !== observacao) return false;
+          if (l.tipo === "normal") return l.quantidade + alvo.quantidade <= MAX_QUANTIDADE;
+          if (l.tipo === "bento") {
+            const bento = alvo as Omit<LinhaBento, "id">;
+            return l.recheio.id === bento.recheio.id && l.quantidade + bento.quantidade <= MAX_QUANTIDADE;
+          }
+          const cento = alvo as Omit<LinhaCento, "id">;
+          return mesmaCombinacao(l, cento) && centosValidos(l.quantidade + cento.quantidade);
+        });
 
   if (indice === -1) {
     if (linhas.length >= MAX_LINHAS) return linhas;
@@ -83,7 +123,8 @@ export function adicionarLinha(linhas: LinhaCarrinho[], nova: NovaLinha, novoId:
 
   return linhas.map((l, i) => {
     if (i !== indice) return l;
-    if (l.tipo === "normal") return { ...l, quantidade: l.quantidade + alvo.quantidade };
+    if (l.tipo === "normal" || l.tipo === "bento") return { ...l, quantidade: l.quantidade + alvo.quantidade };
+    if (l.tipo === "bolo") return l;
     const cento = alvo as Omit<LinhaCento, "id">;
     const somaPorNome = new Map(cento.sabores.map((s) => [s.nome, s.quantidade]));
     return {
@@ -124,6 +165,12 @@ function inteiro(v: unknown, min: number, max: number): v is number {
   return typeof v === "number" && Number.isInteger(v) && v >= min && v <= max;
 }
 
+function recheioValido(v: unknown): v is RecheioEscolhido {
+  if (typeof v !== "object" || v === null) return false;
+  const r = v as Record<string, unknown>;
+  return texto(r.id) && texto(r.nome);
+}
+
 export function linhaValida(v: unknown): v is LinhaCarrinho {
   if (typeof v !== "object" || v === null) return false;
   const l = v as Record<string, unknown>;
@@ -135,6 +182,12 @@ export function linhaValida(v: unknown): v is LinhaCarrinho {
   if (l.tipo === "normal") {
     if (l.unidade_venda !== null && !texto(l.unidade_venda, 20)) return false;
     return inteiro(l.quantidade, 1, MAX_QUANTIDADE);
+  }
+  if (l.tipo === "bolo") {
+    return kgValido(l.quantidade as number) && recheioValido(l.recheio) && formatoValido(l.formato);
+  }
+  if (l.tipo === "bento") {
+    return inteiro(l.quantidade, 1, MAX_QUANTIDADE) && recheioValido(l.recheio);
   }
   if (l.tipo === "cento") {
     if (typeof l.quantidade !== "number" || !centosValidos(l.quantidade)) return false;

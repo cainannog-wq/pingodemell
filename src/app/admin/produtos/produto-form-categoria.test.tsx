@@ -87,12 +87,12 @@ describe("Formulário de produto — categoria obrigatória", () => {
     expect((screen.getByRole("option", { name: "Selecione a categoria" }) as HTMLOptionElement).disabled).toBe(true);
   });
 
-  it("oferece as 5 categorias, incluindo Kits", () => {
+  it("oferece as 6 categorias, incluindo Kits e Bento Cake", () => {
     render(<ProdutoForm action={acao} produtoId={PRODUTO} submitLabel="Salvar produto" />);
     const opcoes = Array.from(categoria().options)
       .filter((o) => !o.disabled)
       .map((o) => o.value);
-    expect(opcoes).toEqual(["Bolos", "Doces", "Salgados", "Bebidas", "Kits"]);
+    expect(opcoes).toEqual(["Bolos", "Bento Cake", "Doces", "Salgados", "Bebidas", "Kits"]);
   });
 
   it("escolhendo Kits o campo fica válido", () => {
