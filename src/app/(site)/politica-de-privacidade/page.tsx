@@ -9,7 +9,7 @@ import "./politica.css";
 export const metadata: Metadata = {
   title: "Política de Privacidade · Pingo de Mell",
   description:
-    "Como a Pingo de Mell trata os dados de quem faz um pedido pelo site: o que coletamos, para que usamos, com quem compartilhamos e por quanto tempo guardamos.",
+    "Condições em que a Pingo de Mell trata os dados pessoais de quem faz pedidos pelo site: dados tratados, finalidades, compartilhamento, prazo de conservação e direitos do titular.",
   robots: { index: false },
 };
 

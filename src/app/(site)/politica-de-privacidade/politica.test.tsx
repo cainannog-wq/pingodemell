@@ -36,61 +36,61 @@ afterEach(() => {
   vi.resetModules();
 });
 
-// Texto aprovado pelo Cainan (versão 1, com as trocas das seções 2, 4 e 8),
-// copiado literalmente do pedido — de propósito, não do componente. Cada
-// entrada é um parágrafo, título ou item de lista, na ordem da página. A
-// linha da versão fica de fora (depende da data, testada à parte).
+// Texto aprovado pelo Cainan (versão 1, redação formal), copiado
+// literalmente do pedido — de propósito, não do componente. Cada entrada é
+// um parágrafo, título ou item de lista, na ordem da página; a numeração
+// interna (2.1, 2.2...) é texto do parágrafo. A linha da versão fica de
+// fora (depende da data, testada à parte).
 const TEXTO_LITERAL = [
   "Política de Privacidade",
-  "Esta política explica como a Pingo de Mell trata os dados pessoais de quem faz um pedido pelo nosso site, de acordo com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, a LGPD).",
-  "1. Quem é o responsável",
-  "O responsável pelos seus dados é a Yaguiu Eventos e Esporte LTDA, que atua como Pingo de Mell, CNPJ 22.066.065/0001-72, Rua das Acácias, 412, Nações, Fazenda Rio Grande/PR.",
-  "Para qualquer assunto sobre seus dados, fale com a gente pelo WhatsApp (41) 98800-2315, no horário de atendimento da loja.",
-  "2. Quais dados coletamos",
-  "Quando você finaliza um pedido, pedimos: nome, número de WhatsApp, email (opcional), endereço de entrega (só se você escolher entrega), data e horário desejados, ocasião, forma de pagamento escolhida, observações e os itens do pedido, com quantidades e preços.",
-  "Não coletamos número de cartão, dados bancários nem CPF. O site não processa pagamento: a forma de pagar é combinada no atendimento.",
-  "Também guardamos o seu endereço IP cada vez que o site recebe uma tentativa de enviar pedido, mesmo quando o pedido não é concluído. Ele serve apenas para contar quantos pedidos partem de um mesmo endereço em um curto período e barrar uso abusivo do site.",
-  "Enquanto você monta o pedido, o carrinho fica salvo no armazenamento do seu próprio navegador, para não se perder se você fechar a página.",
-  "O que você digita no formulário do pedido (nome, WhatsApp, email, endereço, data, horário, ocasião, forma de pagamento e observações) também fica guardado no seu navegador, apenas nesta aba, para não se perder se você voltar ao carrinho. Esses dados somem quando você fecha a aba.",
-  "O carrinho e o formulário ficam no seu aparelho e só chegam até nós quando você confirma o pedido.",
-  "Fotos de referência para bolos e doces não são enviadas pelo site. Você as manda direto pelo WhatsApp.",
-  "3. Para que usamos seus dados",
-  "Usamos seus dados somente para receber, confirmar, produzir e entregar o seu pedido, e para falar com você sobre ele por WhatsApp ou email quando for preciso.",
-  "Não usamos seus dados para propaganda, não enviamos promoções e não vendemos nem cedemos seus dados a terceiros.",
-  "A base legal é a execução do pedido que você pediu para fazer, incluindo os passos anteriores a ele (LGPD, art. 7º, inciso V). Para o endereço IP, a base é o legítimo interesse da loja em proteger o site contra abuso (art. 7º, inciso IX).",
-  "Se um dia quisermos usar seus dados para outra finalidade, como enviar promoções, vamos atualizar esta política e pedir o seu consentimento antes.",
-  "4. Com quem compartilhamos",
-  "Compartilhamos dados apenas com quem é necessário para o site e o pedido funcionarem:",
-  "• Supabase, serviço onde os pedidos são guardados. Os servidores ficam em São Paulo.",
-  "• Netlify, serviço que hospeda o site. Pode processar dados em servidores fora do Brasil.",
-  "• Google (Google Fonts), que fornece a fonte dos ícones do site. Ao abrir uma página, o seu navegador busca essa fonte nos servidores do Google, que recebem o seu endereço IP.",
-  "• WhatsApp (Meta), quando você envia a mensagem do pedido. A partir desse envio, a conversa segue as regras do próprio WhatsApp.",
-  "• As pessoas da equipe da Pingo de Mell que atendem o seu pedido.",
-  "Fora isso, só compartilhamos dados se uma ordem legal exigir.",
-  "5. Por quanto tempo guardamos",
-  "Os pedidos ficam guardados por 12 meses, contados da data do pedido. Depois disso, o pedido é apagado por inteiro do nosso sistema, com os dados do cliente e os itens. Se uma lei exigir que algum dado seja guardado por mais tempo, guardamos só o que ela exige, pelo tempo que ela exige.",
-  "O endereço IP usado para limitar pedidos é guardado por até 30 dias.",
-  "A conversa que você tem com a loja no WhatsApp fica no aplicativo, no aparelho da loja, e não é apagada junto com o pedido do sistema. Se você quiser que ela seja apagada, peça pelo contato da seção 1.",
-  "6. Seus direitos",
-  "Você pode pedir, a qualquer momento:",
-  "• confirmar que tratamos seus dados;",
-  "• ter acesso a eles;",
-  "• corrigir dados incompletos ou errados;",
-  "• apagar dados que não precisamos mais guardar;",
-  "• receber seus dados em formato que possa levar a outro serviço;",
-  "• saber com quem compartilhamos seus dados;",
-  "• retirar um consentimento que tenha dado, quando houver.",
-  "Faça o pedido pelo WhatsApp indicado na seção 1. Para proteger você, podemos pedir que confirme o nome e o número usados no pedido. Respondemos em até 15 dias.",
-  "7. Como protegemos seus dados",
-  "O acesso ao painel onde os pedidos aparecem é restrito, com login e senha de uma pessoa autorizada. O banco de dados só aceita gravação de pedidos pelo servidor do site, e a conexão com o site é criptografada (HTTPS).",
-  "Nenhum sistema é totalmente imune a falhas. Se acontecer um incidente que possa causar risco relevante a você, avisamos você e a Autoridade Nacional de Proteção de Dados (ANPD), como a lei manda.",
-  "8. Cookies e ferramentas de análise",
-  "Hoje o site não usa cookies de publicidade nem de análise de audiência. Os únicos dados guardados no seu navegador são o carrinho e o que você digita no formulário do pedido, explicados na seção 2.",
-  "Se passarmos a usar ferramentas de análise, vamos atualizar esta política e pedir o seu consentimento antes de ativar essas ferramentas.",
-  "9. Mudanças nesta política",
-  "A data de vigência fica no topo desta página. Quando houver mudança relevante, ela aparece aqui com a nova data.",
-  "10. Reclamações",
-  "Se você achar que tratamos seus dados de forma indevida, fale primeiro com a gente pelo contato da seção 1. Você também pode reclamar à ANPD, em gov.br/anpd.",
+  'A presente Política de Privacidade ("Política") estabelece as condições em que a Pingo de Mell realiza o tratamento de dados pessoais dos usuários que efetuam pedidos por meio deste sítio eletrônico ("Titular"), em conformidade com a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais, "LGPD").',
+  "1. Identificação do Controlador",
+  "O Controlador dos dados pessoais é a Yaguiu Eventos e Esporte LTDA, que atua sob o nome Pingo de Mell, inscrita no CNPJ sob o nº 22.066.065/0001-72, estabelecida na Rua das Acácias, 412, Nações, Fazenda Rio Grande/PR.",
+  "O canal de atendimento ao Titular, para o exercício de direitos e para quaisquer questões relativas ao tratamento de dados pessoais, é o WhatsApp (41) 98800-2315, durante o horário de atendimento da loja.",
+  "2. Dados Pessoais Tratados",
+  "2.1. No momento da finalização do pedido, são solicitados os seguintes dados: nome, número de WhatsApp, endereço de correio eletrônico (campo facultativo), endereço de entrega (somente quando escolhida a modalidade de entrega), data e horário desejados, ocasião, forma de pagamento escolhida, observações e itens do pedido, com as respectivas quantidades e preços.",
+  "2.2. Não são coletados números de cartão, dados bancários nem CPF. O sítio eletrônico não realiza processamento de pagamentos, sendo a forma de pagamento ajustada no atendimento.",
+  "2.3. É registrado o endereço IP do Titular a cada tentativa de envio de pedido recebida pelo sítio eletrônico, ainda que o pedido não seja concluído. Tal registro tem a finalidade exclusiva de contabilizar as tentativas originadas de um mesmo endereço em curto período e de prevenir o uso abusivo do sítio eletrônico.",
+  "2.4. Durante a montagem do pedido, o carrinho é mantido no armazenamento do navegador do Titular, a fim de evitar sua perda caso a página seja fechada. Os dados digitados no formulário do pedido (nome, WhatsApp, email, endereço, data, horário, ocasião, forma de pagamento e observações) também são mantidos no navegador, apenas na aba em uso, a fim de evitar sua perda caso o Titular retorne ao carrinho, e são eliminados quando a aba é fechada. O carrinho e o formulário permanecem no dispositivo do Titular e somente são transmitidos ao Controlador com a confirmação do pedido.",
+  "2.5. Fotografias de referência para bolos e doces não são enviadas por meio do sítio eletrônico, devendo ser encaminhadas pelo Titular diretamente pelo WhatsApp.",
+  "3. Finalidades e Bases Legais",
+  "3.1. Os dados pessoais são tratados exclusivamente para receber, confirmar, produzir e entregar o pedido, bem como para contatar o Titular por WhatsApp ou email quando necessário ao atendimento.",
+  "3.2. Os dados pessoais não são utilizados para fins publicitários, não há envio de comunicações promocionais, e os dados não são vendidos nem cedidos a terceiros.",
+  "3.3. A base legal do tratamento dos dados do pedido é a execução de contrato, ou de procedimentos preliminares relacionados a contrato do qual seja parte o Titular, a pedido do próprio Titular (art. 7º, inciso V, da LGPD). Quanto ao endereço IP, a base legal é o legítimo interesse do Controlador na segurança do sítio eletrônico e na prevenção de abusos (art. 7º, inciso IX, da LGPD).",
+  "3.4. A utilização dos dados para finalidade diversa, como o envio de comunicações promocionais, dependerá de prévia atualização desta Política e da obtenção de consentimento específico do Titular.",
+  "4. Compartilhamento de Dados",
+  "Os dados pessoais são compartilhados apenas com os agentes indispensáveis ao funcionamento do sítio eletrônico e ao atendimento do pedido, a saber:",
+  "• Supabase, provedor do banco de dados em que os pedidos são armazenados, com servidores localizados em São Paulo.",
+  "• Netlify, provedor de hospedagem do sítio eletrônico, que poderá realizar o tratamento de dados em servidores localizados fora do Brasil.",
+  "• Google (Google Fonts), que fornece a fonte dos ícones do sítio eletrônico. Ao carregar uma página, o navegador do Titular requisita esse recurso aos servidores do Google, que recebem o endereço IP do Titular.",
+  "• WhatsApp (Meta), quando o Titular envia a mensagem do pedido. A partir do envio, a conversa é regida pelas regras do próprio WhatsApp.",
+  "• Integrantes da equipe da Pingo de Mell responsáveis pelo atendimento do pedido.",
+  "Não há outro compartilhamento de dados, salvo em cumprimento de obrigação legal ou de ordem de autoridade competente.",
+  "5. Prazo de Conservação",
+  "5.1. Os pedidos são conservados por 12 meses, contados da data do pedido. Findo esse prazo, o pedido é eliminado integralmente do sistema do Controlador, incluídos os dados do cliente e os itens.",
+  "5.2. Fica ressalvada a conservação por prazo superior quando exigida por obrigação legal ou regulatória, hipótese em que serão conservados apenas os dados necessários, pelo prazo exigido.",
+  "5.3. O endereço IP utilizado para limitar as tentativas de pedido é conservado por até 30 dias.",
+  "5.4. A conversa mantida entre o Titular e a loja no WhatsApp permanece no aplicativo, no dispositivo da loja, e não é eliminada em conjunto com o pedido do sistema. O Titular poderá requerer sua eliminação por meio do canal indicado na seção 1.",
+  "6. Direitos do Titular",
+  "Nos termos do art. 18 da LGPD, o Titular poderá requerer, a qualquer tempo:",
+  "• a confirmação da existência de tratamento de seus dados;",
+  "• o acesso aos dados;",
+  "• a correção de dados incompletos, inexatos ou desatualizados;",
+  "• a anonimização, o bloqueio ou a eliminação de dados desnecessários, excessivos ou tratados em desconformidade com a LGPD;",
+  "• a portabilidade dos dados a outro fornecedor de serviço ou produto, mediante requisição expressa;",
+  "• a informação sobre as entidades com as quais o Controlador compartilhou seus dados;",
+  "• a revogação do consentimento, quando este constituir a base legal do tratamento.",
+  "O requerimento deverá ser dirigido ao canal indicado na seção 1. Para resguardar o próprio Titular, o Controlador poderá solicitar a confirmação do nome e do número de telefone utilizados no pedido. O Controlador responderá no prazo de até 15 dias.",
+  "7. Segurança da Informação",
+  "O acesso ao painel administrativo em que os pedidos são consultados é restrito a pessoa autorizada, mediante login e senha. O banco de dados admite a gravação de pedidos exclusivamente por meio do servidor do sítio eletrônico, e a comunicação com o sítio eletrônico é protegida por criptografia (HTTPS).",
+  "Nenhum sistema é absolutamente imune a falhas. Na hipótese de incidente de segurança que possa acarretar risco ou dano relevante ao Titular, o Controlador comunicará o Titular e a Autoridade Nacional de Proteção de Dados (ANPD), nos termos da lei.",
+  "8. Cookies e Ferramentas de Análise",
+  "Atualmente, o sítio eletrônico não utiliza cookies de publicidade nem de análise de audiência. Os únicos dados armazenados no navegador do Titular são o carrinho e as informações digitadas no formulário do pedido, descritos na seção 2.",
+  "A eventual adoção de ferramentas de análise dependerá de prévia atualização desta Política e da obtenção do consentimento do Titular antes de sua ativação.",
+  "9. Alterações desta Política",
+  "A data de vigência desta Política consta no topo desta página. Havendo alteração relevante, esta será publicada nesta página, com a indicação da nova data de vigência.",
+  "10. Reclamações e Autoridade Nacional",
+  "Caso entenda que o tratamento de seus dados é indevido, o Titular poderá procurar primeiramente o Controlador, pelo canal indicado na seção 1, sem prejuízo do direito de peticionar à ANPD, em gov.br/anpd.",
 ];
 
 const TITULOS = TEXTO_LITERAL.filter((t) => /^\d+\. /.test(t));
@@ -144,16 +144,12 @@ describe("Política de Privacidade — página", () => {
     expect(itens("direitos")).toHaveLength(7);
   });
 
-  it("mantém a frase do formulário (seção 2) e a do Google (seção 4)", () => {
+  it("mantém o formulário no navegador (seção 2.4) e o Google Fonts (seção 4)", () => {
     render(<PoliticaDePrivacidadePage />);
-    const texto = textoVisivel(document.body);
-    expect(texto).toContain(
-      "O que você digita no formulário do pedido (nome, WhatsApp, email, endereço, data, horário, ocasião, forma de pagamento e observações) também fica guardado no seu navegador, apenas nesta aba"
-    );
-    expect(texto).toContain(
-      "Google (Google Fonts), que fornece a fonte dos ícones do site. Ao abrir uma página, o seu navegador busca essa fonte nos servidores do Google, que recebem o seu endereço IP."
-    );
-    expect(texto).toContain("Os únicos dados guardados no seu navegador são o carrinho e o que você digita no formulário do pedido");
+    const secao2 = textoVisivel(document.getElementById("dados-coletados")!);
+    const secao4 = textoVisivel(document.getElementById("compartilhamento")!);
+    expect(secao2).toContain("apenas na aba em uso");
+    expect(secao4).toContain("Google Fonts");
   });
 
   it("índice 'Nesta página' com os dez links âncora para as seções, com ids estáveis", () => {
@@ -251,6 +247,9 @@ describe("Política de Privacidade — mesma fonte do rodapé", () => {
       expect(responsavel).toContain(valor);
       expect(rodape).toContain(valor);
     }
+    // O endereço de LOJA, na frase do texto aprovado, sai idêntico.
+    expect(LOJA.endereco).toBe("Rua das Acácias, 412, Nações, Fazenda Rio Grande/PR");
+    expect(responsavel).toContain("estabelecida na Rua das Acácias, 412, Nações, Fazenda Rio Grande/PR.");
     // O número do wa.me é o mesmo telefone, só com dígitos e DDI 55.
     expect(WHATSAPP.numero).toBe(`55${LOJA.telefone.replace(/\D/g, "")}`);
   });
@@ -268,8 +267,8 @@ describe("Política de Privacidade — mesma fonte do rodapé", () => {
     const { PoliticaDePrivacidade: ComConfigTrocada } = await import("./politica");
     render(<ComConfigTrocada dataVigencia={null} />);
     const responsavel = textoVisivel(document.getElementById("responsavel")!);
-    expect(responsavel).toContain("CNPJ CNPJ-DE-TESTE, ENDERECO-DE-TESTE.");
-    expect(responsavel).toContain("pelo WhatsApp TELEFONE-DE-TESTE, no horário");
+    expect(responsavel).toContain("inscrita no CNPJ sob o nº CNPJ-DE-TESTE, estabelecida na ENDERECO-DE-TESTE.");
+    expect(responsavel).toContain("é o WhatsApp TELEFONE-DE-TESTE, durante o horário");
     expect(screen.getByRole("link", { name: /^TELEFONE-DE-TESTE/ })).toHaveAttribute(
       "href",
       "https://wa.me/5500000000000"
