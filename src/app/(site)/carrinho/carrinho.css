@@ -86,18 +86,6 @@
   overflow: hidden;
   background: var(--gold-100);
 }
-.carrinho-item-fallback {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  background: var(--gradient-brand);
-}
-.carrinho-item-fallback .site-hive {
-  right: -30px;
-  bottom: -40px;
-  font-size: 120px !important;
-  opacity: 0.25;
-}
 .carrinho-item-topo {
   grid-column: 2;
   grid-row: 1;
@@ -171,9 +159,6 @@
 }
 .carrinho-quantidade-erro:empty {
   display: none;
-}
-.carrinho-nb {
-  white-space: nowrap;
 }
 .carrinho-item-unidade {
   font-size: 14px;

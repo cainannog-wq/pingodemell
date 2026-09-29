@@ -66,6 +66,14 @@ html:has(.pdm-site) {
   color-scheme: light;
   background: var(--surface-page);
 }
+/* globals.css põe overflow-x: hidden em html e body. Com os dois assim, o
+   body vira um contêiner de rolagem que não rola, e position: sticky para de
+   funcionar (resumo do carrinho e do checkout). `clip` corta a rolagem
+   lateral do mesmo jeito, sem criar contêiner de rolagem. */
+html:has(.pdm-site),
+body:has(.pdm-site) {
+  overflow-x: clip;
+}
 body:has(.pdm-site) {
   background: var(--surface-page);
   color: var(--text-body);
@@ -1605,4 +1613,24 @@ input.site-seletor-valor {
   .carrinho .avisos {
     bottom: calc(var(--carrinho-barra-h) + 12px + env(safe-area-inset-bottom));
   }
+}
+
+/* ---------- Linha do pedido (carrinho e resumo do checkout) ---------- */
+
+/* Foto que falta: fundo da marca com a colmeia. */
+.site-linha-fallback {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--gradient-brand);
+}
+.site-linha-fallback .site-hive {
+  right: -30px;
+  bottom: -40px;
+  font-size: 120px !important;
+  opacity: 0.25;
+}
+/* Valor em reais que não quebra no meio. */
+.site-nb {
+  white-space: nowrap;
 }

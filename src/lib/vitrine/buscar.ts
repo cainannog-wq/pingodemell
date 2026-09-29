@@ -51,7 +51,8 @@ async function recheiosDaVitrine(supabase: Supabase, produtos: ProdutoVitrine[])
 
 // Sabores dos Centos e recheios do catálogo, o que decide se um produto está
 // disponível. null em caso de erro em qualquer uma das duas consultas.
-async function dependencias(supabase: Supabase, produtos: ProdutoVitrine[]) {
+// Usada também pelas ofertas do checkout (src/lib/checkout/buscar.ts).
+export async function dependencias(supabase: Supabase, produtos: ProdutoVitrine[]) {
   const [comSabor, recheios] = await Promise.all([centosDisponiveis(supabase, produtos), recheiosDaVitrine(supabase, produtos)]);
   if (!comSabor || !recheios) return null;
   return { comSabor, recheios };

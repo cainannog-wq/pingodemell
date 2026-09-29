@@ -20,9 +20,12 @@ export const ROTAS = {
   // Nunca pelo nome nem pelo id.
   produto: (slug: string) => `/produtos/${slug}`,
   carrinho: "/carrinho",
-  // Reservada pra página 5 (Checkout): o botão "Finalizar pedido" do carrinho
-  // já aponta pra cá e cai na 404 até a página existir (item 6).
+  // Página 5 (Checkout), item 6: dados do pedido, data e hora.
   checkout: "/checkout",
+  // Reservada pra página 6 (Confirmação, próximo item: grava o pedido e abre
+  // o WhatsApp). O botão final do checkout já aponta pra cá e cai na 404 até
+  // a página existir.
+  confirmacao: "/confirmacao",
   quemSomos: "/quem-somos",
   contato: "/quem-somos#contato",
   prazos: "/#prazos",

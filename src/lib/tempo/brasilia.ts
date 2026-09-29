@@ -91,6 +91,14 @@ export function somarMeses(ano: number, mes: number, delta: number): { ano: numb
   return { ano: Math.floor(total / 12), mes: (total % 12 + 12) % 12 + 1 };
 }
 
+// Data de calendário N dias depois (ou antes, com N negativo):
+// somarDias("2026-12-31", 1) -> "2027-01-01".
+export function somarDias(dataIso: string, dias: number): string {
+  const [ano, mes, dia] = dataIso.split("-").map(Number);
+  const d = new Date(Date.UTC(ano, mes - 1, dia + dias));
+  return montarDataIso(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+}
+
 // Diferença em dias de calendário entre duas datas AAAA-MM-DD (b - a).
 export function diferencaEmDias(a: string, b: string): number {
   const [ay, am, ad] = a.split("-").map(Number);
