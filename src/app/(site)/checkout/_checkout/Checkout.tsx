@@ -134,8 +134,7 @@ function Topo() {
         </TextLink>
         <h1>Quase lá</h1>
         <p>
-          Conte tudo de uma vez e a gente já responde com o orçamento pronto. Assim ninguém precisa ficar perguntando
-          detalhe por detalhe depois.
+          Preencha seus dados e envie seu pedido pelo WhatsApp. A gente confirma tudo e combina o pagamento por lá.
         </p>
       </div>
     </section>
@@ -465,7 +464,7 @@ function Formulario({
                   escolhido={dados.modo === "retirada"}
                   icone="storefront"
                   titulo="Retirar na loja"
-                  texto={`${LOJA.enderecoCurto} · sem custo`}
+                  texto={`${LOJA.endereco} · sem custo`}
                   descricaoId={idErro("modo")}
                   invalido={Boolean(erroVisivel("modo"))}
                   aoEscolher={() => {

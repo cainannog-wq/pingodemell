@@ -55,7 +55,8 @@ describe("validação do formulário do checkout", () => {
     ["data", { data: "", hora: "" }, MENSAGENS.dataVazia],
     ["data", { data: "2026-10-05", hora: "" }, MENSAGENS.dataBloqueada], // segunda
     ["hora", { hora: "" }, MENSAGENS.horaVazia],
-    ["hora", { hora: "18:00" }, MENSAGENS.horaInvalida],
+    ["hora", { hora: "12:00" }, MENSAGENS.horaInvalida], // almoço
+    ["hora", { hora: "18:30" }, MENSAGENS.horaInvalida],
     ["modo", { modo: "" }, MENSAGENS.modo],
     ["pagamento", { pagamento: "" }, MENSAGENS.pagamento],
   ] as const)("campo %s: %j -> erro", (campo, mudanca, mensagem) => {

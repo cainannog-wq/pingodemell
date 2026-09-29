@@ -433,6 +433,16 @@ describe("Checkout — validação do formulário", () => {
     expect(push).toHaveBeenCalledWith("/confirmacao");
   });
 
+  it("retirada mostra o endereço completo da loja, com a cidade; topo com o texto do envio pelo WhatsApp", async () => {
+    await abrir();
+    const retirada = screen.getByRole("radio", { name: /Retirar na loja/ }).closest("label")!;
+    expect(retirada).toHaveTextContent("Rua das Acácias, 412, Nações, Fazenda Rio Grande/PR · sem custo");
+    expect(
+      screen.getByText("Preencha seus dados e envie seu pedido pelo WhatsApp. A gente confirma tudo e combina o pagamento por lá.")
+    ).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent("Conte tudo de uma vez");
+  });
+
   it("e-mail continua opcional, sem a marca (opcional)", async () => {
     await abrir();
     const rotulo = document.querySelector('label[for="checkout-email"]')!;
@@ -505,15 +515,18 @@ describe("Checkout — data e hora (hoje: quinta 01/10, 22h30 em Brasília)", ()
     expect(screen.getByLabelText(/^Horário em que precisa/)).toBeDisabled();
   });
 
-  it("horário segue o dia: sábado até 17h30, domingo até 14h30", async () => {
+  it("horário segue o dia: sábado até 18h, domingo até 15h, sem 12h e 12h30", async () => {
     const user = userEvent.setup();
     await abrir();
     await user.click(dia(/^sábado, 3 de outubro/));
     const hora = screen.getByLabelText(/^Horário em que precisa/);
-    expect(within(hora).getAllByRole("option").at(-1)).toHaveTextContent("17h30");
+    expect(within(hora).getAllByRole("option").at(-1)).toHaveTextContent("18h");
+    const rotulos = within(hora).getAllByRole("option").map((o) => o.textContent);
+    expect(rotulos).not.toContain("12h");
+    expect(rotulos).not.toContain("12h30");
     await user.selectOptions(hora, "17:00");
     await user.click(dia(/^domingo, 4 de outubro/));
-    expect(within(hora).getAllByRole("option").at(-1)).toHaveTextContent("14h30");
+    expect(within(hora).getAllByRole("option").at(-1)).toHaveTextContent("15h");
     // 17h não existe no domingo: volta vazio.
     expect(hora).toHaveValue("");
   });

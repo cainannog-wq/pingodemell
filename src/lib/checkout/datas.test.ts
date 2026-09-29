@@ -128,17 +128,23 @@ describe("prazo de produção: só avisa, nunca bloqueia", () => {
 });
 
 describe("horário por dia da semana", () => {
-  it("terça a sábado: 9h às 17h30, de 30 em 30 minutos", () => {
+  it("terça a sábado: 9h às 18h, de 30 em 30 minutos, sem 12h e 12h30 (almoço)", () => {
     const h = horariosDoDia("2026-10-03");
     expect(h[0]).toBe("09:00");
-    expect(h.at(-1)).toBe("17:30");
-    expect(h).toHaveLength(18);
+    expect(h.at(-1)).toBe("18:00");
+    expect(h).not.toContain("12:00");
+    expect(h).not.toContain("12:30");
+    expect(h).toContain("11:30");
+    expect(h).toContain("13:00");
+    expect(h).toHaveLength(17);
   });
 
-  it("domingo: 9h às 14h30", () => {
+  it("domingo: 9h às 15h, sem o almoço", () => {
     const h = horariosDoDia("2026-10-04");
-    expect(h.at(-1)).toBe("14:30");
-    expect(h).toHaveLength(12);
+    expect(h.at(-1)).toBe("15:00");
+    expect(h).not.toContain("12:00");
+    expect(h).not.toContain("12:30");
+    expect(h).toHaveLength(11);
   });
 
   it("segunda: nenhum horário", () => {

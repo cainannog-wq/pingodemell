@@ -101,11 +101,13 @@ export function prazoCurto(dataIso: string, hoje: string, maisDemorado: PrazoDoI
 // ---------- Horário ----------
 
 // Horário da loja: terça a sábado, 9h às 18h; domingo, 9h às 15h; segunda
-// fechado. Horários de 30 em 30 minutos, o último meia hora antes de fechar.
+// fechado. Horários de 30 em 30 minutos, do abrir ao fechar (18h e 15h
+// entram), sem o almoço (12h e 12h30), decisão do Cainan.
 export const INTERVALO_MINUTOS = 30;
 const ABRE = 9 * 60;
 const FECHA_SEMANA = 18 * 60;
 const FECHA_DOMINGO = 15 * 60;
+export const HORARIOS_DE_ALMOCO = ["12:00", "12:30"];
 
 export function horariosDoDia(dataIso: string): string[] {
   if (!lerDataIso(dataIso)) return [];
@@ -113,8 +115,9 @@ export function horariosDoDia(dataIso: string): string[] {
   if (dia === SEGUNDA) return [];
   const fecha = dia === DOMINGO ? FECHA_DOMINGO : FECHA_SEMANA;
   const horarios: string[] = [];
-  for (let m = ABRE; m < fecha; m += INTERVALO_MINUTOS) {
-    horarios.push(`${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`);
+  for (let m = ABRE; m <= fecha; m += INTERVALO_MINUTOS) {
+    const hora = `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+    if (!HORARIOS_DE_ALMOCO.includes(hora)) horarios.push(hora);
   }
   return horarios;
 }
