@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Icon } from "@/components/ds";
 import { useCarrinho } from "@/components/site/CarrinhoProvider";
+import { Seletor } from "@/components/site/Seletor";
 import { normalizarObservacao } from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
 import {
@@ -19,7 +20,6 @@ import {
 import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
 import { Observacao } from "./Observacao";
 import { PainelAdicionar } from "./PainelAdicionar";
-import { Seletor } from "./Seletor";
 
 function textoCentos(n: number): string {
   return `${n} ${n === 1 ? "cento" : "centos"}`;
@@ -70,6 +70,7 @@ export function ConfigCento({ produto, sabores }: { produto: ProdutoVitrine; sab
       preco,
       quantidade: centos,
       sabores: sabores.map((nome) => ({ nome, quantidade: atual[nome] })),
+      foto: produto.image_url,
       observacao: normalizarObservacao(observacao),
     });
     setAdicionado(true);

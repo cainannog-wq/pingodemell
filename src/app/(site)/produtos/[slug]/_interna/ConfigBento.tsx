@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useCarrinho } from "@/components/site/CarrinhoProvider";
+import { Seletor } from "@/components/site/Seletor";
 import { normalizarObservacao } from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
 import { recheiosDoBento } from "@/lib/recheios/regras";
@@ -11,7 +12,6 @@ import { erroQuantidade, normalizarQuantidade, passoQuantidade, quantidadeInicia
 import { EscolhaRecheio } from "./EscolhaRecheio";
 import { Observacao } from "./Observacao";
 import { PainelAdicionar } from "./PainelAdicionar";
-import { Seletor } from "./Seletor";
 
 // Configuração do produto tipo Bento Cake: cada tema é um produto com preço
 // fixo e peso fechado. O cliente escolhe UM recheio (lista simples, sem
@@ -51,6 +51,9 @@ export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; re
       preco,
       quantidade,
       recheio: { id: recheio.id, nome: recheio.nome },
+      // Cópia do momento (ver ConfigAvulso).
+      pedidoMinimo: produto.pedido_minimo,
+      foto: produto.image_url,
       observacao: normalizarObservacao(observacao),
     });
     setAdicionado(true);

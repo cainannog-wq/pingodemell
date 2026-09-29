@@ -6,6 +6,7 @@ import {
   adicionarLinha,
   alterarLinha,
   contarItens,
+  reinserirLinha,
   removerLinha,
   type LinhaCarrinho,
   type NovaLinha,
@@ -23,6 +24,8 @@ type Carrinho = {
   adicionar: (nova: NovaLinha) => void;
   alterar: (id: string, linha: LinhaCarrinho) => void;
   remover: (id: string) => void;
+  // Desfazer remoção: a linha volta para o lugar que tinha (ver reinserirLinha).
+  reinserir: (linha: LinhaCarrinho, ordem: string[]) => void;
   limpar: () => void;
 };
 
@@ -41,11 +44,15 @@ export function CarrinhoProvider({ children }: { children: ReactNode }) {
   const adicionar = useCallback((nova: NovaLinha) => gravar(adicionarLinha(lerNoNavegador(), nova, novoId)), []);
   const alterar = useCallback((id: string, linha: LinhaCarrinho) => gravar(alterarLinha(lerNoNavegador(), id, linha)), []);
   const remover = useCallback((id: string) => gravar(removerLinha(lerNoNavegador(), id)), []);
+  const reinserir = useCallback(
+    (linha: LinhaCarrinho, ordem: string[]) => gravar(reinserirLinha(lerNoNavegador(), linha, ordem)),
+    []
+  );
   const limpar = useCallback(() => gravar([]), []);
 
   const valor = useMemo(
-    () => ({ linhas, totalItens: contarItens(linhas), adicionar, alterar, remover, limpar }),
-    [linhas, adicionar, alterar, remover, limpar]
+    () => ({ linhas, totalItens: contarItens(linhas), adicionar, alterar, remover, reinserir, limpar }),
+    [linhas, adicionar, alterar, remover, reinserir, limpar]
   );
 
   return <CarrinhoContext.Provider value={valor}>{children}</CarrinhoContext.Provider>;

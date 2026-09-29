@@ -194,61 +194,6 @@
   display: none;
 }
 
-/* Seletor em pílula (− valor +). */
-.interna-seletor {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  height: 44px;
-  padding: 0 4px;
-  box-sizing: border-box;
-  border: 2px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  background: var(--surface-raised);
-}
-.interna-seletor[data-apagado="true"] {
-  border-color: var(--border-default);
-}
-.interna-seletor[data-invalido="true"] {
-  border-color: var(--pdm-error);
-}
-.interna-seletor-btn {
-  width: 36px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--brown-500);
-  cursor: pointer;
-}
-.interna-seletor-btn:disabled {
-  color: var(--ink-300);
-  cursor: not-allowed;
-}
-.interna-seletor-valor {
-  min-width: 34px;
-  font: inherit;
-  font-weight: var(--fw-bold);
-  font-size: 16px;
-  color: var(--ink-900);
-  text-align: center;
-}
-input.interna-seletor-valor {
-  width: 56px;
-  height: 36px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-}
-.interna-seletor[data-apagado="true"] .interna-seletor-valor {
-  color: var(--ink-300);
-}
-
 /* Composição do Cento. */
 .interna-composicao {
   background: var(--surface-card);

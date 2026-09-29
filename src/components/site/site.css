@@ -1457,3 +1457,152 @@ body:has(.pdm-site) {
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+/* ---------- Seletor em pílula (− valor +) ---------- */
+
+.site-seletor {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 44px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+}
+.site-seletor[data-apagado="true"] {
+  border-color: var(--border-default);
+}
+.site-seletor[data-invalido="true"] {
+  border-color: var(--pdm-error);
+}
+.site-seletor-btn {
+  position: relative;
+  width: 36px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--brown-500);
+  cursor: pointer;
+}
+/* Área de toque de 44x44: o botão desenha 36x40 dentro da pílula, o toque vai
+   um pouco além. */
+.site-seletor-btn::after {
+  content: "";
+  position: absolute;
+  inset: -2px -4px;
+}
+.site-seletor-btn:disabled {
+  color: var(--ink-300);
+  cursor: not-allowed;
+}
+.site-seletor-valor {
+  min-width: 34px;
+  font: inherit;
+  font-weight: var(--fw-bold);
+  font-size: 16px;
+  color: var(--ink-900);
+  text-align: center;
+}
+input.site-seletor-valor {
+  width: 56px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+}
+.site-seletor[data-apagado="true"] .site-seletor-valor {
+  color: var(--ink-300);
+}
+
+/* ---------- Avisos rápidos empilhados (PilhaDeAvisos) ---------- */
+
+.avisos {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  z-index: 60;
+  width: min(420px, calc(100% - 32px));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.avisos:empty {
+  display: none;
+}
+.aviso {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding: 6px 6px 6px 16px;
+  border-radius: var(--radius);
+  background: var(--brown-800);
+  color: var(--cream-100);
+  box-shadow: var(--shadow-raised);
+  animation: aviso-entra var(--duration) var(--easing);
+}
+@keyframes aviso-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.aviso-texto {
+  flex: 1;
+  font-weight: var(--fw-semibold);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.aviso-acao {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  font-weight: var(--fw-bold);
+  font-size: 15px;
+  color: var(--gold-300);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.aviso-acao:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.aviso-fechar {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--cream-100);
+  cursor: pointer;
+}
+.aviso-fechar:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.pdm-site .aviso :focus-visible {
+  outline-color: var(--cream-100);
+}
+
+/* Celular com a barra fixa do carrinho: os avisos ficam acima dela. */
+@media (max-width: 767px) {
+  .carrinho .avisos {
+    bottom: calc(var(--carrinho-barra-h) + 12px + env(safe-area-inset-bottom));
+  }
+}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Icon } from "@/components/ds";
 import { useCarrinho } from "@/components/site/CarrinhoProvider";
+import { Seletor } from "@/components/site/Seletor";
 import { normalizarObservacao } from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
 import { agruparRecheiosDoBolo, precoDoBolo } from "@/lib/recheios/regras";
@@ -25,7 +26,6 @@ import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
 import { EscolhaRecheio } from "./EscolhaRecheio";
 import { Observacao } from "./Observacao";
 import { PainelAdicionar } from "./PainelAdicionar";
-import { Seletor } from "./Seletor";
 
 // Configuração do produto tipo Bolo (regras em src/lib/vitrine/bolo.ts e
 // src/lib/recheios/regras.ts): tamanho em kg (de 1 em 1; acima de 10 kg só
@@ -68,6 +68,7 @@ export function ConfigBolo({ produto, recheios }: { produto: ProdutoVitrine; rec
       quantidade: kg,
       recheio: { id: recheio.id, nome: recheio.nome },
       formato,
+      foto: produto.image_url,
       observacao: normalizarObservacao(observacao),
     });
     setAdicionado(true);

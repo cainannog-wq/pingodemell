@@ -19,9 +19,10 @@ export const ROTAS = {
   // do nome no cadastro e fixo depois, mesmo que o produto seja renomeado.
   // Nunca pelo nome nem pelo id.
   produto: (slug: string) => `/produtos/${slug}`,
-  // Reservada pra página 4 (Carrinho): a sacola do cabeçalho já aponta pra
-  // cá e cai na 404 até a página existir.
   carrinho: "/carrinho",
+  // Reservada pra página 5 (Checkout): o botão "Finalizar pedido" do carrinho
+  // já aponta pra cá e cai na 404 até a página existir (item 6).
+  checkout: "/checkout",
   quemSomos: "/quem-somos",
   contato: "/quem-somos#contato",
   prazos: "/#prazos",
