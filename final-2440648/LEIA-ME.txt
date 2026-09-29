@@ -1,0 +1,42 @@
+Prova de entrega do PR #25 (checkout), versão final mergeada
+============================================================
+
+Código: commit 2440648 da lote (squash do PR #25; mesma árvore do último
+commit do PR, a2b1d83).
+
+Preview: https://homologacao--pingodemell.netlify.app/checkout
+  curl -sI .../checkout -> X-Homologacao-Commit: 24406485e7149dcdabb5afa05ce57976d0c50396
+  (a homologação está igual à lote, que contém o PR #25)
+
+Saídas completas, rodadas na lote em 2440648 (29/09/2026):
+  npm-run-test.txt   128 arquivos, 1332 testes passando (fusos UTC e America/Sao_Paulo), exit 0
+  npm-run-lint.txt   0 erros, 1 aviso que já existia (src/app/layout.tsx, fonte), exit 0
+  npm-run-build.txt  compilado, TypeScript ok, /checkout dinâmica (ƒ), exit 0
+
+Prints tirados na homologação (código mergeado), com "hoje" = terça 29/09/2026.
+Os de 1280 px saem reduzidos para 800 px na imagem. Fluxo em ordem:
+  01-11 desktop 1280: vazio, erros ao enviar vazio (7 campos), dados e
+        consentimento, prazo curto sem botão de WhatsApp (resumo e botão
+        acompanhando a rolagem), data no prazo com 18h, entrega com cidade e
+        bairro, pagamento, ofertas (sem WhatsApp flutuante), oferta
+        adicionada, resumo com a oferta, botão final -> 404 de /confirmacao.
+  12-18 mobile 375: dados e consentimento, calendário com o horário logo
+        abaixo, entrega, pagamento, resumo, aviso e botão, ofertas.
+  fluxo-desktop-1280.gif e fluxo-mobile-375.gif: os mesmos quadros em
+  sequência (2,2 s cada), montados a partir dos prints.
+
+Evidências lidas da página (homologação):
+  Horários do sábado 03/10: 9h 9h30 10h 10h30 11h 11h30 13h 13h30 14h 14h30
+    15h 15h30 16h 16h30 17h 17h30 18h (sem 12h e 12h30).
+  Retirar na loja: "Rua das Acácias, 412, Nações, Fazenda Rio Grande/PR · sem custo".
+  Oferta: "Coca-cola 2L entrou no seu pedido.", foco no título das ofertas.
+  Rascunho salvo (sessionStorage pdm-checkout-v1) ao clicar em "Revisar e enviar":
+    {"nome":"Juliana Ribeiro","whatsapp":"(41) 99712-4408","email":"juliana@email.com",
+     "aceite":true,"data":"2026-10-03","hora":"18:00","modo":"entrega",
+     "cidade":"Mandirituba","bairro":"Centro","rua":"Rua das Flores","numero":"100",
+     "complemento":"Casa 2","ocasiao":"Aniversário de 5 anos","pagamento":"pix",
+     "observacoes":"Tema jardim encantado, tons de rosa e lilás."}
+
+Não reconfere o carrinho: o Brigadeiro aparece a R$ 1,99 (gravado no
+navegador; no banco é R$ 2,35) e o Bento com o recheio "TESTE Chrome editado
+(demo)" (inativo no banco), sem aviso. Nada foi gravado no banco.

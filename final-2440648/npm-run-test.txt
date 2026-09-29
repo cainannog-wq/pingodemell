@@ -1,0 +1,341 @@
+
+> pingo-de-mel@0.1.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/Users/Caina/OneDrive/Documentos/Pingo de Mell[39m
+
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/(site)/produtos/[slug]/page-bolo-bento.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[33m 4066[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — Bolo[2m > [22mcabeçalho: 'a partir de' o menor R$/kg dos recheios ativos; sem Quantidade, mínimo nem step do cadastro [33m 972[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — Bolo[2m > [22mo botão só liga com o recheio escolhido; preço = R$/kg do recheio × kg [33m 621[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — Bolo[2m > [22macima de 10 kg só avisa (WhatsApp), sem bloquear; número inválido bloqueia [33m 930[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — Bolo[2m > [22madicionar grava tipo bolo (recheio, formato, R$/kg); cada adicionar é um bolo, sem juntar [33m 424[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/(site)/produtos/[slug]/page.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[33m 8000[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — 404[2m > [22mproduto inativo cai na 404 (mesmo com a sessão do admin, que lê inativos) [33m 502[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — avulso[2m > [22munidade preenchida: preço com a unidade, mínimo com a unidade, seletor começa no mínimo [33m 573[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — avulso[2m > [22mrespeita pedido_minimo e step: mínimo 12 em múltiplos de 5 começa em 15 e anda de 5 em 5 [33m 307[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — avulso[2m > [22mnúmero digitado fora da regra desliga o botão com o motivo; ao sair do campo, vai para o aceito [33m 628[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — avulso[2m > [22madicionar ao pedido grava no carrinho e o contador do cabeçalho muda [33m 359[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — Cento[2m > [22mbotão só liga com a soma exata; 2 centos pedem 200 numa combinação só [33m 2538[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — Cento[2m > [22mdiminuir os centos depois de distribuir mostra quanto passou e desliga o botão [33m 1881[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/(site)/produtos/[slug]/page.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[33m 8142[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — 404[2m > [22mproduto inativo cai na 404 (mesmo com a sessão do admin, que lê inativos) [33m 506[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — avulso[2m > [22munidade preenchida: preço com a unidade, mínimo com a unidade, seletor começa no mínimo [33m 563[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — avulso[2m > [22mrespeita pedido_minimo e step: mínimo 12 em múltiplos de 5 começa em 15 e anda de 5 em 5 [33m 359[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — avulso[2m > [22mnúmero digitado fora da regra desliga o botão com o motivo; ao sair do campo, vai para o aceito [33m 596[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — avulso[2m > [22mgaleria: capa primeiro, depois as extras na ordem [33m 321[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — avulso[2m > [22madicionar ao pedido grava no carrinho e o contador do cabeçalho muda [33m 395[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — Cento[2m > [22mbotão só liga com a soma exata; 2 centos pedem 200 numa combinação só [33m 2653[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — Cento[2m > [22mdiminuir os centos depois de distribuir mostra quanto passou e desliga o botão [33m 1892[2mms[22m[39m
+[90mstderr[2m | src/app/(site)/carrinho/carrinho.test.tsx[2m > [22m[2mCarrinho — editar Cento e Bolo[2m > [22m[2mclicar em editar não remove nem muda a linha (a troca só acontece ao confirmar na interna)
+[22m[39mNot implemented: navigation to another Document
+
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/(site)/carrinho/carrinho.test.tsx [2m([22m[2m35 tests[22m[2m)[22m[33m 9017[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — exibição do que está gravado[2m > [22mmostra uma linha de cada tipo com os dados exatamente como gravados, sem consultar nada [33m 722[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — quantidade por tipo[2m > [22mAvulso: anda no step, trava no mínimo e o total recalcula [33m 567[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — quantidade por tipo[2m > [22mnúmero fora do step avisa e, ao sair do campo, vai para o múltiplo mais próximo; número certo vale na hora [33m 424[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — quantidade por tipo[2m > [22mSmash Cake anda de 1 em 1 e Bento Cake trava no mínimo do produto (2), sem step [33m 547[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — remover e desfazer[2m > [22m'Desfazer' com o teclado (Enter no botão) e o foco volta para o botão de remover da linha [33m 323[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — remover e desfazer[2m > [22mqualquer outra interação só fecha o aviso e a remoção fica valendo[2m > [22mrolar a tela (roda do mouse, dedo ou teclas de rolagem) [33m 547[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — remover e desfazer[2m > [22mcada remoção tem o seu aviso, independente dos outros[2m > [22mremover outra linha NÃO fecha o aviso anterior; cada 'Desfazer' devolve só a sua linha [33m 490[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — remover e desfazer[2m > [22mcada remoção tem o seu aviso, independente dos outros[2m > [22mdesfazer na ordem inversa também devolve tudo na posição original [33m 430[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — remover e desfazer[2m > [22mcada remoção tem o seu aviso, independente dos outros[2m > [22mno desktop ficam no máximo 3 avisos empilhados; o mais antigo fecha e a remoção dele vale [33m 300[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — remover e desfazer[2m > [22mcada remoção tem o seu aviso, independente dos outros[2m > [22mno celular ficam no máximo 2, para não cobrir a barra de 'Finalizar pedido' [33m 313[2mms[22m[39m
+[90mstderr[2m | src/app/(site)/carrinho/carrinho.test.tsx[2m > [22m[2mCarrinho — editar Cento e Bolo[2m > [22m[2mclicar em editar não remove nem muda a linha (a troca só acontece ao confirmar na interna)
+[22m[39mNot implemented: navigation to another Document
+
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/(site)/carrinho/carrinho.test.tsx [2m([22m[2m35 tests[22m[2m)[22m[33m 9088[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — exibição do que está gravado[2m > [22mmostra uma linha de cada tipo com os dados exatamente como gravados, sem consultar nada [33m 760[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — quantidade por tipo[2m > [22mAvulso: anda no step, trava no mínimo e o total recalcula [33m 626[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — quantidade por tipo[2m > [22mnúmero fora do step avisa e, ao sair do campo, vai para o múltiplo mais próximo; número certo vale na hora [33m 480[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — quantidade por tipo[2m > [22mSmash Cake anda de 1 em 1 e Bento Cake trava no mínimo do produto (2), sem step [33m 513[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — remover e desfazer[2m > [22m'Desfazer' devolve a linha idêntica e na mesma posição, e o total volta [33m 320[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — remover e desfazer[2m > [22mqualquer outra interação só fecha o aviso e a remoção fica valendo[2m > [22mrolar a tela (roda do mouse, dedo ou teclas de rolagem) [33m 554[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — remover e desfazer[2m > [22mcada remoção tem o seu aviso, independente dos outros[2m > [22mremover outra linha NÃO fecha o aviso anterior; cada 'Desfazer' devolve só a sua linha [33m 448[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — remover e desfazer[2m > [22mcada remoção tem o seu aviso, independente dos outros[2m > [22mdesfazer na ordem inversa também devolve tudo na posição original [33m 398[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — remover e desfazer[2m > [22mcada remoção tem o seu aviso, independente dos outros[2m > [22mno desktop ficam no máximo 3 avisos empilhados; o mais antigo fecha e a remoção dele vale [33m 368[2mms[22m[39m
+   [33m[2m✓[22m[39m Carrinho — remover e desfazer[2m > [22mcada remoção tem o seu aviso, independente dos outros[2m > [22mno celular ficam no máximo 2, para não cobrir a barra de 'Finalizar pedido' [33m 321[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/(site)/produtos/[slug]/page-editar.test.tsx [2m([22m[2m16 tests[22m[2m)[22m[33m 3722[2mms[22m[39m
+   [33m[2m✓[22m[39m Editar Bolo — abrir pré-preenchido[2m > [22mkg, formato, recheio e observação vêm do que está gravado; o carrinho não muda e o botão é 'Salvar alteração' [33m 848[2mms[22m[39m
+   [33m[2m✓[22m[39m Editar Bolo — confirmar troca a linha[2m > [22mtroca na mesma posição, com o mesmo id, sem mudar o tamanho da lista, e leva ao carrinho [33m 347[2mms[22m[39m
+   [33m[2m✓[22m[39m Editar Cento[2m > [22mvínculo perdido: interna vazia com aviso e confirmar entra como item novo, sem tocar nas outras linhas [33m 1005[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/(site)/produtos/[slug]/page-bolo-bento.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[33m 3768[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — Bolo[2m > [22mcabeçalho: 'a partir de' o menor R$/kg dos recheios ativos; sem Quantidade, mínimo nem step do cadastro [33m 874[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — Bolo[2m > [22mo botão só liga com o recheio escolhido; preço = R$/kg do recheio × kg [33m 539[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — Bolo[2m > [22macima de 10 kg só avisa (WhatsApp), sem bloquear; número inválido bloqueia [33m 755[2mms[22m[39m
+   [33m[2m✓[22m[39m Interna — Bolo[2m > [22madicionar grava tipo bolo (recheio, formato, R$/kg); cada adicionar é um bolo, sem juntar [33m 378[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/(site)/produtos/[slug]/page-editar.test.tsx [2m([22m[2m16 tests[22m[2m)[22m[33m 4252[2mms[22m[39m
+   [33m[2m✓[22m[39m Editar Bolo — abrir pré-preenchido[2m > [22mkg, formato, recheio e observação vêm do que está gravado; o carrinho não muda e o botão é 'Salvar alteração' [33m 999[2mms[22m[39m
+   [33m[2m✓[22m[39m Editar Bolo — confirmar troca a linha[2m > [22mtroca na mesma posição, com o mesmo id, sem mudar o tamanho da lista, e leva ao carrinho [33m 386[2mms[22m[39m
+   [33m[2m✓[22m[39m Editar Cento[2m > [22mvínculo perdido: interna vazia com aviso e confirmar entra como item novo, sem tocar nas outras linhas [33m 1156[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/(site)/produtos/page.test.tsx [2m([22m[2m17 tests[22m[2m)[22m[33m 2791[2mms[22m[39m
+   [33m[2m✓[22m[39m Página Lista — estrutura[2m > [22mtem um único H1 com o texto do layout [33m 876[2mms[22m[39m
+   [33m[2m✓[22m[39m Página Lista — estrutura[2m > [22m'Todos': grade única sem subtítulo visível, destaques primeiro, filtro 'Todos' marcado [33m 425[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/(site)/produtos/page.test.tsx [2m([22m[2m17 tests[22m[2m)[22m[33m 2789[2mms[22m[39m
+   [33m[2m✓[22m[39m Página Lista — estrutura[2m > [22mtem um único H1 com o texto do layout [33m 842[2mms[22m[39m
+   [33m[2m✓[22m[39m Página Lista — estrutura[2m > [22m'Todos': grade única sem subtítulo visível, destaques primeiro, filtro 'Todos' marcado [33m 401[2mms[22m[39m
+   [33m[2m✓[22m[39m Página Lista — estrutura[2m > [22mcategoria inválida na URL mostra 'Todos', sem erro [33m 330[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/dias-off/calendario.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 2488[2mms[22m[39m
+   [33m[2m✓[22m[39m Calendario de dias off[2m > [22mpede confirmação antes de marcar um dia comum como sem produção [33m 892[2mms[22m[39m
+   [33m[2m✓[22m[39m Calendario de dias off[2m > [22mpede confirmação antes de remover um dia comum já marcado [33m 393[2mms[22m[39m
+   [33m[2m✓[22m[39m Calendario de dias off[2m > [22mclicar numa segunda já reaberta pergunta se quer fechar de novo, e chama deleteReabertura [33m 303[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/produtos/galeria-fotos.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 2093[2mms[22m[39m
+   [33m[2m✓[22m[39m GaleriaFotosExtras — limite de 9[2m > [22mcom 9 fotos, o botão de adicionar fica desabilitado, com a mensagem visível e associada a ele [33m 725[2mms[22m[39m
+   [33m[2m✓[22m[39m GaleriaFotosExtras — limite de 9[2m > [22mescolhendo mais fotos do que cabe, entram só as que cabem, com aviso [33m 327[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/dias-off/calendario.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 2527[2mms[22m[39m
+   [33m[2m✓[22m[39m Calendario de dias off[2m > [22mpede confirmação antes de marcar um dia comum como sem produção [33m 804[2mms[22m[39m
+   [33m[2m✓[22m[39m Calendario de dias off[2m > [22mpede confirmação antes de remover um dia comum já marcado [33m 327[2mms[22m[39m
+   [33m[2m✓[22m[39m Calendario de dias off[2m > [22mclicar numa segunda fechada por padrão pergunta se quer reabrir, e chama createReabertura [33m 327[2mms[22m[39m
+   [33m[2m✓[22m[39m Calendario de dias off[2m > [22mclicar numa segunda já reaberta pergunta se quer fechar de novo, e chama deleteReabertura [33m 375[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/produtos/produto-form-capa.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 2243[2mms[22m[39m
+   [33m[2m✓[22m[39m ProdutoForm — foto de capa[2m > [22mescolher a capa só reduz no navegador: nada vai para o servidor nem para o storage; sair sem salvar não deixa nada [33m 758[2mms[22m[39m
+   [33m[2m✓[22m[39m ProdutoForm — foto de capa[2m > [22mno Salvar: sobe a foto reduzida no caminho autorizado e manda só id + extensão; nenhum arquivo vai no formulário [33m 410[2mms[22m[39m
+   [33m[2m✓[22m[39m ProdutoForm — foto de capa[2m > [22menvio da capa falhando: mostra o erro, pede a limpeza e não chama a Server Action; a foto continua na tela [33m 312[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/produtos/produto-form-capa.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 2449[2mms[22m[39m
+   [33m[2m✓[22m[39m ProdutoForm — foto de capa[2m > [22mescolher a capa só reduz no navegador: nada vai para o servidor nem para o storage; sair sem salvar não deixa nada [33m 820[2mms[22m[39m
+   [33m[2m✓[22m[39m ProdutoForm — foto de capa[2m > [22mno Salvar: sobe a foto reduzida no caminho autorizado e manda só id + extensão; nenhum arquivo vai no formulário [33m 443[2mms[22m[39m
+   [33m[2m✓[22m[39m ProdutoForm — foto de capa[2m > [22mfoto recusada na redução: mensagem clara e a capa atual continua (Salvar não troca a capa) [33m 338[2mms[22m[39m
+   [33m[2m✓[22m[39m ProdutoForm — foto de capa[2m > [22m'Manter a capa atual' desfaz a escolha antes de salvar [33m 359[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/produtos/galeria-fotos.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 3948[2mms[22m[39m
+   [33m[2m✓[22m[39m GaleriaFotosExtras — limite de 9[2m > [22mcom 9 fotos, o botão de adicionar fica desabilitado, com a mensagem visível e associada a ele [33m 501[2mms[22m[39m
+   [33m[2m✓[22m[39m GaleriaFotosExtras — limite de 9[2m > [22mescolhendo mais fotos do que cabe, entram só as que cabem, com aviso [33m 868[2mms[22m[39m
+   [33m[2m✓[22m[39m GaleriaFotosExtras — adicionar uma de cada vez[2m > [22mcada foto nova entra no fim da lista, sem substituir a anterior [33m 438[2mms[22m[39m
+   [33m[2m✓[22m[39m GaleriaFotosExtras — ordem e remoção[2m > [22msubir desabilitado na primeira, descer na última, rótulos identificam a foto [33m 940[2mms[22m[39m
+   [33m[2m✓[22m[39m GaleriaFotosExtras — ordem e remoção[2m > [22mmover a última até a primeira: ordem certa, foco acompanha a foto e a mudança é anunciada [33m 570[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/produtos/produto-form-bolo-bento.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 3785[2mms[22m[39m
+   [33m[2m✓[22m[39m Formulário de produto — tipo Bolo[2m > [22moferece os tipos Bolo e Bento Cake [33m 1681[2mms[22m[39m
+   [33m[2m✓[22m[39m Formulário de produto — tipo Bolo[2m > [22mproduto normal: preço, quantidade mínima, step e unidade aparecem [33m 593[2mms[22m[39m
+   [33m[2m✓[22m[39m Formulário de produto — tipo Bolo[2m > [22mescolher Bolo trava a categoria em Bolos e tira preço, mínimo, step e unidade (o prazo fica) [33m 415[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/produtos/produtos-list.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 2768[2mms[22m[39m
+   [33m[2m✓[22m[39m AtivoToggleCell — feedback acessível[2m > [22manuncia erro via role=alert quando o Supabase falha, e reverte o toggle [33m 1787[2mms[22m[39m
+   [33m[2m✓[22m[39m ProdutosList — busca e chips de categoria[2m > [22mcombina busca com o chip de categoria selecionado [33m 380[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/produtos/produto-form-galeria.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 4466[2mms[22m[39m
+   [33m[2m✓[22m[39m ProdutoForm — fotos extras só no Salvar[2m > [22madicionar, reordenar e remover não chamam servidor nem storage; sair sem salvar não deixa nada [33m 3424[2mms[22m[39m
+   [33m[2m✓[22m[39m ProdutoForm — fotos extras só no Salvar[2m > [22mno Salvar: sobe as novas no caminho autorizado e manda a lista final na ordem da tela [33m 710[2mms[22m[39m
+   [33m[2m✓[22m[39m ProdutoForm — fotos extras só no Salvar[2m > [22menvio falhando no meio: mostra o erro, não chama a Server Action e pede a limpeza [33m 328[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/produtos/produto-form-galeria.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 4615[2mms[22m[39m
+   [33m[2m✓[22m[39m ProdutoForm — fotos extras só no Salvar[2m > [22madicionar, reordenar e remover não chamam servidor nem storage; sair sem salvar não deixa nada [33m 3606[2mms[22m[39m
+   [33m[2m✓[22m[39m ProdutoForm — fotos extras só no Salvar[2m > [22mno Salvar: sobe as novas no caminho autorizado e manda a lista final na ordem da tela [33m 710[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/(site)/checkout/checkout.test.tsx [2m([22m[2m24 tests[22m[2m)[22m[33m 36532[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — resumo do pedido sem reconferir o banco[2m > [22mmostra uma linha de cada tipo com o preço e o status gravados, mesmo com o banco diferente, sem aviso [33m 1356[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22menviar vazio aponta cada campo obrigatório, anuncia o resumo dos erros e foca o primeiro [33m 899[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22mWhatsApp e e-mail fora do formato não deixam avançar; e-mail vazio pode [33m 5724[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22mendereço aparece só na entrega: cidade, bairro, rua e número obrigatórios [33m 6125[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22mnome precisa ser completo (nome e sobrenome) [33m 4614[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22mconsentimento nasce desmarcado e é obrigatório; o link da política fica em Seus dados [33m 3453[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22mcompleto: o botão final só navega para a confirmação, sem gravar nada [33m 3298[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22mo preenchido fica no sessionStorage e volta ao reabrir a página [33m 1550[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22maviso com o texto exato antes do botão [33m 403[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — data e hora (hoje: quinta 01/10, 22h30 em Brasília)[2m > [22mbloqueia hoje, segunda e dia sem produção; libera sexta e o fim de semana (pedido até quinta) [33m 466[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — data e hora (hoje: quinta 01/10, 22h30 em Brasília)[2m > [22mhorário segue o dia: sábado até 18h, domingo até 15h, sem 12h e 12h30 [33m 548[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — data e hora (hoje: quinta 01/10, 22h30 em Brasília)[2m > [22mprazo curto (Cento de 3 dias para sexta) avisa, sem botão de WhatsApp, e NÃO bloqueia o envio [33m 4168[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — data e hora (hoje: quinta 01/10, 22h30 em Brasília)[2m > [22mdata que cabe no prazo mostra só a confirmação [33m 524[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — data e hora (hoje: quinta 01/10, 22h30 em Brasília)[2m > [22mteclado: setas andam entre os dias, PageDown troca o mês, Enter escolhe [33m 1114[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — ofertas do rodapé[2m > [22mcom data, some o que não fica pronto a tempo (Cento de docinho, 3 dias, para sexta) [33m 443[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — ofertas do rodapé[2m > [22mavulso entra direto no carrinho com o mínimo e a tela se atualiza; Cento e Bolo levam à interna [33m 438[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/(site)/checkout/checkout.test.tsx [2m([22m[2m24 tests[22m[2m)[22m[33m 36948[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — resumo do pedido sem reconferir o banco[2m > [22mmostra uma linha de cada tipo com o preço e o status gravados, mesmo com o banco diferente, sem aviso [33m 1358[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22menviar vazio aponta cada campo obrigatório, anuncia o resumo dos erros e foca o primeiro [33m 1017[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22mWhatsApp e e-mail fora do formato não deixam avançar; e-mail vazio pode [33m 5647[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22mendereço aparece só na entrega: cidade, bairro, rua e número obrigatórios [33m 5976[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22mnome precisa ser completo (nome e sobrenome) [33m 4522[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22mconsentimento nasce desmarcado e é obrigatório; o link da política fica em Seus dados [33m 3583[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22mcompleto: o botão final só navega para a confirmação, sem gravar nada [33m 3469[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22mo preenchido fica no sessionStorage e volta ao reabrir a página [33m 1566[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — validação do formulário[2m > [22maviso com o texto exato antes do botão [33m 350[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — data e hora (hoje: quinta 01/10, 22h30 em Brasília)[2m > [22mbloqueia hoje, segunda e dia sem produção; libera sexta e o fim de semana (pedido até quinta) [33m 495[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — data e hora (hoje: quinta 01/10, 22h30 em Brasília)[2m > [22mhorário segue o dia: sábado até 18h, domingo até 15h, sem 12h e 12h30 [33m 621[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — data e hora (hoje: quinta 01/10, 22h30 em Brasília)[2m > [22mprazo curto (Cento de 3 dias para sexta) avisa, sem botão de WhatsApp, e NÃO bloqueia o envio [33m 4577[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — data e hora (hoje: quinta 01/10, 22h30 em Brasília)[2m > [22mdata que cabe no prazo mostra só a confirmação [33m 476[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — data e hora (hoje: quinta 01/10, 22h30 em Brasília)[2m > [22mteclado: setas andam entre os dias, PageDown troca o mês, Enter escolhe [33m 1122[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — ofertas do rodapé[2m > [22mcom data, some o que não fica pronto a tempo (Cento de docinho, 3 dias, para sexta) [33m 385[2mms[22m[39m
+   [33m[2m✓[22m[39m Checkout — ofertas do rodapé[2m > [22mavulso entra direto no carrinho com o mínimo e a tela se atualiza; Cento e Bolo levam à interna [33m 432[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/recheios/recheio-form.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 1059[2mms[22m[39m
+   [33m[2m✓[22m[39m Formulário de recheio[2m > [22mpreço e grupo só aparecem com 'Bolo grande' marcado [33m 305[2mms[22m[39m
+   [33m[2m✓[22m[39m Lista de recheios[2m > [22mmostra onde vale, preço e grupo (só do Bolo) e o status; sem botão de excluir [33m 429[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/produtos/produto-form-categoria.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 1406[2mms[22m[39m
+   [33m[2m✓[22m[39m Formulário de produto — categoria obrigatória[2m > [22mcadastro novo: começa sem categoria, campo obrigatório e o Salvar é travado [33m 734[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/produtos/produto-form-categoria.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 1447[2mms[22m[39m
+   [33m[2m✓[22m[39m Formulário de produto — categoria obrigatória[2m > [22mcadastro novo: começa sem categoria, campo obrigatório e o Salvar é travado [33m 783[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/produtos/produtos-list.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 1544[2mms[22m[39m
+   [33m[2m✓[22m[39m AtivoToggleCell — feedback acessível[2m > [22manuncia erro via role=alert quando o Supabase falha, e reverte o toggle [33m 676[2mms[22m[39m
+   [33m[2m✓[22m[39m ProdutosList — busca e chips de categoria[2m > [22mcombina busca com o chip de categoria selecionado [33m 366[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/produtos/produto-form-bolo-bento.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 1698[2mms[22m[39m
+   [33m[2m✓[22m[39m Formulário de produto — tipo Bolo[2m > [22moferece os tipos Bolo e Bento Cake [33m 402[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/(site)/_home/Categorias.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 565[2mms[22m[39m
+   [33m[2m✓[22m[39m Home — bloco de categorias[2m > [22mmostra 5 quadrados, na ordem do CMS, cada um levando ao filtro da Lista [33m 478[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/recheios/recheio-form.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 1113[2mms[22m[39m
+   [33m[2m✓[22m[39m Formulário de recheio[2m > [22mpreço e grupo só aparecem com 'Bolo grande' marcado [33m 395[2mms[22m[39m
+   [33m[2m✓[22m[39m Lista de recheios[2m > [22mmostra onde vale, preço e grupo (só do Bolo) e o status; sem botão de excluir [33m 448[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/pedidos/pedidos-list.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 809[2mms[22m[39m
+   [33m[2m✓[22m[39m PedidosList — agrupamento mobile[2m > [22mordena atrasados primeiro, depois por dia (Hoje/Amanhã), e finalizados por último [33m 515[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/(site)/_home/MaisPedidos.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 789[2mms[22m[39m
+   [33m[2m✓[22m[39m Home — seção Os mais pedidos[2m > [22mproduto sem foto mostra o fundo da marca, com texto alternativo coerente [33m 425[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/produtos/subitens-picker.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 868[2mms[22m[39m
+   [33m[2m✓[22m[39m SubitensPicker[2m > [22mescolhe no dropdown, adiciona e remove um subitem, gerando um input hidden por item [33m 675[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/(site)/_home/MaisPedidos.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 835[2mms[22m[39m
+   [33m[2m✓[22m[39m Home — seção Os mais pedidos[2m > [22mproduto sem foto mostra o fundo da marca, com texto alternativo coerente [33m 426[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/produtos/subitens-picker.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 791[2mms[22m[39m
+   [33m[2m✓[22m[39m SubitensPicker[2m > [22mescolhe no dropdown, adiciona e remove um subitem, gerando um input hidden por item [33m 666[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/pedidos/pedidos-list.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 631[2mms[22m[39m
+   [33m[2m✓[22m[39m PedidosList — agrupamento mobile[2m > [22mordena atrasados primeiro, depois por dia (Hoje/Amanhã), e finalizados por último [33m 342[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/(site)/_home/Categorias.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 661[2mms[22m[39m
+   [33m[2m✓[22m[39m Home — bloco de categorias[2m > [22mmostra 5 quadrados, na ordem do CMS, cada um levando ao filtro da Lista [33m 560[2mms[22m[39m
+[90mstdout[2m | src/lib/pedidos/format.equivalencia.test.ts[2m > [22m[2mformat.ts: implementação antiga (-3h fixo) x atual (Intl, America/Sao_Paulo)[2m > [22m[2mformatação de datas e mês dos cards: iguais em todas as horas de 2026 (minuto 00 e 37)
+[22m[39m[equivalência] formatação: 87910 comparações de 2025-12-31T00:00:00.000Z a 2027-01-01T06:00:00.000Z, 0 diferença(s)
+
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/admin/tempos.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/admin/tempos.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/components/ds/PriceInput.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 174[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/components/ds/PriceInput.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 169[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/dias-off/observacao-field.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 518[2mms[22m[39m
+   [33m[2m✓[22m[39m ObservacaoField[2m > [22msalva no blur quando o valor muda, e anuncia sucesso via role=status [33m 352[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/dias-off/observacao-field.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 652[2mms[22m[39m
+   [33m[2m✓[22m[39m ObservacaoField[2m > [22msalva no blur quando o valor muda, e anuncia sucesso via role=status [33m 529[2mms[22m[39m
+warning: in the working copy of 'docs/status.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pagina.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/status.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pagina.ts', LF will be replaced by CRLF the next time Git touches it
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/vitrine/buscar.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 379[2mms[22m[39m
+   [33m[2m✓[22m[39m buscarLista — admin logado navegando no site[2m > [22mpede só ativos ao banco [33m 363[2mms[22m[39m
+warning: in the working copy of 'docs/status.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pagina.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'heartbeat-log.txt', LF will be replaced by CRLF the next time Git touches it
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/produtos/cento-actions.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 294[2mms[22m[39m
+warning: in the working copy of 'docs/status.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pagina.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'heartbeat-log.txt', LF will be replaced by CRLF the next time Git touches it
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/vitrine/interna.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 435[2mms[22m[39m
+   [33m[2m✓[22m[39m buscarInterna[2m > [22mavulso ativo: produto, sem sabores, e a galeria com capa + extras na ordem da posição [33m 419[2mms[22m[39m
+warning: in the working copy of 'src/pagina.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pagina.ts', LF will be replaced by CRLF the next time Git touches it
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/produtos/cento-actions.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 209[2mms[22m[39m
+[90mstdout[2m | src/lib/pedidos/format.equivalencia.test.ts[2m > [22m[2mformat.ts: implementação antiga (-3h fixo) x atual (Intl, America/Sao_Paulo)[2m > [22m[2mformatação de datas e mês dos cards: iguais em todas as horas de 2026 (minuto 00 e 37)
+[22m[39m[equivalência] formatação: 87910 comparações de 2025-12-31T00:00:00.000Z a 2027-01-01T06:00:00.000Z, 0 diferença(s)
+
+warning: in the working copy of 'docs/status.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pagina.ts', LF will be replaced by CRLF the next time Git touches it
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/dias-off/actions.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 163[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/dias-off/actions.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 124[2mms[22m[39m
+warning: in the working copy of 'docs/status.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pagina.ts', LF will be replaced by CRLF the next time Git touches it
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/vitrine/interna.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 110[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/recheios/actions.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 92[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/vitrine/buscar.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 119[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m scripts/netlify/ignorar-build.test.mjs [2m([22m[2m28 tests[22m[2m)[22m[33m 3454[2mms[22m[39m
+   [33m[2m✓[22m[39m decidir com um repositório git de verdade[2m > [22mcommit só de docs e heartbeat: pula [33m 513[2mms[22m[39m
+   [33m[2m✓[22m[39m decidir com um repositório git de verdade[2m > [22mvários commits desde o último build, um deles em src/: builda [33m 995[2mms[22m[39m
+   [33m[2m✓[22m[39m decidir com um repositório git de verdade[2m > [22mmover arquivo de src/ para docs/: builda (o site perdeu o arquivo) [33m 691[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m scripts/netlify/ignorar-build.test.mjs [2m([22m[2m28 tests[22m[2m)[22m[33m 3224[2mms[22m[39m
+   [33m[2m✓[22m[39m decidir com um repositório git de verdade[2m > [22mcommit só de docs e heartbeat: pula [33m 454[2mms[22m[39m
+   [33m[2m✓[22m[39m decidir com um repositório git de verdade[2m > [22mvários commits desde o último build, um deles em src/: builda [33m 1016[2mms[22m[39m
+   [33m[2m✓[22m[39m decidir com um repositório git de verdade[2m > [22mmover arquivo de src/ para docs/: builda (o site perdeu o arquivo) [33m 673[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/recheios/actions.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 66[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/produtos/actions.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 54[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/galeria/reduzir.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 68[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/produtos/actions.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/produtos/bolo-actions.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 65[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/produtos/bolo-actions.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 66[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/galeria/reduzir.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 64[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/produtos/galeria-actions.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/galeria/storage-servidor.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/api/pedidos/route.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/api/pedidos/route.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/produtos/capa-actions.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/galeria/storage-servidor.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/produtos/galeria-actions.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/produtos/capa-actions.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/checkout/formulario.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+[90mstderr[2m | src/lib/vitrine/vitrine-bolo-bento.test.ts[2m > [22m[2mLista — Bolo, Bento Cake e Smash Cake[2m > [22m[2mfalha na consulta dos recheios: a Lista devolve null (aviso de falha, não 'vazia')
+[22m[39mFalha ao buscar os recheios: falha simulada em recheios
+
+[90mstderr[2m | src/lib/vitrine/vitrine-bolo-bento.test.ts[2m > [22m[2mbuscarInterna — Bolo e Bento Cake[2m > [22m[2mfalha nos recheios é 'erro', não 404
+[22m[39mFalha ao buscar os recheios: falha simulada em recheios
+
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/vitrine/vitrine-bolo-bento.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+[90mstderr[2m | src/lib/vitrine/vitrine-bolo-bento.test.ts[2m > [22m[2mLista — Bolo, Bento Cake e Smash Cake[2m > [22m[2mfalha na consulta dos recheios: a Lista devolve null (aviso de falha, não 'vazia')
+[22m[39mFalha ao buscar os recheios: falha simulada em recheios
+
+[90mstderr[2m | src/lib/vitrine/vitrine-bolo-bento.test.ts[2m > [22m[2mbuscarInterna — Bolo e Bento Cake[2m > [22m[2mfalha nos recheios é 'erro', não 404
+[22m[39mFalha ao buscar os recheios: falha simulada em recheios
+
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/vitrine/vitrine-bolo-bento.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/tempo/brasilia.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/carrinho/regras-pagina.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/app/admin/produtos/galeria-envio.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/tempo/brasilia.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/checkout/datas.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/produtos/parse.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/app/admin/produtos/galeria-envio.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/carrinho/regras-pagina.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+[90mstdout[2m | src/lib/pedidos/format.equivalencia.test.ts[2m > [22m[2mformat.ts: implementação antiga (-3h fixo) x atual (Intl, America/Sao_Paulo)[2m > [22m[2mHoje/Amanhã/dia e diferença em dias: iguais com o relógio em cada 3h de 2026, pedidos de 3 dias antes a 3 dias depois
+[22m[39m[equivalência] dia relativo: 169998 comparações, 0 diferença(s)
+
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/pedidos/format.equivalencia.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 13100[2mms[22m[39m
+   [33m[2m✓[22m[39m format.ts: implementação antiga (-3h fixo) x atual (Intl, America/Sao_Paulo)[2m > [22mformatação de datas e mês dos cards: iguais em todas as horas de 2026 (minuto 00 e 37) [33m 2021[2mms[22m[39m
+   [33m[2m✓[22m[39m format.ts: implementação antiga (-3h fixo) x atual (Intl, America/Sao_Paulo)[2m > [22mHoje/Amanhã/dia e diferença em dias: iguais com o relógio em cada 3h de 2026, pedidos de 3 dias antes a 3 dias depois [33m 11077[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/vitrine/lista.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/produtos/parse.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/vitrine/lista.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/checkout/datas.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/vitrine/mais-pedidos.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/galeria/regras.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/vitrine/mais-pedidos.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/carrinho/regras-bolo-bento.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/galeria/regras.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/carrinho/regras.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/carrinho/regras.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/carrinho/regras-bolo-bento.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/vitrine/cento.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/checkout/formulario.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/checkout/ofertas.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/galeria/capa.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/produtos/parse-bolo-bento.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/checkout/ofertas.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/recheios/parse.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/recheios/parse.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m next-config.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m next-config.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/vitrine/cento.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+[90mstdout[2m | src/lib/pedidos/format.equivalencia.test.ts[2m > [22m[2mformat.ts: implementação antiga (-3h fixo) x atual (Intl, America/Sao_Paulo)[2m > [22m[2mHoje/Amanhã/dia e diferença em dias: iguais com o relógio em cada 3h de 2026, pedidos de 3 dias antes a 3 dias depois
+[22m[39m[equivalência] dia relativo: 169998 comparações, 0 diferença(s)
+
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/pedidos/format.equivalencia.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 13399[2mms[22m[39m
+   [33m[2m✓[22m[39m format.ts: implementação antiga (-3h fixo) x atual (Intl, America/Sao_Paulo)[2m > [22mformatação de datas e mês dos cards: iguais em todas as horas de 2026 (minuto 00 e 37) [33m 2222[2mms[22m[39m
+   [33m[2m✓[22m[39m format.ts: implementação antiga (-3h fixo) x atual (Intl, America/Sao_Paulo)[2m > [22mHoje/Amanhã/dia e diferença em dias: iguais com o relógio em cada 3h de 2026, pedidos de 3 dias antes a 3 dias depois [33m 11175[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/galeria/capa.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/produtos/parse-bolo-bento.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/vitrine/disponibilidade.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/dias-off/parse.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/vitrine/fotos.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/vitrine/fotos.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/dias-off/parse.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/vitrine/disponibilidade.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/recheios/regras.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/recheios/regras.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/vitrine/quantidade.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/vitrine/variacao.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/vitrine/quantidade.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/vitrine/variacao.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/design/contrast.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/vitrine/bolo.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/vitrine/bolo.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/design/contrast.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/vitrine/minimo.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/checkout/rascunho.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/vitrine/minimo.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/checkout/rascunho.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[42m fuso-utc [49m[39m src/lib/site/whatsapp.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m [30m[45m fuso-brasilia [49m[39m src/lib/site/whatsapp.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m128 passed[39m[22m[90m (128)[39m
+[2m      Tests [22m [1m[32m1332 passed[39m[22m[90m (1332)[39m
+[2m   Start at [22m 10:56:21
+[2m   Duration [22m 102.62s[2m (transform 12.29s, setup 4.35s, collect 132.23s, tests 212.89s, environment 274.32s, prepare 35.77s)[22m
+
+npm notice
+npm notice New major version of npm available! 11.17.0 -> 12.1.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.1.0
+npm notice To update run: npm install -g npm@12.1.0
+npm notice
+exit 0

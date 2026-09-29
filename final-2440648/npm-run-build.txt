@@ -1,0 +1,48 @@
+
+> pingo-de-mel@0.1.0 build
+> next build
+
+▲ Next.js 16.3.4 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 173ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 9.3s
+  Running TypeScript ...
+  Finished TypeScript in 6.3s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/17) ...
+  Generating static pages using 7 workers (4/17) 
+  Generating static pages using 7 workers (8/17) 
+  Generating static pages using 7 workers (12/17) 
+✓ Generating static pages using 7 workers (17/17) in 557ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /admin
+├ ƒ /admin/dias-off
+├ ƒ /admin/pedidos
+├ ƒ /admin/pedidos/[numero]
+├ ƒ /admin/produtos
+├ ƒ /admin/produtos/[nome]
+├ ƒ /admin/produtos/novo
+├ ƒ /admin/recheios
+├ ƒ /admin/recheios/[id]
+├ ƒ /admin/recheios/novo
+├ ƒ /api/pedidos
+├ ○ /carrinho
+├ ƒ /checkout
+├ ƒ /login
+├ ○ /politica-de-privacidade
+├ ƒ /produtos
+└ ƒ /produtos/[slug]
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+exit 0
