@@ -89,8 +89,8 @@ await emTransacaoDesfeita("Unidade de venda e categoria Kits", async (db) => {
       return;
     }
     registrar(
-      "kits 1. enum categoria_produto com os 5 valores",
-      valores.length === 5 && ["Bolos", "Doces", "Salgados", "Bebidas", "Kits"].every((v) => valores.includes(v)),
+      "kits 1. enum categoria_produto mantém os 5 valores de antes (Bento Cake veio depois, ver recheios.mjs)",
+      ["Bolos", "Doces", "Salgados", "Bebidas", "Kits"].every((v) => valores.includes(v)),
       valores.join(", ")
     );
     await c.como("authenticated");
