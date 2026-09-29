@@ -46,6 +46,20 @@ describe("PriceInput — posição do cursor ao editar no meio do valor", () => 
     expect(input.selectionStart).toBe(3);
   });
 
+  it("digitar do zero, dígito a dígito no fim, dá o valor digitado (7500 = R$ 75,00, não R$ 500,07)", () => {
+    render(<PriceInput name="preco" required />);
+    const input = screen.getByPlaceholderText("R$ 0,00") as HTMLInputElement;
+    let atual = "";
+    for (const digito of ["7", "5", "0", "0"]) {
+      const novo = atual + digito;
+      fireEvent.change(input, { target: { value: novo, selectionStart: novo.length, selectionEnd: novo.length } });
+      atual = input.value;
+      expect(input.selectionStart).toBe(atual.length);
+    }
+    expect(atual).toBe("R$ 75,00");
+    expect((document.querySelector('input[name="preco"]') as HTMLInputElement).value).toBe("75.00");
+  });
+
   it("continua digitando no fim normalmente (caso comum, sem edição no meio)", () => {
     render(<PriceInput name="preco" defaultValue={1.23} required />);
     const input = screen.getByPlaceholderText("R$ 0,00") as HTMLInputElement;
