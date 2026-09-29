@@ -1,0 +1,16 @@
+Fluxo de editar (servidor de desenvolvimento local, localStorage pdm-carrinho-v1). Nada gravado no banco.
+
+Bolo (linha teste-bolo), editar -> trocar 3 kg redondo por 5 kg quadrado -> Salvar alteração:
+  antes de salvar, no carrinho: 7ed99909:30 | teste-cento:2 | teste-bolo:3:redondo | teste-smash:2 | teste-bento:2
+  depois (rota /carrinho):      7ed99909:30 | teste-cento:2 | teste-bolo:5:quadrado | teste-smash:2 | teste-bento:2
+  (mesma posição, mesmo id, mesmo tamanho da lista; total R$ 807,48 -> R$ 997,48)
+
+Cento (linha teste-cento), editar -> mexer nos sabores na tela -> "Cancelar e voltar ao carrinho":
+  na tela alterada, o carrinho seguia: Empada de palmito 120, Risole de carne 80
+  depois de voltar: teste-cento:2 (sabores iguais aos de antes; print 18)
+
+F5 na interna em modo edição (?editar=teste-cento aberto de novo):
+  faixa "editando": true | botão: Salvar alteração | Risole de carne: 80 / Empada de palmito: 120
+  (o vínculo está na URL; os campos voltam ao gravado)
+
+Vínculo perdido (?editar=nao-existe): faixa "Esse item não está mais no seu pedido. Ao confirmar, ele entra como item novo." (print 19)
