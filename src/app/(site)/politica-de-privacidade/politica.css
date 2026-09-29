@@ -100,4 +100,10 @@
   .politica-indice {
     padding: 16px;
   }
+  /* Links no meio do texto (WhatsApp, gov.br/anpd): área de toque de 44 px
+     de altura sem mexer nas linhas (padding em elemento inline não empurra
+     o texto). */
+  .pdm-site .politica p a {
+    padding-block: 12px;
+  }
 }
