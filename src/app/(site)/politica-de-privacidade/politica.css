@@ -1,11 +1,15 @@
 /* Política de Privacidade. Só tokens e padrões do site público
-   (site.css): texto longo em largura de leitura de ~68 caracteres. */
+   (site.css): texto longo em largura de leitura confortável.
+
+   Largura em em, não em ch: o "ch" é a largura do "0", mais largo que a
+   letra média da Nunito, e 68ch dava ~84 caracteres por linha. 35em dá
+   ~72 em média (medido na homologação, 1280 px). */
 
 .politica {
   display: flex;
   flex-direction: column;
   gap: 40px;
-  max-width: 68ch;
+  max-width: 35em;
   margin-inline: auto;
 }
 
