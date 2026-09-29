@@ -1,6 +1,9 @@
+import { variacaoDoProduto } from "@/lib/vitrine/variacao";
 import {
+  CATEGORIA_DO_TIPO,
   CATEGORIA_VALUES,
   STEP_QUANTIDADE_VALUES,
+  TIPO_PRODUTO_LABELS,
   TIPO_PRODUTO_VALUES,
   UNIDADE_VENDA_MAX,
   type CategoriaProduto,
@@ -20,6 +23,12 @@ export type ParsedProduto = {
   destaque: boolean;
   ativo: boolean;
   tipo: TipoProduto;
+  // true no tipo Bolo: preço, pedido mínimo, step e unidade de venda não
+  // valem (o preço vem do recheio × kg) e o formulário nem os mostra. Os
+  // quatro campos acima vêm com valores neutros, só para o cadastro novo
+  // preencher as colunas obrigatórias; a edição NÃO os grava (preserva o
+  // que já está no banco).
+  semCamposDePreco: boolean;
   // Nomes dos produtos usados como subitens, na ordem escolhida no
   // formulário. Só tem efeito quando tipo === "cento"; para tipo
   // "normal" vem sempre vazio, mesmo que o campo chegue preenchido.
@@ -58,17 +67,27 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
   const destaque = formData.get("destaque") != null;
   const ativo = formData.get("ativo") != null;
 
-  const preco = normalizePreco(precoRaw);
-  const pedido_minimo = Number(pedidoMinimoRaw);
+  // Quais campos valem depende do tipo (variacaoDoProduto). Tipo inválido é
+  // recusado mais abaixo; até lá conta como avulso.
+  const tipoConhecido = TIPO_PRODUTO_VALUES.includes(tipoRaw as TipoProduto);
+  const variacao = tipoConhecido ? variacaoDoProduto({ tipo: tipoRaw as TipoProduto }) : "avulso";
+  const bolo = variacao === "bolo";
+  const bento = variacao === "bento";
+
+  // Bolo: nada disso vale (preço do recheio × kg). Bento: peso fechado, sem
+  // unidade nem step. Os campos escondidos do formulário nem chegam aqui, e
+  // qualquer valor que chegue é ignorado.
+  const preco = bolo ? 0 : normalizePreco(precoRaw);
+  const pedido_minimo = bolo ? 1 : Number(pedidoMinimoRaw);
   const prazo_producao_dias = Number(prazoRaw);
 
   if (!nome) {
     return { success: false, error: "Informe o nome do produto." };
   }
-  if (!Number.isFinite(preco) || preco <= 0) {
+  if (!bolo && (!Number.isFinite(preco) || preco <= 0)) {
     return { success: false, error: "Informe um preço válido." };
   }
-  if (!Number.isInteger(pedido_minimo) || pedido_minimo < 1) {
+  if (!bolo && (!Number.isInteger(pedido_minimo) || pedido_minimo < 1)) {
     return {
       success: false,
       error: "Informe um pedido mínimo válido (mínimo 1).",
@@ -80,7 +99,7 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
       error: "Informe um prazo de produção válido, em dias (0 ou mais). Use 0 para produto sempre disponível.",
     };
   }
-  if (!STEP_QUANTIDADE_VALUES.includes(stepRaw as StepQuantidade)) {
+  if (!bolo && !bento && !STEP_QUANTIDADE_VALUES.includes(stepRaw as StepQuantidade)) {
     return { success: false, error: "Selecione um step de quantidade." };
   }
   // Categoria obrigatória no formulário (a coluna ainda aceita nulo no
@@ -91,17 +110,31 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
   if (!CATEGORIA_VALUES.includes(categoriaRaw as CategoriaProduto)) {
     return { success: false, error: "Selecione uma categoria válida." };
   }
-  if (unidadeVenda.length > UNIDADE_VENDA_MAX) {
+  if (!bolo && !bento && unidadeVenda.length > UNIDADE_VENDA_MAX) {
     return {
       success: false,
       error: `A unidade de venda tem no máximo ${UNIDADE_VENDA_MAX} caracteres (ex.: kg, unidade, litro).`,
     };
   }
-  if (!TIPO_PRODUTO_VALUES.includes(tipoRaw as TipoProduto)) {
+  if (!tipoConhecido) {
     return { success: false, error: "Selecione um tipo de produto válido." };
   }
 
   const tipo = tipoRaw as TipoProduto;
+
+  // A categoria acompanha o tipo: Bolo só em Bolos, Bento Cake só em Bento
+  // Cake, e a categoria Bento Cake só aceita o tipo Bento Cake. Smash Cake é
+  // um produto normal em Bolos, sem tipo próprio.
+  const categoriaExigida = CATEGORIA_DO_TIPO[tipo];
+  if (categoriaExigida && categoriaRaw !== categoriaExigida) {
+    return {
+      success: false,
+      error: `Um produto do tipo "${TIPO_PRODUTO_LABELS[tipo]}" precisa estar na categoria ${categoriaExigida}.`,
+    };
+  }
+  if (categoriaRaw === "Bento Cake" && tipo !== "bento_cake") {
+    return { success: false, error: 'A categoria Bento Cake exige o tipo "Bento Cake (com recheio)".' };
+  }
 
   // Sem texto livre: cada subitem é o nome de um produto real, escolhido
   // no seletor de busca do formulário (um input hidden "subitem_nome" por
@@ -126,12 +159,13 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
       descricao,
       pedido_minimo,
       categoria: categoriaRaw as CategoriaProduto,
-      unidade_venda: unidadeVenda || null,
+      unidade_venda: bolo || bento ? null : unidadeVenda || null,
       prazo_producao_dias,
-      step_quantidade: stepRaw as StepQuantidade,
+      step_quantidade: bolo || bento ? "livre" : (stepRaw as StepQuantidade),
       destaque,
       ativo,
       tipo,
+      semCamposDePreco: bolo,
       subitens,
     },
   };

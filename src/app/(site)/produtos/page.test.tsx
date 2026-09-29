@@ -139,12 +139,13 @@ describe("Página Lista — estrutura", () => {
     expect(cardsNaOrdem()).toHaveLength(7);
   });
 
-  it("filtro tem as 5 categorias do CMS (com Kits) mais 'Todos', como links da URL", async () => {
+  it("filtro tem as 6 categorias do CMS (com Kits e Bento Cake) mais 'Todos', como links da URL", async () => {
     await renderLista();
     const links = within(screen.getByRole("navigation", { name: "Categorias" })).getAllByRole("link");
     expect(links.map((a) => a.getAttribute("href"))).toEqual([
       "/produtos",
       "/produtos?categoria=bolos",
+      "/produtos?categoria=bento-cake",
       "/produtos?categoria=doces",
       "/produtos?categoria=salgados",
       "/produtos?categoria=bebidas",

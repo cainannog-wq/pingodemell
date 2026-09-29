@@ -8,16 +8,31 @@ export const STEP_QUANTIDADE_LABELS: Record<StepQuantidade, string> = {
 };
 
 // Mesma ordem do filtro da Lista e do cadastro. Espelha o enum
-// categoria_produto do banco (Kits entrou em supabase/categoria-kits.sql).
-export const CATEGORIA_VALUES = ["Bolos", "Doces", "Salgados", "Bebidas", "Kits"] as const;
+// categoria_produto do banco (Kits entrou em supabase/categoria-kits.sql;
+// Bento Cake em supabase/categoria-bento-cake.sql).
+export const CATEGORIA_VALUES = ["Bolos", "Bento Cake", "Doces", "Salgados", "Bebidas", "Kits"] as const;
 export type CategoriaProduto = (typeof CATEGORIA_VALUES)[number];
 
-export const TIPO_PRODUTO_VALUES = ["normal", "cento"] as const;
+// Comportamento do produto na interna, no carrinho e no cadastro. Espelha
+// o enum produto_tipo do banco (bolo e bento_cake entraram em
+// supabase/produto-tipo-bolo-bento.sql). A categoria é só filtro; quem
+// decide a tela é o tipo (src/lib/vitrine/variacao.ts). Smash Cake não tem
+// tipo: é um produto normal em Bolos.
+export const TIPO_PRODUTO_VALUES = ["normal", "cento", "bolo", "bento_cake"] as const;
 export type TipoProduto = (typeof TIPO_PRODUTO_VALUES)[number];
 
 export const TIPO_PRODUTO_LABELS: Record<TipoProduto, string> = {
   normal: "Normal",
   cento: "Cento (com subitens)",
+  bolo: "Bolo (recheio e tamanho em kg)",
+  bento_cake: "Bento Cake (com recheio)",
+};
+
+// Categoria que cada tipo exige. O Bento Cake também é o único tipo aceito
+// na categoria Bento Cake.
+export const CATEGORIA_DO_TIPO: Partial<Record<TipoProduto, CategoriaProduto>> = {
+  bolo: "Bolos",
+  bento_cake: "Bento Cake",
 };
 
 // Unidades sugeridas no campo "Unidade de venda" do cadastro. O banco

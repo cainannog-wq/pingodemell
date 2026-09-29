@@ -22,6 +22,7 @@ const TABELAS = {
   produtos: ["S", SIUD],
   produto_fotos: ["S", SIUD],
   produto_cento_itens: ["S", SIUD],
+  recheios: ["S", SIUD],
   dias_off: ["S", SIUD],
   segunda_reaberturas: ["S", SIUD],
   pedidos: ["", "SUD"],
@@ -38,6 +39,8 @@ const FUNCOES = {
   produtos_set_atualizado_em: { anon: false, authenticated: false },
   pedidos_recalcular_totais: { anon: false, authenticated: false },
   pedidos_set_status_atualizado_em: { anon: false, authenticated: false },
+  // Catálogo de recheios (supabase/recheios-schema.sql): só gatilho.
+  recheios_set_atualizado_em: { anon: false, authenticated: false },
   // Slug do produto (supabase/produtos-slug.sql): regra e gatilhos; ninguém
   // da API executa.
   produto_slug_base: { anon: false, authenticated: false },

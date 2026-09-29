@@ -37,10 +37,19 @@ export function FotoProduto({
 // desce inteiro para a linha de baixo quando não cabe (o espaço entre os
 // dois é o único ponto de quebra).
 // No celular a unidade usa o estilo de texto secundário.
-export function PrecoProduto({ produto }: { produto: Pick<ProdutoVitrine, "preco" | "tipo" | "unidade_venda"> }) {
-  const { valor, unidade } = partesPrecoVitrine(produto);
+export function PrecoProduto({
+  produto,
+}: {
+  produto: Pick<ProdutoVitrine, "preco" | "tipo" | "unidade_venda" | "preco_a_partir_de">;
+}) {
+  const { prefixo, valor, unidade } = partesPrecoVitrine(produto);
   return (
     <span className="home-price">
+      {prefixo ? (
+        <>
+          <span className="site-preco-unidade">{prefixo}</span>{" "}
+        </>
+      ) : null}
       <span className="site-preco-valor">{valor}</span>
       {unidade ? (
         <>

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
+  CATEGORIA_DO_TIPO,
   CATEGORIA_VALUES,
   STEP_QUANTIDADE_LABELS,
   STEP_QUANTIDADE_VALUES,
@@ -14,6 +15,7 @@ import {
   type Produto,
   type TipoProduto,
 } from "@/lib/produtos/types";
+import { variacaoDoProduto } from "@/lib/vitrine/variacao";
 import { descartarEnviosFotos, prepararEnvioFotos, type ProdutoFormState } from "./actions";
 import { Badge, Card, Field, Input, PriceInput, Textarea, Select, Toggle, Button, Icon } from "@/components/ds";
 import { SubitensPicker, type SubitemCandidato } from "./subitens-picker";
@@ -77,6 +79,7 @@ export function ProdutoForm({
   const [preparandoCapa, setPreparandoCapa] = useState(false);
   const [erroCapa, setErroCapa] = useState<string | null>(null);
   const [tipo, setTipo] = useState<TipoProduto>(produto?.tipo ?? "normal");
+  const [categoria, setCategoria] = useState<string>(produto?.Categoria ?? "");
   const [nome, setNome] = useState(produto?.nome ?? "");
   const [fotos, setFotos] = useState<FotoNaTela[]>(() =>
     fotosIniciais.map((foto) => ({ chave: foto.id, tipo: "existente", id: foto.id, url: foto.url }))
@@ -84,6 +87,27 @@ export function ProdutoForm({
   const [enviandoFotos, setEnviandoFotos] = useState(false);
   const [erroEnvio, setErroEnvio] = useState<string | null>(null);
   const salvando = pending || enviandoFotos;
+  // Quais campos valem depende do tipo (a mesma regra da vitrine e do
+  // servidor): o Bolo não usa preço, quantidade mínima, step nem unidade
+  // (o preço vem do recheio × kg); o Bento Cake tem peso fechado, sem step
+  // nem unidade.
+  const variacao = variacaoDoProduto({ tipo });
+  const bolo = variacao === "bolo";
+  const bento = variacao === "bento";
+  const categoriaTravada = CATEGORIA_DO_TIPO[tipo] ?? null;
+
+  // Bolo e Bento Cake só existem em Bolos e Bento Cake (a categoria acompanha
+  // o tipo); e a categoria Bento Cake só aceita o tipo Bento Cake.
+  function aoMudarTipo(novo: TipoProduto) {
+    setTipo(novo);
+    const exigida = CATEGORIA_DO_TIPO[novo];
+    if (exigida) setCategoria(exigida);
+    else if (categoria === "Bento Cake") setCategoria("");
+  }
+  function aoMudarCategoria(nova: string) {
+    setCategoria(nova);
+    if (nova === "Bento Cake") setTipo("bento_cake");
+  }
   const erro = erroEnvio ?? state?.error;
 
   // Registro de tempo (só na homologação): Salvar que voltou com erro.
@@ -194,8 +218,27 @@ export function ProdutoForm({
               </Field>
             </div>
             <div className="produto-form-grid" style={{ gridTemplateColumns: "1fr 1fr", marginTop: 24 }}>
-              <Field label="Categoria" htmlFor="f-categoria" required hint="Usada no filtro do catálogo público.">
-                <Select id="f-categoria" name="categoria" defaultValue={produto?.Categoria ?? ""} required>
+              <Field
+                label="Categoria"
+                htmlFor="f-categoria"
+                required
+                hint={
+                  categoriaTravada
+                    ? `Definida pelo tipo de produto: ${categoriaTravada}.`
+                    : "Usada no filtro do catálogo público."
+                }
+              >
+                {/* Select desabilitado não vai no envio: a categoria travada pelo
+                    tipo segue num campo escondido. */}
+                {categoriaTravada ? <input type="hidden" name="categoria" value={categoriaTravada} /> : null}
+                <Select
+                  id="f-categoria"
+                  name={categoriaTravada ? undefined : "categoria"}
+                  value={categoriaTravada ?? categoria}
+                  onChange={(e) => aoMudarCategoria(e.target.value)}
+                  disabled={categoriaTravada !== null}
+                  required
+                >
                   <option value="" disabled>
                     Selecione a categoria
                   </option>
@@ -214,14 +257,18 @@ export function ProdutoForm({
                 hint={
                   tipo === "cento"
                     ? "Cento: quantidade sempre fixa em 100 unidades, o preço é o preço normal deste cadastro (não soma o dos subitens)."
-                    : "Produto normal ou Cento, com lista de subitens (sabores) referenciando outros produtos do catálogo."
+                    : tipo === "bolo"
+                      ? "Bolo: o cliente escolhe tamanho (kg), formato e um recheio do catálogo de recheios. O preço é o R$/kg do recheio × o tamanho."
+                      : tipo === "bento_cake"
+                        ? "Bento Cake: cada tema é um produto, com preço fixo. O cliente escolhe um recheio do catálogo de recheios (sem efeito no preço)."
+                        : "Produto normal (inclui o Smash Cake, na categoria Bolos), Cento com lista de subitens (sabores), Bolo ou Bento Cake."
                 }
               >
                 <Select
                   id="f-tipo"
                   name="tipo"
-                  defaultValue={tipo}
-                  onChange={(e) => setTipo(e.target.value as TipoProduto)}
+                  value={tipo}
+                  onChange={(e) => aoMudarTipo(e.target.value as TipoProduto)}
                   required
                 >
                   {TIPO_PRODUTO_VALUES.map((valor) => (
@@ -234,12 +281,21 @@ export function ProdutoForm({
             </div>
           </FormSection>
 
-          <FormSection title="Preço e pedido mínimo">
+          <FormSection title={bolo ? "Prazo de produção" : "Preço e pedido mínimo"}>
+            {bolo ? (
+              <p className="produto-form-aviso" style={{ margin: "0 0 24px", color: "var(--pdm-muted)" }}>
+                O preço de um Bolo vem do catálogo de recheios: R$/kg do recheio escolhido × tamanho em kg. Por isso
+                preço, quantidade mínima, step e unidade de venda não se aplicam a este produto.
+              </p>
+            ) : null}
             <div className="produto-form-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+              {!bolo && (
               <Field label="Preço" htmlFor="f-preco" required hint="Digite só números — a formatação em reais é automática.">
                 <PriceInput id="f-preco" name="preco" defaultValue={produto?.preco} required />
               </Field>
+              )}
 
+              {!bolo && (
               <Field label="Quantidade mínima" htmlFor="f-min" required hint="Menor quantidade aceita por encomenda, sempre número inteiro, na unidade de venda (em kg: 1 = 1 kg).">
                 <Input
                   id="f-min"
@@ -252,7 +308,9 @@ export function ProdutoForm({
                   required
                 />
               </Field>
+              )}
 
+              {!bolo && !bento && (
               <Field label="Step de quantidade" htmlFor="f-step" required hint="Incremento aceito ao ajustar a quantidade no pedido.">
                 <Select id="f-step" name="step_quantidade" defaultValue={produto?.step_quantidade ?? "livre"} required>
                   {STEP_QUANTIDADE_VALUES.map((step) => (
@@ -262,6 +320,7 @@ export function ProdutoForm({
                   ))}
                 </Select>
               </Field>
+              )}
 
               <Field
                 label="Prazo de produção"
@@ -281,6 +340,7 @@ export function ProdutoForm({
                 />
               </Field>
             </div>
+            {!bolo && !bento && (
             <div className="produto-form-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginTop: 24 }}>
               <Field
                 label="Unidade de venda"
@@ -303,6 +363,7 @@ export function ProdutoForm({
                 </datalist>
               </Field>
             </div>
+            )}
           </FormSection>
 
           {tipo === "cento" && (

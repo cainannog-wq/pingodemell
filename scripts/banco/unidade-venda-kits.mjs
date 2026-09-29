@@ -78,15 +78,19 @@ await emTransacaoDesfeita("Unidade de venda e categoria Kits", async (db) => {
 
   // --- Kits -----------------------------------------------------------------
   await cenario(db, async (c) => {
-    const { rows } = await c.q("select enum_range(null::public.categoria_produto)::text[] as valores");
-    const valores = rows[0].valores;
+    const lido = await c.tentar("select enum_range(null::public.categoria_produto)::text[] as valores");
+    if (!lido.ok && lido.code === "55P04") {
+      console.log("\n[AVISO] Um valor novo do enum foi criado nesta mesma transação (--com-migracao): parte de Kits não testada.");
+      return;
+    }
+    const valores = lido.rows[0].valores;
     if (!valores.includes("Kits")) {
       console.log(`\n[AVISO] Kits ainda não está no enum (${valores.join(", ")}): parte de Kits não testada.`);
       return;
     }
     registrar(
-      "kits 1. enum categoria_produto com os 5 valores",
-      valores.length === 5 && ["Bolos", "Doces", "Salgados", "Bebidas", "Kits"].every((v) => valores.includes(v)),
+      "kits 1. enum categoria_produto mantém os 5 valores de antes (Bento Cake veio depois, ver recheios.mjs)",
+      ["Bolos", "Doces", "Salgados", "Bebidas", "Kits"].every((v) => valores.includes(v)),
       valores.join(", ")
     );
     await c.como("authenticated");

@@ -50,11 +50,14 @@ function positionAfterDigits(value: string, digitCount: number): number {
   return value.length;
 }
 
-// Limitação conhecida: abaixo de R$ 1,00 o valor formatado ganha dígitos
-// "0" sintéticos (padding do centavo/inteiro) que não vieram da digitação
-// — nesse caso estreito (valor total < 3 dígitos) o cursor pode ficar
-// levemente deslocado do dígito exato digitado, mas nunca pula pro fim
-// da string, que era o bug original.
+// Digitar no fim do campo (o caso comum) deixa o cursor no fim. Sem isso,
+// abaixo de R$ 1,00 o valor formatado ganha dígitos "0" sintéticos
+// (padding do centavo/inteiro) que não vieram da digitação, e contar
+// dígitos deslocava o cursor para antes dos centavos: digitar 7500 do zero
+// dava R$ 500,07 (achado no teste manual de 28/09/2026). Editar no meio do
+// valor continua preservando a posição pelo número de dígitos.
+const CURSOR_NO_FIM = Number.POSITIVE_INFINITY;
+
 export function PriceInput({
   id,
   name,
@@ -79,7 +82,7 @@ export function PriceInput({
     const el = inputRef.current;
     if (digitCount === null || !el) return;
     const display = cents > 0 ? formatCentsToDisplay(cents) : "";
-    const pos = positionAfterDigits(display, digitCount);
+    const pos = digitCount === CURSOR_NO_FIM ? display.length : positionAfterDigits(display, digitCount);
     el.setSelectionRange(pos, pos);
     pendingCaretDigitsRef.current = null;
   }, [cents]);
@@ -96,7 +99,8 @@ export function PriceInput({
         required={required}
         onChange={(e) => {
           const caretPos = e.target.selectionStart ?? e.target.value.length;
-          pendingCaretDigitsRef.current = countDigitsBefore(e.target.value, caretPos);
+          pendingCaretDigitsRef.current =
+            caretPos >= e.target.value.length ? CURSOR_NO_FIM : countDigitsBefore(e.target.value, caretPos);
           const digits = e.target.value.replace(/\D/g, "");
           setCents(digits ? Number(digits) : 0);
         }}

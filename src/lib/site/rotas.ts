@@ -3,10 +3,11 @@
 
 import type { CategoriaProduto } from "@/lib/produtos/types";
 
-// Valor do filtro na URL da Lista: a categoria do banco em minúsculas
-// (Bolos → bolos). Não é slug de produto, é só o nome da categoria.
+// Valor do filtro na URL da Lista: a categoria do banco em minúsculas e
+// com hífen no lugar do espaço (Bolos → bolos, Bento Cake → bento-cake).
+// Não é slug de produto, é só o nome da categoria.
 export function categoriaParaParametro(categoria: CategoriaProduto): string {
-  return categoria.toLowerCase();
+  return categoria.toLowerCase().replace(/\s+/g, "-");
 }
 
 export const ROTAS = {

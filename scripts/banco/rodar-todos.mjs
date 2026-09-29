@@ -18,6 +18,7 @@ const TESTES_DE_BANCO = [
   "permissoes.mjs",
   "produtos.mjs",
   "produto-cento-itens.mjs",
+  "recheios.mjs",
   "dias-off.mjs",
   "pedidos.mjs",
   "limite-pedidos.mjs",

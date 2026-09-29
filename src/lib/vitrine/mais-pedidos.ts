@@ -24,6 +24,9 @@ export type ProdutoVitrine = {
   ativo: boolean;
   destaque: boolean;
   atualizado_em: string;
+  // Só do Bolo (tipo "bolo"), preenchido pela vitrine: menor R$/kg entre os
+  // recheios ativos. O campo Preço do cadastro não vale para o Bolo.
+  preco_a_partir_de?: number | null;
 };
 
 export const CAMPOS_VITRINE =
@@ -76,6 +79,9 @@ const ARTIGO_UNIDADE: Record<string, string> = {
 
 export function textoUnidadeVenda(produto: Pick<ProdutoVitrine, "tipo" | "unidade_venda">): string | null {
   if (produto.tipo === "cento") return "o cento";
+  if (produto.tipo === "bolo") return "o kg";
+  // Bento Cake tem peso fechado: o preço é do bolinho inteiro.
+  if (produto.tipo === "bento_cake") return null;
   const unidade = produto.unidade_venda?.trim();
   if (!unidade) return null;
   return ARTIGO_UNIDADE[unidade.toLowerCase()] ?? `por ${unidade}`;
@@ -84,17 +90,27 @@ export function textoUnidadeVenda(produto: Pick<ProdutoVitrine, "tipo" | "unidad
 // Preço como aparece no card: valor mais a unidade de venda (sem unidade,
 // só o valor). Separado em partes pro card poder manter o valor inteiro
 // numa linha e descer só a unidade.
-export function partesPrecoVitrine(produto: Pick<ProdutoVitrine, "preco" | "tipo" | "unidade_venda">): {
+type PrecoDoProduto = Pick<ProdutoVitrine, "preco" | "tipo" | "unidade_venda" | "preco_a_partir_de">;
+
+export function partesPrecoVitrine(produto: PrecoDoProduto): {
+  // "a partir de", só no Bolo (o preço depende do recheio escolhido).
+  prefixo: string | null;
   valor: string;
   unidade: string | null;
 } {
+  if (produto.tipo === "bolo") {
+    const a = produto.preco_a_partir_de;
+    if (typeof a !== "number") return { prefixo: null, valor: "Sob consulta", unidade: null };
+    return { prefixo: "a partir de", valor: formatMoeda(a), unidade: textoUnidadeVenda(produto) };
+  }
   return {
+    prefixo: null,
     valor: formatMoeda(Number(produto.preco)),
     unidade: textoUnidadeVenda(produto),
   };
 }
 
-export function formatarPrecoVitrine(produto: Pick<ProdutoVitrine, "preco" | "tipo" | "unidade_venda">): string {
-  const { valor, unidade } = partesPrecoVitrine(produto);
-  return unidade ? `${valor} ${unidade}` : valor;
+export function formatarPrecoVitrine(produto: PrecoDoProduto): string {
+  const { prefixo, valor, unidade } = partesPrecoVitrine(produto);
+  return [prefixo, valor, unidade].filter(Boolean).join(" ");
 }

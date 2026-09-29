@@ -33,20 +33,21 @@ describe("Home — bloco de categorias", () => {
     render(<Categorias />);
     const links = quadrados();
     expect(links).toHaveLength(5);
-    expect(links.map((a) => a.querySelector(".home-cat-label")?.textContent)).toEqual(["Bolos", "Doces", "Salgados", "Bebidas", "Kits"]);
+    expect(links.map((a) => a.querySelector(".home-cat-label")?.textContent)).toEqual(["Bolos", "Doces", "Salgados", "Bento Cake", "Kits"]);
     expect(links.map((a) => a.getAttribute("href"))).toEqual([
       "/produtos?categoria=bolos",
       "/produtos?categoria=doces",
       "/produtos?categoria=salgados",
-      "/produtos?categoria=bebidas",
+      "/produtos?categoria=bento-cake",
       "/produtos?categoria=kits",
     ]);
   });
 
-  it("Kits fica sem foto, com o fundo da marca, como Bebidas", () => {
+  it("Bento Cake e Kits ficam sem foto, com o fundo da marca", () => {
     render(<Categorias />);
-    const [, , , bebidas, kits] = quadrados();
-    expect(within(bebidas).queryByRole("img")).toBeNull();
+    const [, , , bento, kits] = quadrados();
+    expect(within(bento).queryByRole("img")).toBeNull();
+    expect(bento.querySelector(".site-hive")).not.toBeNull();
     expect(within(kits).queryByRole("img")).toBeNull();
     expect(kits.querySelector(".site-hive")).not.toBeNull();
   });
