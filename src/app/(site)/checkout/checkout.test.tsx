@@ -225,7 +225,7 @@ function dia(rotulo: RegExp) {
 }
 const enviar = () => screen.getByRole("button", { name: "Revisar e enviar" });
 const alerta = () => document.querySelector<HTMLElement>(".checkout-erros")!;
-const aceite = () => screen.getByRole("checkbox", { name: /Concordo em compartilhar meus dados/ });
+const aceite = () => screen.getByRole("checkbox", { name: /^Li e estou ciente da Política de Privacidade/ });
 
 async function preencherTudo(user: ReturnType<typeof userEvent.setup>, data = /^sábado, 3 de outubro/) {
   await user.type(screen.getByLabelText(/^Seu nome/), "Juliana Ribeiro");
@@ -332,7 +332,7 @@ describe("Checkout — validação do formulário", () => {
     expect(nome).toHaveAccessibleDescription("Conta pra gente o seu nome completo.");
     expect(aceite()).not.toBeChecked();
     expect(aceite()).toHaveAccessibleDescription(
-      "Para continuar, marque que concorda com o compartilhamento dos dados e com a Política de Privacidade."
+      "Para continuar, marque que leu a Política de Privacidade."
     );
     expect(screen.getByLabelText(/^Seu WhatsApp/)).toHaveAccessibleDescription(
       "Ops, esse campo ficou em branco. É por aqui que a gente te responde."
@@ -410,7 +410,7 @@ describe("Checkout — validação do formulário", () => {
     expect(push).toHaveBeenCalledWith("/confirmacao");
   });
 
-  it("consentimento nasce desmarcado e é obrigatório; o link da política fica em Seus dados", async () => {
+  it("ciência da política nasce desmarcada e é obrigatória; o link da política fica em Seus dados", async () => {
     const user = userEvent.setup();
     await abrir();
     const dados = screen.getByRole("region", { name: "Seus dados" });
@@ -418,6 +418,12 @@ describe("Checkout — validação do formulário", () => {
       "href",
       "/politica-de-privacidade"
     );
+    // Ciência, não consentimento: nada de "concordo" nem de "compartilhar".
+    // Rótulo visível, sem o aviso "(abre em nova aba)" que só o leitor de tela lê.
+    const rotulo = aceite().closest("label")!.cloneNode(true) as HTMLElement;
+    rotulo.querySelectorAll(".site-visually-hidden").forEach((n) => n.remove());
+    expect(rotulo.textContent).toBe("Li e estou ciente da Política de Privacidade. *");
+    expect(document.body).not.toHaveTextContent(/Concordo|compartilhar meus dados/);
     // A frase antiga e o link no resumo saíram.
     expect(document.body).not.toHaveTextContent("Seus dados são usados só para cuidar deste pedido.");
     expect(screen.getAllByRole("link", { name: /Política de Privacidade/ })).toHaveLength(1);

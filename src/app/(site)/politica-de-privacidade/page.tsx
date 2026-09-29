@@ -1,26 +1,23 @@
 import type { Metadata } from "next";
-import { LOJA } from "@/lib/site/config";
+import { DATA_VIGENCIA_POLITICA, PoliticaDePrivacidade } from "./politica";
+import "./politica.css";
 
-// CONTEÚDO PROVISÓRIO (23/09/2026): a rota existe pro link do rodapé não
-// quebrar. O texto definitivo precisa ser escrito/validado com a cliente
-// antes do lançamento — principalmente quando entrarem o formulário de
-// checkout (dados pessoais do pedido) e as tags de GA4/Clarity (Fase 4).
+// Política de Privacidade, versão 1 (texto em ./politica.tsx). Continua
+// fora do Google (noindex) mesmo sendo o texto definitivo: vai à produção
+// com o lote antes da validação jurídica terminar, e a indexação do site
+// inteiro é decisão da Fase 4 (Cainan, PR politica-de-privacidade).
 export const metadata: Metadata = {
-  title: "Política de privacidade · Pingo de Mell",
+  title: "Política de Privacidade · Pingo de Mell",
+  description:
+    "Como a Pingo de Mell trata os dados de quem faz um pedido pelo site: o que coletamos, para que usamos, com quem compartilhamos e por quanto tempo guardamos.",
   robots: { index: false },
 };
 
 export default function PoliticaDePrivacidadePage() {
   return (
     <section className="site-section">
-      <div className="site-container site-prose">
-        <h1>Política de privacidade</h1>
-        <p>
-          <strong>Página em construção.</strong> Estamos preparando o texto completo da nossa política de privacidade.
-        </p>
-        <p>
-          Dúvidas sobre como a {LOJA.nome} trata os seus dados? Fale com a gente pelo WhatsApp {LOJA.telefone}.
-        </p>
+      <div className="site-container">
+        <PoliticaDePrivacidade dataVigencia={DATA_VIGENCIA_POLITICA} />
       </div>
     </section>
   );

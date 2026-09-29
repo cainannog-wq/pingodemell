@@ -321,9 +321,11 @@ function Formulario({
                 </CampoTexto>
               </div>
 
-              {/* Consentimento: nasce desmarcado e é obrigatório. Os dados
-                  podem ser usados também para marketing no futuro, por isso
-                  não há mais a frase "usados só para este pedido". */}
+              {/* Ciência da Política de Privacidade: nasce desmarcada e é
+                  obrigatória, validada só na tela. Não é consentimento: a
+                  base legal do tratamento é a execução do pedido (LGPD, art.
+                  7º, V). Por isso o rótulo diz "li e estou ciente", não
+                  "concordo", e o aceite não vai para o /api/pedidos. */}
               <div className="checkout-aceite" data-invalido={erroVisivel("aceite") ? true : undefined}>
                 <label className="checkout-aceite-caixa">
                   <input
@@ -340,7 +342,7 @@ function Formulario({
                     }}
                   />
                   <span>
-                    Concordo em compartilhar meus dados e estou de acordo com a{" "}
+                    Li e estou ciente da{" "}
                     <a href={ROTAS.privacidade} target="_blank" rel="noopener noreferrer">
                       Política de Privacidade
                       <span className="site-visually-hidden"> (abre em nova aba)</span>
