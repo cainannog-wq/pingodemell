@@ -1634,3 +1634,36 @@ input.site-seletor-valor {
 .site-nb {
   white-space: nowrap;
 }
+
+/* ---------- Copiar mensagem (checkout e confirmação) ---------- */
+.site-copiar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.site-copiar-instrucao {
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: var(--fw-semibold);
+  color: var(--brown-800);
+}
+.site-copiar-status:empty {
+  display: none;
+}
+.site-copiar-status {
+  font-size: 14px;
+  color: var(--pdm-success-text, #3f5a2c);
+}
+.site-copiar-campo {
+  width: 100%;
+  min-height: 180px;
+  padding: 12px;
+  border: 2px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-900);
+  resize: vertical;
+}

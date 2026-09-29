@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,6 +8,7 @@ import { CarrinhoProvider } from "@/components/site/CarrinhoProvider";
 import { CHAVE_CARRINHO, reiniciarParaTeste } from "@/lib/carrinho/armazenamento";
 import { escreverCarrinho, lerCarrinho, type LinhaCarrinho } from "@/lib/carrinho/regras";
 import { CHAVE_CHECKOUT } from "@/lib/checkout/rascunho";
+import { CHAVE_IDEMPOTENCIA, CHAVE_RETRATO, reiniciarRetratoParaTeste } from "@/lib/pedidos/retrato";
 import { createClient as clienteDoNavegador } from "@/lib/supabase/client";
 import type { Oferta } from "@/lib/checkout/ofertas";
 import type { LinhaSabor } from "@/lib/vitrine/cento";
@@ -210,7 +211,22 @@ function montarBanco() {
 
 // ---------- Ajudantes ----------
 
+// Rede simulada: só POST /api/pedidos existe. Resposta padrão: gravado,
+// pedido 1048, com o valor de cada linha como o servidor devolve.
 let fetchSimulado: ReturnType<typeof vi.fn>;
+let respostaDaRota: () => Response | Promise<Response>;
+let ultimaRequisicao: RequestInit | undefined;
+function respostaJson(status: number, corpo: unknown, cabecalhos: Record<string, string> = {}) {
+  return new Response(JSON.stringify(corpo), { status, headers: { "Content-Type": "application/json", ...cabecalhos } });
+}
+function gravado(numero = 1048) {
+  return () => {
+    const corpo = JSON.parse(String(ultimaRequisicao?.body)) as { itens: { preco: number; quantidade: number }[] };
+    const itens = corpo.itens.map((i) => ({ valor_centavos: Math.round(i.preco * 100) * i.quantidade }));
+    const total = itens.reduce((a, b) => a + b.valor_centavos, 0);
+    return respostaJson(201, { numero, itens, subtotal_centavos: total, total_centavos: total });
+  };
+}
 
 async function abrir(linhas: LinhaCarrinho[] = CARRINHO) {
   window.localStorage.setItem(CHAVE_CARRINHO, escreverCarrinho(linhas));
@@ -244,16 +260,22 @@ beforeEach(() => {
   window.sessionStorage.clear();
   consultas.length = 0;
   push.mockClear();
+  reiniciarRetratoParaTeste();
   montarBanco();
-  fetchSimulado = vi.fn(async () => {
-    throw new Error("o checkout não chama a rede pelo navegador");
+  respostaDaRota = gravado();
+  ultimaRequisicao = undefined;
+  fetchSimulado = vi.fn(async (url: string, init?: RequestInit) => {
+    if (url !== "/api/pedidos" || init?.method !== "POST") throw new Error(`rede inesperada: ${url}`);
+    ultimaRequisicao = init;
+    return respostaDaRota();
   });
   vi.stubGlobal("fetch", fetchSimulado);
 });
 
 afterEach(() => {
-  // Vale para todos os testes: nada de rede nem de banco pelo navegador.
-  expect(fetchSimulado).not.toHaveBeenCalled();
+  // Vale para todos os testes: nada de banco pelo navegador, e a única
+  // chamada de rede possível é POST /api/pedidos (o envio).
+  for (const [url] of fetchSimulado.mock.calls) expect(url).toBe("/api/pedidos");
   expect(clienteDoNavegador).not.toHaveBeenCalled();
   cleanup();
   vi.useRealTimers();
@@ -364,7 +386,7 @@ describe("Checkout — validação do formulário", () => {
     expect(screen.getByLabelText(/^Seu WhatsApp/)).toHaveValue("(41) 99712-4408");
     await user.clear(screen.getByLabelText(/^Seu e-mail/));
     await user.click(enviar());
-    expect(push).toHaveBeenCalledWith("/confirmacao");
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/confirmacao"));
   });
 
   it("endereço aparece só na entrega: cidade, bairro, rua e número obrigatórios", async () => {
@@ -385,8 +407,10 @@ describe("Checkout — validação do formulário", () => {
     await user.type(screen.getByLabelText(/^Endereço/), "Rua das Flores");
     await user.type(screen.getByLabelText(/^Número/), "100");
     await user.click(enviar());
-    expect(push).toHaveBeenCalledWith("/confirmacao");
-    expect(JSON.parse(window.sessionStorage.getItem(CHAVE_CHECKOUT)!).dados).toMatchObject({
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/confirmacao"));
+    // O endereço vai no pedido enviado ao servidor (o rascunho é apagado
+    // depois do envio registrado).
+    expect(JSON.parse(String(ultimaRequisicao?.body))).toMatchObject({
       cidade: "Mandirituba",
       bairro: "Centro",
       rua: "Rua das Flores",
@@ -407,7 +431,7 @@ describe("Checkout — validação do formulário", () => {
     expect(push).not.toHaveBeenCalled();
     await user.type(screen.getByLabelText(/^Seu nome completo/), " Ribeiro");
     await user.click(enviar());
-    expect(push).toHaveBeenCalledWith("/confirmacao");
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/confirmacao"));
   });
 
   it("ciência da política nasce desmarcada e é obrigatória; o link da política fica em Seus dados", async () => {
@@ -436,7 +460,7 @@ describe("Checkout — validação do formulário", () => {
     expect(push).not.toHaveBeenCalled();
     await user.click(aceite());
     await user.click(enviar());
-    expect(push).toHaveBeenCalledWith("/confirmacao");
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/confirmacao"));
   });
 
   it("retirada mostra o endereço completo da loja, com a cidade; topo com o texto do envio pelo WhatsApp", async () => {
@@ -455,14 +479,16 @@ describe("Checkout — validação do formulário", () => {
     expect(rotulo).toHaveTextContent(/^Seu e-mail$/);
   });
 
-  it("completo: o botão final só navega para a confirmação, sem gravar nada", async () => {
+  it("completo: o botão final envia o pedido uma vez a POST /api/pedidos e navega para a confirmação", async () => {
     const user = userEvent.setup();
     await abrir();
     await preencherTudo(user);
     await user.click(enviar());
-    expect(push).toHaveBeenCalledTimes(1);
-    expect(push).toHaveBeenCalledWith("/confirmacao");
-    // Mesmas consultas de leitura da abertura, nenhuma a mais.
+    await waitFor(() => expect(push).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/confirmacao"));
+    expect(fetchSimulado).toHaveBeenCalledTimes(1);
+    // O banco não é consultado pelo navegador: mesmas consultas de leitura
+    // da abertura (do servidor), nenhuma a mais.
     expect(consultas).toHaveLength(4);
   });
 
@@ -548,7 +574,7 @@ describe("Checkout — data e hora (hoje: quinta 01/10, 22h30 em Brasília)", ()
     expect(document.querySelector('a[href^="https://wa.me/"]')).toBeNull();
 
     await user.click(enviar());
-    expect(push).toHaveBeenCalledWith("/confirmacao");
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/confirmacao"));
   });
 
   it("data que cabe no prazo mostra só a confirmação", async () => {
@@ -626,5 +652,180 @@ describe("Checkout — ofertas do rodapé", () => {
     expect(within(docinho).getByRole("link", { name: /Escolher sabores/ })).toHaveAttribute("href", "/produtos/cento-de-docinho");
     const bolo2 = document.querySelector<HTMLElement>('[data-oferta="o-bolo2"]')!;
     expect(within(bolo2).getByRole("link", { name: /Escolher recheio/ })).toHaveAttribute("href", "/produtos/bolo-prest-gio");
+  });
+});
+
+// ---------- Envio do pedido (PR confirmacao-e-gravacao) ----------
+// Respostas da rota simuladas aqui (a rota de verdade tem os próprios
+// testes, e o banco, os de scripts/banco/).
+
+function carrinhoSalvo() {
+  return lerCarrinho(window.localStorage.getItem(CHAVE_CARRINHO));
+}
+function corpoEnviado(n = -1) {
+  return JSON.parse(String(fetchSimulado.mock.calls.at(n)![1].body)) as { chave_idempotencia: string; itens: unknown[] };
+}
+const saida = () => screen.queryByRole("link", { name: /Enviar pelo WhatsApp sem registrar/ });
+const tentarDeNovo = () => screen.queryByRole("button", { name: "Tentar de novo" });
+
+describe("Checkout — envio do pedido", () => {
+  it("sucesso: esvazia o carrinho, apaga o rascunho, troca a chave, salva o retrato e vai para a confirmação", async () => {
+    const user = userEvent.setup();
+    await abrir();
+    await preencherTudo(user);
+    const chave = window.sessionStorage.getItem(CHAVE_IDEMPOTENCIA);
+    expect(chave).toMatch(/^[0-9a-f-]{36}$/);
+    await user.click(enviar());
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/confirmacao"));
+
+    expect(corpoEnviado().chave_idempotencia).toBe(chave);
+    expect(corpoEnviado().itens).toHaveLength(5);
+    expect(carrinhoSalvo()).toEqual([]);
+    expect(window.sessionStorage.getItem(CHAVE_CHECKOUT)).toBeNull();
+    expect(window.sessionStorage.getItem(CHAVE_IDEMPOTENCIA)).toBeNull();
+    const retrato = JSON.parse(window.sessionStorage.getItem(CHAVE_RETRATO)!).retrato;
+    expect(retrato).toMatchObject({ modo: "registrado", numero: 1048, totalCentavos: 51540, pendenteEsvaziar: false });
+    expect(retrato.mensagem.split("\n")[0]).toBe("Olá! Fiz o pedido nº 1048 pelo site.");
+  });
+
+  it("durante a espera: botão desabilitado, progresso anunciado, e o duplo clique não manda outro pedido", async () => {
+    const user = userEvent.setup();
+    let liberar!: () => void;
+    const pendente = new Promise<void>((r) => (liberar = r));
+    const resposta = gravado();
+    respostaDaRota = async () => {
+      await pendente;
+      return resposta();
+    };
+    await abrir();
+    await preencherTudo(user);
+    await user.click(enviar());
+    const botao = screen.getByRole("button", { name: "Enviando o pedido…" });
+    expect(botao).toBeDisabled();
+    expect(document.body).toHaveTextContent("Enviando o pedido. Aguarde.");
+    await user.click(botao);
+    await user.dblClick(botao);
+    liberar();
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/confirmacao"));
+    expect(fetchSimulado).toHaveBeenCalledTimes(1);
+  });
+
+  it("falha de rede: mensagem clara, carrinho intacto, Tentar de novo com a MESMA chave; na 2ª falha aparece a saída pelo WhatsApp", async () => {
+    const user = userEvent.setup();
+    respostaDaRota = () => {
+      throw new TypeError("Failed to fetch");
+    };
+    await abrir();
+    await preencherTudo(user);
+    await user.click(enviar());
+    await screen.findByText("Não conseguimos registrar o pedido");
+    expect(carrinhoSalvo()).toHaveLength(5);
+    expect(window.sessionStorage.getItem(CHAVE_CHECKOUT)).not.toBeNull();
+    expect(tentarDeNovo()).toBeEnabled();
+    expect(saida()).toBeNull();
+    const chave = corpoEnviado().chave_idempotencia;
+
+    await user.click(tentarDeNovo()!);
+    await waitFor(() => expect(fetchSimulado).toHaveBeenCalledTimes(2));
+    expect(corpoEnviado().chave_idempotencia).toBe(chave);
+    await waitFor(() => expect(saida()).not.toBeNull());
+    expect(saida()).toHaveAttribute("target", "_blank");
+    expect(saida()).toHaveAttribute("rel", "noopener noreferrer");
+    const texto = decodeURIComponent(saida()!.getAttribute("href")!.split("?text=")[1]);
+    expect(texto.split("\n").slice(0, 2)).toEqual(["Olá! Quero fazer um pedido pelo site.", "Pedido não registrado no site, por instabilidade."]);
+    expect(texto).not.toContain("nº");
+    expect(push).not.toHaveBeenCalled();
+
+    // Resposta perdida, pedido gravado: o reenvio com a mesma chave recebe o
+    // número e segue normalmente.
+    respostaDaRota = gravado(1049);
+    await user.click(tentarDeNovo()!);
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/confirmacao"));
+    expect(corpoEnviado().chave_idempotencia).toBe(chave);
+  });
+
+  it("5xx conta como falha (Tentar de novo)", async () => {
+    const user = userEvent.setup();
+    respostaDaRota = () => respostaJson(500, { codigo: "erro", mensagem: "x" });
+    await abrir();
+    await preencherTudo(user);
+    await user.click(enviar());
+    await screen.findByText("Não conseguimos registrar o pedido");
+    expect(tentarDeNovo()).toBeEnabled();
+  });
+
+  it("erro de validação do servidor (400/413): mensagem e já a saída pelo WhatsApp, sem Tentar de novo", async () => {
+    const user = userEvent.setup();
+    respostaDaRota = () =>
+      respostaJson(413, { codigo: "grande_demais", mensagem: "O pedido ficou grande demais para o site. Tire alguns itens ou encurte as observações." });
+    await abrir();
+    await preencherTudo(user);
+    await user.click(enviar());
+    await screen.findByText("O site não aceitou o pedido");
+    expect(document.body).toHaveTextContent("O pedido ficou grande demais para o site.");
+    expect(tentarDeNovo()).toBeNull();
+    expect(saida()).not.toBeNull();
+    expect(carrinhoSalvo()).toHaveLength(5);
+  });
+
+  it("limite (429): minutos de espera, Tentar de novo desabilitado e a saída pelo WhatsApp desde o início", async () => {
+    const user = userEvent.setup();
+    respostaDaRota = () => respostaJson(429, { codigo: "limite", espera_segundos: 1200 }, { "Retry-After": "1200" });
+    await abrir();
+    await preencherTudo(user);
+    await user.click(enviar());
+    await screen.findByText("Muitos pedidos enviados desta conexão");
+    expect(document.body).toHaveTextContent("Aguarde 20 minutos para tentar de novo");
+    expect(tentarDeNovo()).toBeDisabled();
+    expect(saida()).not.toBeNull();
+    expect(carrinhoSalvo()).toHaveLength(5);
+  });
+
+  it("depois de abrir o WhatsApp sem registro: carrinho fica, e o aviso de não pedir de novo aparece", async () => {
+    const user = userEvent.setup();
+    respostaDaRota = () => respostaJson(429, { codigo: "limite" }, { "Retry-After": "600" });
+    await abrir();
+    await preencherTudo(user);
+    await user.click(enviar());
+    await waitFor(() => expect(saida()).not.toBeNull());
+    await user.click(saida()!);
+    expect(
+      screen.getByText("Você abriu o WhatsApp sem registro no site. Se a mensagem já foi enviada, não precisa fazer o pedido de novo.")
+    ).toBeInTheDocument();
+    expect(carrinhoSalvo()).toHaveLength(5);
+  });
+
+  it("gravação desligada (409): vai para a confirmação no modo sem registro, sem esvaziar nada", async () => {
+    const user = userEvent.setup();
+    respostaDaRota = () => respostaJson(409, { codigo: "gravacao_desligada" });
+    await abrir();
+    await preencherTudo(user);
+    const chave = window.sessionStorage.getItem(CHAVE_IDEMPOTENCIA);
+    await user.click(enviar());
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/confirmacao"));
+    const retrato = JSON.parse(window.sessionStorage.getItem(CHAVE_RETRATO)!).retrato;
+    expect(retrato).toMatchObject({ modo: "sem_registro", numero: null, pendenteEsvaziar: true });
+    expect(retrato.mensagem).not.toContain("instabilidade");
+    expect(carrinhoSalvo()).toHaveLength(5);
+    expect(window.sessionStorage.getItem(CHAVE_CHECKOUT)).not.toBeNull();
+    expect(window.sessionStorage.getItem(CHAVE_IDEMPOTENCIA)).toBe(chave);
+  });
+
+  it("voltar ao checkout depois do envio: carrinho vazio com 'Ver o último pedido enviado'; sem retrato, sem o link", async () => {
+    window.sessionStorage.setItem(
+      CHAVE_RETRATO,
+      JSON.stringify({
+        versao: 1,
+        retrato: { modo: "registrado", numero: 1048, mensagem: "Olá", formato: "completo", cabe: true, linhas: [], totalCentavos: 0, temBolo: false, prazo: null, pendenteEsvaziar: false },
+      })
+    );
+    await abrir([]);
+    expect(screen.getByRole("heading", { name: "Seu pedido ainda está vazinho" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Ver o último pedido enviado/ })).toHaveAttribute("href", "/confirmacao");
+    cleanup();
+    window.sessionStorage.clear();
+    reiniciarRetratoParaTeste();
+    await abrir([]);
+    expect(screen.queryByRole("link", { name: /Ver o último pedido enviado/ })).toBeNull();
   });
 });

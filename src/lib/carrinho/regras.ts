@@ -14,9 +14,11 @@ import {
 // lido pelo CarrinhoProvider. Nada aqui vale como verdade para o pedido:
 // nome, preço, foto, mínimo e step de cada linha são uma cópia do momento em
 // que o item foi adicionado. A página do carrinho NÃO consulta o banco: mostra
-// e soma o que está gravado (risco aceito, decisão do Cainan). Quem confere
-// tudo de novo no banco (produto ativo, preço atual, mínimo, step, recheio e
-// composição do Cento) é o servidor do checkout.
+// e soma o que está gravado (risco aceito, decisão do Cainan). O servidor
+// também não reconfere nada disso no banco (produto ativo, preço atual,
+// recheio, id que ainda existe): grava o pedido com o valor da linha e a
+// atendente ajusta pelo WhatsApp (PR confirmacao-e-gravacao). Ele confere só
+// a forma e os limites (src/lib/pedidos/validacao.ts).
 
 export const VERSAO_CARRINHO = 1;
 export const MAX_LINHAS = 50;
@@ -28,7 +30,7 @@ type LinhaBase = {
   id: string;
   produtoId: string;
   slug: string | null;
-  // Só para exibir; o preço que vale sai do banco.
+  // Retrato do momento da adição: é o que vai para o pedido.
   nome: string;
   preco: number;
   // Observação da cliente para este item (opcional, texto livre). Vai com o
@@ -60,9 +62,9 @@ export type LinhaCento = LinhaBase & {
   sabores: { nome: string; quantidade: number }[];
 };
 
-// Recheio escolhido (Bolo e Bento Cake). O nome é só para exibir; o id
-// aponta para public.recheios, que o servidor do checkout confere de novo
-// (ativo, vale_bolo / vale_bento, preço atual).
+// Recheio escolhido (Bolo e Bento Cake). O id aponta para public.recheios e
+// vai com o pedido; o servidor confere só o formato dele, não se o recheio
+// continua ativo nem o preço atual.
 export type RecheioEscolhido = { id: string; nome: string };
 
 // Bolo: quantidade em kg (inteiro) e preco = R$/kg do recheio escolhido,

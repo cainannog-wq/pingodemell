@@ -71,3 +71,13 @@ export function salvarRascunho(dados: DadosCheckout): void {
     // Sem sessionStorage: o formulário segue só na memória da página.
   }
 }
+
+// Depois do envio registrado (ou do WhatsApp no modo sem registro), o
+// formulário não fica mais no navegador.
+export function apagarRascunho(): void {
+  try {
+    window.sessionStorage.removeItem(CHAVE_CHECKOUT);
+  } catch {
+    // Sem sessionStorage: nada foi salvo.
+  }
+}

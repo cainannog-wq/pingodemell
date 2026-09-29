@@ -8,11 +8,18 @@ import type { ReactNode } from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { SiteChrome } from "@/components/site/SiteChrome";
 import { reiniciarParaTeste } from "@/lib/carrinho/armazenamento";
+import { CHAVE_IDEMPOTENCIA, CHAVE_RETRATO } from "@/lib/pedidos/retrato";
 
 // O que o site público guarda no navegador. A Política de Privacidade
 // (seções 2 e 8) diz que são só o carrinho (localStorage) e o formulário do
 // checkout (sessionStorage). Qualquer chave ou cookie novo quebra este
 // teste: aí o texto da política precisa de versão nova ANTES do merge.
+//
+// PR confirmacao-e-gravacao: duas chaves novas no sessionStorage, listadas
+// aqui de propósito: pdm-checkout-chave-v1 (chave de idempotência do envio,
+// uuid sem dado pessoal) e pdm-pedido-enviado-v1 (retrato do pedido enviado,
+// lido pela /confirmacao). As seções 2 e 8 da Política serão atualizadas no
+// PR seguinte (6c), antes da validação jurídica.
 
 vi.setConfig({ testTimeout: 30_000 });
 
@@ -111,7 +118,7 @@ async function visitar(pagina: string, ui: ReactNode) {
 }
 
 describe("Armazenamento do navegador no site público", () => {
-  it("Home → Lista → interna → carrinho → checkout → Política: só pdm-carrinho-v1 e pdm-checkout-v1, sem cookie", async () => {
+  it("Home → Lista → interna → carrinho → checkout → Política: só pdm-carrinho-v1, pdm-checkout-v1 e pdm-checkout-chave-v1, sem cookie", async () => {
     window.localStorage.clear();
     window.sessionStorage.clear();
     reiniciarParaTeste();
@@ -143,12 +150,15 @@ describe("Armazenamento do navegador no site público", () => {
 
     expect(estadoDoNavegador()).toEqual({
       localStorage: ["pdm-carrinho-v1"],
-      sessionStorage: ["pdm-checkout-v1"],
+      // pdm-checkout-chave-v1 nasce ao abrir o checkout. O retrato
+      // (pdm-pedido-enviado-v1) só existe depois de enviar: o envio fica no
+      // teste do checkout e da confirmação, e a varredura abaixo pega o arquivo.
+      sessionStorage: ["pdm-checkout-chave-v1", "pdm-checkout-v1"],
       cookies: "",
     });
   });
 
-  it("no código do site público, só o carrinho e o rascunho do checkout mexem no armazenamento do navegador", () => {
+  it("no código do site público, só o carrinho, o rascunho do checkout e o retrato do pedido enviado mexem no armazenamento do navegador", () => {
     // Varredura do código (fora admin e testes): complementa o percurso
     // acima para pegar armazenamento em página que ele não visita.
     const raiz = path.join(process.cwd(), "src");
@@ -174,6 +184,11 @@ describe("Armazenamento do navegador no site público", () => {
       )
       .sort();
     console.log("[armazenamento] arquivos do site que usam armazenamento do navegador:", usam);
-    expect(usam).toEqual(["lib/carrinho/armazenamento.ts", "lib/checkout/rascunho.ts"]);
+    expect(usam).toEqual(["lib/carrinho/armazenamento.ts", "lib/checkout/rascunho.ts", "lib/pedidos/retrato.ts"]);
+  });
+
+  it("as chaves de sessionStorage do envio são exatamente pdm-pedido-enviado-v1 e pdm-checkout-chave-v1", () => {
+    // Seções 2 e 8 da Política: atualização no PR seguinte (6c).
+    expect([CHAVE_RETRATO, CHAVE_IDEMPOTENCIA]).toEqual(["pdm-pedido-enviado-v1", "pdm-checkout-chave-v1"]);
   });
 });

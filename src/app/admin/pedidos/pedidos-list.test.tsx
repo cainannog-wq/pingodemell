@@ -3,6 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { Pedido } from "@/lib/pedidos/types";
+import { exportarPedidosCSV } from "./export-csv";
 import { PedidosList } from "./pedidos-list";
 
 vi.mock("next/link", () => ({
@@ -69,11 +70,13 @@ function pedido(overrides: Partial<Pedido>): Pedido {
     status: "aguardando_confirmacao",
     criado_em: bz(-1),
     status_atualizado_em: bz(-1),
+    teste: false,
     ...overrides,
   };
 }
 
-const STATS = { pedidosNoMes: 0, aguardandoConfirmacao: 0, entregues: 0, valorNoMes: 0 };
+const ZERO = { pedidosNoMes: 0, aguardandoConfirmacao: 0, entregues: 0, valorNoMes: 0 };
+const STATS = { semTeste: ZERO, comTeste: ZERO };
 
 // Reorganização da listagem de pedidos pro mobile (22/09/2026): pedidos em
 // aberto vêm primeiro (atrasados no topo, depois agrupados por dia de
@@ -148,5 +151,42 @@ describe("PedidosList — agrupamento mobile", () => {
     fireEvent.click(botao);
 
     expect(within(mobile).getByText("Cliente Antigo Cancelado")).toBeInTheDocument();
+  });
+});
+
+// PR confirmacao-e-gravacao: pedidos de teste escondidos por padrão na
+// lista, nos cards e na exportação, com a opção visível para exibi-los e a
+// etiqueta "Teste" quando exibidos.
+describe("PedidosList — pedidos de teste", () => {
+  afterEach(() => cleanup());
+
+  it("esconde os de teste por padrão (lista, cards e exportação) e mostra com a etiqueta ao marcar a opção", () => {
+    const pedidos = [
+      pedido({ cliente_nome: "Cliente Real", numero: 2001 }),
+      pedido({ cliente_nome: "Cliente Homologação", numero: 2002, teste: true }),
+    ];
+    const stats = {
+      semTeste: { pedidosNoMes: 1, aguardandoConfirmacao: 1, entregues: 0, valorNoMes: 50 },
+      comTeste: { pedidosNoMes: 2, aguardandoConfirmacao: 2, entregues: 0, valorNoMes: 100 },
+    };
+    const { container } = render(<PedidosList pedidos={pedidos} stats={stats} />);
+    const tabela = container.querySelector(".admin-table") as HTMLElement;
+    const cards = container.querySelector(".admin-stat-grid") as HTMLElement;
+
+    expect(within(tabela).getByText("Cliente Real")).toBeInTheDocument();
+    expect(within(tabela).queryByText("Cliente Homologação")).not.toBeInTheDocument();
+    expect(within(tabela).queryByText("Teste")).not.toBeInTheDocument();
+    expect(cards.textContent).toContain("R$ 50,00");
+    fireEvent.click(screen.getAllByRole("button", { name: /Exportar planilha/ })[0]);
+    expect(vi.mocked(exportarPedidosCSV).mock.calls.at(-1)![0].map((p) => p.numero)).toEqual([2001]);
+
+    fireEvent.click(screen.getByLabelText("Mostrar pedidos de teste (1)"));
+
+    expect(within(tabela).getByText("Cliente Homologação")).toBeInTheDocument();
+    const linhaTeste = within(tabela).getByText("Cliente Homologação").closest("tr") as HTMLElement;
+    expect(within(linhaTeste).getByText("Teste")).toBeInTheDocument();
+    expect(cards.textContent).toContain("R$ 100,00");
+    fireEvent.click(screen.getAllByRole("button", { name: /Exportar planilha/ })[0]);
+    expect(vi.mocked(exportarPedidosCSV).mock.calls.at(-1)![0].map((p) => p.numero)).toEqual([2001, 2002]);
   });
 });

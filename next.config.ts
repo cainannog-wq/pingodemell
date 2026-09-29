@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
     // só no build da homologação (branch deploy da Netlify). Na produção
     // fica vazio e o build elimina o código do registro.
     MEDIR_TEMPOS_ADMIN: process.env.CONTEXT === "branch-deploy" ? "1" : "",
+    // Contexto do deploy na Netlify, fixado no build (src/lib/pedidos/ambiente.ts):
+    // "production" grava pedido de verdade; qualquer outro valor (ou vazio)
+    // grava o pedido marcado como teste e usa o interruptor "fora_producao".
+    CONTEXTO_NETLIFY: process.env.CONTEXT ?? "",
   },
   images: {
     remotePatterns: supabaseHostname

@@ -697,3 +697,19 @@
     font-size: 20px !important;
   }
 }
+
+/* Histórico de pedidos: opção de exibir os pedidos de teste. */
+.pedidos-mostrar-testes {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap-min);
+  font-size: 15px;
+  color: var(--text-body);
+  cursor: pointer;
+}
+.pedidos-mostrar-testes input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+}

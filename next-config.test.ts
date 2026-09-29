@@ -72,3 +72,20 @@ describe("X-Robots-Tag por contexto da Netlify", () => {
     }
   });
 });
+
+// PR confirmacao-e-gravacao: o CONTEXT da Netlify é fixado no build em
+// CONTEXTO_NETLIFY (src/lib/pedidos/ambiente.ts decide teste e interruptor).
+describe("CONTEXTO_NETLIFY embutido no build", () => {
+  for (const [contexto, esperado] of [
+    ["production", "production"],
+    ["branch-deploy", "branch-deploy"],
+    [undefined, ""],
+  ] as const) {
+    it(`CONTEXT=${contexto ?? "(sem valor)"} vira CONTEXTO_NETLIFY=${JSON.stringify(esperado)}`, async () => {
+      vi.stubEnv("CONTEXT", contexto);
+      vi.resetModules();
+      const { default: config } = await import("./next.config");
+      expect(config.env?.CONTEXTO_NETLIFY).toBe(esperado);
+    });
+  }
+});

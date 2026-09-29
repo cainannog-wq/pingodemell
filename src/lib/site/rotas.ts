@@ -22,9 +22,8 @@ export const ROTAS = {
   carrinho: "/carrinho",
   // Página 5 (Checkout), item 6: dados do pedido, data e hora.
   checkout: "/checkout",
-  // Reservada pra página 6 (Confirmação, próximo item: grava o pedido e abre
-  // o WhatsApp). O botão final do checkout já aponta pra cá e cai na 404 até
-  // a página existir.
+  // Página 6 (Confirmação): depois que o servidor grava o pedido, o botão
+  // que abre o WhatsApp com a mensagem pronta.
   confirmacao: "/confirmacao",
   quemSomos: "/quem-somos",
   contato: "/quem-somos#contato",

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Pedido } from "@/lib/pedidos/types";
-import { anoMesBrasilia } from "@/lib/tempo/brasilia";
+import { resumirPedidos } from "@/lib/pedidos/resumo";
 import { PedidosList } from "./pedidos-list";
 
 export default async function PedidosPage() {
@@ -22,18 +22,12 @@ export default async function PedidosPage() {
 
   // Estatísticas calculadas aqui (Server Component, roda uma vez por
   // requisição) em vez de no client — evita recalcular "mês atual" nos
-  // dois lados (servidor em UTC, navegador em horário de Brasília) e
-  // arriscar um card piscando um número diferente na hidratação.
-  const mesAtual = anoMesBrasilia();
-  const pedidosDoMes = rows.filter((p) => anoMesBrasilia(p.criado_em) === mesAtual);
-
+  // dois lados e arriscar um card piscando um número diferente na
+  // hidratação. Duas versões: sem os pedidos de teste (padrão) e com eles
+  // (quando o admin marca "Mostrar pedidos de teste").
   const stats = {
-    pedidosNoMes: pedidosDoMes.length,
-    aguardandoConfirmacao: rows.filter((p) => p.status === "aguardando_confirmacao").length,
-    entregues: rows.filter((p) => p.status === "entregue").length,
-    valorNoMes: pedidosDoMes
-      .filter((p) => p.status !== "cancelado")
-      .reduce((soma, p) => soma + p.total, 0),
+    semTeste: resumirPedidos(rows.filter((p) => !p.teste)),
+    comTeste: resumirPedidos(rows),
   };
 
   return <PedidosList pedidos={rows} stats={stats} />;
