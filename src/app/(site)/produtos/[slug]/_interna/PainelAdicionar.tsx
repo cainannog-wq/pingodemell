@@ -15,6 +15,9 @@ export function PainelAdicionar({
   erro,
   adicionado,
   aoAdicionar,
+  rotulo = "Adicionar ao pedido",
+  rotuloBarra = "Adicionar",
+  mensagemAdicionado = "Adicionado ao pedido",
 }: {
   subtotal: number;
   // "10 unidades × R$ 2,50", "2 centos × R$ 95,99".
@@ -23,12 +26,18 @@ export function PainelAdicionar({
   erro: string | null;
   adicionado: boolean;
   aoAdicionar: () => void;
+  // Em modo edição (Cento e Bolo) o botão é "Salvar alteração" / "Salvar".
+  rotulo?: string;
+  rotuloBarra?: string;
+  // Confirmação depois de adicionar (a de sempre, ou o aviso de que a edição
+  // virou item novo).
+  mensagemAdicionado?: string;
 }) {
   const valor = formatMoeda(subtotal);
   const aviso = adicionado ? (
     <p className="interna-adicionado">
       <Icon name="check_circle" size={20} tone="inherit" />
-      Adicionado ao pedido
+      {mensagemAdicionado}
     </p>
   ) : erro ? (
     <p className="interna-painel-erro">{erro}</p>
@@ -47,7 +56,7 @@ export function PainelAdicionar({
           </span>
         </div>
         <Button variant="primary" size="lg" fullWidth iconLeft="add_shopping_cart" disabled={!podeAdicionar} onClick={aoAdicionar}>
-          Adicionar ao pedido
+          {rotulo}
         </Button>
         {aviso}
         <p className="interna-resumo-nota">Nada é cobrado aqui. Você fecha o pedido com a gente no WhatsApp.</p>
@@ -56,7 +65,7 @@ export function PainelAdicionar({
       {/* Anúncio para leitor de tela, um só para a caixa e a barra (a caixa
           some no celular e a barra some no desktop). */}
       <div role="status" className="site-visually-hidden">
-        {adicionado ? "Adicionado ao pedido." : ""}
+        {adicionado ? `${mensagemAdicionado.replace(/.$/, "")}.` : ""}
       </div>
 
       {/* Barra fixa do celular: mesmo subtotal e mesmo botão. */}
@@ -70,7 +79,7 @@ export function PainelAdicionar({
             </span>
           </div>
           <Button variant="primary" size="md" fullWidth iconLeft="add_shopping_cart" disabled={!podeAdicionar} onClick={aoAdicionar}>
-            Adicionar
+            {rotuloBarra}
           </Button>
         </div>
       </div>

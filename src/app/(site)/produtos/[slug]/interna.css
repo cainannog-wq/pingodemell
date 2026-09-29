@@ -678,3 +678,42 @@
 .interna-nota .material-symbols-outlined {
   flex: none;
 }
+
+/* Faixa do modo edição (aberta pelo ícone de editar do carrinho, ?editar=). */
+.interna-edicao {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--gold-100);
+  color: var(--ink-700);
+}
+.interna-edicao[data-tipo="perdido"] {
+  background: #eaeff4;
+}
+.interna-edicao .material-symbols-rounded {
+  flex: none;
+  margin-top: 1px;
+  color: var(--brown-700);
+}
+.interna-edicao-texto {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.pdm-site .interna-edicao-texto a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.interna-edicao-carregando {
+  min-height: 240px;
+}

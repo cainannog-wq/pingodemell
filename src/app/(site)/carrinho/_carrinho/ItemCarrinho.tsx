@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "@/components/ds";
 import { Hive } from "@/components/site/Hive";
@@ -9,10 +10,12 @@ import {
   controleDaQuantidade,
   limitesDaLinha,
   passoNaLinha,
+  podeEditarNaInterna,
   subtotalDaLinha,
   type LinhaCarrinho,
 } from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
+import { ROTAS } from "@/lib/site/rotas";
 import { FORMATO_BOLO_LABELS } from "@/lib/vitrine/bolo";
 import { UNIDADES_POR_CENTO } from "@/lib/vitrine/cento";
 import { textoUnidadeVenda } from "@/lib/vitrine/mais-pedidos";
@@ -192,9 +195,19 @@ export function ItemCarrinho({
 
       <div className="carrinho-item-topo">
         <h2 className="carrinho-item-nome">{linha.nome}</h2>
+        <div className="carrinho-item-acoes">
+          {podeEditarNaInterna(linha) ? (
+            <Link
+              href={`${ROTAS.produto(linha.slug)}?editar=${encodeURIComponent(linha.id)}`}
+              className="carrinho-acao carrinho-editar"
+              aria-label={`Editar ${linha.nome}`}
+            >
+              <Icon name="edit" size={22} tone="inherit" />
+            </Link>
+          ) : null}
         <button
           type="button"
-          className="carrinho-remover"
+          className="carrinho-acao carrinho-remover"
           data-remover
           data-nao-fecha-avisos
           aria-label={`Remover ${linha.nome} do pedido`}
@@ -202,6 +215,7 @@ export function ItemCarrinho({
         >
           <Icon name="delete" size={22} tone="inherit" />
         </button>
+        </div>
       </div>
 
       <div className="carrinho-item-detalhes">

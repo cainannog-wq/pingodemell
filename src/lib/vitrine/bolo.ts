@@ -24,7 +24,7 @@ export const KG_AVISO = 10;
 export const KG_MAXIMO = 50;
 
 export const TEXTO_FOTO_REFERENCIA = "Aceita foto de referência, envie pelo WhatsApp depois de confirmar.";
-export const TEXTO_DECORACAO = "Decoração personalizada é orçada à parte pela Taami, no WhatsApp, depois do pedido.";
+export const TEXTO_DECORACAO = "Decoração personalizada é orçada à parte, no WhatsApp, depois do pedido.";
 
 export function textoAvisoKg(kg: number): string | null {
   if (!Number.isFinite(kg) || kg <= KG_AVISO) return null;

@@ -66,6 +66,7 @@ const cento: LinhaCarrinho = {
   ...base,
   id: "l-cento",
   produtoId: "p-cento",
+  slug: "cento-de-salgados-assados",
   nome: "Cento de salgados assados",
   preco: 95.99,
   tipo: "cento",
@@ -82,6 +83,7 @@ const bolo: LinhaCarrinho = {
   ...base,
   id: "l-bolo",
   produtoId: "p-bolo",
+  slug: "bolo-recheado",
   nome: "Bolo Recheado",
   preco: 89.9,
   tipo: "bolo",
@@ -619,5 +621,35 @@ describe("Carrinho — remover e desfazer", () => {
       expect(screen.queryByRole("button", { name: /^Desfazer a remoção de Brigadeiro/ })).not.toBeInTheDocument();
       expect(screen.getByRole("button", { name: /^Desfazer a remoção de Bolo/ })).toBeInTheDocument();
     });
+  });
+});
+
+describe("Carrinho — editar Cento e Bolo", () => {
+  it("só o Cento e o Bolo têm o ícone de editar, ao lado do de remover, e ele leva à interna com ?editar=", () => {
+    abrir();
+    const cento = within(itemOuFalha("l-cento")).getByRole("link", { name: "Editar Cento de salgados assados" });
+    expect(cento).toHaveAttribute("href", "/produtos/cento-de-salgados-assados?editar=l-cento");
+    const bolo = within(itemOuFalha("l-bolo")).getByRole("link", { name: "Editar Bolo Recheado" });
+    expect(bolo).toHaveAttribute("href", "/produtos/bolo-recheado?editar=l-bolo");
+    for (const id of ["l-cento", "l-bolo"]) {
+      expect(within(itemOuFalha(id)).getByRole("button", { name: /^Remover / })).toBeInTheDocument();
+    }
+    for (const id of ["l-avulso", "l-smash", "l-bento"]) {
+      expect(within(itemOuFalha(id)).queryByRole("link", { name: /^Editar / })).not.toBeInTheDocument();
+    }
+  });
+
+  it("clicar em editar não remove nem muda a linha (a troca só acontece ao confirmar na interna)", async () => {
+    const user = userEvent.setup();
+    abrir();
+    await user.click(within(itemOuFalha("l-cento")).getByRole("link", { name: /^Editar / }));
+    expect(salvas()).toEqual(TODAS);
+    expect(idsNaTela()).toEqual(["l-avulso", "l-cento", "l-bolo", "l-smash", "l-bento"]);
+    expect(avisosNaTela()).toHaveLength(0);
+  });
+
+  it("linha sem slug gravado não tem o ícone (não há para onde levar)", () => {
+    abrir([{ ...cento, slug: null } as LinhaCarrinho]);
+    expect(within(itemOuFalha("l-cento")).queryByRole("link", { name: /^Editar / })).not.toBeInTheDocument();
   });
 });

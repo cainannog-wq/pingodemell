@@ -246,6 +246,50 @@ export function reinserirLinha(linhas: LinhaCarrinho[], linha: LinhaCarrinho, or
   return [...linhas.slice(0, indice), linha, ...linhas.slice(indice)];
 }
 
+// --- Editar Cento e Bolo -----------------------------------------------------
+// O ícone de editar da linha leva à interna do produto com ?editar={id da
+// linha}. A linha só muda quando a edição é confirmada, e aí é trocada por
+// outra, de um por um, na mesma posição.
+
+export type LinhaEditavel = LinhaCento | LinhaBolo;
+
+// Cento e Bolo (Avulso, Smash Cake e Bento Cake ajustam a quantidade direto
+// no carrinho). Sem slug não há para onde levar, então não edita.
+export function podeEditarNaInterna(linha: LinhaCarrinho): linha is LinhaEditavel & { slug: string } {
+  return (linha.tipo === "cento" || linha.tipo === "bolo") && linha.slug !== null;
+}
+
+// Linha que o ?editar= aponta, se ela ainda serve: existe, é do mesmo produto
+// e do mesmo tipo da interna. Senão null (vínculo perdido).
+export function linhaParaEditar(
+  linhas: LinhaCarrinho[],
+  id: string,
+  produtoId: string,
+  tipo: LinhaEditavel["tipo"]
+): LinhaEditavel | null {
+  const linha = linhas.find((l) => l.id === id);
+  if (!linha || (linha.tipo !== "cento" && linha.tipo !== "bolo")) return null;
+  return linha.produtoId === produtoId && linha.tipo === tipo ? linha : null;
+}
+
+// Retrato da linha no instante em que a edição abriu. A troca só vale se a
+// linha ainda for exatamente esta (não foi removida nem mudou em outra aba).
+export function assinaturaDaLinha(linha: LinhaCarrinho): string {
+  return JSON.stringify(linha);
+}
+
+// Troca a linha `id` pela versão editada, na mesma posição e com o mesmo id.
+// Nunca junta com outra linha (nem se a composição ficar igual à de outra) e
+// nunca cria linha nova: se o id não existe, o produto ou o tipo não batem ou
+// a linha nova é inválida, devolve a lista como estava.
+export function substituirLinha(linhas: LinhaCarrinho[], id: string, nova: LinhaCarrinho): LinhaCarrinho[] {
+  const atual = linhas.find((l) => l.id === id);
+  if (!atual || atual.produtoId !== nova.produtoId || atual.tipo !== nova.tipo) return linhas;
+  const trocada = { ...nova, id } as LinhaCarrinho;
+  if (!linhaValida(trocada)) return linhas;
+  return linhas.map((l) => (l.id === id ? trocada : l));
+}
+
 // --- Leitura do que está salvo no navegador ---------------------------------
 // O texto do localStorage pode ter sido mexido à mão, vir de uma versão
 // antiga ou estar corrompido: cada linha é conferida e a inválida é

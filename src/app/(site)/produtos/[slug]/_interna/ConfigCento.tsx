@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Icon } from "@/components/ds";
-import { useCarrinho } from "@/components/site/CarrinhoProvider";
 import { Seletor } from "@/components/site/Seletor";
 import { normalizarObservacao } from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
@@ -18,6 +17,7 @@ import {
   type Distribuicao,
 } from "@/lib/vitrine/cento";
 import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
+import { AVISO_VIROU_ITEM_NOVO, ROTULO_ADICIONAR, ROTULO_SALVAR, useConfirmacao, type Edicao } from "./edicao";
 import { Observacao } from "./Observacao";
 import { PainelAdicionar } from "./PainelAdicionar";
 
@@ -30,11 +30,21 @@ function textoCentos(n: number): string {
 // a distribuição das 100 × centos unidades entre os sabores ativos, numa
 // combinação só, em passos de 5. O botão só liga com a soma exata.
 // Com 1 sabor ativo, o total inteiro vai para ele, sem distribuição.
-export function ConfigCento({ produto, sabores }: { produto: ProdutoVitrine; sabores: string[] }) {
-  const { adicionar } = useCarrinho();
-  const [centos, setCentos] = useState(1);
-  const [distribuicao, setDistribuicao] = useState<Distribuicao>(() => distribuicaoInicial(sabores, 1));
-  const [observacao, setObservacao] = useState("");
+//
+// Em modo edição (edicao, vindo do ?editar= do carrinho) começa preenchido com
+// o que está gravado na linha: número de centos, distribuição e observação.
+// Sabor que já não está ativo não entra; a soma só fecha quando a cliente
+// completa.
+export function ConfigCento({ produto, sabores, edicao }: { produto: ProdutoVitrine; sabores: string[]; edicao?: Edicao }) {
+  const { confirmar, emEdicao, virouNovo } = useConfirmacao(edicao);
+  const gravada = edicao?.linha.tipo === "cento" ? edicao.linha : null;
+  const [centos, setCentos] = useState(gravada?.quantidade ?? 1);
+  const [distribuicao, setDistribuicao] = useState<Distribuicao>(() => {
+    if (!gravada) return distribuicaoInicial(sabores, 1);
+    const salvos = new Map(gravada.sabores.map((s) => [s.nome, s.quantidade]));
+    return Object.fromEntries(sabores.map((nome) => [nome, salvos.get(nome) ?? 0]));
+  });
+  const [observacao, setObservacao] = useState(gravada?.observacao ?? "");
   const [adicionado, setAdicionado] = useState(false);
 
   const umSabor = sabores.length === 1;
@@ -62,7 +72,7 @@ export function ConfigCento({ produto, sabores }: { produto: ProdutoVitrine; sab
 
   function aoAdicionar() {
     if (!valida) return;
-    adicionar({
+    const resultado = confirmar({
       tipo: "cento",
       produtoId: produto.id,
       slug: produto.slug,
@@ -73,7 +83,7 @@ export function ConfigCento({ produto, sabores }: { produto: ProdutoVitrine; sab
       foto: produto.image_url,
       observacao: normalizarObservacao(observacao),
     });
-    setAdicionado(true);
+    if (resultado === "adicionou") setAdicionado(true);
   }
 
   const cor = situacao.completa ? "ok" : situacao.soma === 0 ? "neutro" : "erro";
@@ -175,6 +185,9 @@ export function ConfigCento({ produto, sabores }: { produto: ProdutoVitrine; sab
         erro={valida ? null : erro}
         adicionado={adicionado}
         aoAdicionar={aoAdicionar}
+        rotulo={emEdicao ? ROTULO_SALVAR : ROTULO_ADICIONAR}
+        rotuloBarra={emEdicao ? "Salvar" : "Adicionar"}
+        mensagemAdicionado={virouNovo ? AVISO_VIROU_ITEM_NOVO : undefined}
       />
     </>
   );

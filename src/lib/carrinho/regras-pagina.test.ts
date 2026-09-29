@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   alterarQuantidade,
+  assinaturaDaLinha,
   controleDaQuantidade,
   escreverCarrinho,
   lerCarrinho,
   limitesDaLinha,
+  linhaParaEditar,
   linhaValida,
   passoNaLinha,
+  podeEditarNaInterna,
   reinserirLinha,
   subtotalDaLinha,
+  substituirLinha,
   totalDoCarrinho,
   type LinhaCarrinho,
 } from "./regras";
@@ -220,5 +224,61 @@ describe("carrinho — linhas gravadas com os campos novos", () => {
     delete antiga.step;
     delete antiga.foto;
     expect(linhaValida(antiga)).toBe(true);
+  });
+});
+
+describe("carrinho — editar Cento e Bolo (troca de um por um)", () => {
+  const lista = [brigadeiro(10), cento, bolo, smash, bento];
+
+  it("só Cento e Bolo com slug têm editar", () => {
+    expect(podeEditarNaInterna({ ...cento, slug: "cento-de-salgados" })).toBe(true);
+    expect(podeEditarNaInterna({ ...bolo, slug: "bolo" })).toBe(true);
+    expect(podeEditarNaInterna({ ...bolo, slug: null })).toBe(false);
+    expect(podeEditarNaInterna(brigadeiro(10))).toBe(false);
+    expect(podeEditarNaInterna(smash)).toBe(false);
+    expect(podeEditarNaInterna(bento)).toBe(false);
+  });
+
+  it("o vínculo vale só para linha existente, do mesmo produto e do mesmo tipo", () => {
+    expect(linhaParaEditar(lista, "cento", "p4", "cento")).toBe(cento);
+    expect(linhaParaEditar(lista, "bolo", "p5", "bolo")).toBe(bolo);
+    expect(linhaParaEditar(lista, "nao-existe", "p4", "cento")).toBeNull();
+    expect(linhaParaEditar(lista, "cento", "outro-produto", "cento")).toBeNull();
+    expect(linhaParaEditar(lista, "cento", "p4", "bolo")).toBeNull();
+    expect(linhaParaEditar(lista, "smash", "p2", "cento")).toBeNull();
+    expect(linhaParaEditar(lista, "bento", "p3", "bolo")).toBeNull();
+  });
+
+  it("troca na mesma posição, mantém o id e não muda o tamanho da lista", () => {
+    const editada = { ...bolo, quantidade: 4, formato: "quadrado" as const, observacao: "sem topo" };
+    const depois = substituirLinha(lista, "bolo", { ...editada, id: "qualquer-outro" });
+    expect(depois).toHaveLength(lista.length);
+    expect(depois.map((l) => l.id)).toEqual(lista.map((l) => l.id));
+    expect(depois[2]).toEqual({ ...editada, id: "bolo" });
+    expect(depois[0]).toBe(lista[0]);
+    expect(depois[4]).toBe(lista[4]);
+  });
+
+  it("não junta com outra linha, mesmo que a composição fique idêntica à de outro Cento", () => {
+    const outro: LinhaCarrinho = { ...cento, id: "cento-2", quantidade: 1, sabores: [{ nome: "Coxinha", quantidade: 100 }] };
+    const editada: LinhaCarrinho = { ...cento, quantidade: 1, sabores: [{ nome: "Coxinha", quantidade: 100 }] };
+    const depois = substituirLinha([cento, outro], "cento", editada);
+    expect(depois).toHaveLength(2);
+    expect(depois.map((l) => l.id)).toEqual(["cento", "cento-2"]);
+    expect(depois[0]).toEqual({ ...editada, id: "cento" });
+    expect(depois[1]).toBe(outro);
+  });
+
+  it("id inexistente, produto ou tipo diferente e linha inválida devolvem a lista como estava", () => {
+    expect(substituirLinha(lista, "nao-existe", bolo)).toBe(lista);
+    expect(substituirLinha(lista, "bolo", { ...bolo, produtoId: "outro" })).toBe(lista);
+    expect(substituirLinha(lista, "bolo", { ...cento, id: "bolo" })).toBe(lista);
+    expect(substituirLinha(lista, "bolo", { ...bolo, quantidade: 0 })).toBe(lista);
+    expect(substituirLinha(lista, "bolo", { ...bolo, quantidade: 51 })).toBe(lista);
+  });
+
+  it("a assinatura muda quando a linha muda", () => {
+    expect(assinaturaDaLinha(bolo)).toBe(assinaturaDaLinha({ ...bolo }));
+    expect(assinaturaDaLinha(bolo)).not.toBe(assinaturaDaLinha({ ...bolo, quantidade: 13 }));
   });
 });

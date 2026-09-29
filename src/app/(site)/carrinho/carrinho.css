@@ -193,12 +193,18 @@
   white-space: nowrap;
 }
 
-/* Lixeira: 44x44 de toque, ícone marrom claro como no layout. */
-.carrinho-remover {
+/* Ações da linha, no canto de cima à direita: editar (só Cento e Bolo) e
+   remover. Cada uma com 44x44 de toque, ícone marrom claro como no layout. */
+.carrinho-item-acoes {
+  flex: none;
+  display: flex;
+  align-items: center;
+  margin: -8px -8px 0 0;
+}
+.pdm-site .carrinho-acao {
   flex: none;
   width: 44px;
   height: 44px;
-  margin: -8px -8px 0 0;
   display: grid;
   place-items: center;
   padding: 0;
@@ -209,7 +215,7 @@
   cursor: pointer;
   transition: var(--transition-base);
 }
-.carrinho-remover:hover {
+.pdm-site .carrinho-acao:hover {
   background: var(--brown-050);
   color: var(--brown-500);
 }

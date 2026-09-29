@@ -5,6 +5,7 @@ import { ButtonLink, Icon, TextLink } from "@/components/ds";
 import { useCarrinho } from "@/components/site/CarrinhoProvider";
 import { Hive } from "@/components/site/Hive";
 import { PilhaDeAvisos, type Aviso } from "@/components/site/PilhaDeAvisos";
+import { useMontado } from "@/components/site/useMontado";
 import { alterarQuantidade, subtotalDaLinha, totalDoCarrinho, type LinhaCarrinho } from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
 import { ROTAS } from "@/lib/site/rotas";
@@ -37,18 +38,11 @@ function assinarCelular(aoMudar: () => void) {
 const lerCelular = () => typeof window.matchMedia === "function" && window.matchMedia(CELULAR).matches;
 const lerCelularNoServidor = () => false;
 
-// Verdadeiro só depois de montar no navegador. No servidor (e no primeiro
-// render do cliente) o carrinho é sempre vazio; sem isto a página piscaria
-// "carrinho vazio" antes de mostrar as linhas salvas.
-const assinarNada = () => () => {};
-const lerMontado = () => true;
-const lerMontadoNoServidor = () => false;
-
 let sequenciaAviso = 0;
 
 export function Carrinho() {
   const { linhas, alterar, remover, reinserir } = useCarrinho();
-  const montado = useSyncExternalStore(assinarNada, lerMontado, lerMontadoNoServidor);
+  const montado = useMontado();
   const celular = useSyncExternalStore(assinarCelular, lerCelular, lerCelularNoServidor);
   const [avisos, setAvisos] = useState<Aviso[]>([]);
   const raiz = useRef<HTMLDivElement>(null);
