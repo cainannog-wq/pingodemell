@@ -203,9 +203,15 @@ describe("Política de Privacidade — página", () => {
 });
 
 describe("Política de Privacidade — versão e data de vigência", () => {
-  it("versão 1 e data nula neste PR", () => {
+  it("versão 1, vigente a partir de 01/10/2026 (data validada pelo Cainan)", () => {
     expect(VERSAO_POLITICA).toBe(1);
-    expect(DATA_VIGENCIA_POLITICA).toBeNull();
+    expect(DATA_VIGENCIA_POLITICA).toBe("2026-10-01");
+    // A página de verdade usa a constante.
+    render(<PoliticaDePrivacidadePage />);
+    expect(document.querySelector(".politica-versao")).toHaveTextContent(
+      /^Versão 1\. Vigente a partir de 01\/10\/2026\.$/
+    );
+    expect(document.body.innerHTML).not.toMatch(/\{\{|\}\}/);
   });
 
   it("com a data nula, mostra só 'Versão 1.' e nenhum campo entre chaves", () => {
@@ -213,11 +219,6 @@ describe("Política de Privacidade — versão e data de vigência", () => {
     expect(container.querySelector(".politica-versao")).toHaveTextContent(/^Versão 1\.$/);
     expect(container.textContent).not.toContain("Vigente");
     expect(container.innerHTML).not.toMatch(/\{\{|\}\}/);
-    // A página de verdade usa a constante (nula).
-    cleanup();
-    render(<PoliticaDePrivacidadePage />);
-    expect(document.querySelector(".politica-versao")).toHaveTextContent(/^Versão 1\.$/);
-    expect(document.body.innerHTML).not.toMatch(/\{\{|\}\}/);
   });
 
   it("com uma data de teste, a frase de vigência aparece com essa data", () => {

@@ -16,10 +16,10 @@ import { LOJA, WHATSAPP } from "@/lib/site/config";
 
 export const VERSAO_POLITICA = 1;
 
-// "AAAA-MM-DD". Nula até o lote ir para a main: enquanto for nula, a página
-// omite a frase "Vigente a partir de" e mostra só "Versão 1.". Não inventar
-// data.
-export const DATA_VIGENCIA_POLITICA: string | null = null;
+// "AAAA-MM-DD". 01/10/2026, decidida e validada pelo Cainan na homologação
+// (29/09/2026). Nula, a página omite a frase "Vigente a partir de" e mostra
+// só "Versão N." — para uma versão nova ainda sem data. Não inventar data.
+export const DATA_VIGENCIA_POLITICA: string | null = "2026-10-01";
 
 // Formata "AAAA-MM-DD" como "DD/MM/AAAA" só com texto: a data já é o dia
 // de vigência, sem fuso nenhum a converter (regra do CLAUDE.md: nada de

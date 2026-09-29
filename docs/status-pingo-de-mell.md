@@ -169,7 +169,7 @@ Os 15 produtos em 28/09/2026 05:04 UTC, depois da etapa 1 (todos com `atualizado
 ## Política de Privacidade (PR `politica-de-privacidade`, item 6b)
 
 - **Texto do Cainan, literal, versão 1, em redação formal** (`src/app/(site)/politica-de-privacidade/politica.tsx`; numeração interna 2.1, 2.2… é texto do parágrafo, listas só nas seções 4 e 6), ainda sem validação jurídica. Nada do texto muda sem pedido dele; mudança relevante = versão nova. `politica.test.tsx` compara a página, bloco por bloco, com o texto aprovado.
-- **Versão e vigência**: `VERSAO_POLITICA = 1`; `DATA_VIGENCIA_POLITICA = null` até a `lote` ir para a `main` (ver "Quando o lote for para a main"). Com a data nula, só "Versão 1."; com data, "Versão 1. Vigente a partir de DD/MM/AAAA." (formatada só com texto, sem `Date`).
+- **Versão e vigência**: `VERSAO_POLITICA = 1`; `DATA_VIGENCIA_POLITICA = "2026-10-01"` (decisão do Cainan, validada na homologação em 29/09/2026). Com a data nula (versão nova ainda sem data), só "Versão 1."; com data, "Versão 1. Vigente a partir de DD/MM/AAAA." (formatada só com texto, sem `Date`).
 - **Mesma fonte do rodapé**: CNPJ, endereço e WhatsApp saem de `LOJA` (`src/lib/site/config.ts`); a razão social (Yaguiu Eventos e Esporte LTDA) está só no texto.
 - **Continua `noindex`** (decisão do Cainan): vai à produção antes da validação jurídica terminar, e a indexação do site é da Fase 4.
 - **Página estática** (`○` no build, largura de leitura 35em ≈ 72 caracteres por linha): não lê o banco, não grava nada, sem JavaScript próprio. Índice "Nesta página" com âncoras (`#responsavel` … `#reclamacoes`, ids fixos); WhatsApp (wa.me, sem mensagem) e gov.br/anpd em nova aba.
@@ -199,7 +199,7 @@ Passos que dependem do merge da `lote` na `main`, na ordem dos PRs:
 
 4. **Antes da carga real**: apagar os recheios e produtos "(demo)" e cadastrar os recheios reais (Taami) e os produtos Smash Cake e Bento Cake reais pelo admin novo (ver "Bolo, Smash Cake e Bento Cake"; o desfazer está no cabeçalho de `supabase/dados-bolo-bento-teste.sql`).
 
-5. **Data de vigência da Política de Privacidade** (PR `politica-de-privacidade`): no PR que levar a `lote` para a `main`, preencher `DATA_VIGENCIA_POLITICA` (`src/app/(site)/politica-de-privacidade/politica.tsx`, "AAAA-MM-DD") com a data do deploy. Até lá a página mostra só "Versão 1.".
+5. **Data de vigência da Política de Privacidade** (PR `politica-de-privacidade`): já fixada em 01/10/2026 (`DATA_VIGENCIA_POLITICA`, `src/app/(site)/politica-de-privacidade/politica.tsx`), por decisão do Cainan. Se a `lote` for para a `main` depois de 01/10/2026, a página vai a produção dizendo "Vigente a partir de 01/10/2026": confirmar com o Cainan antes do merge se a data continua valendo.
 
 ## Funções e gatilhos em `public`
 
