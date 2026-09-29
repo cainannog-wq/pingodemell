@@ -20,8 +20,8 @@ export type DadosCheckout = {
   nome: string; // completo: pelo menos nome e sobrenome
   whatsapp: string;
   email: string;
-  // Concordou em compartilhar os dados e com a Política de Privacidade
-  // (obrigatório; nasce desmarcado).
+  // Leu e está ciente da Política de Privacidade (obrigatório; nasce
+  // desmarcado). É ciência, não consentimento: validado só na tela.
   aceite: boolean;
   data: string; // AAAA-MM-DD, calendário de Brasília
   hora: string; // HH:MM
@@ -156,7 +156,7 @@ export const MENSAGENS = {
   whatsappVazio: "Ops, esse campo ficou em branco. É por aqui que a gente te responde.",
   whatsappInvalido: "Confira o número: DDD + número, por exemplo (41) 99999-9999.",
   email: "Confira o e-mail: ele precisa ter @ e o domínio, por exemplo nome@email.com.",
-  aceite: "Para continuar, marque que concorda com o compartilhamento dos dados e com a Política de Privacidade.",
+  aceite: "Para continuar, marque que leu a Política de Privacidade.",
   dataVazia: "Escolha a data no calendário.",
   dataBloqueada: "Essa data não está mais disponível. Escolha outra no calendário.",
   horaVazia: "Escolha o horário em que precisa.",

@@ -1,0 +1,111 @@
+/* Política de Privacidade. Só tokens e padrões do site público
+   (site.css): texto longo em largura de leitura confortável.
+
+   Largura em em, não em ch: o "ch" é a largura do "0", mais largo que a
+   letra média da Nunito, e 68ch dava ~84 caracteres por linha. 35em dá
+   ~72 em média (medido na homologação, 1280 px). */
+
+.politica {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  max-width: 35em;
+  margin-inline: auto;
+}
+
+.politica p,
+.politica li {
+  color: var(--ink-700);
+}
+
+/* Link no meio do texto: sublinhado, para não depender só da cor. */
+.pdm-site .politica p a {
+  color: var(--text-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  /* O telefone não quebra no meio ("(41)" numa linha, o resto na outra). */
+  white-space: nowrap;
+}
+
+.politica-topo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.pdm-site .politica-versao {
+  font-size: var(--fs-small);
+  font-weight: var(--fw-semibold);
+}
+
+/* Índice "Nesta página". */
+.politica-indice {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+}
+.pdm-site .politica-indice-rotulo {
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-700);
+  margin-bottom: 8px;
+}
+.politica-indice ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pdm-site .politica-indice a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--text-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Seções. O H2 é semântico (dez seções); o tamanho fica no degrau do H3
+   para o texto longo não virar uma sequência de títulos enormes. */
+.politica-secao {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-margin-top: 24px;
+}
+.pdm-site .politica-secao h2 {
+  font-size: var(--fs-h3);
+  line-height: var(--lh-h3);
+}
+.politica-secao ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding-left: 1.25em;
+  list-style: disc;
+}
+
+/* Rolagem suave até a seção só para quem não pediu menos movimento
+   (site.css já zera scroll-behavior com prefers-reduced-motion). */
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.politica) {
+    scroll-behavior: smooth;
+  }
+}
+
+@media (max-width: 767px) {
+  .politica {
+    gap: 32px;
+  }
+  .politica-indice {
+    padding: 16px;
+  }
+  /* Links no meio do texto (WhatsApp, gov.br/anpd): área de toque de 44 px
+     de altura sem mexer nas linhas (padding em elemento inline não empurra
+     o texto). */
+  .pdm-site .politica p a {
+    padding-block: 12px;
+  }
+}
