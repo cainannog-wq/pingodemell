@@ -55,6 +55,20 @@ describe("Formulário de recheio", () => {
   });
 });
 
+describe("Formulário de recheio — erro do servidor", () => {
+  it("mostra o erro e mantém o que foi digitado (não limpa o formulário)", async () => {
+    const recusa = vi.fn(async () => ({ error: "Já existe um recheio com esse nome." }));
+    render(<RecheioForm action={recusa} rotuloEnviar="Cadastrar recheio" />);
+    fireEvent.change(screen.getByLabelText(/Nome do recheio/), { target: { value: "Ninho" } });
+    fireEvent.click(screen.getByLabelText(/Bento Cake/));
+    fireEvent.submit(document.querySelector("form") as HTMLFormElement);
+    expect(await screen.findByText("Já existe um recheio com esse nome.")).toBeInTheDocument();
+    expect(recusa).toHaveBeenCalledTimes(1);
+    expect((screen.getByLabelText(/Nome do recheio/) as HTMLInputElement).value).toBe("Ninho");
+    expect(screen.getByLabelText(/Bento Cake/)).toBeChecked();
+  });
+});
+
 describe("Lista de recheios", () => {
   const base = { criado_em: "", atualizado_em: "" };
   const recheios: Recheio[] = [

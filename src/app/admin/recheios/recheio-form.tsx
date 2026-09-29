@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState, type FormEvent } from "react";
 import { Button, Card, Field, Icon, Input, PriceInput, Select, Toggle } from "@/components/ds";
 import { GRUPO_RECHEIO_LABELS, GRUPO_RECHEIO_VALUES, NOME_RECHEIO_MAX, type Recheio } from "@/lib/recheios/types";
 import type { RecheioFormState } from "./actions";
@@ -16,6 +16,14 @@ const estadoInicial: RecheioFormState = {};
 export function RecheioForm({ action, recheio, rotuloEnviar }: { action: Acao; recheio?: Recheio; rotuloEnviar: string }) {
   const [state, formAction, pending] = useActionState(action, estadoInicial);
   const [valeBolo, setValeBolo] = useState(recheio?.vale_bolo ?? false);
+
+  // Envio por onSubmit (e não <form action>): o React 19 limpa o formulário
+  // depois de uma ação, e um erro do servidor apagaria tudo o que foi digitado.
+  function aoEnviar(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    const dados = new FormData(evento.currentTarget);
+    startTransition(() => formAction(dados));
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -38,7 +46,7 @@ export function RecheioForm({ action, recheio, rotuloEnviar }: { action: Acao; r
         </div>
       )}
 
-      <form action={formAction}>
+      <form onSubmit={aoEnviar}>
         <Card tone="white" padding="0">
           <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 24, borderBottom: "1px solid var(--border-subtle)" }}>
             <Field label="Nome do recheio" htmlFor="r-nome" required hint="Como o cliente vai ver. Um recheio que serve para bolo e para bento é cadastrado uma vez só.">
