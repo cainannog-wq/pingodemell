@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Icon } from "@/components/ds";
-import { useCarrinho } from "@/components/site/CarrinhoProvider";
+import { Seletor } from "@/components/site/Seletor";
 import { normalizarObservacao } from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
 import { agruparRecheiosDoBolo, precoDoBolo } from "@/lib/recheios/regras";
@@ -22,10 +22,10 @@ import {
 } from "@/lib/vitrine/bolo";
 import type { RecheioVitrine } from "@/lib/vitrine/disponibilidade";
 import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
+import { AVISO_VIROU_ITEM_NOVO, ROTULO_ADICIONAR, ROTULO_SALVAR, useConfirmacao, type Edicao } from "./edicao";
 import { EscolhaRecheio } from "./EscolhaRecheio";
 import { Observacao } from "./Observacao";
 import { PainelAdicionar } from "./PainelAdicionar";
-import { Seletor } from "./Seletor";
 
 // Configuração do produto tipo Bolo (regras em src/lib/vitrine/bolo.ts e
 // src/lib/recheios/regras.ts): tamanho em kg (de 1 em 1; acima de 10 kg só
@@ -33,13 +33,28 @@ import { Seletor } from "./Seletor";
 // um recheio do catálogo (agrupado) e observação do item. O preço é sempre
 // R$/kg do recheio × kg; o campo Preço do cadastro não vale aqui. Cada
 // "Adicionar ao pedido" é um bolo (uma linha no carrinho).
-export function ConfigBolo({ produto, recheios }: { produto: ProdutoVitrine; recheios: RecheioVitrine[] }) {
-  const { adicionar } = useCarrinho();
+//
+// Em modo edição (edicao, vindo do ?editar= do carrinho) começa preenchido com
+// o que está gravado na linha: kg, formato, recheio e observação. Recheio que
+// já não está no catálogo do Bolo não vem escolhido (a cliente escolhe de novo).
+export function ConfigBolo({
+  produto,
+  recheios,
+  edicao,
+}: {
+  produto: ProdutoVitrine;
+  recheios: RecheioVitrine[];
+  edicao?: Edicao;
+}) {
+  const { confirmar, emEdicao, virouNovo } = useConfirmacao(edicao);
   const grupos = agruparRecheiosDoBolo(recheios);
-  const [texto, setTexto] = useState(String(KG_MINIMO));
-  const [recheioId, setRecheioId] = useState<string | null>(null);
-  const [formato, setFormato] = useState<FormatoBolo>("redondo");
-  const [observacao, setObservacao] = useState("");
+  const gravada = edicao?.linha.tipo === "bolo" ? edicao.linha : null;
+  const [texto, setTexto] = useState(String(gravada?.quantidade ?? KG_MINIMO));
+  const [recheioId, setRecheioId] = useState<string | null>(() =>
+    gravada && grupos.some((g) => g.recheios.some((r) => r.id === gravada.recheio.id)) ? gravada.recheio.id : null
+  );
+  const [formato, setFormato] = useState<FormatoBolo>(gravada?.formato ?? "redondo");
+  const [observacao, setObservacao] = useState(gravada?.observacao ?? "");
   const [adicionado, setAdicionado] = useState(false);
 
   const kg = texto === "" ? NaN : Number(texto);
@@ -59,7 +74,7 @@ export function ConfigBolo({ produto, recheios }: { produto: ProdutoVitrine; rec
 
   function aoAdicionar() {
     if (!valida || !recheio || precoKg === null) return;
-    adicionar({
+    const resultado = confirmar({
       tipo: "bolo",
       produtoId: produto.id,
       slug: produto.slug,
@@ -68,9 +83,10 @@ export function ConfigBolo({ produto, recheios }: { produto: ProdutoVitrine; rec
       quantidade: kg,
       recheio: { id: recheio.id, nome: recheio.nome },
       formato,
+      foto: produto.image_url,
       observacao: normalizarObservacao(observacao),
     });
-    setAdicionado(true);
+    if (resultado === "adicionou") setAdicionado(true);
   }
 
   return (
@@ -166,6 +182,9 @@ export function ConfigBolo({ produto, recheios }: { produto: ProdutoVitrine; rec
         erro={valida ? null : erro}
         adicionado={adicionado}
         aoAdicionar={aoAdicionar}
+        rotulo={emEdicao ? ROTULO_SALVAR : ROTULO_ADICIONAR}
+        rotuloBarra={emEdicao ? "Salvar" : "Adicionar"}
+        mensagemAdicionado={virouNovo ? AVISO_VIROU_ITEM_NOVO : undefined}
       />
     </>
   );

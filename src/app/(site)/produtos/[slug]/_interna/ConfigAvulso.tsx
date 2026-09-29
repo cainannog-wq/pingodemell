@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useCarrinho } from "@/components/site/CarrinhoProvider";
+import { Seletor } from "@/components/site/Seletor";
 import { normalizarObservacao } from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
 import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
@@ -16,7 +17,6 @@ import {
 } from "@/lib/vitrine/quantidade";
 import { Observacao } from "./Observacao";
 import { PainelAdicionar } from "./PainelAdicionar";
-import { Seletor } from "./Seletor";
 
 // Configuração do produto avulso (tipo normal): quantidade respeitando o
 // pedido mínimo e o step (Livre/5/10) do produto, observação do item,
@@ -53,6 +53,11 @@ export function ConfigAvulso({ produto }: { produto: ProdutoVitrine }) {
       preco,
       unidade_venda: produto.unidade_venda,
       quantidade,
+      // Cópia do momento: a página do carrinho trava a quantidade com isto,
+      // sem consultar o banco.
+      pedidoMinimo: produto.pedido_minimo,
+      step: produto.step_quantidade,
+      foto: produto.image_url,
       observacao: normalizarObservacao(observacao),
     });
     setAdicionado(true);

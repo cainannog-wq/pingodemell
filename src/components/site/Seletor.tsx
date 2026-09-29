@@ -36,14 +36,14 @@ export function Seletor({
   idCampo?: string;
 }) {
   return (
-    <div className="interna-seletor" data-apagado={apagado} data-invalido={invalido}>
-      <button type="button" className="interna-seletor-btn" aria-label={`Diminuir ${rotulo}`} disabled={!podeMenos} onClick={aoMenos}>
+    <div className="site-seletor" data-apagado={apagado} data-invalido={invalido}>
+      <button type="button" className="site-seletor-btn" aria-label={`Diminuir ${rotulo}`} disabled={!podeMenos} onClick={aoMenos}>
         <Icon name="remove" size={20} tone="inherit" />
       </button>
       {aoDigitar ? (
         <input
           id={idCampo}
-          className="interna-seletor-valor"
+          className="site-seletor-valor"
           type="text"
           inputMode="numeric"
           pattern="[0-9]*"
@@ -55,12 +55,12 @@ export function Seletor({
           onBlur={aoSairDoCampo}
         />
       ) : (
-        <span className="interna-seletor-valor" aria-live="polite">
+        <span className="site-seletor-valor" aria-live="polite">
           <span className="site-visually-hidden">{rotulo}: </span>
           {valor}
         </span>
       )}
-      <button type="button" className="interna-seletor-btn" aria-label={`Aumentar ${rotulo}`} disabled={!podeMais} onClick={aoMais}>
+      <button type="button" className="site-seletor-btn" aria-label={`Aumentar ${rotulo}`} disabled={!podeMais} onClick={aoMais}>
         <Icon name="add" size={20} tone="inherit" />
       </button>
     </div>

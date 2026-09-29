@@ -13,12 +13,15 @@ import { textoMinimo } from "@/lib/vitrine/minimo";
 import { variacaoDoProduto } from "@/lib/vitrine/variacao";
 import { ConfigAvulso } from "./_interna/ConfigAvulso";
 import { ConfigBento } from "./_interna/ConfigBento";
-import { ConfigBolo } from "./_interna/ConfigBolo";
-import { ConfigCento } from "./_interna/ConfigCento";
+import { ConfigEditavel } from "./_interna/ConfigEditavel";
 import { Galeria } from "./_interna/Galeria";
 import "./interna.css";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = {
+  params: Promise<{ slug: string }>;
+  // ?editar={id da linha do carrinho}: abre Cento ou Bolo para editar essa linha.
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
 // Uma busca só por requisição, dividida entre generateMetadata e a página.
 const carregar = cache((slug: string) => buscarInterna(slug));
@@ -43,9 +46,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // Bolo escolhe tamanho, formato e recheio; o Bento Cake escolhe o recheio e
 // a quantidade; o avulso (inclusive o Smash Cake) escolhe a quantidade.
 // Todos gravam no carrinho do navegador ("Adicionar ao pedido") e atualizam
-// o contador do cabeçalho.
-export default async function ProdutoPage({ params }: Props) {
+// o contador do cabeçalho. Cento e Bolo também abrem em modo edição, pelo ícone
+// de editar do carrinho (?editar={id da linha}, ver ConfigEditavel).
+export default async function ProdutoPage({ params, searchParams }: Props) {
   const interna = await carregar((await params).slug);
+  const editar = (await searchParams)?.editar;
+  const editarId = (Array.isArray(editar) ? editar[0] : editar) || null;
   if (interna.estado === "nao-encontrado") notFound();
 
   if (interna.estado === "erro") {
@@ -121,9 +127,9 @@ export default async function ProdutoPage({ params }: Props) {
           <div className="interna-divisor" />
 
           {variacao === "cento" ? (
-            <ConfigCento produto={produto} sabores={sabores} />
+            <ConfigEditavel key={editarId ?? "novo"} tipo="cento" produto={produto} sabores={sabores} editarId={editarId} />
           ) : variacao === "bolo" ? (
-            <ConfigBolo produto={produto} recheios={recheios} />
+            <ConfigEditavel key={editarId ?? "novo"} tipo="bolo" produto={produto} recheios={recheios} editarId={editarId} />
           ) : variacao === "bento" ? (
             <ConfigBento produto={produto} recheios={recheios} />
           ) : (

@@ -1,13 +1,22 @@
+import { STEP_QUANTIDADE_VALUES, type StepQuantidade } from "@/lib/produtos/types";
 import { formatoValido, kgValido, type FormatoBolo } from "@/lib/vitrine/bolo";
 import { centosValidos, PASSO_SABOR, totalDoCento } from "@/lib/vitrine/cento";
-import { MAX_QUANTIDADE } from "@/lib/vitrine/quantidade";
+import {
+  MAX_QUANTIDADE,
+  normalizarQuantidade,
+  passoQuantidade,
+  quantidadeInicial,
+  quantidadeMaxima,
+} from "@/lib/vitrine/quantidade";
 
 // Carrinho do site público: regras puras, cobertas por teste. O estado
 // fica no navegador (localStorage, src/lib/carrinho/armazenamento.ts) e é
 // lido pelo CarrinhoProvider. Nada aqui vale como verdade para o pedido:
-// nome, preço e unidade de cada linha são só para exibir, e a página do
-// carrinho e o servidor do checkout conferem tudo de novo no banco (produto
-// ativo, preço atual, mínimo, step e composição do Cento).
+// nome, preço, foto, mínimo e step de cada linha são uma cópia do momento em
+// que o item foi adicionado. A página do carrinho NÃO consulta o banco: mostra
+// e soma o que está gravado (risco aceito, decisão do Cainan). Quem confere
+// tudo de novo no banco (produto ativo, preço atual, mínimo, step, recheio e
+// composição do Cento) é o servidor do checkout.
 
 export const VERSAO_CARRINHO = 1;
 export const MAX_LINHAS = 50;
@@ -26,6 +35,9 @@ type LinhaBase = {
   // item para a mensagem do WhatsApp e para o registro do pedido; é
   // diferente das observações do pedido inteiro, no checkout.
   observacao: string | null;
+  // Capa do produto no momento da adição, só para exibir. Opcional: linha de
+  // antes deste campo aparece com o fundo da marca.
+  foto?: string | null;
 };
 
 export type LinhaAvulso = LinhaBase & {
@@ -33,6 +45,11 @@ export type LinhaAvulso = LinhaBase & {
   unidade_venda: string | null;
   // Na unidade de venda, inteira.
   quantidade: number;
+  // Pedido mínimo e step do produto no momento da adição, para a página do
+  // carrinho travar a quantidade sem consultar o banco. Opcionais: linha sem
+  // eles não tem controle de quantidade, só remover.
+  pedidoMinimo?: number;
+  step?: StepQuantidade;
 };
 
 export type LinhaCento = LinhaBase & {
@@ -65,6 +82,8 @@ export type LinhaBento = LinhaBase & {
   tipo: "bento";
   quantidade: number;
   recheio: RecheioEscolhido;
+  // Pedido mínimo do produto no momento da adição (o Bento não tem step).
+  pedidoMinimo?: number;
 };
 
 export type LinhaCarrinho = LinhaAvulso | LinhaCento | LinhaBolo | LinhaBento;
@@ -152,6 +171,125 @@ export function contarItens(linhas: LinhaCarrinho[]): number {
   return linhas.length;
 }
 
+// --- Página do carrinho ------------------------------------------------------
+// Tudo em cima do que está gravado na linha, sem banco.
+
+// Mínimo e step da linha para o seletor da página do carrinho, ou null quando
+// a linha não tem controle de quantidade: Cento e Bolo (só se remove e se
+// adiciona de novo pela interna) e linha antiga sem os campos gravados. O
+// Smash Cake é um avulso; o Bento Cake não usa step.
+export function controleDaQuantidade(linha: LinhaCarrinho): { minimo: number; step: StepQuantidade } | null {
+  if (linha.tipo === "normal" && linha.pedidoMinimo !== undefined && linha.step !== undefined) {
+    return { minimo: linha.pedidoMinimo, step: linha.step };
+  }
+  if (linha.tipo === "bento" && linha.pedidoMinimo !== undefined) {
+    return { minimo: linha.pedidoMinimo, step: "livre" };
+  }
+  return null;
+}
+
+export type LimitesQuantidade = { minimo: number; maximo: number; podeMenos: boolean; podeMais: boolean };
+
+// Menor e maior quantidade aceitas na linha, e se os botões − e + andam.
+export function limitesDaLinha(linha: LinhaCarrinho): LimitesQuantidade | null {
+  const controle = controleDaQuantidade(linha);
+  if (!controle) return null;
+  const minimo = quantidadeInicial(controle.minimo, controle.step);
+  const maximo = quantidadeMaxima(controle.step);
+  return { minimo, maximo, podeMenos: linha.quantidade > minimo, podeMais: linha.quantidade < maximo };
+}
+
+// Troca a quantidade de uma linha com controle, levando o valor para o mais
+// próximo aceito (mínimo, step e teto). Linha sem controle não muda.
+export function alterarQuantidade(linhas: LinhaCarrinho[], id: string, quantidade: number): LinhaCarrinho[] {
+  return linhas.map((l) => {
+    if (l.id !== id) return l;
+    const controle = controleDaQuantidade(l);
+    if (!controle || (l.tipo !== "normal" && l.tipo !== "bento")) return l;
+    return { ...l, quantidade: normalizarQuantidade(quantidade, controle.minimo, controle.step) };
+  });
+}
+
+// Um passo do step (botões − e +) na linha.
+export function passoNaLinha(linha: LinhaCarrinho, direcao: 1 | -1): number {
+  const controle = controleDaQuantidade(linha);
+  if (!controle) return linha.quantidade;
+  return passoQuantidade(linha.quantidade, direcao, controle.minimo, controle.step);
+}
+
+// Subtotal da linha, em centavos inteiros para a soma não acumular erro de
+// ponto flutuante. Sempre preço gravado × quantidade gravada: avulso e Bento
+// = unidades; Cento = centos (preço por cento); Bolo = kg (preço por kg do
+// recheio).
+export function subtotalEmCentavos(linha: LinhaCarrinho): number {
+  return Math.round(linha.preco * 100) * linha.quantidade;
+}
+
+export function subtotalDaLinha(linha: LinhaCarrinho): number {
+  return subtotalEmCentavos(linha) / 100;
+}
+
+export function totalDoCarrinho(linhas: LinhaCarrinho[]): number {
+  return linhas.reduce((soma, l) => soma + subtotalEmCentavos(l), 0) / 100;
+}
+
+// Desfazer remoção: põe a linha de volta onde estava. `ordem` são os ids na
+// ordem que a lista tinha antes de tirar a linha; ela volta logo antes da
+// primeira linha que vinha depois dela e ainda existe (ou no fim). Assim vale
+// mesmo que outras linhas tenham sido removidas ou desfeitas no meio. Se a
+// linha já está na lista, nada muda.
+export function reinserirLinha(linhas: LinhaCarrinho[], linha: LinhaCarrinho, ordem: string[]): LinhaCarrinho[] {
+  if (linhas.some((l) => l.id === linha.id) || linhas.length >= MAX_LINHAS) return linhas;
+  const seguintes = new Set(ordem.slice(ordem.indexOf(linha.id) + 1));
+  const indice = linhas.findIndex((l) => seguintes.has(l.id));
+  if (indice === -1) return [...linhas, linha];
+  return [...linhas.slice(0, indice), linha, ...linhas.slice(indice)];
+}
+
+// --- Editar Cento e Bolo -----------------------------------------------------
+// O ícone de editar da linha leva à interna do produto com ?editar={id da
+// linha}. A linha só muda quando a edição é confirmada, e aí é trocada por
+// outra, de um por um, na mesma posição.
+
+export type LinhaEditavel = LinhaCento | LinhaBolo;
+
+// Cento e Bolo (Avulso, Smash Cake e Bento Cake ajustam a quantidade direto
+// no carrinho). Sem slug não há para onde levar, então não edita.
+export function podeEditarNaInterna(linha: LinhaCarrinho): linha is LinhaEditavel & { slug: string } {
+  return (linha.tipo === "cento" || linha.tipo === "bolo") && linha.slug !== null;
+}
+
+// Linha que o ?editar= aponta, se ela ainda serve: existe, é do mesmo produto
+// e do mesmo tipo da interna. Senão null (vínculo perdido).
+export function linhaParaEditar(
+  linhas: LinhaCarrinho[],
+  id: string,
+  produtoId: string,
+  tipo: LinhaEditavel["tipo"]
+): LinhaEditavel | null {
+  const linha = linhas.find((l) => l.id === id);
+  if (!linha || (linha.tipo !== "cento" && linha.tipo !== "bolo")) return null;
+  return linha.produtoId === produtoId && linha.tipo === tipo ? linha : null;
+}
+
+// Retrato da linha no instante em que a edição abriu. A troca só vale se a
+// linha ainda for exatamente esta (não foi removida nem mudou em outra aba).
+export function assinaturaDaLinha(linha: LinhaCarrinho): string {
+  return JSON.stringify(linha);
+}
+
+// Troca a linha `id` pela versão editada, na mesma posição e com o mesmo id.
+// Nunca junta com outra linha (nem se a composição ficar igual à de outra) e
+// nunca cria linha nova: se o id não existe, o produto ou o tipo não batem ou
+// a linha nova é inválida, devolve a lista como estava.
+export function substituirLinha(linhas: LinhaCarrinho[], id: string, nova: LinhaCarrinho): LinhaCarrinho[] {
+  const atual = linhas.find((l) => l.id === id);
+  if (!atual || atual.produtoId !== nova.produtoId || atual.tipo !== nova.tipo) return linhas;
+  const trocada = { ...nova, id } as LinhaCarrinho;
+  if (!linhaValida(trocada)) return linhas;
+  return linhas.map((l) => (l.id === id ? trocada : l));
+}
+
 // --- Leitura do que está salvo no navegador ---------------------------------
 // O texto do localStorage pode ter sido mexido à mão, vir de uma versão
 // antiga ou estar corrompido: cada linha é conferida e a inválida é
@@ -179,14 +317,19 @@ export function linhaValida(v: unknown): v is LinhaCarrinho {
   if (typeof l.preco !== "number" || !Number.isFinite(l.preco) || l.preco < 0) return false;
   if (l.observacao !== null && !(typeof l.observacao === "string" && l.observacao.length <= OBSERVACAO_MAX)) return false;
 
+  if (l.foto !== undefined && l.foto !== null && !texto(l.foto, 2000)) return false;
+
   if (l.tipo === "normal") {
     if (l.unidade_venda !== null && !texto(l.unidade_venda, 20)) return false;
+    if (l.pedidoMinimo !== undefined && !inteiro(l.pedidoMinimo, 1, MAX_QUANTIDADE)) return false;
+    if (l.step !== undefined && !(STEP_QUANTIDADE_VALUES as readonly unknown[]).includes(l.step)) return false;
     return inteiro(l.quantidade, 1, MAX_QUANTIDADE);
   }
   if (l.tipo === "bolo") {
     return kgValido(l.quantidade as number) && recheioValido(l.recheio) && formatoValido(l.formato);
   }
   if (l.tipo === "bento") {
+    if (l.pedidoMinimo !== undefined && !inteiro(l.pedidoMinimo, 1, MAX_QUANTIDADE)) return false;
     return inteiro(l.quantidade, 1, MAX_QUANTIDADE) && recheioValido(l.recheio);
   }
   if (l.tipo === "cento") {

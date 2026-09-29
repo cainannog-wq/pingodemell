@@ -194,61 +194,6 @@
   display: none;
 }
 
-/* Seletor em pílula (− valor +). */
-.interna-seletor {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  height: 44px;
-  padding: 0 4px;
-  box-sizing: border-box;
-  border: 2px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  background: var(--surface-raised);
-}
-.interna-seletor[data-apagado="true"] {
-  border-color: var(--border-default);
-}
-.interna-seletor[data-invalido="true"] {
-  border-color: var(--pdm-error);
-}
-.interna-seletor-btn {
-  width: 36px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--brown-500);
-  cursor: pointer;
-}
-.interna-seletor-btn:disabled {
-  color: var(--ink-300);
-  cursor: not-allowed;
-}
-.interna-seletor-valor {
-  min-width: 34px;
-  font: inherit;
-  font-weight: var(--fw-bold);
-  font-size: 16px;
-  color: var(--ink-900);
-  text-align: center;
-}
-input.interna-seletor-valor {
-  width: 56px;
-  height: 36px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-}
-.interna-seletor[data-apagado="true"] .interna-seletor-valor {
-  color: var(--ink-300);
-}
-
 /* Composição do Cento. */
 .interna-composicao {
   background: var(--surface-card);
@@ -732,4 +677,43 @@ input.interna-seletor-valor {
 .interna-aviso .material-symbols-outlined,
 .interna-nota .material-symbols-outlined {
   flex: none;
+}
+
+/* Faixa do modo edição (aberta pelo ícone de editar do carrinho, ?editar=). */
+.interna-edicao {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--gold-100);
+  color: var(--ink-700);
+}
+.interna-edicao[data-tipo="perdido"] {
+  background: #eaeff4;
+}
+.interna-edicao .material-symbols-rounded {
+  flex: none;
+  margin-top: 1px;
+  color: var(--brown-700);
+}
+.interna-edicao-texto {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.pdm-site .interna-edicao-texto a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.interna-edicao-carregando {
+  min-height: 240px;
 }
