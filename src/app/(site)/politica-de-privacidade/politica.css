@@ -23,6 +23,8 @@
   color: var(--text-link);
   text-decoration: underline;
   text-underline-offset: 3px;
+  /* O telefone não quebra no meio ("(41)" numa linha, o resto na outra). */
+  white-space: nowrap;
 }
 
 .politica-topo {
