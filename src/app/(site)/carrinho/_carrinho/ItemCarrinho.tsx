@@ -1,10 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "@/components/ds";
-import { Hive } from "@/components/site/Hive";
+import { DetalhesDaLinha, FotoDaLinha, textoQuantidadeDaLinha } from "@/components/site/LinhaDoPedido";
 import { Seletor } from "@/components/site/Seletor";
 import {
   controleDaQuantidade,
@@ -16,40 +15,18 @@ import {
 } from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
 import { ROTAS } from "@/lib/site/rotas";
-import { FORMATO_BOLO_LABELS } from "@/lib/vitrine/bolo";
-import { UNIDADES_POR_CENTO } from "@/lib/vitrine/cento";
-import { textoUnidadeVenda } from "@/lib/vitrine/mais-pedidos";
-import { nomeDaUnidade, textoQuantidadeNaUnidade } from "@/lib/vitrine/minimo";
+import { nomeDaUnidade } from "@/lib/vitrine/minimo";
 import { erroQuantidade } from "@/lib/vitrine/quantidade";
 
 // Uma linha do carrinho. Tudo que aparece aqui é o que foi gravado no
 // navegador quando o item foi adicionado (nome, preço, recheio, formato,
-// sabores, foto, observação): nenhuma consulta ao banco.
+// sabores, foto, observação): nenhuma consulta ao banco. A exibição por
+// tipo (foto, detalhes, quantidade fixa) é a mesma do resumo do checkout
+// (src/components/site/LinhaDoPedido.tsx).
 //
 // Quantidade: só Avulso (Smash Cake é um avulso) e Bento Cake têm o
 // seletor, travado no mínimo e no step gravados na linha. Cento e Bolo só
 // têm o botão de remover; para mudar, remove e adiciona de novo pela interna.
-
-function FotoDoItem({ foto, nome }: { foto: string | null | undefined; nome: string }) {
-  const [falhou, setFalhou] = useState(false);
-  if (foto && !falhou) {
-    return (
-      <Image
-        src={foto}
-        alt={`Foto de ${nome}`}
-        fill
-        sizes="(max-width: 767px) 104px, 120px"
-        style={{ objectFit: "cover" }}
-        onError={() => setFalhou(true)}
-      />
-    );
-  }
-  return (
-    <div className="carrinho-item-fallback" role="img" aria-label={`${nome}: foto ainda não disponível`}>
-      <Hive />
-    </div>
-  );
-}
 
 // Seletor da quantidade com o texto digitado à parte: enquanto o número
 // digitado não vale (abaixo do mínimo, fora do step), a linha não muda e a
@@ -122,60 +99,6 @@ function textoDaUnidade(linha: Extract<LinhaCarrinho, { tipo: "normal" | "bento"
   return [unidade, minimo].filter(Boolean).join(" · ");
 }
 
-// Valor em reais que não quebra no meio ("R$" numa linha e "95,99" na outra).
-function Dinheiro({ valor }: { valor: number }) {
-  return <span className="carrinho-nb">{formatMoeda(valor)}</span>;
-}
-
-function Detalhes({ linha }: { linha: LinhaCarrinho }) {
-  if (linha.tipo === "cento") {
-    const total = linha.quantidade * UNIDADES_POR_CENTO;
-    return (
-      <>
-        <p>
-          {linha.sabores
-            .filter((s) => s.quantidade > 0)
-            .map((s) => `${s.nome} ${s.quantidade}`)
-            .join(" · ")}
-        </p>
-        <p>
-          {linha.quantidade} {linha.quantidade === 1 ? "cento" : "centos"} · {total} unidades · <Dinheiro valor={linha.preco} />{" "}
-          {textoUnidadeVenda({ tipo: "cento", unidade_venda: null })}
-        </p>
-      </>
-    );
-  }
-  if (linha.tipo === "bolo") {
-    return (
-      <>
-        <p>
-          Recheio: {linha.recheio.nome} · Formato: {FORMATO_BOLO_LABELS[linha.formato]}
-        </p>
-        <p>
-          {linha.quantidade} kg × <Dinheiro valor={linha.preco} /> o kg
-        </p>
-      </>
-    );
-  }
-  if (linha.tipo === "bento") {
-    return (
-      <>
-        <p>Recheio: {linha.recheio.nome}</p>
-        <p>
-          <Dinheiro valor={linha.preco} /> cada
-        </p>
-      </>
-    );
-  }
-  const unidade = textoUnidadeVenda({ tipo: "normal", unidade_venda: linha.unidade_venda });
-  return (
-    <p>
-      <Dinheiro valor={linha.preco} />
-      {unidade ? ` ${unidade}` : null}
-    </p>
-  );
-}
-
 export function ItemCarrinho({
   linha,
   aoRemover,
@@ -190,7 +113,7 @@ export function ItemCarrinho({
   return (
     <li className="carrinho-item" data-linha={linha.id} data-tipo={linha.tipo}>
       <div className="carrinho-item-foto">
-        <FotoDoItem foto={linha.foto} nome={linha.nome} />
+        <FotoDaLinha foto={linha.foto} nome={linha.nome} sizes="(max-width: 767px) 104px, 120px" />
       </div>
 
       <div className="carrinho-item-topo">
@@ -219,7 +142,7 @@ export function ItemCarrinho({
       </div>
 
       <div className="carrinho-item-detalhes">
-        <Detalhes linha={linha} />
+        <DetalhesDaLinha linha={linha} />
       </div>
 
       {linha.observacao ? (
@@ -240,15 +163,7 @@ export function ItemCarrinho({
               <span className="carrinho-item-unidade">{textoDaUnidade(linha)}</span>
             </>
           ) : (
-            <span className="carrinho-item-fixo">
-              {linha.tipo === "normal"
-                ? textoQuantidadeNaUnidade(linha.quantidade, linha.unidade_venda)
-                : linha.tipo === "bolo"
-                  ? `${linha.quantidade} kg`
-                  : linha.tipo === "cento"
-                    ? `${linha.quantidade} ${linha.quantidade === 1 ? "cento" : "centos"}`
-                    : `${linha.quantidade} ${linha.quantidade === 1 ? "unidade" : "unidades"}`}
-            </span>
+            <span className="carrinho-item-fixo">{textoQuantidadeDaLinha(linha)}</span>
           )}
         </div>
         <span className="carrinho-item-subtotal">

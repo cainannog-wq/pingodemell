@@ -1606,3 +1606,23 @@ input.site-seletor-valor {
     bottom: calc(var(--carrinho-barra-h) + 12px + env(safe-area-inset-bottom));
   }
 }
+
+/* ---------- Linha do pedido (carrinho e resumo do checkout) ---------- */
+
+/* Foto que falta: fundo da marca com a colmeia. */
+.site-linha-fallback {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--gradient-brand);
+}
+.site-linha-fallback .site-hive {
+  right: -30px;
+  bottom: -40px;
+  font-size: 120px !important;
+  opacity: 0.25;
+}
+/* Valor em reais que não quebra no meio. */
+.site-nb {
+  white-space: nowrap;
+}
