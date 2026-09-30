@@ -11,15 +11,12 @@ import { reiniciarParaTeste } from "@/lib/carrinho/armazenamento";
 import { CHAVE_IDEMPOTENCIA, CHAVE_RETRATO } from "@/lib/pedidos/retrato";
 
 // O que o site público guarda no navegador. A Política de Privacidade
-// (seções 2 e 8) diz que são só o carrinho (localStorage) e o formulário do
-// checkout (sessionStorage). Qualquer chave ou cookie novo quebra este
-// teste: aí o texto da política precisa de versão nova ANTES do merge.
-//
-// PR confirmacao-e-gravacao: duas chaves novas no sessionStorage, listadas
-// aqui de propósito: pdm-checkout-chave-v1 (chave de idempotência do envio,
-// uuid sem dado pessoal) e pdm-pedido-enviado-v1 (retrato do pedido enviado,
-// lido pela /confirmacao). As seções 2 e 8 da Política serão atualizadas no
-// PR seguinte (6c), antes da validação jurídica.
+// (seção 2.5 e primeiro parágrafo da seção 8) diz que são só o carrinho
+// (localStorage), o formulário do checkout, o resumo do pedido enviado
+// (pdm-pedido-enviado-v1, lido pela /confirmacao) e o código que evita
+// pedido duplicado (pdm-checkout-chave-v1, uuid sem dado pessoal), os três
+// no sessionStorage. Qualquer chave ou cookie novo quebra este teste: aí o
+// texto da política precisa de versão nova ANTES do merge.
 
 vi.setConfig({ testTimeout: 30_000 });
 
@@ -188,7 +185,7 @@ describe("Armazenamento do navegador no site público", () => {
   });
 
   it("as chaves de sessionStorage do envio são exatamente pdm-pedido-enviado-v1 e pdm-checkout-chave-v1", () => {
-    // Seções 2 e 8 da Política: atualização no PR seguinte (6c).
+    // Descritas na Política, seção 2.5 e primeiro parágrafo da seção 8.
     expect([CHAVE_RETRATO, CHAVE_IDEMPOTENCIA]).toEqual(["pdm-pedido-enviado-v1", "pdm-checkout-chave-v1"]);
   });
 });
