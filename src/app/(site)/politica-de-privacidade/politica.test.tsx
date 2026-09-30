@@ -36,7 +36,8 @@ afterEach(() => {
   vi.resetModules();
 });
 
-// Texto aprovado pelo Cainan (versão 1, redação formal), copiado
+// Texto aprovado pelo Cainan (versão 1, redação formal; seções 2 e 8
+// ajustadas no PR do item 6c), copiado
 // literalmente do pedido — de propósito, não do componente. Cada entrada é
 // um parágrafo, título ou item de lista, na ordem da página; a numeração
 // interna (2.1, 2.2...) é texto do parágrafo. A linha da versão fica de
@@ -49,10 +50,11 @@ const TEXTO_LITERAL = [
   "O canal de atendimento ao Titular, para o exercício de direitos e para quaisquer questões relativas ao tratamento de dados pessoais, é o WhatsApp (41) 98800-2315, durante o horário de atendimento da loja.",
   "2. Dados Pessoais Tratados",
   "2.1. No momento da finalização do pedido, são solicitados os seguintes dados: nome, número de WhatsApp, endereço de correio eletrônico (campo facultativo), endereço de entrega (somente quando escolhida a modalidade de entrega), data e horário desejados, ocasião, forma de pagamento escolhida, observações e itens do pedido, com as respectivas quantidades e preços.",
-  "2.2. Não são coletados números de cartão, dados bancários nem CPF. O sítio eletrônico não realiza processamento de pagamentos, sendo a forma de pagamento ajustada no atendimento.",
-  "2.3. É registrado o endereço IP do Titular a cada tentativa de envio de pedido recebida pelo sítio eletrônico, ainda que o pedido não seja concluído. Tal registro tem a finalidade exclusiva de contabilizar as tentativas originadas de um mesmo endereço em curto período e de prevenir o uso abusivo do sítio eletrônico.",
-  "2.4. Durante a montagem do pedido, o carrinho é mantido no armazenamento do navegador do Titular, a fim de evitar sua perda caso a página seja fechada. Os dados digitados no formulário do pedido (nome, WhatsApp, email, endereço, data, horário, ocasião, forma de pagamento e observações) também são mantidos no navegador, apenas na aba em uso, a fim de evitar sua perda caso o Titular retorne ao carrinho, e são eliminados quando a aba é fechada. O carrinho e o formulário permanecem no dispositivo do Titular e somente são transmitidos ao Controlador com a confirmação do pedido.",
-  "2.5. Fotografias de referência para bolos e doces não são enviadas por meio do sítio eletrônico, devendo ser encaminhadas pelo Titular diretamente pelo WhatsApp.",
+  "2.2. No campo de observações, o Titular poderá informar, por sua iniciativa, dados necessários à produção do pedido, como alergias ou restrições alimentares, que podem constituir dados pessoais sensíveis referentes à saúde. Tais informações são utilizadas exclusivamente para a preparação do pedido com segurança. O Titular não é obrigado a informá-las por meio do sítio eletrônico e poderá ajustá-las diretamente com a equipe, pelo WhatsApp.",
+  "2.3. Não são coletados números de cartão, dados bancários nem CPF. O sítio eletrônico não realiza processamento de pagamentos, sendo a forma de pagamento ajustada no atendimento.",
+  "2.4. É registrado o endereço IP do Titular a cada envio de pedido, com dados válidos, recebido pelo sítio eletrônico, ainda que o pedido não seja concluído. Tal registro tem a finalidade exclusiva de contabilizar os pedidos originados de um mesmo endereço em curto período e de prevenir o uso abusivo do sítio eletrônico.",
+  "2.5. Durante a montagem do pedido, o carrinho é mantido no armazenamento do navegador do Titular, a fim de evitar sua perda caso a página seja fechada. Os dados digitados no formulário do pedido (nome, WhatsApp, email, endereço, data, horário, ocasião, forma de pagamento e observações) também são mantidos no navegador, apenas na aba em uso, a fim de evitar sua perda caso o Titular retorne ao carrinho, e são eliminados quando a aba é fechada. Concluído o envio do pedido, o navegador mantém, igualmente apenas na aba em uso, um resumo do pedido enviado (número do pedido, itens, valores e o texto da mensagem a ser encaminhada pelo WhatsApp), a fim de permitir ao Titular rever a confirmação e enviar a mensagem, sendo esse resumo eliminado quando a aba é fechada. O navegador mantém ainda, na aba em uso, um código aleatório destinado exclusivamente a evitar o registro em duplicidade do mesmo pedido. O carrinho e o formulário permanecem no dispositivo do Titular e somente são transmitidos ao Controlador com a confirmação do pedido.",
+  "2.6. Fotografias de referência para bolos e doces não são enviadas por meio do sítio eletrônico, devendo ser encaminhadas pelo Titular diretamente pelo WhatsApp.",
   "3. Finalidades e Bases Legais",
   "3.1. Os dados pessoais são tratados exclusivamente para receber, confirmar, produzir e entregar o pedido, bem como para contatar o Titular por WhatsApp ou email quando necessário ao atendimento.",
   "3.2. Os dados pessoais não são utilizados para fins publicitários, não há envio de comunicações promocionais, e os dados não são vendidos nem cedidos a terceiros.",
@@ -85,7 +87,7 @@ const TEXTO_LITERAL = [
   "O acesso ao painel administrativo em que os pedidos são consultados é restrito a pessoa autorizada, mediante login e senha. O banco de dados admite a gravação de pedidos exclusivamente por meio do servidor do sítio eletrônico, e a comunicação com o sítio eletrônico é protegida por criptografia (HTTPS).",
   "Nenhum sistema é absolutamente imune a falhas. Na hipótese de incidente de segurança que possa acarretar risco ou dano relevante ao Titular, o Controlador comunicará o Titular e a Autoridade Nacional de Proteção de Dados (ANPD), nos termos da lei.",
   "8. Cookies e Ferramentas de Análise",
-  "Atualmente, o sítio eletrônico não utiliza cookies de publicidade nem de análise de audiência. Os únicos dados armazenados no navegador do Titular são o carrinho e as informações digitadas no formulário do pedido, descritos na seção 2.",
+  "Atualmente, o sítio eletrônico não utiliza cookies de publicidade nem de análise de audiência. Os únicos dados armazenados no navegador do Titular são o carrinho, as informações digitadas no formulário do pedido, o resumo do pedido enviado e o código destinado a evitar o registro em duplicidade, descritos na seção 2.",
   "A eventual adoção de ferramentas de análise dependerá de prévia atualização desta Política e da obtenção do consentimento do Titular antes de sua ativação.",
   "9. Alterações desta Política",
   "A data de vigência desta Política consta no topo desta página. Havendo alteração relevante, esta será publicada nesta página, com a indicação da nova data de vigência.",
@@ -144,12 +146,35 @@ describe("Política de Privacidade — página", () => {
     expect(itens("direitos")).toHaveLength(7);
   });
 
-  it("mantém o formulário no navegador (seção 2.4) e o Google Fonts (seção 4)", () => {
+  it("mantém o formulário no navegador (seção 2.5) e o Google Fonts (seção 4)", () => {
     render(<PoliticaDePrivacidadePage />);
     const secao2 = textoVisivel(document.getElementById("dados-coletados")!);
     const secao4 = textoVisivel(document.getElementById("compartilhamento")!);
     expect(secao2).toContain("apenas na aba em uso");
     expect(secao4).toContain("Google Fonts");
+  });
+
+  it("seções 2 e 8 descrevem o dado de saúde nas observações, o IP, o resumo do pedido e o código da aba (6c)", () => {
+    render(<PoliticaDePrivacidadePage />);
+    const secao2 = textoVisivel(document.getElementById("dados-coletados")!);
+    const secao8 = textoVisivel(document.getElementById("cookies")!);
+    const pagina = textoVisivel(document.querySelector("article.politica")!);
+    expect(secao2).toMatch(/por sua iniciativa.*dados pessoais sensíveis referentes à saúde/);
+    expect(secao2).toContain("a cada envio de pedido, com dados válidos");
+    expect(secao2).toContain("um resumo do pedido enviado");
+    expect(secao2).toContain("um código aleatório destinado exclusivamente a evitar o registro em duplicidade");
+    expect(secao8).toContain("o resumo do pedido enviado e o código destinado a evitar o registro em duplicidade");
+    // Frases da redação anterior (antigo 2.3 e primeiro parágrafo da seção
+    // 8), que estavam na página até este PR.
+    expect(pagina).not.toContain("a cada tentativa de envio de pedido recebida pelo sítio eletrônico");
+    expect(pagina).not.toContain(
+      "são o carrinho e as informações digitadas no formulário do pedido, descritos na seção 2"
+    );
+    // Numeração interna da seção 2: 2.1 a 2.6, em ordem.
+    const numeros = [...document.getElementById("dados-coletados")!.querySelectorAll("p")].map(
+      (p) => /^(\d\.\d)\. /.exec(textoVisivel(p))?.[1]
+    );
+    expect(numeros).toEqual(["2.1", "2.2", "2.3", "2.4", "2.5", "2.6"]);
   });
 
   it("índice 'Nesta página' com os dez links âncora para as seções, com ids estáveis", () => {
