@@ -5,7 +5,8 @@
 /* O botão flutuante de contato não aparece aqui: ao lado do botão do
    pedido, levaria a cliente a uma conversa sem o pedido. */
 .pdm-site:has(.confirmacao) .site-fab {
-  display: none;
+  /* !important: o componente põe display direto no elemento. */
+  display: none !important;
 }
 
 .confirmacao-topo {
@@ -76,7 +77,7 @@
 }
 /* Texto escuro sobre o verde do WhatsApp: o branco do botão padrão não
    passa no contraste (1,9:1); aqui fica 11:1. */
-.confirmacao-whatsapp {
+.pdm-site .confirmacao-whatsapp {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -93,7 +94,7 @@
   box-shadow: var(--shadow-rest);
   transition: var(--transition-base);
 }
-.confirmacao-whatsapp:hover {
+.pdm-site .confirmacao-whatsapp:hover {
   background: #1fc45c;
   transform: scale(1.02);
 }

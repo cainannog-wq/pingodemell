@@ -203,7 +203,7 @@ export function PedidosList({
           <h1 className="admin-page-h1" style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
             Histórico de pedidos
           </h1>
-          <p style={{ margin: "4px 0 0", color: "var(--pdm-muted)" }}>Todo pedido fechado pelo WhatsApp fica registrado aqui.</p>
+          <p style={{ margin: "4px 0 0", color: "var(--pdm-muted)" }}>Todo pedido feito pelo site fica registrado aqui.</p>
         </div>
         <div className="admin-header-action-desktop">
           <Button variant="secondary" iconLeft="download" onClick={() => exportarPedidosCSV(rows)} disabled={rows.length === 0}>
@@ -355,7 +355,9 @@ export function PedidosList({
               </h3>
               <p style={{ margin: 0, color: "var(--pdm-muted)" }}>
                 {totalCount === 0
-                  ? "Pedidos fechados pelo WhatsApp aparecem aqui assim que forem registrados."
+                  ? quantosTestes > 0 && !mostrarTestes
+                    ? "Os pedidos de teste estão escondidos. Marque \"Mostrar pedidos de teste\" para ver."
+                    : "Pedidos feitos pelo site aparecem aqui assim que forem registrados."
                   : "Ajuste a busca ou o filtro de status para ver os pedidos cadastrados."}
               </p>
               {hasFilter ? (

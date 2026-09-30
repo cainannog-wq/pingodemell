@@ -123,7 +123,7 @@ export function PedidoDetail({ pedido }: { pedido: Pedido }) {
               Pedido #{pedido.numero}
             </h1>
             <p style={{ margin: "4px 0 0", color: "var(--pdm-muted)" }}>
-              Recebido em {formatDataHoraExtensa(pedido.criado_em)} pelo WhatsApp.
+              Registrado pelo site em {formatDataHoraExtensa(pedido.criado_em)}.
             </p>
           </div>
           <div className="pedido-detail-header-actions" style={{ display: "flex", alignItems: "center", gap: 12 }}>
