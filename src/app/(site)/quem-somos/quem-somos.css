@@ -1,0 +1,375 @@
+/* Quem Somos (página 7 do handoff). Medidas do handoff; só tokens que já
+   existem, nenhum token global alterado. */
+
+.qs-kicker {
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-small);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-strong);
+}
+
+/* ---------- Topo ---------- */
+
+.qs-hero {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.qs-hero .site-hive {
+  right: -80px;
+  top: -120px;
+  font-size: 320px !important;
+  opacity: 0.12;
+}
+.qs-hero-inner {
+  position: relative;
+  padding-block: 44px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+.pdm-site .qs-hero h1 {
+  font-size: 50px;
+}
+.qs-lead {
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink-700);
+  max-width: 720px;
+}
+
+/* ---------- História ---------- */
+
+.qs-historia-inner {
+  padding-block: 72px;
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 64px;
+  align-items: center;
+}
+.qs-foto {
+  position: relative;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.qs-foto img {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+  object-position: center 35%;
+  border-radius: 12px;
+  display: block;
+  box-shadow: var(--shadow-raised);
+}
+.qs-foto figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.qs-foto-nome {
+  font-weight: var(--fw-bold);
+  font-size: 16px;
+  color: var(--brown-700);
+}
+.qs-foto-papel {
+  font-size: 15px;
+  color: var(--text-muted);
+}
+.qs-selo {
+  position: absolute;
+  right: -24px;
+  top: -24px;
+}
+.qs-historia-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: flex-start;
+}
+.qs-paragrafos {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.qs-paragrafos p {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--ink-700);
+}
+.qs-citacao {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  border-left: 3px solid var(--gold-500);
+}
+.pdm-site .qs-citacao p {
+  font-family: var(--font-display);
+  font-weight: var(--fw-regular);
+  font-size: 26px;
+  line-height: 1.35;
+  color: var(--text-heading);
+}
+
+/* ---------- Valores ---------- */
+
+.qs-valores {
+  background: var(--gold-100);
+  padding-block: 64px;
+}
+.pdm-site .qs-valores h2 {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.qs-valores-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.qs-valores-lista > li > div {
+  height: 100%;
+}
+
+/* ---------- Contato ---------- */
+
+.qs-contato-inner {
+  padding-block: 72px;
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  grid-template-areas:
+    "kicker mapa"
+    "titulo mapa"
+    "lista mapa"
+    "botoes mapa";
+  grid-template-rows: auto auto auto 1fr;
+  column-gap: 56px;
+  row-gap: 24px;
+  align-items: start;
+}
+.qs-area-kicker {
+  grid-area: kicker;
+}
+.qs-area-titulo {
+  grid-area: titulo;
+}
+.qs-area-lista {
+  grid-area: lista;
+}
+.qs-area-botoes {
+  grid-area: botoes;
+}
+.qs-area-mapa {
+  grid-area: mapa;
+  align-self: center;
+}
+.qs-contato-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.qs-contato-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink-700);
+}
+.qs-contato-item p {
+  color: var(--ink-700);
+}
+.qs-fechado {
+  display: inline-block;
+  color: var(--text-muted);
+}
+/* O texto de LOJA é "segunda fechado"; o layout abre a linha com maiúscula. */
+.qs-fechado::first-letter {
+  text-transform: uppercase;
+}
+.pdm-site a.qs-contato-whatsapp {
+  align-items: center;
+  min-height: var(--tap-min);
+  margin-block: -10px;
+  color: var(--ink-700);
+}
+.pdm-site a.qs-contato-whatsapp:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.qs-botoes {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.pdm-site .qs-botao {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap-min);
+  padding: 13px 20px;
+  box-sizing: border-box;
+  border: 1px solid var(--brown-200);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-rest);
+  font-weight: var(--fw-bold);
+  font-size: 16px;
+  color: var(--brown-700);
+  transition: var(--transition-base);
+}
+.pdm-site .qs-botao:hover {
+  border-color: var(--gold-500);
+  color: var(--brown-800);
+}
+.qs-botao-instagram {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: block;
+  flex: none;
+}
+.qs-mapa {
+  border-radius: 12px;
+  overflow: hidden;
+  height: 360px;
+  box-shadow: var(--shadow-rest);
+  background: var(--cream-200);
+}
+.qs-mapa svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 767px) {
+  .qs-hero {
+    background: transparent;
+    border-bottom: 0;
+  }
+  .qs-hero .site-hive {
+    right: -90px;
+    top: -70px;
+    font-size: 240px !important;
+    opacity: 0.13;
+  }
+  .qs-hero-inner {
+    padding-block: 24px 20px;
+  }
+  .pdm-site .qs-hero h1 {
+    font-size: 34px;
+  }
+  .qs-lead {
+    font-size: 15px;
+  }
+
+  .qs-historia-inner {
+    padding-block: 8px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .qs-foto {
+    width: 100%;
+    gap: 10px;
+  }
+  .qs-foto img {
+    height: 230px;
+    box-shadow: var(--shadow-rest);
+  }
+  .qs-foto-nome {
+    font-size: 15px;
+  }
+  .qs-foto-papel {
+    font-size: 14px;
+  }
+  .qs-historia-texto {
+    gap: 16px;
+  }
+  .pdm-site .qs-historia h2 {
+    font-size: 22px;
+  }
+  .qs-paragrafos p {
+    font-size: 15px;
+  }
+  .qs-citacao {
+    margin-top: 4px;
+    padding-left: 16px;
+  }
+  .pdm-site .qs-citacao p {
+    font-size: 21px;
+  }
+
+  .qs-valores {
+    padding-block: 28px;
+  }
+  .pdm-site .qs-valores h2 {
+    text-align: left;
+    margin-bottom: 16px;
+  }
+  .qs-valores-lista {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .qs-contato-inner {
+    padding-block: 28px;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "kicker"
+      "titulo"
+      "mapa"
+      "lista"
+      "botoes";
+    grid-template-rows: none;
+    row-gap: 16px;
+  }
+  .qs-area-mapa {
+    width: 100%;
+  }
+  .qs-mapa {
+    height: 170px;
+  }
+  .qs-contato-lista {
+    gap: 14px;
+  }
+  .qs-contato-item {
+    gap: 12px;
+    font-size: 15px;
+  }
+  .qs-contato-item > .material-symbols-rounded {
+    font-size: 22px !important;
+  }
+  /* O handoff põe os dois lado a lado ("Ver no mapa" | "Instagram"). Com
+     "Abrir no Google Maps" e o ícone de nova aba, lado a lado o texto
+     quebra em três linhas; empilhados, cada um fica numa linha só. */
+  .qs-botoes {
+    width: 100%;
+    gap: 10px;
+    flex-direction: column;
+  }
+  .pdm-site .qs-botao {
+    width: 100%;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+  .qs-botao-instagram {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+  }
+}

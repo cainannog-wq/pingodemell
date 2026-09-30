@@ -9,7 +9,16 @@ export const LOJA = {
   nome: "Pingo de Mell",
   endereco: "Rua das Acácias, 412, Nações, Fazenda Rio Grande/PR",
   enderecoCurto: "Rua das Acácias, 412, Nações",
+  // Segunda linha do endereço na Quem Somos (a primeira é enderecoCurto).
+  cidade: "Fazenda Rio Grande, PR",
+  // Local da loja no Google Maps (link do handoff). Mesmo lugar do
+  // avaliacoesGoogleUrl (id 0x94dc5570c97917bd:0x6afc7f109f7f4b13), conferido
+  // em 30/09/2026.
+  mapsUrl: "https://maps.app.goo.gl/WV9T6qZpGMNdrXjk9",
   horario: "Terça a sábado, 9h às 18h · domingo, 9h às 15h",
+  // Também está dentro de horarioAtendimento; config.test.ts falha se as
+  // duas cópias divergirem.
+  diaFechado: "segunda fechado",
   horarioAtendimento:
     "Terça a sábado, 9h às 18h · domingo, 9h às 15h · segunda fechado. Fim de semana: peça até quinta.",
   telefone: "(41) 98800-2315",
@@ -18,6 +27,11 @@ export const LOJA = {
   avaliacoesGoogleUrl:
     "https://www.google.com/search?q=pingo+de+mell#lrd=0x94dc5570c97917bd:0x6afc7f109f7f4b13,1",
 } as const;
+
+// Perfil do Instagram montado a partir do @ de LOJA (fonte única do nome).
+export function urlInstagram(arroba: string = LOJA.instagram): string {
+  return `https://www.instagram.com/${arroba.replace(/^@/, "")}`;
+}
 
 export const WHATSAPP = {
   // Só dígitos, com DDI 55 + DDD 41 — formato exigido pelo wa.me.

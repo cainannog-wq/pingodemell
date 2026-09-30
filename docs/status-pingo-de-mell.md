@@ -2,7 +2,7 @@
 
 O status do projeto fica fora do repositório; este arquivo registra apenas o estado técnico.
 
-Todo PR que traz migração de schema atualiza este arquivo no mesmo PR (ver CLAUDE.md). Última atualização: 29/09/2026 (PR `confirmacao-e-gravacao`, item 7: gravação do pedido pelo site, tela `/confirmacao` e mensagem do WhatsApp, com a migração aditiva `pedidos-gravacao.sql`; antes, PR `politica-de-privacidade`, item 6b: texto definitivo da Política, sem migração; antes, PR `checkout-de-verdade`, item 6: checkout, sem migração; antes, PR `carrinho-de-verdade`, item 5: página do carrinho; antes, PR `bolo-bento`, item 3b: Bolo com recheio e tamanho, Smash Cake, Bento Cake e catálogo de recheios).
+Todo PR que traz migração de schema atualiza este arquivo no mesmo PR (ver CLAUDE.md). Última atualização: 30/09/2026 (PR `quem-somos`, item 8: página Quem Somos, estática, sem migração; antes, 29/09/2026, PR `confirmacao-e-gravacao`, item 7: gravação do pedido pelo site, tela `/confirmacao` e mensagem do WhatsApp, com a migração aditiva `pedidos-gravacao.sql`; antes, PR `politica-de-privacidade`, item 6b: texto definitivo da Política, sem migração; antes, PR `checkout-de-verdade`, item 6: checkout, sem migração; antes, PR `carrinho-de-verdade`, item 5: página do carrinho; antes, PR `bolo-bento`, item 3b: Bolo com recheio e tamanho, Smash Cake, Bento Cake e catálogo de recheios).
 
 Banco único: o projeto Supabase `npervqefspmwmrekskcb` (região `sa-east-1`) atende produção, previews da Netlify e os scripts locais (`SUPABASE_URL` do `.env.local`). Não existe banco de staging.
 
@@ -51,7 +51,7 @@ Site público (`src/app/(site)`):
 | `/carrinho` | Carrinho (PR `carrinho-de-verdade`, item 5). Página estática (`○` no build), sem nenhuma consulta ao banco: lê só o `localStorage` (ver seção abaixo). Sem `robots`/sitemap próprios ainda (Fase 4) |
 | `/checkout` | Checkout (PR `checkout-de-verdade`, item 6). Dinâmica (`ƒ`): lê dias sem produção, prazos e ofertas; **não** reconfere as linhas do carrinho. Desde o PR `confirmacao-e-gravacao`, o botão final envia o pedido a `POST /api/pedidos` (ver "Confirmação e gravação do pedido"). `robots: noindex` |
 | `/confirmacao` | Confirmação (PR `confirmacao-e-gravacao`, item 7). Estática (`○`): lê só o retrato do pedido enviado, no `sessionStorage` da aba; **nunca consulta o banco pelo número**. `robots: noindex, nofollow`; nenhum dado do pedido no título nem na URL |
-| `/quem-somos`, `/quem-somos#contato` | reservadas em `src/lib/site/rotas.ts`; ainda caem na 404 |
+| `/quem-somos` | Quem Somos (PR `quem-somos`, item 8). Estática (`○`), sem banco nem armazenamento. `/quem-somos#contato` é a seção de contato da mesma página (item "Contato" do menu e do rodapé). Ver "Quem Somos" |
 
 Admin (exige login; `src/app/admin`): `/login`, `/admin`, `/admin/produtos`, `/admin/produtos/novo`, `/admin/produtos/{nome}`, `/admin/pedidos`, `/admin/pedidos/{numero}`, `/admin/dias-off`, `/admin/recheios`, `/admin/recheios/novo`, `/admin/recheios/{id}`.
 
@@ -220,6 +220,14 @@ Os 15 produtos em 28/09/2026 05:04 UTC, depois da etapa 1 (todos com `atualizado
 - **Diferenças do handoff** (`6 - Confirmação.dc.html`), aprovadas: selo "registrado, falta enviar"; sem "Voltar e editar" depois de gravado ("Fazer novo pedido"); botão do WhatsApp antes da prévia; sem emoji nem `*negrito*` na mensagem; passos sem sinal/Pix; horário como informação, sem "retornamos na abertura seguinte". Não aprovada, a registrar: o botão grande do WhatsApp usa texto escuro sobre o verde (o branco do botão padrão do DS tem contraste 1,9:1); o botão flutuante de contato some nesta tela.
 
 
+## Quem Somos (PR `quem-somos`, item 8)
+
+- **Conteúdo:** texto e foto do handoff (`7 - Quem Somos.dc.html`), trazidos da loja pelo Cainan, sem reescrita; só `Segunda-feira fechado` virou `segunda fechado` (sem hífen). As versões desktop e mobile do handoff (história, cartões de valores, botão do Instagram) ficam as duas no HTML e a inativa some com `display:none` (`.site-so-desktop`/`.site-so-mobile`).
+- **Dados da loja só de `LOJA`** (`src/lib/site/config.ts`): endereço (`enderecoCurto` + `cidade`), horário (`horario` + `diaFechado`), telefone, Instagram (`urlInstagram()`, montado do `@`) e Google Maps (`mapsUrl`). Campos novos neste PR, com ok do Cainan: `cidade`, `mapsUrl`, `diaFechado`. `config.test.ts` falha se `horarioAtendimento` deixar de conter `diaFechado`, se `endereco` divergir de `enderecoCurto` + `cidade` ou se o número do WhatsApp sem mensagem divergir de `WHATSAPP.numero`. `mapsUrl` (link curto do handoff) abre o mesmo lugar de `avaliacoesGoogleUrl` (id `0x94dc5570c97917bd:0x6afc7f109f7f4b13`, conferido em 30/09/2026).
+- **Nada de terceiro:** o mapa é um cartão ilustrado em SVG, sem texto, fora do leitor de tela e do foco; o único link é "Abrir no Google Maps" (nova aba). O handoff trazia um `iframe` do Google Maps, recusado (IP da visitante e cookies do Google). Domínios de terceiro com a página aberta: só `fonts.googleapis.com` e `fonts.gstatic.com` (fonte de ícones, já existente).
+- **WhatsApp do bloco de contato:** `LINK_WHATSAPP_SEM_MENSAGEM` (`src/lib/site/whatsapp.ts`), `https://wa.me/55` + dígitos de `LOJA.telefone`, sem mensagem; o botão flutuante continua com a mensagem de contato.
+- **Teste de hífen** (`quem-somos.test.tsx`): texto, `alt`, `aria-label` e `title` do `main`, nas duas versões; confere hífen, hífen tipográfico, hífen não separável, sinal de menos e os dois travessões. Ficam fora os valores de `LOJA` com hífen: `telefone` e `cnpj` (o CNPJ só aparece no rodapé, fora do `main`).
+- **Cabeçalho não é fixo** (rola com a página): chegando por "Contato", a seção fica no topo da tela.
 ## Quando o lote for para a main
 
 Passos que dependem do merge da `lote` na `main`, na ordem dos PRs:
