@@ -1,0 +1,100 @@
+﻿print: 01-quem-somos-1280-inteira.png
+print: 02-quem-somos-375-inteira.png
+domínios de terceiro: [ 'fonts.googleapis.com', 'fonts.gstatic.com' ]
+iframes: 0 scripts externos: []
+375 antes: {
+  url: '/quem-somos',
+  scrollY: 0,
+  menuAberto: false,
+  contatoTopo: 1546,
+  tituloContatoTopo: 1611,
+  atual: [
+    'Principal: Sobre nós',
+    'Principal (menu): Sobre nósarrow_forward'
+  ]
+}
+print: 03-menu-mobile-375-aberto.png
+375 depois de Contato no menu: {
+  url: '/quem-somos#contato',
+  scrollY: 1546,
+  menuAberto: false,
+  contatoTopo: 0,
+  tituloContatoTopo: 65,
+  atual: [
+    'Principal: Sobre nós',
+    'Principal (menu): Sobre nósarrow_forward'
+  ]
+}
+print: 04-menu-375-contato-abaixo-do-cabecalho.png
+375 depois de Sobre nós no menu: {
+  url: '/quem-somos',
+  scrollY: 0,
+  menuAberto: false,
+  contatoTopo: 1546,
+  tituloContatoTopo: 1611,
+  atual: [
+    'Principal: Sobre nós',
+    'Principal (menu): Sobre nósarrow_forward'
+  ]
+}
+print: 05-menu-375-sobre-nos-volta-ao-topo.png
+375 Home → Contato (menu): {
+  url: '/quem-somos#contato',
+  scrollY: 1546,
+  menuAberto: false,
+  contatoTopo: 0,
+  tituloContatoTopo: 65,
+  atual: [
+    'Principal: Sobre nós',
+    'Principal (menu): Sobre nósarrow_forward'
+  ]
+}
+print: 06-home-menu-375-contato.png
+1280 Home → Contato (cabeçalho): {
+  url: '/quem-somos#contato',
+  scrollY: 1194,
+  menuAberto: false,
+  contatoTopo: 199,
+  tituloContatoTopo: 318,
+  atual: [
+    'Principal: Sobre nós',
+    'Principal (menu): Sobre nósarrow_forward'
+  ]
+}
+print: 07-cabecalho-1280-contato.png
+1280 Home → Sobre nós (cabeçalho): {
+  url: '/quem-somos',
+  scrollY: 0,
+  menuAberto: false,
+  contatoTopo: 1393,
+  tituloContatoTopo: 1512,
+  atual: [
+    'Principal: Sobre nós',
+    'Principal (menu): Sobre nósarrow_forward'
+  ]
+}
+print: 08-cabecalho-1280-sobre-nos-atual.png
+print: 09-rodape-1280-links.png
+1280 rodapé → Sobre nós: {
+  url: '/quem-somos',
+  scrollY: 0,
+  menuAberto: false,
+  contatoTopo: 1393,
+  tituloContatoTopo: 1512,
+  atual: [
+    'Principal: Sobre nós',
+    'Principal (menu): Sobre nósarrow_forward'
+  ]
+}
+1280 rodapé → Contato: {
+  url: '/quem-somos#contato',
+  scrollY: 1194,
+  menuAberto: false,
+  contatoTopo: 199,
+  tituloContatoTopo: 318,
+  atual: [
+    'Principal: Sobre nós',
+    'Principal (menu): Sobre nósarrow_forward'
+  ]
+}
+print: 10-rodape-1280-contato.png
