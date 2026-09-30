@@ -27,6 +27,8 @@ const TABELAS = {
   segunda_reaberturas: ["S", SIUD],
   pedidos: ["", "SUD"],
   pedidos_rate_limit: ["", ""],
+  // Interruptor da gravação (supabase/pedidos-gravacao.sql): só a chave de serviço.
+  pedidos_gravacao: ["", ""],
   heartbeat: ["", ""],
 };
 
@@ -34,6 +36,9 @@ const TABELAS = {
 const FUNCOES = {
   salvar_produto_fotos: { anon: false, authenticated: true },
   registrar_tentativa_pedido: { anon: false, authenticated: false },
+  // Gravação de pedido pelo site (supabase/pedidos-gravacao.sql): só a chave de serviço.
+  registrar_tentativa_pedido_v2: { anon: false, authenticated: false },
+  criar_pedido: { anon: false, authenticated: false },
   rls_auto_enable: { anon: false, authenticated: false },
   produto_fotos_limite: { anon: false, authenticated: false },
   produtos_set_atualizado_em: { anon: false, authenticated: false },
@@ -50,7 +55,7 @@ const FUNCOES = {
 };
 
 // Sem política de propósito: só a chave de serviço acessa.
-const RLS_SEM_POLITICA_ESPERADO = ["heartbeat", "pedidos_rate_limit"];
+const RLS_SEM_POLITICA_ESPERADO = ["heartbeat", "pedidos_rate_limit", "pedidos_gravacao"];
 
 const PRIVS = { S: "SELECT", I: "INSERT", U: "UPDATE", D: "DELETE" };
 
@@ -182,7 +187,7 @@ await emTransacaoDesfeita("Permissões por papel e alertas do verificador", asyn
   const inesperados = achados.filter((a) => !a.includes("(intencional"));
   console.log("\nVerificador (regras de banco 0008/0011/0013/0028/0029):\n  " + (achados.join("\n  ") || "nenhum achado"));
   registrar(
-    "permissões 8. verificador: só os alertas intencionais (RLS sem política em heartbeat e pedidos_rate_limit)",
+    "permissões 8. verificador: só os alertas intencionais (RLS sem política em heartbeat, pedidos_rate_limit e pedidos_gravacao)",
     inesperados.length === 0,
     inesperados.length ? `inesperados: ${inesperados.join(" | ")}` : "ok"
   );

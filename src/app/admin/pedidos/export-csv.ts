@@ -1,6 +1,6 @@
 import type { Pedido } from "@/lib/pedidos/types";
 import { STATUS_LABEL } from "@/lib/pedidos/status";
-import { formatDataHoraCurta } from "@/lib/pedidos/format";
+import { formatDataHoraCurta, textoValorEntrega } from "@/lib/pedidos/format";
 import { hojeBrasilia } from "@/lib/tempo/brasilia";
 
 // ";" como separador (não ",") porque o Excel em português do Brasil usa
@@ -11,7 +11,7 @@ const SEPARADOR = ";";
 const BOM = "﻿";
 
 // Campos como cliente_nome e ocasiao vem de um formulario publico, sem
-// autenticacao (o insert de pedido é anônimo por design). Se um valor
+// autenticacao (a cliente pede sem login; o servidor grava). Se um valor
 // comecar com =, +, -, @, tab ou CR, o Excel/Sheets pode interpretar a
 // celula como formula ao abrir o CSV (CSV/formula injection) — um
 // "cliente" poderia gravar algo como "=HYPERLINK(...)" no nome e tentar
@@ -49,6 +49,7 @@ const CABECALHO = [
   "Total",
   "Status",
   "Criado em",
+  "Pedido de teste",
 ];
 
 export function gerarCSVPedidos(pedidos: Pedido[]): string {
@@ -62,10 +63,14 @@ export function gerarCSVPedidos(pedidos: Pedido[]): string {
       formatDataHoraCurta(p.data_hora_entrega),
       contarItens(p),
       p.subtotal.toFixed(2).replace(".", ","),
-      p.valor_entrega.toFixed(2).replace(".", ","),
+      // "a combinar" (entrega sem valor) e "sem custo" (retirada), nunca 0,00.
+      p.modo_entrega === "entrega" && p.valor_entrega > 0
+        ? p.valor_entrega.toFixed(2).replace(".", ",")
+        : textoValorEntrega(p),
       p.total.toFixed(2).replace(".", ","),
       STATUS_LABEL[p.status],
       formatDataHoraCurta(p.criado_em),
+      p.teste ? "Sim" : "Não",
     ]
       .map(celula)
       .join(SEPARADOR)

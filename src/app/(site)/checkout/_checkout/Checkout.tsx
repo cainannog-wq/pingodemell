@@ -30,7 +30,11 @@ import {
   type DadosCheckout,
 } from "@/lib/checkout/formulario";
 import { quantidadeDaOferta, selecionarOfertas, type Oferta } from "@/lib/checkout/ofertas";
-import { carregarRascunho, salvarRascunho } from "@/lib/checkout/rascunho";
+import { apagarRascunho, carregarRascunho, salvarRascunho } from "@/lib/checkout/rascunho";
+import { mensagemSemRegistro, montarRetrato } from "@/lib/pedidos/confirmacao";
+import { montarCorpo } from "@/lib/pedidos/envio";
+import { enviarPedido } from "@/lib/pedidos/enviar";
+import { chaveIdempotencia, lerRetrato, salvarRetrato, trocarChaveIdempotencia } from "@/lib/pedidos/retrato";
 import { LOJA } from "@/lib/site/config";
 import { ROTAS } from "@/lib/site/rotas";
 import { diaDaSemana, hojeBrasilia, somarDias } from "@/lib/tempo/brasilia";
@@ -38,6 +42,7 @@ import { nomeDaUnidade, textoQuantidadeNaUnidade } from "@/lib/vitrine/minimo";
 import { CarrinhoVazio } from "../../carrinho/_carrinho/CarrinhoVazio";
 import { Calendario } from "./Calendario";
 import { Ofertas } from "./Ofertas";
+import { mostraSaida, PainelEnvio, type EstadoEnvio } from "./PainelEnvio";
 import { ResumoPedido } from "./ResumoPedido";
 
 // Checkout (página 5 do site): dados da cliente, data e hora, como
@@ -49,9 +54,13 @@ import { ResumoPedido } from "./ResumoPedido";
 //   disponibilidade delas (risco aceito).
 // - "Hoje" é o dia de Brasília (hojeBrasilia), nunca o do aparelho.
 // - O que a cliente preenche fica no sessionStorage (rascunho.ts).
-// - Nada é gravado no banco e nada é cobrado: o botão final confere o
-//   formulário e só leva para a confirmação (ROTAS.confirmacao), que ainda
-//   não existe (404 até o próximo item).
+// - Nada é cobrado. O botão final confere o formulário e envia o pedido a
+//   POST /api/pedidos (PR confirmacao-e-gravacao), com a chave de
+//   idempotência da aba. Gravou: esvazia o carrinho, apaga o rascunho, troca
+//   a chave, salva o retrato e vai para a confirmação. Gravação desligada
+//   (409): vai para a confirmação no modo sem registro, sem esvaziar nada.
+//   Falha, erro de validação e limite por IP ficam aqui mesmo (PainelEnvio),
+//   com o formulário preservado.
 
 export const TEXTO_ARTESANAL =
   "Pode haver diferenças em relação à imagem enviada, a gente capricha, mas cada peça é única.";
@@ -104,8 +113,12 @@ export function Checkout({
 }) {
   const { linhas } = useCarrinho();
   const montado = useMontado();
+  // Depois do envio registrado, o carrinho é esvaziado enquanto a navegação
+  // para a confirmação acontece: sem isto, o estado de carrinho vazio
+  // piscaria na tela.
+  const [saindo, setSaindo] = useState(false);
 
-  if (!montado) {
+  if (!montado || saindo) {
     return (
       <div className="checkout">
         <Topo />
@@ -114,13 +127,25 @@ export function Checkout({
     );
   }
   if (linhas.length === 0) {
+    // Voltou ao checkout depois de enviar: carrinho vazio, com o caminho
+    // para o último pedido enviado nesta aba.
+    const temRetrato = lerRetrato() !== null;
     return (
       <div className="checkout">
-        <CarrinhoVazio />
+        <CarrinhoVazio
+          extra={
+            temRetrato ? (
+              <TextLink href={ROTAS.confirmacao}>
+                Ver o último pedido enviado
+                <Icon name="arrow_forward" size={18} tone="inherit" />
+              </TextLink>
+            ) : null
+          }
+        />
       </div>
     );
   }
-  return <Formulario linhas={linhas} diasOff={diasOff} prazos={prazos} ofertas={ofertas} />;
+  return <Formulario linhas={linhas} diasOff={diasOff} prazos={prazos} ofertas={ofertas} aoSair={() => setSaindo(true)} />;
 }
 
 function Topo() {
@@ -161,14 +186,27 @@ function Formulario({
   diasOff,
   prazos,
   ofertas,
+  aoSair,
 }: {
   linhas: LinhaCarrinho[];
   diasOff: string[];
   prazos: Record<string, number>;
   ofertas: Oferta[];
+  aoSair: () => void;
 }) {
   const router = useRouter();
-  const { adicionar } = useCarrinho();
+  const { adicionar, limpar } = useCarrinho();
+  const [envio, setEnvio] = useState<EstadoEnvio>({ tipo: "parado" });
+  const [avisoSemRegistro, setAvisoSemRegistro] = useState(false);
+  const enviando = useRef(false);
+  // Falhas seguidas de rede/servidor: da 2ª em diante aparece a saída pelo
+  // WhatsApp. Zera só com um sucesso.
+  const falhas = useRef(0);
+
+  // A chave de idempotência nasce ao abrir o checkout e fica na aba.
+  useEffect(() => {
+    chaveIdempotencia();
+  }, []);
   const [hoje] = useState(() => hojeBrasilia());
   const bloqueados = useMemo(() => new Set(diasOff), [diasOff]);
   const [dados, setDados] = useState<DadosCheckout>(() => rascunhoInicial(hoje, bloqueados));
@@ -219,8 +257,8 @@ function Formulario({
     setTocados((atual) => (atual.has(campo) ? atual : new Set([...atual, campo])));
   }
 
-  function aoEnviar(e: FormEvent) {
-    e.preventDefault();
+  function aoEnviar(e?: FormEvent) {
+    e?.preventDefault();
     setTentou(true);
     if (listaErros.length > 0) {
       focoPendente.current = listaErros[0];
@@ -228,8 +266,45 @@ function Formulario({
       setTocados((atual) => new Set(atual));
       return;
     }
+    void enviar();
+  }
+
+  async function enviar() {
+    // Duplo clique: o segundo não sai (e, se saísse, a mesma chave
+    // devolveria o mesmo pedido).
+    if (enviando.current) return;
+    // Bloqueado pelo limite por IP: só depois de passar o tempo.
+    if (envio.tipo === "limite" && !envio.liberado) return;
+    enviando.current = true;
     salvarRascunho(dados);
-    router.push(ROTAS.confirmacao);
+    setEnvio({ tipo: "enviando" });
+    const prazo = curto && maisDemorado ? { nome: maisDemorado.nome, dias: maisDemorado.dias } : null;
+    const resultado = await enviarPedido(montarCorpo(dados, linhas, chaveIdempotencia()));
+    enviando.current = false;
+
+    if (resultado.tipo === "ok") {
+      salvarRetrato(montarRetrato({ dados, linhas, resposta: resultado.resposta, prazo }));
+      apagarRascunho();
+      trocarChaveIdempotencia();
+      aoSair();
+      router.push(ROTAS.confirmacao);
+      limpar();
+      return;
+    }
+    if (resultado.tipo === "desligado") {
+      // Modo sem registro: nada foi gravado. O carrinho e o rascunho só
+      // saem depois do clique no botão do WhatsApp, na confirmação.
+      salvarRetrato(montarRetrato({ dados, linhas, resposta: null, prazo }));
+      aoSair();
+      router.push(ROTAS.confirmacao);
+      return;
+    }
+    if (resultado.tipo === "invalido") setEnvio({ tipo: "invalido", mensagem: resultado.mensagem });
+    else if (resultado.tipo === "limite") setEnvio({ tipo: "limite", ateMs: instanteDaqui(resultado.esperaSegundos), liberado: false });
+    else {
+      falhas.current += 1;
+      setEnvio({ tipo: "falha", falhas: falhas.current });
+    }
   }
 
   function aoAdicionarOferta(oferta: Oferta) {
@@ -646,16 +721,38 @@ function Formulario({
           </Secao>
         </div>
 
-        <aside className="checkout-coluna-resumo">
+        {/* Com falha, bloqueio ou aviso de envio, a coluna cresce além da
+            tela: sem a altura máxima, o resumo não é espremido por baixo
+            do painel. */}
+        <aside
+          className="checkout-coluna-resumo"
+          data-envio={(envio.tipo !== "parado" && envio.tipo !== "enviando") || avisoSemRegistro || undefined}
+        >
           <ResumoPedido linhas={linhas} />
           <div className="checkout-enviar">
             <p className="checkout-artesanal">
               <Icon name="favorite" size={20} color="var(--brown-500)" />
               <span>{TEXTO_ARTESANAL}</span>
             </p>
-            <Button type="submit" variant="primary" size="lg" fullWidth iconRight="arrow_forward">
-              Revisar e enviar
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
+              iconRight={envio.tipo === "enviando" ? undefined : "arrow_forward"}
+              disabled={envio.tipo === "enviando" || (envio.tipo === "limite" && !envio.liberado)}
+              aria-busy={envio.tipo === "enviando" || undefined}
+            >
+              {envio.tipo === "enviando" ? "Registrando o pedido" : "Fazer pedido"}
             </Button>
+            <PainelEnvio
+              estado={envio}
+              mensagemSemRegistro={mostraSaida(envio) ? mensagemSemRegistro(dados, linhas, "instabilidade") : null}
+              aoTentar={() => aoEnviar()}
+              aoLiberar={() => setEnvio((atual) => (atual.tipo === "limite" ? { ...atual, liberado: true } : atual))}
+              aoAbrirSemRegistro={() => setAvisoSemRegistro(true)}
+              avisoSemRegistro={avisoSemRegistro}
+            />
             <p className="checkout-sem-pagamento">
               <Icon name="payments" size={18} color="var(--brown-500)" />
               Nenhum pagamento é feito aqui no site.
@@ -674,6 +771,11 @@ function Formulario({
       <PilhaDeAvisos avisos={avisos} aoFechar={(id) => setAvisos((atuais) => atuais.filter((a) => a.id !== id))} />
     </div>
   );
+}
+
+// Instante daqui a N segundos (fim da espera do limite por IP).
+function instanteDaqui(segundos: number): number {
+  return Date.now() + segundos * 1000;
 }
 
 // Foco no campo: o próprio campo, ou o que dá para focar dentro dele (o dia

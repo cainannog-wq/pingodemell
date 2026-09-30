@@ -22,6 +22,7 @@ const TESTES_DE_BANCO = [
   "dias-off.mjs",
   "pedidos.mjs",
   "limite-pedidos.mjs",
+  "gravacao-pedidos.mjs",
   "slug.mjs",
   "unidade-venda-kits.mjs",
 ];

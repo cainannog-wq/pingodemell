@@ -880,3 +880,54 @@
     scroll-snap-align: start;
   }
 }
+
+/* ---------- Envio: falha, inválido, limite e saída sem registro ---------- */
+/* PR confirmacao-e-gravacao. Erro em fundo claro com texto escuro (contraste
+   AA) e borda vermelha à esquerda. */
+
+.checkout-coluna-resumo[data-envio] {
+  max-height: none;
+}
+.checkout-envio-alerta[data-vazio] {
+  display: none;
+}
+.checkout-caixa[data-tom="erro"] {
+  background: #f8ebe9; /* danger-050 */
+  border-left: 4px solid var(--pdm-error);
+}
+.checkout-caixa[data-tom="erro"] .checkout-caixa-titulo {
+  color: var(--pdm-error);
+}
+.checkout-caixa p + p {
+  margin-top: 4px;
+}
+.checkout-saida {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.checkout-saida-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--tap-min);
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  border: 2px solid var(--whatsapp-600);
+  background: var(--surface-raised);
+  color: #0f5a2c;
+  font-weight: var(--fw-bold);
+  font-size: 16px;
+  text-decoration: none;
+  text-align: center;
+}
+.checkout-saida-link:hover {
+  background: #e7f8ee;
+}
+.checkout-saida-nota {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  text-align: center;
+}

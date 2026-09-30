@@ -137,7 +137,7 @@ describe("e-mail e endereço", () => {
       enderecoCompleto({ rua: " Rua das Acácias ", numero: "412", complemento: "", bairro: "Nações", cidade: "Fazenda Rio Grande" })
     ).toBe("Rua das Acácias, 412, Nações, Fazenda Rio Grande");
     expect(enderecoCompleto({ rua: "Rua X", numero: "s/n", complemento: "Casa 2", bairro: "Centro", cidade: "Mandirituba" })).toBe(
-      "Rua X, s/n - Casa 2, Centro, Mandirituba"
+      "Rua X, s/n, Casa 2, Centro, Mandirituba"
     );
   });
 });
