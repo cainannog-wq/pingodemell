@@ -1,0 +1,93 @@
+=== https://homologacao--pingodemell.netlify.app/quem-somos em 1280px: 39 requisições ===
+
+fonts.googleapis.com (1)  [TERCEIRO]
+  https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0&display=swap
+
+fonts.gstatic.com (1)  [TERCEIRO]
+  https://fonts.gstatic.com/s/materialsymbolsrounded/v375/syl0-zNym6YjUruM-QrEh7-nyTnjDwKNJ_190FjpZIvDmUSVOK7BDJ_vb9vUSzq3wzLK-P0J-V_Zs-QtQth3-jOcbTCVpeRL2w5rwZu2…
+
+homologacao--pingodemell.netlify.app (37)  [o próprio site]
+  https://homologacao--pingodemell.netlify.app/quem-somos
+  https://homologacao--pingodemell.netlify.app/_next/static/media/07454f8ad8aaac57-s.p.2kjei9psvcorz.woff2
+  https://homologacao--pingodemell.netlify.app/_next/static/media/248e1dc0efc99276-s.p.1d6sb5kuiz5lw.woff2
+  https://homologacao--pingodemell.netlify.app/_next/static/media/32a036eac4f5c29a-s.p.02omj01dfd0zw.woff2
+  https://homologacao--pingodemell.netlify.app/_next/static/media/797e433ab948586e-s.p.0r6juujl39pe6.woff2
+  https://homologacao--pingodemell.netlify.app/_next/static/media/9de307755bdae5a1-s.p.1kbfywaj9b7tf.woff2
+  https://homologacao--pingodemell.netlify.app/_next/static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2
+  https://homologacao--pingodemell.netlify.app/_next/static/media/e163fe1b2d841fa0-s.p.0gin8g154xalb.woff2
+  https://homologacao--pingodemell.netlify.app/_next/image?url=%2Ffotos%2Ftaami-yaguiu.jpeg&w=640&q=75
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/1xvmj_g_r4daw.css
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/1kiho7clqlk_x.css
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/3d1opyq0c2o_f.css
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/40wa5-gvzkc44.js
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/2mi2aw2fy4puf.js
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/33wmmxu2kkyqh.js
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/turbopack-0qulb-zgc2hil.js
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/3fntmmi971322.js
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/11daknd1mid0i.js
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/43qtqtne85xfv.js
+  https://homologacao--pingodemell.netlify.app/icons/whatsapp.png
+  https://homologacao--pingodemell.netlify.app/_next/image?url=%2Flogo-gold.png&w=256&q=75
+  https://homologacao--pingodemell.netlify.app/_next/image?url=%2Ficons%2Finstagram.webp&w=32&q=75
+  https://homologacao--pingodemell.netlify.app/_next/image?url=%2Flogo-mono-cream.png&w=128&q=75
+  https://homologacao--pingodemell.netlify.app/?_rsc=0hz8QZY4p4khsCHD
+  https://homologacao--pingodemell.netlify.app/produtos?_rsc=0hz8QZY4p4khsCHD
+  https://homologacao--pingodemell.netlify.app/quem-somos?_rsc=0hz8QZY4p4khsCHD
+  https://homologacao--pingodemell.netlify.app/carrinho?_rsc=0hz8QZY4p4khsCHD
+  https://homologacao--pingodemell.netlify.app/quem-somos?_rsc=abjelw6ANArwMnKq
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/3rxtm2jwasm-_.css
+  https://homologacao--pingodemell.netlify.app/quem-somos?_rsc=il3dKoR1zZDvaVpd
+  https://homologacao--pingodemell.netlify.app/politica-de-privacidade?_rsc=0hz8QZY4p4khsCHD
+  https://homologacao--pingodemell.netlify.app/produtos?_rsc=NWWtWXyqIYpCGMsM
+  https://homologacao--pingodemell.netlify.app/?_rsc=NWWtWXyqIYpCGMsM
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/3kyr0pve9eu31.css
+  https://homologacao--pingodemell.netlify.app/politica-de-privacidade?_rsc=2R4n4K4aHAx3R4Vd
+  https://homologacao--pingodemell.netlify.app/carrinho?_rsc=PLt-jmqxxlHhSpKs
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/39paf4lkewhiw.js
+
+=== https://homologacao--pingodemell.netlify.app/quem-somos em 375px: 39 requisições ===
+
+fonts.googleapis.com (1)  [TERCEIRO]
+  https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0&display=swap
+
+fonts.gstatic.com (1)  [TERCEIRO]
+  https://fonts.gstatic.com/s/materialsymbolsrounded/v375/syl0-zNym6YjUruM-QrEh7-nyTnjDwKNJ_190FjpZIvDmUSVOK7BDJ_vb9vUSzq3wzLK-P0J-V_Zs-QtQth3-jOcbTCVpeRL2w5rwZu2…
+
+homologacao--pingodemell.netlify.app (37)  [o próprio site]
+  https://homologacao--pingodemell.netlify.app/quem-somos
+  https://homologacao--pingodemell.netlify.app/_next/static/media/07454f8ad8aaac57-s.p.2kjei9psvcorz.woff2
+  https://homologacao--pingodemell.netlify.app/_next/static/media/248e1dc0efc99276-s.p.1d6sb5kuiz5lw.woff2
+  https://homologacao--pingodemell.netlify.app/_next/static/media/32a036eac4f5c29a-s.p.02omj01dfd0zw.woff2
+  https://homologacao--pingodemell.netlify.app/_next/static/media/797e433ab948586e-s.p.0r6juujl39pe6.woff2
+  https://homologacao--pingodemell.netlify.app/_next/static/media/9de307755bdae5a1-s.p.1kbfywaj9b7tf.woff2
+  https://homologacao--pingodemell.netlify.app/_next/static/media/caa3a2e1cccd8315-s.p.0wgildi0cnwt9.woff2
+  https://homologacao--pingodemell.netlify.app/_next/static/media/e163fe1b2d841fa0-s.p.0gin8g154xalb.woff2
+  https://homologacao--pingodemell.netlify.app/_next/image?url=%2Ffotos%2Ftaami-yaguiu.jpeg&w=640&q=75
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/1xvmj_g_r4daw.css
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/1kiho7clqlk_x.css
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/3d1opyq0c2o_f.css
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/40wa5-gvzkc44.js
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/2mi2aw2fy4puf.js
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/33wmmxu2kkyqh.js
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/turbopack-0qulb-zgc2hil.js
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/3fntmmi971322.js
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/11daknd1mid0i.js
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/43qtqtne85xfv.js
+  https://homologacao--pingodemell.netlify.app/icons/whatsapp.png
+  https://homologacao--pingodemell.netlify.app/_next/image?url=%2Flogo-gold.png&w=256&q=75
+  https://homologacao--pingodemell.netlify.app/?_rsc=0hz8QZY4p4khsCHD
+  https://homologacao--pingodemell.netlify.app/carrinho?_rsc=0hz8QZY4p4khsCHD
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/3rxtm2jwasm-_.css
+  https://homologacao--pingodemell.netlify.app/carrinho?_rsc=abjelw6ANArwMnKq
+  https://homologacao--pingodemell.netlify.app/carrinho?_rsc=PLt-jmqxxlHhSpKs
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/39paf4lkewhiw.js
+  https://homologacao--pingodemell.netlify.app/?_rsc=NWWtWXyqIYpCGMsM
+  https://homologacao--pingodemell.netlify.app/_next/image?url=%2Ficons%2Finstagram.webp&w=32&q=75
+  https://homologacao--pingodemell.netlify.app/_next/image?url=%2Flogo-mono-cream.png&w=128&q=75
+  https://homologacao--pingodemell.netlify.app/produtos?_rsc=0hz8QZY4p4khsCHD
+  https://homologacao--pingodemell.netlify.app/quem-somos?_rsc=0hz8QZY4p4khsCHD
+  https://homologacao--pingodemell.netlify.app/politica-de-privacidade?_rsc=0hz8QZY4p4khsCHD
+  https://homologacao--pingodemell.netlify.app/_next/static/chunks/3kyr0pve9eu31.css
+  https://homologacao--pingodemell.netlify.app/politica-de-privacidade?_rsc=2R4n4K4aHAx3R4Vd
+  https://homologacao--pingodemell.netlify.app/quem-somos?_rsc=il3dKoR1zZDvaVpd
+  https://homologacao--pingodemell.netlify.app/produtos?_rsc=NWWtWXyqIYpCGMsM
