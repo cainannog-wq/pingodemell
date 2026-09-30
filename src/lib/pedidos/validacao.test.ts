@@ -26,7 +26,7 @@ describe("validação do pedido no servidor: aceita", () => {
     const { pedido } = r.valor;
     expect(pedido.cliente_whatsapp).toBe("(41) 99712-4408");
     expect(pedido.forma_pagamento).toBe("Pix");
-    expect(pedido.endereco).toBe("Rua das Cerejeiras, 88 - Casa dos fundos, Nações, Fazenda Rio Grande");
+    expect(pedido.endereco).toBe("Rua das Cerejeiras, 88, Casa dos fundos, Nações, Fazenda Rio Grande");
     // 14h de Brasília = 17h UTC, qualquer que seja o fuso do processo.
     expect(pedido.data_hora_entrega).toBe("2026-10-17T17:00:00.000Z");
     expect(pedido.itens.map((i) => i.tipo)).toEqual(["normal", "cento", "bolo", "normal", "bento", "normal", "normal"]);

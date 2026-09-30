@@ -737,7 +737,7 @@ function Formulario({
               disabled={envio.tipo === "enviando" || (envio.tipo === "limite" && !envio.liberado)}
               aria-busy={envio.tipo === "enviando" || undefined}
             >
-              {envio.tipo === "enviando" ? "Enviando o pedido…" : "Revisar e enviar"}
+              {envio.tipo === "enviando" ? "Registrando o pedido" : "Fazer pedido"}
             </Button>
             <PainelEnvio
               estado={envio}

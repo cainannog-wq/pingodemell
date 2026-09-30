@@ -68,7 +68,7 @@ export function PainelEnvio({
     <>
       {/* Progresso: sempre no HTML, anunciado quando muda. */}
       <p className="site-visually-hidden" role="status" aria-live="polite">
-        {estado.tipo === "enviando" ? "Enviando o pedido. Aguarde." : ""}
+        {estado.tipo === "enviando" ? "Registrando o pedido. Aguarde." : ""}
       </p>
 
       <div role="alert" className="checkout-envio-alerta" data-vazio={estado.tipo === "parado" || estado.tipo === "enviando" || undefined}>

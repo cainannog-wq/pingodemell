@@ -239,7 +239,7 @@ async function abrir(linhas: LinhaCarrinho[] = CARRINHO) {
 function dia(rotulo: RegExp) {
   return within(screen.getByRole("grid")).getByRole("button", { name: rotulo });
 }
-const enviar = () => screen.getByRole("button", { name: "Revisar e enviar" });
+const enviar = () => screen.getByRole("button", { name: "Fazer pedido" });
 const alerta = () => document.querySelector<HTMLElement>(".checkout-erros")!;
 const aceite = () => screen.getByRole("checkbox", { name: /^Li e estou ciente da Política de Privacidade/ });
 
@@ -335,7 +335,7 @@ describe("Checkout — resumo do pedido sem reconferir o banco", () => {
   it("carrinho vazio mostra o estado vazio, sem formulário", async () => {
     await abrir([]);
     expect(screen.getByRole("heading", { name: "Seu pedido ainda está vazinho" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Revisar e enviar" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Fazer pedido" })).toBeNull();
   });
 });
 
@@ -700,9 +700,9 @@ describe("Checkout — envio do pedido", () => {
     await abrir();
     await preencherTudo(user);
     await user.click(enviar());
-    const botao = screen.getByRole("button", { name: "Enviando o pedido…" });
+    const botao = screen.getByRole("button", { name: "Registrando o pedido" });
     expect(botao).toBeDisabled();
-    expect(document.body).toHaveTextContent("Enviando o pedido. Aguarde.");
+    expect(document.body).toHaveTextContent("Registrando o pedido. Aguarde.");
     await user.click(botao);
     await user.dblClick(botao);
     liberar();

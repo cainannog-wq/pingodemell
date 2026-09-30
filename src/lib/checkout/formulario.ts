@@ -135,15 +135,16 @@ export function emailValido(texto: string): boolean {
 
 // ---------- Endereço ----------
 
-// Texto único gravado em pedidos.endereco:
-// "Rua X, 412 - Casa 2, Nações, Fazenda Rio Grande".
+// Texto único gravado em pedidos.endereco (e mostrado no painel), só com
+// vírgulas, sem hífen como separador (PR confirmacao-e-gravacao):
+// "Rua X, 412, Casa 2, Nações, Fazenda Rio Grande".
 export function enderecoCompleto(
   dados: Pick<DadosCheckout, "rua" | "numero" | "complemento" | "bairro" | "cidade">
 ): string {
-  const ruaNumero = [dados.rua.trim(), dados.numero.trim()].filter(Boolean).join(", ");
-  const complemento = dados.complemento.trim();
-  const primeiro = complemento ? `${ruaNumero} - ${complemento}` : ruaNumero;
-  return [primeiro, dados.bairro.trim(), dados.cidade.trim()].filter(Boolean).join(", ");
+  return [dados.rua, dados.numero, dados.complemento, dados.bairro, dados.cidade]
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .join(", ");
 }
 
 // ---------- Validação ----------
