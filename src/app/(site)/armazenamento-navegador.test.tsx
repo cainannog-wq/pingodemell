@@ -155,6 +155,32 @@ describe("Armazenamento do navegador no site público", () => {
     });
   });
 
+  it("Home → Quem Somos → Home não cria nem apaga chave nem cookie", async () => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+    reiniciarParaTeste();
+    const user = userEvent.setup();
+
+    // Com um item no carrinho, para ver que a Quem Somos também não apaga.
+    const { default: ProdutoPage } = await import("./produtos/[slug]/page");
+    await visitar("interna", await ProdutoPage({ params: Promise.resolve({ slug: COCA.slug }) }));
+    const resumo = document.querySelector(".interna-resumo") as HTMLElement;
+    await user.click(within(resumo).getByRole("button", { name: "Adicionar ao pedido" }));
+
+    const { default: HomePage } = await import("./page");
+    await visitar("Home", await HomePage());
+    const antes = estadoDoNavegador();
+    expect(antes).toEqual({ localStorage: ["pdm-carrinho-v1"], sessionStorage: [], cookies: "" });
+
+    const { default: QuemSomosPage } = await import("./quem-somos/page");
+    await visitar("Quem Somos", <QuemSomosPage />);
+    expect(screen.getByRole("heading", { level: 1, name: "Somos a Pingo de Mell" })).toBeInTheDocument();
+    expect(estadoDoNavegador()).toEqual(antes);
+
+    await visitar("Home de novo", await HomePage());
+    expect(estadoDoNavegador()).toEqual(antes);
+  });
+
   it("no código do site público, só o carrinho, o rascunho do checkout e o retrato do pedido enviado mexem no armazenamento do navegador", () => {
     // Varredura do código (fora admin e testes): complementa o percurso
     // acima para pegar armazenamento em página que ele não visita.
