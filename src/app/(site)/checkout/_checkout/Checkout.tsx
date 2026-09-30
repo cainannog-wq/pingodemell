@@ -721,7 +721,13 @@ function Formulario({
           </Secao>
         </div>
 
-        <aside className="checkout-coluna-resumo">
+        {/* Com falha, bloqueio ou aviso de envio, a coluna cresce além da
+            tela: sem a altura máxima, o resumo não é espremido por baixo
+            do painel. */}
+        <aside
+          className="checkout-coluna-resumo"
+          data-envio={(envio.tipo !== "parado" && envio.tipo !== "enviando") || avisoSemRegistro || undefined}
+        >
           <ResumoPedido linhas={linhas} />
           <div className="checkout-enviar">
             <p className="checkout-artesanal">

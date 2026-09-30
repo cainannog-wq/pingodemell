@@ -885,6 +885,9 @@
 /* PR confirmacao-e-gravacao. Erro em fundo claro com texto escuro (contraste
    AA) e borda vermelha à esquerda. */
 
+.checkout-coluna-resumo[data-envio] {
+  max-height: none;
+}
 .checkout-envio-alerta[data-vazio] {
   display: none;
 }
