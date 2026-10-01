@@ -110,7 +110,9 @@ export async function rodarMigracao(db, arquivo) {
   await db.query(sql);
 }
 
-export async function conectar() {
+// nome: application_name da conexão. silencioso: não imprime a linha da
+// conexão (scripts/exclusao/, cuja saída é lida pelo Cainan).
+export async function conectar({ nome = "testes-transacao-desfeita", silencioso = false } = {}) {
   if (!env.SUPABASE_DB_URL) {
     console.error("Falta SUPABASE_DB_URL no .env.local (conexão Session pooler do painel da Supabase).");
     process.exit(1);
@@ -127,14 +129,14 @@ export async function conectar() {
   const ssl = existsSync(CERTIFICADO)
     ? { ca: readFileSync(CERTIFICADO, "utf8"), rejectUnauthorized: true }
     : { rejectUnauthorized: false };
-  const db = new pg.Client({ connectionString: url.toString(), ssl, application_name: "testes-transacao-desfeita" });
+  const db = new pg.Client({ connectionString: url.toString(), ssl, application_name: nome });
   try {
     await db.connect();
   } catch (erro) {
     console.error("Não conectou ao banco:", limpar(erro.message));
     process.exit(1);
   }
-  console.log(
+  if (!silencioso) console.log(
     existsSync(CERTIFICADO)
       ? `(conexão: TLS conferindo o certificado do servidor com ${path.relative(raiz, CERTIFICADO).split(path.sep).join("/")})`
       : "(conexão: TLS sem conferir o certificado — supabase/prod-ca.crt ausente)"
