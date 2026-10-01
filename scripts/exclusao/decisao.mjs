@@ -74,24 +74,23 @@ export function textoLinha(linha, agora) {
 //   ultimaRodada: null (nunca rodou) | { status: string, inicio: Date, mensagem: string | null }
 //   registro: linhas { executadoEm: Date, origem, tabela, status, ... }, com
 //     pelo menos as dos últimos 35 dias e a mais recente de cada tabela.
-//   previa: null | { pedidos: number } (candidatas de agora, da simulação
-//     privado.exclusao_previa; só serve para sugerir o teto quando não há
-//     registro de onde ler)
 // Saída: { veredito: "OK" | "ATENÇÃO", motivos: string[], informativos: string[],
-//          tetoSugerido: number | null }
+//          liberacao: boolean }
 // ATENÇÃO quando: o job não existe ou está inativo; o job foi criado e ainda
 // não rodou (espera da primeira execução, não é falha); falta execução de
 // alguma tabela; a última execução tem mais de 26 horas; o status MAIS
 // RECENTE de alguma tabela é abortado; a última rodada do pg_cron falhou. Um
 // aborto já seguido de execução ok vira só a linha informativa "aborto
 // resolvido em DD/MM".
-// tetoSugerido: preenchido quando a ATENÇÃO é por aborto de teto (candidatas
-// do registro) ou por execução ausente (candidatas da simulação); é o teto do
-// comando de liberação manual impresso por montarSaida.
-export function avaliar({ agora, job, ultimaRodada, registro, previa = null }) {
+// liberacao: verdadeiro quando a ATENÇÃO é por aborto de teto ou por execução
+// ausente. montarSaida imprime então só o comando da SIMULAÇÃO: o comando de
+// apagar de verdade aparece apenas no fim da simulação, depois da contagem
+// que ela acabou de fazer (a ordem simular, conferir e só então apagar vem
+// do fluxo, não da disciplina de quem lê).
+export function avaliar({ agora, job, ultimaRodada, registro }) {
   const motivos = [];
   const informativos = [];
-  let tetoSugerido = null;
+  let abortoTeto = false;
   let execucaoAusente = false;
 
   if (!job) motivos.push("o job exclusao_dados_diaria não existe");
@@ -123,7 +122,7 @@ export function avaliar({ agora, job, ultimaRodada, registro, previa = null }) {
     if (ultima.status !== "ok") {
       motivos.push(`a execução mais recente de ${tabela} ${ultima.status === "abortado_teto" ? "abortou por teto" : "abortou por prazo inválido"}, em ${diaMes(ultima.executadoEm)}, e espera liberação manual`);
     }
-    if (ultima.status === "abortado_teto") tetoSugerido = Math.ceil(ultima.candidatas ?? 0);
+    if (ultima.status === "abortado_teto") abortoTeto = true;
     // Abortos dos últimos 35 dias já seguidos de uma execução ok.
     const limite = agora.getTime() - DIAS_ABORTO * 86400000;
     linhas.forEach((linha, i) => {
@@ -150,12 +149,7 @@ export function avaliar({ agora, job, ultimaRodada, registro, previa = null }) {
     motivos.push(`a última rodada do pg_cron falhou, em ${formatarInstante(ultimaRodada.inicio)}`);
   }
 
-  // Execução ausente sem aborto de teto: o teto vem da simulação de agora.
-  if (tetoSugerido === null && execucaoAusente && previa && Number.isFinite(previa.pedidos)) {
-    tetoSugerido = Math.ceil(previa.pedidos);
-  }
-
-  return { veredito: motivos.length ? "ATENÇÃO" : "OK", motivos, informativos, tetoSugerido };
+  return { veredito: motivos.length ? "ATENÇÃO" : "OK", motivos, informativos, liberacao: abortoTeto || execucaoAusente };
 }
 
 // Comandos literais (podem ter opções com dois hífens; o texto em volta não).
@@ -182,10 +176,10 @@ function colunas(linhas) {
 }
 
 // Saída inteira do ultima-execucao.mjs, linha a linha. historico: linhas do
-// registro para --historico N (ou null). Com teto sugerido, imprime antes da
-// última linha os dois comandos prontos para copiar, um por linha.
-export function montarSaida({ agora, job, ultimaRodada, registro, historico = null, previa = null }) {
-  const resultado = avaliar({ agora, job, ultimaRodada, registro, previa });
+// registro para --historico N (ou null). Na ATENÇÃO por aborto de teto ou
+// execução ausente, imprime antes da última linha só o comando da simulação.
+export function montarSaida({ agora, job, ultimaRodada, registro, historico = null }) {
+  const resultado = avaliar({ agora, job, ultimaRodada, registro });
   const saida = [];
   saida.push("Rotina de exclusão de dados (horários de Brasília)");
   saida.push(`Consulta em ${formatarInstante(agora)}`);
@@ -228,14 +222,57 @@ export function montarSaida({ agora, job, ultimaRodada, registro, historico = nu
     }
   }
 
-  if (resultado.tetoSugerido !== null) {
+  if (resultado.liberacao) {
     saida.push("");
-    saida.push("Liberação manual. Primeiro a simulação, depois a execução, com o teto sugerido já preenchido:");
+    saida.push("Liberação manual: rode a simulação. Ela mostra o que seria apagado e, no fim, o comando para apagar, com o teto da contagem dela:");
     saida.push(COMANDO_SIMULAR);
-    saida.push(comandoExecutar(resultado.tetoSugerido));
   }
 
   saida.push("");
   saida.push(linhaFinal(resultado));
-  return { linhas: saida, veredito: resultado.veredito, tetoSugerido: resultado.tetoSugerido };
+  return { linhas: saida, veredito: resultado.veredito, liberacao: resultado.liberacao };
+}
+
+// Saída inteira da simulação do executar-manual.mjs, linha a linha.
+//   agora: Date
+//   tabelas: linhas de privado.exclusao_previa já lidas:
+//     { tabela, candidatas, diaMaisAntigo, diaMaisRecente ("AAAA-MM-DD" ou null),
+//       agendadaAbortaria, prazoMeses, prazoHoras, teto }
+// O comando de apagar de verdade só aparece aqui, no fim, com o teto igual às
+// candidatas de pedidos que a simulação acabou de contar. Sem pedido
+// candidato, não há comando: a liberação manual existe para pedidos, e as
+// linhas de IP saem sozinhas na próxima rotina agendada (não têm teto).
+export function montarSimulacao({ agora, tabelas }) {
+  const saida = [];
+  saida.push("SIMULAÇÃO: nada é gravado (transação só de leitura).");
+  saida.push(`Consulta em ${formatarInstante(agora)} (horário de Brasília).`);
+  saida.push("");
+  for (const t of tabelas) {
+    const intervalo = t.candidatas
+      ? ` ${t.tabela === "pedidos" ? "Pedidos criados" : "Janelas iniciadas"} de ${dataBr(t.diaMaisAntigo)} a ${dataBr(t.diaMaisRecente)} (dias de Brasília).`
+      : "";
+    if (t.tabela === "pedidos") {
+      saida.push(
+        `pedidos: ${t.candidatas} seriam apagados.${intervalo} Prazo ${t.prazoMeses} meses, teto da rotina agendada ${t.teto}: ` +
+          (t.agendadaAbortaria ? "a rotina agendada ABORTARIA e esperaria liberação manual." : "a rotina agendada não abortaria.")
+      );
+    } else {
+      saida.push(`pedidos_rate_limit: ${t.candidatas} seriam apagadas.${intervalo} Prazo ${t.prazoHoras} horas, sem teto.`);
+    }
+  }
+  const pedidos = tabelas.find((t) => t.tabela === "pedidos");
+  const ip = tabelas.find((t) => t.tabela === "pedidos_rate_limit");
+  saida.push("");
+  if (!pedidos || !pedidos.candidatas) {
+    saida.push(
+      ip && ip.candidatas
+        ? "Nenhum pedido a apagar: não há o que liberar manualmente. As linhas de IP saem sozinhas na próxima rotina agendada."
+        : "Nada a apagar: não há o que liberar manualmente."
+    );
+    return { linhas: saida, comando: null };
+  }
+  const comando = comandoExecutar(Math.ceil(pedidos.candidatas));
+  saida.push(`Para apagar de verdade, depois de conferir a contagem acima, copie e rode (teto igual aos ${pedidos.candidatas} pedidos contados agora):`);
+  saida.push(comando);
+  return { linhas: saida, comando };
 }

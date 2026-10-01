@@ -19,7 +19,7 @@
 // Nunca imprime a conexão (SUPABASE_DB_URL do .env.local, lida por lib.mjs).
 
 import { conectar, limpar } from "../banco/lib.mjs";
-import { comandoExecutar, dataBr, formatarInstante, textoStatus } from "./decisao.mjs";
+import { montarSimulacao, textoStatus } from "./decisao.mjs";
 
 const args = process.argv.slice(2);
 const executar = args.includes("--executar");
@@ -67,26 +67,22 @@ try {
          (extract(year from r_prazo) * 12 + extract(month from r_prazo))::int meses, (extract(epoch from r_prazo) / 3600)::int horas
        from privado.exclusao_previa()`
     );
-    console.log("SIMULAÇÃO: nada é gravado (transação só de leitura).");
-    console.log(`Consulta em ${formatarInstante(agora[0].agora)} (horário de Brasília).`);
-    console.log("");
-    for (const r of rows) {
-      const intervalo = r.r_candidatas
-        ? ` ${r.r_tabela === "pedidos" ? "Pedidos criados" : "Janelas iniciadas"} de ${dataBr(r.antigo)} a ${dataBr(r.recente)} (dias de Brasília).`
-        : "";
-      if (r.r_tabela === "pedidos") {
-        console.log(
-          `pedidos: ${r.r_candidatas} seriam apagados.${intervalo} Prazo ${prazoTexto("pedidos", r.meses, r.horas)}, teto da rotina agendada ${r.r_teto}: ` +
-            (r.r_agendada_abortaria ? "a rotina agendada ABORTARIA e esperaria liberação manual." : "a rotina agendada não abortaria.")
-        );
-      } else {
-        console.log(`pedidos_rate_limit: ${r.r_candidatas} seriam apagadas.${intervalo} Prazo ${prazoTexto(r.r_tabela, r.meses, r.horas)}, sem teto.`);
-      }
-    }
-    const pedidos = rows.find((r) => r.r_tabela === "pedidos");
-    console.log("");
-    console.log("Para apagar de verdade, copie e rode (teto igual às candidatas de pedidos de agora):");
-    console.log(comandoExecutar(Math.ceil(pedidos.r_candidatas)));
+    // Texto montado pela função pura (decisao.mjs, testada à parte): o comando
+    // de apagar de verdade só aparece no fim, com o teto desta contagem.
+    const { linhas } = montarSimulacao({
+      agora: agora[0].agora,
+      tabelas: rows.map((r) => ({
+        tabela: r.r_tabela,
+        candidatas: r.r_candidatas,
+        diaMaisAntigo: r.antigo,
+        diaMaisRecente: r.recente,
+        agendadaAbortaria: r.r_agendada_abortaria,
+        prazoMeses: r.meses,
+        prazoHoras: r.horas,
+        teto: r.r_teto,
+      })),
+    });
+    console.log(linhas.join("\n"));
   } else {
     await db.query("begin");
     const antes = await contagens(db);
