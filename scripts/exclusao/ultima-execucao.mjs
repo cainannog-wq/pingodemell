@@ -94,7 +94,16 @@ try {
     historico = [];
   }
 
-  const { linhas, veredito } = montarSaida({ agora, job, ultimaRodada, registro, historico });
+  // Candidatas de agora (simulação, só leitura): teto sugerido do comando de
+  // liberação quando falta execução e não há registro de onde ler.
+  let previa = null;
+  const { rows: temPrevia } = await db.query("select to_regprocedure('privado.exclusao_previa()') is not null existe");
+  if (temPrevia[0].existe) {
+    const { rows } = await db.query("select r_candidatas from privado.exclusao_previa() where r_tabela = 'pedidos'");
+    previa = { pedidos: rows[0].r_candidatas };
+  }
+
+  const { linhas, veredito } = montarSaida({ agora, job, ultimaRodada, registro, historico, previa });
   console.log(linhas.join("\n"));
   codigo = veredito === "OK" ? 0 : 1;
 } catch (erro) {

@@ -19,7 +19,7 @@
 // Nunca imprime a conexão (SUPABASE_DB_URL do .env.local, lida por lib.mjs).
 
 import { conectar, limpar } from "../banco/lib.mjs";
-import { dataBr, formatarInstante, textoStatus } from "./decisao.mjs";
+import { comandoExecutar, dataBr, formatarInstante, textoStatus } from "./decisao.mjs";
 
 const args = process.argv.slice(2);
 const executar = args.includes("--executar");
@@ -83,8 +83,10 @@ try {
         console.log(`pedidos_rate_limit: ${r.r_candidatas} seriam apagadas.${intervalo} Prazo ${prazoTexto(r.r_tabela, r.meses, r.horas)}, sem teto.`);
       }
     }
+    const pedidos = rows.find((r) => r.r_tabela === "pedidos");
     console.log("");
-    console.log("Para apagar de verdade, rode com as opções executar e teto (veja o cabeçalho do script).");
+    console.log("Para apagar de verdade, copie e rode (teto igual às candidatas de pedidos de agora):");
+    console.log(comandoExecutar(Math.ceil(pedidos.r_candidatas)));
   } else {
     await db.query("begin");
     const antes = await contagens(db);
