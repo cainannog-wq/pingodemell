@@ -2,37 +2,80 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { unstable_getResponseFromNextConfig } from "next/experimental/testing/server";
 import nextConfig from "./next.config";
 
-// X-Robots-Tag só na homologação (branch deploy da Netlify). A produção
-// nunca pode receber noindex: sairia do Google.
+// X-Robots-Tag (PR noindex-site): o site inteiro fica fora dos buscadores,
+// em qualquer domínio, enquanto SITE_INDEXAVEL (src/lib/site/indexacao.ts)
+// for false; a homologação (branch deploy da Netlify), sempre.
 
-const ROTAS = ["/", "/produtos", "/login", "/admin/produtos", "/api/pedidos"];
+const ROTAS = [
+  "/",
+  "/produtos",
+  "/produtos/beijinho",
+  "/quem-somos",
+  "/politica-de-privacidade",
+  "/checkout",
+  "/robots.txt",
+  "/login",
+  "/admin/produtos",
+  "/api/pedidos",
+];
+const CONTEXTOS = ["production", "deploy-preview", "branch-deploy", undefined];
 
-async function robots(rota: string): Promise<string | null> {
+async function robots(rota: string, config = nextConfig, host = "pingodemell.netlify.app"): Promise<string | null> {
   const resposta = await unstable_getResponseFromNextConfig({
-    url: `https://pingodemell.netlify.app${rota}`,
-    nextConfig,
+    url: `https://${host}${rota}`,
+    nextConfig: config,
   });
   return resposta.headers.get("x-robots-tag");
+}
+
+// next.config.ts com SITE_INDEXAVEL trocado (simula o corte de DNS).
+async function configComIndexavel(indexavel: boolean) {
+  vi.resetModules();
+  vi.doMock("./src/lib/site/indexacao", async (original) => ({
+    ...(await original<typeof import("./src/lib/site/indexacao")>()),
+    SITE_INDEXAVEL: indexavel,
+  }));
+  const { default: config } = await import("./next.config");
+  vi.doUnmock("./src/lib/site/indexacao");
+  return config;
 }
 
 afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-describe("X-Robots-Tag por contexto da Netlify", () => {
-  for (const contexto of ["production", "deploy-preview", undefined]) {
-    it(`CONTEXT=${contexto ?? "(sem valor)"}: nenhuma rota recebe X-Robots-Tag`, async () => {
+describe("X-Robots-Tag com a trava de indexação", () => {
+  for (const contexto of CONTEXTOS) {
+    it(`trava ligada (como está hoje), CONTEXT=${contexto ?? "(sem valor)"}: todas as rotas recebem noindex, nofollow`, async () => {
       vi.stubEnv("CONTEXT", contexto);
       for (const rota of ROTAS) {
-        expect(await robots(rota), rota).toBeNull();
+        expect(await robots(rota), rota).toBe("noindex, nofollow");
       }
     });
   }
 
-  it("CONTEXT=branch-deploy: todas as rotas recebem noindex, nofollow", async () => {
+  it("trava ligada: vale em qualquer domínio, não só no da Netlify", async () => {
+    vi.stubEnv("CONTEXT", "production");
+    for (const host of ["pingodemell.netlify.app", "main--pingodemell.netlify.app", "www.pingodemell.com.br"]) {
+      expect(await robots("/", nextConfig, host), host).toBe("noindex, nofollow");
+    }
+  });
+
+  for (const contexto of ["production", "deploy-preview", undefined]) {
+    it(`SITE_INDEXAVEL true, CONTEXT=${contexto ?? "(sem valor)"}: nenhuma rota recebe X-Robots-Tag`, async () => {
+      vi.stubEnv("CONTEXT", contexto);
+      const config = await configComIndexavel(true);
+      for (const rota of ROTAS) {
+        expect(await robots(rota, config), rota).toBeNull();
+      }
+    });
+  }
+
+  it("SITE_INDEXAVEL true, CONTEXT=branch-deploy: a homologação continua noindex, nofollow", async () => {
     vi.stubEnv("CONTEXT", "branch-deploy");
+    const config = await configComIndexavel(true);
     for (const rota of ROTAS) {
-      expect(await robots(rota), rota).toBe("noindex, nofollow");
+      expect(await robots(rota, config), rota).toBe("noindex, nofollow");
     }
   });
 
