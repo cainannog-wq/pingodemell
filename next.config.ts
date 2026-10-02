@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { SITE_INDEXAVEL, cabecalhoRobots } from "./src/lib/site/indexacao";
 
 const supabaseHostname = process.env.SUPABASE_URL
   ? new URL(process.env.SUPABASE_URL).hostname
@@ -47,13 +48,14 @@ const nextConfig: NextConfig = {
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
     ];
-    // Homologação (branch deploy da Netlify, homologacao--pingodemell.netlify.app)
-    // fora do Google. A Netlify já põe noindex nos Deploy Previews e nos links
-    // fixos de deploy, mas não no endereço da branch. CONTEXT é definido pela
-    // Netlify no build ("production", "deploy-preview", "branch-deploy"); a
-    // produção nunca recebe este cabeçalho.
+    // Fora dos buscadores (src/lib/site/indexacao.ts): o site inteiro, em
+    // qualquer domínio, enquanto SITE_INDEXAVEL for false (até o corte de
+    // DNS); a homologação (branch deploy da Netlify), sempre. CONTEXT é
+    // definido pela Netlify no build ("production", "deploy-preview",
+    // "branch-deploy").
+    const robots = cabecalhoRobots(SITE_INDEXAVEL, process.env.CONTEXT);
+    if (robots) headers.push({ key: "X-Robots-Tag", value: robots });
     if (process.env.CONTEXT === "branch-deploy") {
-      headers.push({ key: "X-Robots-Tag", value: "noindex, nofollow" });
       // Commit que a homologação está servindo (COMMIT_REF é definido pela
       // Netlify no build): prova "homologação = commit X" com um curl -I,
       // sem abrir o painel. Só na homologação.

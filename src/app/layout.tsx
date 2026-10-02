@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Merriweather, Nunito, Yellowtail } from "next/font/google";
+import { SITE_INDEXAVEL, metadataRobots } from "@/lib/site/indexacao";
 import "@/styles/ds/styles.css";
 import "./globals.css";
 
@@ -45,6 +46,9 @@ const yellowtail = Yellowtail({
 export const metadata: Metadata = {
   title: "Pingo de Mell — Admin",
   description: "Painel administrativo da Pingo de Mell.",
+  // Trava de indexação (src/lib/site/indexacao.ts): herdada por toda página
+  // sem robots próprio.
+  robots: metadataRobots(SITE_INDEXAVEL),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
