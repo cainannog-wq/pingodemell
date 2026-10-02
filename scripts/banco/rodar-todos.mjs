@@ -5,9 +5,10 @@
 //
 // A fotografia é tirada numa conexão só de leitura.
 //
-// Uso: node scripts/banco/rodar-todos.mjs [--com-migracao]
-//   --com-migracao é repassado aos testes de banco (ver lib.mjs). O teste
-//   HTTP sempre olha o estado real de produção.
+// Uso: node scripts/banco/rodar-todos.mjs [--com-migracao=<arquivo.sql>]
+//   --com-migracao=... é repassado aos testes de banco (ver lib.mjs), menos
+//   à slug-migracao.mjs, que aplica a etapa 1 do slug sozinha quando ela
+//   falta. O teste HTTP sempre olha o estado real de produção.
 
 import { spawnSync } from "node:child_process";
 import path from "node:path";
@@ -17,12 +18,20 @@ const TESTES_DE_BANCO = [
   "permissoes.mjs",
   "produtos.mjs",
   "produto-cento-itens.mjs",
+  "recheios.mjs",
   "dias-off.mjs",
   "pedidos.mjs",
   "limite-pedidos.mjs",
+  "gravacao-pedidos.mjs",
+  "slug.mjs",
+  "unidade-venda-kits.mjs",
+  "exclusao-dados.mjs",
 ];
+// Aplica a própria migração quando ela falta; não recebe --com-migracao.
+const TESTES_SEM_ARGUMENTO = ["slug-migracao.mjs"];
 const TESTE_HTTP = "http-sem-gravar.mjs";
-const comMigracao = process.argv.includes("--com-migracao");
+const argMigracao = process.argv.find((a) => a.startsWith("--com-migracao"));
+const comMigracao = Boolean(argMigracao);
 
 async function fotografar() {
   const db = await conectar();
@@ -39,6 +48,23 @@ async function fotografar() {
          from public.${JSON.stringify(relname)} t`
       );
       foto[`public.${relname}`] = `${rows[0].n} linha(s), conteúdo ${rows[0].assinatura.slice(0, 10)}`;
+    }
+    // Rotina de exclusão (supabase/exclusao-dados.sql): registro e job, se já
+    // existirem.
+    const { rows: extras } = await db.query(
+      `select to_regclass('privado.exclusao_registro') is not null registro, to_regclass('cron.job') is not null cron`
+    );
+    if (extras[0].registro) {
+      const { rows } = await db.query(
+        `select count(*)::int n, coalesce(md5(string_agg(t::text, '|' order by t::text)), '-') assinatura from privado.exclusao_registro t`
+      );
+      foto["privado.exclusao_registro"] = `${rows[0].n} linha(s), conteúdo ${rows[0].assinatura.slice(0, 10)}`;
+    }
+    if (extras[0].cron) {
+      const { rows } = await db.query(
+        `select count(*)::int n, coalesce(md5(string_agg(jobname || schedule || command || active, '|' order by jobid)), '-') assinatura from cron.job`
+      );
+      foto["cron.job"] = `${rows[0].n} job(s), conteúdo ${rows[0].assinatura.slice(0, 10)}`;
     }
     for (const tabela of ["storage.buckets", "storage.objects", "auth.users", "auth.identities", "auth.sessions", "auth.refresh_tokens", "auth.audit_log_entries"]) {
       const { rows } = await db.query(`select count(*)::int n from ${tabela}`);
@@ -64,7 +90,8 @@ function rodar(arquivo, args) {
 const antes = await fotografar();
 
 const resultados = [];
-for (const arquivo of TESTES_DE_BANCO) resultados.push([arquivo, rodar(arquivo, comMigracao ? ["--com-migracao"] : [])]);
+for (const arquivo of TESTES_DE_BANCO) resultados.push([arquivo, rodar(arquivo, comMigracao ? [argMigracao] : [])]);
+for (const arquivo of TESTES_SEM_ARGUMENTO) resultados.push([arquivo, rodar(arquivo, [])]);
 resultados.push([TESTE_HTTP, rodar(TESTE_HTTP, [])]);
 
 const depois = await fotografar();

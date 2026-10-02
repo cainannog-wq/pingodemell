@@ -12,6 +12,14 @@ const nextConfig: NextConfig = {
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY,
+    // Registro de tempo do Salvar no console (src/lib/admin/tempos.ts): "1"
+    // só no build da homologação (branch deploy da Netlify). Na produção
+    // fica vazio e o build elimina o código do registro.
+    MEDIR_TEMPOS_ADMIN: process.env.CONTEXT === "branch-deploy" ? "1" : "",
+    // Contexto do deploy na Netlify, fixado no build (src/lib/pedidos/ambiente.ts):
+    // "production" grava pedido de verdade; qualquer outro valor (ou vazio)
+    // grava o pedido marcado como teste e usa o interruptor "fora_producao".
+    CONTEXTO_NETLIFY: process.env.CONTEXT ?? "",
   },
   images: {
     remotePatterns: supabaseHostname
@@ -46,6 +54,10 @@ const nextConfig: NextConfig = {
     // produção nunca recebe este cabeçalho.
     if (process.env.CONTEXT === "branch-deploy") {
       headers.push({ key: "X-Robots-Tag", value: "noindex, nofollow" });
+      // Commit que a homologação está servindo (COMMIT_REF é definido pela
+      // Netlify no build): prova "homologação = commit X" com um curl -I,
+      // sem abrir o painel. Só na homologação.
+      if (process.env.COMMIT_REF) headers.push({ key: "X-Homologacao-Commit", value: process.env.COMMIT_REF });
     }
     return [{ source: "/:path*", headers }];
   },

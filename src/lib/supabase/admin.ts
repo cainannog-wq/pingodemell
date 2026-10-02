@@ -12,8 +12,8 @@ import { supabaseUrl } from "./env";
 // Usos: POST /api/pedidos — limite por IP (função registrar_tentativa_pedido
 // e tabela pedidos_rate_limit, só a service role executa/acessa) e a
 // gravação do pedido (desde o PR seguranca-api, nenhum papel da API grava
-// direto em pedidos, só o servidor) — e os arquivos da galeria
-// de fotos extras no storage (src/lib/galeria/storage-servidor.ts): o admin
+// direto em pedidos, só o servidor) — e os arquivos das fotos do produto
+// (capa e fotos extras) no storage (src/lib/galeria/storage-servidor.ts): o admin
 // logado não enxerga storage.objects (não existe política de SELECT no
 // bucket), então não consegue listar nem apagar arquivo com a própria sessão.
 export function createAdminClient() {

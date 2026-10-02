@@ -91,9 +91,43 @@ export function somarMeses(ano: number, mes: number, delta: number): { ano: numb
   return { ano: Math.floor(total / 12), mes: (total % 12 + 12) % 12 + 1 };
 }
 
+// Data de calendário N dias depois (ou antes, com N negativo):
+// somarDias("2026-12-31", 1) -> "2027-01-01".
+export function somarDias(dataIso: string, dias: number): string {
+  const [ano, mes, dia] = dataIso.split("-").map(Number);
+  const d = new Date(Date.UTC(ano, mes - 1, dia + dias));
+  return montarDataIso(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+}
+
 // Diferença em dias de calendário entre duas datas AAAA-MM-DD (b - a).
 export function diferencaEmDias(a: string, b: string): number {
   const [ay, am, ad] = a.split("-").map(Number);
   const [by, bm, bd] = b.split("-").map(Number);
   return Math.round((Date.UTC(by, bm - 1, bd) - Date.UTC(ay, am - 1, ad)) / 86_400_000);
+}
+
+// Mesma data N meses depois (ou antes), com o dia limitado ao fim do mês:
+// somarMesesNaData("2027-02-28", 12) -> "2028-02-28";
+// somarMesesNaData("2028-02-29", 12) -> "2029-02-28".
+export function somarMesesNaData(dataIso: string, meses: number): string {
+  const [ano, mes, dia] = dataIso.split("-").map(Number);
+  const alvo = somarMeses(ano, mes, meses);
+  return montarDataIso(alvo.ano, alvo.mes, Math.min(dia, diasNoMes(alvo.ano, alvo.mes)));
+}
+
+// Data de calendário + "HH:MM" no relógio de Brasília -> instante (ISO em
+// UTC). Não supõe o deslocamento: confere com partesBrasilia e corrige, então
+// continua certo se o Brasil voltar a ter horário de verão.
+export function instanteBrasilia(dataIso: string, hora: string): string {
+  const [ano, mes, dia] = dataIso.split("-").map(Number);
+  const [h, m] = hora.split(":").map(Number);
+  const desejado = Date.UTC(ano, mes - 1, dia, h, m);
+  let instante = desejado + 3 * 3_600_000;
+  for (let i = 0; i < 2; i++) {
+    const p = partesBrasilia(instante);
+    const visto = Date.UTC(p.ano, p.mes - 1, p.dia, p.hora, p.minuto);
+    if (visto === desejado) break;
+    instante += desejado - visto;
+  }
+  return new Date(instante).toISOString();
 }

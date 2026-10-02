@@ -1,7 +1,10 @@
 @AGENTS.md
-@docs/escopo-pingo-de-mell.md
-@docs/roadmap-pingo-de-mell.md
 @docs/status-pingo-de-mell.md
+
+Este arquivo guarda só regras técnicas (schema, RLS, rotas, scripts, testes,
+fluxo de homologação e de lote). Escopo, roadmap e regras de negócio ficam
+fora do repositório e chegam no prompt de cada PR; não copiar para cá nem
+para `docs/`. Decisão do Cainan em 28/09/2026, no PR 2d.
 
 ## Regra de processo — migração de schema x merge do PR
 
@@ -60,8 +63,32 @@ Decisão fechada com o Cainan em 24/09/2026, no PR seguranca-api:
   (security advisors) e mostra a saída na descrição do PR**, antes e depois
   da migração, com uma justificativa para cada alerta que continuar. Antes
   do merge, o "depois" das regras de banco sai de
-  `node scripts/banco/permissoes.mjs --com-migracao`; o verificador de
-  verdade roda de novo depois que a migração for aplicada.
+  `node scripts/banco/permissoes.mjs --com-migracao=<arquivo.sql>`; o
+  verificador de verdade roda de novo depois que a migração for aplicada.
+
+## Regra do slug do produto (URL amigável)
+
+Decisão fechada com o Cainan em 28/09/2026, no PR slug:
+
+- **O slug é gerado e travado no banco** (`supabase/produtos-slug.sql`): um
+  gatilho gera o slug a partir do nome no cadastro, e outro recusa qualquer
+  mudança num slug já preenchido. Renomear o produto não mexe no slug.
+- **Código e scripts nunca enviam slug**: gravam sem ele e leem o valor
+  depois. O banco aceita um slug enviado (no formato e sem repetir) só para
+  o único uso legítimo: restaurar backup com as URLs originais.
+- **A leitura do produto pelo slug fica no código do site**
+  (`buscarProdutoPorSlug`, em `src/lib/vitrine/buscar.ts`, só ativo, com o
+  filtro na consulta). Não criar função de banco pública para isso.
+- Consequências aceitas: produto recadastrado com o nome de um produto
+  desativado ganha `-2` na URL, para sempre; produto excluído libera o slug,
+  e o endereço antigo passa a abrir o produto novo (por isso: desativar,
+  nunca excluir). Detalhes em `docs/status-pingo-de-mell.md`.
+- **Todo PR que mexe em gatilho ou função de `produtos` roda
+  `node scripts/banco/rodar-todos.mjs` antes do merge** (com
+  `--com-migracao=<arquivo.sql>` se a mudança ainda não estiver aplicada) e
+  mostra a saída no PR. A proteção da ordem dos gatilhos de edição (teste
+  `slug 13` em `scripts/banco/slug.mjs`) só existe nessa bateria de banco,
+  não no `npm run test`; sem rodá-la, ela não vale.
 
 ## Regra de fuso horário — "que dia é"
 
@@ -75,9 +102,9 @@ Decisão fechada com o Cainan em 24/09/2026, no PR fuso-brasilia:
   em UTC: entre 21h e meia-noite de Brasília, para eles já é o dia seguinte.
   Comparar dois instantes (`getTime()`, "já passou do horário de entrega?")
   não decide dia e pode ficar fora do módulo.
-- **O futuro checkout (antecedência de 1 dia; fim de semana até quinta)
-  decide no servidor e só com esse módulo**, nunca com o relógio do
-  navegador da cliente.
+- **O futuro checkout decide a antecedência da data no servidor e só com
+  esse módulo**, nunca com o relógio do navegador da cliente (a regra de
+  antecedência em si chega no prompt do PR do checkout).
 - **Testes não dependem do relógio real nem do fuso da máquina.** A suíte
   roda em dois fusos (UTC e America/Sao_Paulo, `vitest.config.ts`); teste
   que envolve "hoje" fixa o relógio (`vi.setSystemTime`), de preferência num
@@ -112,18 +139,23 @@ Decisão fechada com o Cainan em 24/09/2026, no PR noindex-homologacao:
 
 ## Regra de custo — créditos da Netlify e merges em lote
 
-Decisão fechada com o Cainan em 25/09/2026, no PR economia-deploys. Plano
-Free da Netlify: 300 créditos por ciclo (ciclo atual: 20/09 a 19/10/2026), divididos
-entre os 6 sites da conta. **Cada deploy de produção publicado custa 15
-créditos**; Deploy Preview, branch deploy (homologação), build pulado e build
-que falha não custam. Se os créditos acabam, **todos os sites da conta saem
-do ar** até o ciclo virar, não só o pingodemell. Saldo e histórico em
-`docs/status-pingo-de-mell.md`, seção "Créditos da Netlify".
+Decisão fechada com o Cainan em 25/09/2026, no PR economia-deploys;
+atualizada em 28/09/2026 com a troca de plano. Plano **Personal** da
+Netlify desde 28/09/2026: 1.000 créditos por ciclo (ciclo atual: 28/09 a
+27/10/2026), divididos entre os sites da conta. **Cada deploy de produção
+publicado custa 15 créditos**; Deploy Preview, branch deploy (homologação),
+build pulado e build que falha não custam. Se os créditos acabam, **todos os
+sites da conta saem do ar** até o ciclo virar, não só o pingodemell. Saldo e
+histórico em `docs/status-pingo-de-mell.md`, seção "Créditos da Netlify".
 
 - **Só merge na `main` gera deploy pago.** Nada de push direto na `main`.
   Validação sempre na homologação ou em Deploy Preview.
-- **Até 19/10/2026 (fim do ciclo atual), nenhum deploy de produção**, só
-  correção urgente com o ok explícito do Cainan.
+- **Deploy de produção liberado** com o plano Personal (a trava "nenhum
+  deploy de produção até 19/10/2026" do plano Free caiu em 28/09/2026). A
+  `main` continua recebendo só o PR da `lote`, quando o Cainan pedir.
+- **Nunca usar "Trigger deploy" nem "Clear cache and deploy site" da página
+  de Deploys** para forçar a homologação: publicam a produção (28/09/2026,
+  15 créditos).
 - **Commit que não deve publicar leva `[skip netlify]` na mensagem** (o
   commit do heartbeat já leva). Não usar `[skip ci]`: também pula o GitHub
   Actions.

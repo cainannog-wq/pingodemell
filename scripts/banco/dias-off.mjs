@@ -2,7 +2,7 @@
 // desfeita — nada é gravado. Substitui scripts/test-rls-dias-off.mjs, que
 // gravava registros temporários em produção.
 //
-// Uso: node scripts/banco/dias-off.mjs [--com-migracao]
+// Uso: node scripts/banco/dias-off.mjs [--com-migracao=<arquivo.sql>]
 
 import { cenario, descrever, emTransacaoDesfeita, registrar } from "./lib.mjs";
 

@@ -1,0 +1,933 @@
+/* Checkout (/checkout). Layout: design/handoff/5 - Checkout.dc.html e
+   screenshots/checkout-d.png, checkout-m.png, aviso-data.png, aviso-campo.png.
+   Página única com as 5 seções abertas (o handoff usa acordeão). */
+
+.pdm-site {
+  /* Cores do handoff que o app não tem como token. */
+  --checkout-ok-fundo: #eef3e8; /* success-050 */
+  --checkout-erro-fundo: #f8ebe9; /* danger-050 */
+  --checkout-alerta-fundo: #fdf1dc; /* warning suave */
+}
+
+/* ---------- Faixa de título ---------- */
+
+.checkout-topo {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.checkout-topo .site-hive {
+  right: -70px;
+  top: -120px;
+  font-size: 320px !important;
+  opacity: 0.12;
+}
+.checkout-topo-inner {
+  position: relative;
+  padding-block: 20px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.pdm-site .checkout-topo h1 {
+  font-size: 44px;
+}
+.checkout-topo-inner p {
+  max-width: 720px;
+  font-size: 17px;
+  color: var(--ink-700);
+}
+
+/* ---------- Corpo: formulário + resumo ---------- */
+
+.checkout-corpo {
+  padding-block: 32px 64px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 40px;
+  align-items: start;
+  min-height: 240px;
+}
+.checkout-coluna-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* ---------- Seções ---------- */
+
+.checkout-secao {
+  background: var(--surface-raised);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-raised);
+  padding: 28px;
+}
+.checkout-secao-cabeca {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.checkout-secao-numero {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--gold-500);
+  font-weight: var(--fw-bold);
+  font-size: 16px;
+  color: var(--ink-900);
+}
+.pdm-site .checkout-secao h2 {
+  font-size: 24px;
+  line-height: 1.3;
+}
+.checkout-secao-cabeca p {
+  margin-top: 2px;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+.checkout-secao-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ---------- Campos ---------- */
+
+.checkout-campos {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.checkout-campos-dupla {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.checkout-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.checkout-rotulo {
+  font-weight: var(--fw-semibold);
+  font-size: 15px;
+  color: var(--text-strong);
+}
+.checkout-opcional {
+  font-weight: var(--fw-regular);
+  color: var(--text-muted);
+}
+.checkout-dica {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.checkout-erro {
+  font-weight: var(--fw-semibold);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--pdm-error);
+}
+.checkout-erro:empty {
+  display: none;
+}
+.checkout-grupo {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.checkout-grupo legend {
+  padding: 0;
+  margin-bottom: 10px;
+}
+
+/* Resumo dos erros (aviso-campo.png). A região fica sempre no HTML. */
+.checkout-erros {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  background: var(--checkout-erro-fundo);
+  color: var(--brown-800);
+}
+.checkout-erros[data-vazio] {
+  padding: 0;
+  background: none;
+}
+.checkout-erros ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}
+.pdm-site .checkout-erros-link {
+  min-height: var(--tap-min);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: var(--fw-semibold);
+  color: var(--pdm-error);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Caixas de texto (confirmação da data, por que bloqueia, aviso de prazo). */
+.checkout-caixa {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--brown-800);
+}
+.checkout-caixa .material-symbols-rounded {
+  flex: none;
+  margin-top: 1px;
+}
+.checkout-caixa[data-tom="ok"] {
+  background: var(--checkout-ok-fundo);
+}
+.checkout-caixa[data-tom="ok"] .checkout-caixa-titulo {
+  color: var(--pdm-success-text);
+}
+.checkout-caixa[data-tom="info"] {
+  background: var(--gold-100);
+}
+.checkout-caixa[data-tom="alerta"] {
+  background: var(--checkout-alerta-fundo);
+  border-left: 4px solid var(--pdm-warning);
+}
+.checkout-caixa-titulo {
+  font-weight: var(--fw-bold);
+  font-size: 15px;
+  color: var(--text-strong);
+}
+
+/* ---------- Quando ---------- */
+
+/* Desktop: calendário à esquerda; à direita, de cima para baixo, a
+   confirmação (ou o aviso de prazo), o "por que bloqueia" e o horário. No
+   HTML o horário vem logo depois do calendário, que é a ordem do celular. */
+.checkout-quando {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-rows: auto auto 1fr;
+  grid-template-areas:
+    "cal status"
+    "cal porque"
+    "cal hora";
+  gap: 16px 24px;
+  align-items: start;
+}
+.checkout-quando-cal {
+  grid-area: cal;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.checkout-quando-hora {
+  grid-area: hora;
+  min-width: 0;
+}
+.checkout-quando-status {
+  grid-area: status;
+  min-width: 0;
+}
+.checkout-quando-porque {
+  grid-area: porque;
+}
+.checkout-quando-status:empty {
+  display: none;
+}
+
+/* ---------- Consentimento (Seus dados) ---------- */
+
+.checkout-aceite {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 4px;
+}
+.checkout-aceite-caixa {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: var(--tap-min);
+  padding: 12px 14px;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--surface-card);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-700);
+  cursor: pointer;
+}
+.checkout-aceite[data-invalido] .checkout-aceite-caixa {
+  border-color: var(--pdm-error);
+}
+.checkout-aceite-caixa input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
+  accent-color: var(--brown-500);
+  cursor: pointer;
+}
+.pdm-site .checkout-aceite-caixa a {
+  font-weight: var(--fw-semibold);
+  color: var(--text-link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.checkout-cal {
+  padding: 16px 20px 20px;
+  border-radius: var(--radius);
+  background: var(--surface-card);
+  border: 2px solid transparent;
+}
+.checkout-cal[data-invalido] {
+  border-color: var(--pdm-error);
+}
+.checkout-cal-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.pdm-site .checkout-cal-mes {
+  font-family: var(--font-heading);
+  font-weight: var(--fw-bold);
+  font-size: 20px;
+  color: var(--text-heading);
+  text-align: center;
+}
+.pdm-site .checkout-cal-seta {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--brown-500);
+  cursor: pointer;
+}
+.pdm-site .checkout-cal-seta:hover:not(:disabled) {
+  background: var(--brown-050);
+}
+.pdm-site .checkout-cal-seta:disabled {
+  color: var(--brown-200);
+  cursor: default;
+}
+.checkout-cal-grade {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.checkout-cal-linha {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.checkout-cal-dia-semana {
+  display: grid;
+  place-items: center;
+  height: 28px;
+  font-weight: var(--fw-semibold);
+  font-size: 13px;
+  color: var(--ink-500);
+}
+.checkout-cal-dia-semana abbr {
+  text-decoration: none;
+}
+.checkout-cal-linha > span {
+  display: flex;
+}
+.pdm-site .checkout-cal-dia {
+  position: relative;
+  width: 100%;
+  min-height: var(--tap-min);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 2px solid var(--brown-100);
+  border-radius: 10px;
+  background: var(--surface-raised);
+  font: inherit;
+  font-weight: var(--fw-semibold);
+  font-size: 15px;
+  color: var(--brown-700);
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+.pdm-site .checkout-cal-dia[data-estado="livre"]:hover {
+  border-color: var(--gold-500);
+}
+.pdm-site .checkout-cal-dia[data-estado="escolhida"] {
+  border-color: var(--gold-500);
+  background: var(--gold-500);
+  font-weight: var(--fw-bold);
+  color: var(--ink-900);
+}
+.pdm-site .checkout-cal-dia[data-estado="bloqueada"],
+.pdm-site .checkout-cal-dia[data-estado="passado"] {
+  border-color: transparent;
+  background: transparent;
+  font-weight: var(--fw-regular);
+  color: var(--ink-300);
+  cursor: default;
+}
+.pdm-site .checkout-cal-dia[data-estado="passado"] {
+  text-decoration: line-through;
+}
+/* Prazo curto: pode escolher, com um ponto de aviso embaixo do número. */
+.pdm-site .checkout-cal-dia[data-curto]::after,
+.checkout-cal-amostra[data-curto]::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--pdm-warning);
+}
+.checkout-cal-legenda {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 13px;
+  color: var(--ink-500);
+}
+.checkout-cal-legenda li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.checkout-cal-amostra {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 2px solid var(--brown-100);
+  background: var(--surface-raised);
+}
+.checkout-cal-amostra[data-estado="escolhida"] {
+  border-color: var(--gold-500);
+  background: var(--gold-500);
+}
+.checkout-cal-amostra[data-estado="bloqueada"] {
+  border-color: var(--cream-200);
+  background: var(--cream-200);
+}
+.checkout-cal-amostra[data-curto]::after {
+  bottom: 1px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+}
+
+/* ---------- Como receber ---------- */
+
+.checkout-opcoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.checkout-opcao {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px;
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+.checkout-opcao:hover {
+  border-color: var(--brown-200);
+}
+.checkout-opcao[data-invalido] {
+  border-color: var(--pdm-error);
+}
+.checkout-opcao[data-escolhido] {
+  border-color: var(--border-strong);
+  background: var(--gold-100);
+}
+.checkout-opcao input,
+.checkout-chip input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 2px 0 0;
+  accent-color: var(--brown-500);
+  cursor: pointer;
+}
+.checkout-opcao:has(input:focus-visible),
+.checkout-chip:has(input:focus-visible) {
+  outline: 2px solid var(--brown-500);
+  outline-offset: 2px;
+}
+.checkout-opcao input:focus-visible,
+.checkout-chip input:focus-visible {
+  outline: none;
+}
+.checkout-opcao-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.checkout-opcao-titulo {
+  font-weight: var(--fw-bold);
+  font-size: 16px;
+  color: var(--text-strong);
+}
+.checkout-endereco {
+  padding-top: 4px;
+}
+
+/* ---------- Pagamento ---------- */
+
+.checkout-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.checkout-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap-min);
+  padding: 8px 18px 8px 14px;
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  font-weight: var(--fw-semibold);
+  font-size: 15px;
+  color: var(--brown-700);
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+.checkout-chip input {
+  margin: 0;
+}
+.checkout-chip[data-escolhido] {
+  border-color: var(--border-strong);
+  background: var(--gold-100);
+}
+
+/* ---------- Resumo e envio ---------- */
+
+/* Desktop: resumo e botão acompanham a rolagem. A coluna nunca passa da
+   altura da tela: com muitos itens, só a lista de itens rola por dentro, e
+   o total, o aviso e o botão ficam sempre à vista. */
+.checkout-coluna-resumo {
+  position: sticky;
+  top: 24px;
+  max-height: calc(100dvh - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.checkout-resumo {
+  flex: 0 1 auto;
+  min-height: 0;
+  background: var(--surface-raised);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-raised);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.checkout-enviar {
+  flex: none;
+}
+.checkout-resumo-cabeca {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.pdm-site .checkout-resumo h2 {
+  font-size: 26px;
+}
+.checkout-resumo-itens {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  margin: 0;
+  padding: 0 4px 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.checkout-resumo-item {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+.checkout-resumo-foto {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--gold-100);
+}
+.checkout-resumo-foto .site-linha-fallback .site-hive {
+  font-size: 60px !important;
+  right: -14px;
+  bottom: -20px;
+}
+.checkout-resumo-nome {
+  font-weight: var(--fw-bold);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text-strong);
+  overflow-wrap: anywhere;
+}
+.checkout-resumo-detalhes {
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-700);
+  overflow-wrap: anywhere;
+}
+.checkout-resumo-obs {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+  color: var(--text-muted);
+}
+.checkout-resumo-obs .material-symbols-rounded {
+  flex: none;
+  margin-top: 2px;
+}
+.checkout-resumo-subtotal {
+  font-weight: var(--fw-bold);
+  font-size: 15px;
+  color: var(--ink-900);
+  white-space: nowrap;
+}
+.checkout-resumo-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+.checkout-resumo-total span {
+  font-weight: var(--fw-bold);
+  font-size: 17px;
+  color: var(--text-strong);
+}
+.checkout-resumo-total strong {
+  font-weight: var(--fw-bold);
+  font-size: 30px;
+  line-height: 1.1;
+  color: var(--ink-900);
+  white-space: nowrap;
+}
+.checkout-resumo-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: #eaeff4;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-700);
+}
+.checkout-enviar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.checkout-artesanal {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: var(--gold-100);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--brown-800);
+}
+.checkout-artesanal .material-symbols-rounded {
+  flex: none;
+  margin-top: 1px;
+}
+.checkout-sem-pagamento {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ---------- Ofertas ---------- */
+
+.checkout-ofertas {
+  padding-block: 48px 64px;
+  background: var(--surface-card);
+  border-top: 1px solid var(--border-subtle);
+}
+.checkout-ofertas-cabeca {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 24px;
+}
+.pdm-site .checkout-ofertas h2 {
+  font-size: 28px;
+}
+.pdm-site .checkout-ofertas h2:focus-visible {
+  outline-offset: 4px;
+}
+.checkout-ofertas-cabeca p {
+  color: var(--text-muted);
+}
+.checkout-ofertas-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 20px;
+}
+.checkout-ofertas-lista .home-price {
+  font-size: 18px;
+}
+
+/* ---------- Falha ---------- */
+
+.checkout-falha-inner {
+  padding-block: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+.pdm-site .checkout-falha h1 {
+  font-size: 36px;
+}
+.checkout-falha-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* Sem o WhatsApp flutuante no checkout (decisão do Cainan): ele cobria os
+   campos e o botão final. O WhatsApp segue no rodapé. */
+.pdm-site:has(.checkout, .checkout-falha) .site-fab {
+  display: none !important;
+}
+
+/* ---------- Tablet e celular ---------- */
+
+@media (max-width: 1023px) {
+  .checkout-corpo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .checkout-coluna-resumo {
+    position: static;
+    max-height: none;
+  }
+  .checkout-resumo-itens {
+    overflow: visible;
+  }
+  .checkout-ofertas-lista {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .checkout-topo {
+    background: none;
+    border-bottom: 0;
+  }
+  .checkout-topo .site-hive {
+    display: none !important;
+  }
+  .checkout-topo-inner {
+    padding-block: 8px 0;
+    gap: 4px;
+  }
+  .pdm-site .checkout-topo h1 {
+    font-size: 36px;
+  }
+  .checkout-topo-inner p {
+    font-size: 15px;
+  }
+  .checkout-corpo {
+    padding-block: 16px 40px;
+  }
+  .checkout-coluna-form {
+    gap: 16px;
+  }
+  .checkout-secao {
+    padding: 20px 16px;
+    box-shadow: var(--shadow-rest);
+  }
+  .checkout-secao-cabeca {
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .pdm-site .checkout-secao h2 {
+    font-size: 21px;
+  }
+  .checkout-campos-dupla,
+  .checkout-opcoes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Celular: horário logo abaixo do calendário. */
+  .checkout-quando {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      "cal"
+      "hora"
+      "status"
+      "porque";
+  }
+  /* O calendário avança sobre o respiro da seção para cada dia ter pelo
+     menos 44px de largura em 375px. */
+  .checkout-cal {
+    margin-inline: -12px;
+    padding: 12px 4px 14px;
+  }
+  .checkout-cal-grade,
+  .checkout-cal-linha {
+    gap: 2px;
+  }
+  .pdm-site .checkout-cal-dia {
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .checkout-resumo {
+    padding: 20px;
+    box-shadow: var(--shadow-rest);
+  }
+  .checkout-resumo-total strong {
+    font-size: 26px;
+  }
+  .checkout-ofertas {
+    padding-block: 32px 48px;
+  }
+  .pdm-site .checkout-ofertas h2 {
+    font-size: 22px;
+  }
+  /* Celular: rolagem lateral com encaixe por cartão. */
+  .checkout-ofertas-lista {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    /* Sem isto o encaixe cola o primeiro cartão na borda da tela. */
+    scroll-padding-inline: var(--container-pad);
+    margin-inline: calc(-1 * var(--container-pad));
+    padding: 4px var(--container-pad) 12px;
+    gap: 14px;
+  }
+  .checkout-ofertas-lista > li {
+    flex: 0 0 200px;
+    scroll-snap-align: start;
+  }
+}
+
+/* ---------- Envio: falha, inválido, limite e saída sem registro ---------- */
+/* PR confirmacao-e-gravacao. Erro em fundo claro com texto escuro (contraste
+   AA) e borda vermelha à esquerda. */
+
+.checkout-coluna-resumo[data-envio] {
+  max-height: none;
+}
+.checkout-envio-alerta[data-vazio] {
+  display: none;
+}
+.checkout-caixa[data-tom="erro"] {
+  background: #f8ebe9; /* danger-050 */
+  border-left: 4px solid var(--pdm-error);
+}
+.checkout-caixa[data-tom="erro"] .checkout-caixa-titulo {
+  color: var(--pdm-error);
+}
+.checkout-caixa p + p {
+  margin-top: 4px;
+}
+.checkout-saida {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.checkout-saida-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--tap-min);
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  border: 2px solid var(--whatsapp-600);
+  background: var(--surface-raised);
+  color: #0f5a2c;
+  font-weight: var(--fw-bold);
+  font-size: 16px;
+  text-decoration: none;
+  text-align: center;
+}
+.checkout-saida-link:hover {
+  background: #e7f8ee;
+}
+.checkout-saida-nota {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  text-align: center;
+}

@@ -36,6 +36,33 @@ describe("X-Robots-Tag por contexto da Netlify", () => {
     }
   });
 
+  it("commit servido aparece em X-Homologacao-Commit só na homologação", async () => {
+    vi.stubEnv("COMMIT_REF", "c18a492c693f5e38f29aaf043ec6fdd40d72c49a");
+    for (const [contexto, esperado] of [
+      ["production", null],
+      ["deploy-preview", null],
+      ["branch-deploy", "c18a492c693f5e38f29aaf043ec6fdd40d72c49a"],
+    ] as const) {
+      vi.stubEnv("CONTEXT", contexto);
+      const resposta = await unstable_getResponseFromNextConfig({ url: "https://pingodemell.netlify.app/", nextConfig });
+      expect(resposta.headers.get("x-homologacao-commit"), contexto).toBe(esperado);
+    }
+  });
+
+  it('registro de tempo do Salvar (MEDIR_TEMPOS_ADMIN) só é ligado no build da homologação', async () => {
+    for (const [contexto, esperado] of [
+      ["production", ""],
+      ["deploy-preview", ""],
+      [undefined, ""],
+      ["branch-deploy", "1"],
+    ] as const) {
+      vi.stubEnv("CONTEXT", contexto);
+      vi.resetModules();
+      const { default: config } = await import("./next.config");
+      expect(config.env?.MEDIR_TEMPOS_ADMIN, String(contexto)).toBe(esperado);
+    }
+  });
+
   it("os outros cabeçalhos de segurança continuam em todos os contextos", async () => {
     for (const contexto of ["production", "branch-deploy"]) {
       vi.stubEnv("CONTEXT", contexto);
@@ -44,4 +71,21 @@ describe("X-Robots-Tag por contexto da Netlify", () => {
       expect(resposta.headers.get("referrer-policy")).toBe("strict-origin-when-cross-origin");
     }
   });
+});
+
+// PR confirmacao-e-gravacao: o CONTEXT da Netlify é fixado no build em
+// CONTEXTO_NETLIFY (src/lib/pedidos/ambiente.ts decide teste e interruptor).
+describe("CONTEXTO_NETLIFY embutido no build", () => {
+  for (const [contexto, esperado] of [
+    ["production", "production"],
+    ["branch-deploy", "branch-deploy"],
+    [undefined, ""],
+  ] as const) {
+    it(`CONTEXT=${contexto ?? "(sem valor)"} vira CONTEXTO_NETLIFY=${JSON.stringify(esperado)}`, async () => {
+      vi.stubEnv("CONTEXT", contexto);
+      vi.resetModules();
+      const { default: config } = await import("./next.config");
+      expect(config.env?.CONTEXTO_NETLIFY).toBe(esperado);
+    });
+  }
 });

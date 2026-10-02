@@ -3,6 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { LinhaSabor } from "@/lib/vitrine/cento";
 import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
 
 vi.mock("next/image", () => ({
@@ -24,32 +25,44 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-// "Banco" simulado: devolve o que estiver em `doBanco`, sem ler nada real.
+// "Banco" simulado: devolve o que estiver em `doBanco` (produtos) e em
+// `saboresDoBanco` (produto_cento_itens), sem ler nada real.
 let doBanco: ProdutoVitrine[] = [];
+let saboresDoBanco: LinhaSabor[] = [];
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(async () => ({
-    from: () => {
+    from: (tabela: string) => {
+      const dados = tabela === "produto_cento_itens" ? saboresDoBanco : doBanco;
       const b = {
         select: () => b,
         eq: () => b,
-        then: (ok: (v: unknown) => unknown) => Promise.resolve({ data: doBanco, error: null }).then(ok),
+        in: () => b,
+        then: (ok: (v: unknown) => unknown) => Promise.resolve({ data: dados, error: null }).then(ok),
       };
       return b;
     },
   })),
 }));
 
+function sabor(cento_nome: string, subitem_nome: string, ativo = true): LinhaSabor {
+  return { cento_nome, subitem_nome, ordem: 0, sabor: { nome: subitem_nome, ativo } };
+}
+
 let seq = 0;
 function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {
   seq += 1;
   return {
     id: `00000000-0000-4000-8000-${String(seq).padStart(12, "0")}`,
+    slug: `produto-${seq}`,
     nome: `Produto ${seq}`,
     descricao: null,
     preco: 10,
     image_url: null,
     Categoria: "Doces",
     tipo: "normal",
+    unidade_venda: null,
+    pedido_minimo: 1,
+    step_quantidade: "livre",
     ativo: true,
     destaque: false,
     atualizado_em: "2026-09-23T14:29:18.070Z",
@@ -65,6 +78,7 @@ const CATALOGO = [
   produto({ nome: "Coca-cola 2L", Categoria: "Bebidas", preco: 11, destaque: true }),
   produto({ nome: "Morango Banhado", Categoria: "Doces", preco: 2.5 }),
   produto({ nome: "Empada", Categoria: "Salgados", preco: 4.5 }),
+  produto({ nome: "Kit Aniversário", Categoria: "Kits", preco: 180 }),
   produto({ nome: "Kit Festa", Categoria: null, preco: 150 }),
   produto({ nome: "Torta Inativa", Categoria: "Doces", ativo: false }),
 ];
@@ -81,6 +95,7 @@ const filtroAtual = () => within(screen.getByRole("navigation", { name: "Categor
 
 beforeEach(() => {
   doBanco = CATALOGO;
+  saboresDoBanco = [sabor("Beijinho", "Morango Banhado")];
 });
 afterEach(cleanup);
 
@@ -98,7 +113,7 @@ describe("Página Lista — estrutura", () => {
     expect(h2s).toHaveLength(1);
     expect(h2s[0]).toHaveTextContent("Todos os produtos");
     expect(h2s[0]).toHaveClass("site-visually-hidden");
-    expect(cardsNaOrdem()).toEqual(["Beijinho", "Bolo de Chocolate", "Coca-cola 2L", "Empada", "Kit Festa", "Morango Banhado"]);
+    expect(cardsNaOrdem()).toEqual(["Beijinho", "Bolo de Chocolate", "Coca-cola 2L", "Empada", "Kit Aniversário", "Kit Festa", "Morango Banhado"]);
     expect(filtroAtual()).toHaveAttribute("href", "/produtos");
     expect(screen.queryByText("Torta Inativa")).not.toBeInTheDocument();
   });
@@ -111,21 +126,30 @@ describe("Página Lista — estrutura", () => {
     expect(cardsNaOrdem()).toEqual(["Beijinho", "Morango Banhado"]);
   });
 
+  it("?categoria=kits: só os produtos da categoria Kits, filtro Kits marcado", async () => {
+    await renderLista("kits");
+    expect(screen.getByRole("heading", { level: 2, name: "Kits" })).toHaveClass("site-visually-hidden");
+    expect(filtroAtual()).toHaveAttribute("href", "/produtos?categoria=kits");
+    expect(cardsNaOrdem()).toEqual(["Kit Aniversário"]);
+  });
+
   it("categoria inválida na URL mostra 'Todos', sem erro", async () => {
     await renderLista("kits-festa");
     expect(filtroAtual()).toHaveAttribute("href", "/produtos");
-    expect(cardsNaOrdem()).toHaveLength(6);
+    expect(cardsNaOrdem()).toHaveLength(7);
   });
 
-  it("filtro tem as 4 categorias do CMS mais 'Todos', como links da URL", async () => {
+  it("filtro tem as 6 categorias do CMS (com Kits e Bento Cake) mais 'Todos', como links da URL", async () => {
     await renderLista();
     const links = within(screen.getByRole("navigation", { name: "Categorias" })).getAllByRole("link");
     expect(links.map((a) => a.getAttribute("href"))).toEqual([
       "/produtos",
       "/produtos?categoria=bolos",
+      "/produtos?categoria=bento-cake",
       "/produtos?categoria=doces",
       "/produtos?categoria=salgados",
       "/produtos?categoria=bebidas",
+      "/produtos?categoria=kits",
     ]);
     expect(links.filter((a) => a.getAttribute("aria-current") === "page")).toHaveLength(1);
   });
@@ -170,6 +194,18 @@ describe("Página Lista — card", () => {
     expect(preco("R$ 2,50")).toBeInTheDocument();
   });
 
+  it("card com unidade de venda: 'R$ X o kg'; sem unidade (produto de hoje), só o preço", async () => {
+    doBanco = [
+      produto({ nome: "Bolo de Cenoura", Categoria: "Bolos", preco: 90, unidade_venda: "kg" }),
+      produto({ nome: "Bolo Antigo", Categoria: "Bolos", preco: 45 }),
+    ];
+    await renderLista("bolos");
+    const kg = preco("R$ 90,00 o kg");
+    expect(within(cardDe("Bolo de Cenoura")).getByText("o kg")).toHaveClass("site-preco-unidade");
+    expect(kg.querySelector(".site-preco-valor")?.textContent?.replace(/\s+/g, " ")).toBe("R$ 90,00");
+    expect(preco("R$ 45,00").querySelector(".site-preco-unidade")).toBeNull();
+  });
+
   it("preço do cento: valor e 'o cento' em blocos separados, só o espaço entre eles pode quebrar", async () => {
     await renderLista("doces");
     const bloco = preco("R$ 100,00 o cento");
@@ -199,13 +235,53 @@ describe("Página Lista — card", () => {
     expect(screen.getByRole("img", { name: "Foto de Bolo de Chocolate" })).toHaveAttribute("src", COM_FOTO);
   });
 
-  it("card e botão levam à interna pelo id; nada vai para o carrinho", async () => {
+  it("card e botão levam à interna pelo slug; nada vai para o carrinho", async () => {
     await renderLista("salgados");
     const empada = CATALOGO.find((p) => p.nome === "Empada")!;
     const card = screen.getByRole("heading", { level: 3, name: "Empada" }).closest("article")!;
     const links = within(card).getAllByRole("link");
     expect(links.length).toBeGreaterThanOrEqual(2);
-    for (const link of links) expect(link).toHaveAttribute("href", `/produtos/${empada.id}`);
+    expect(empada.slug).toBeTruthy();
+    for (const link of links) expect(link).toHaveAttribute("href", `/produtos/${empada.slug}`);
     expect(document.querySelector('a[href="/carrinho"]')).toBeNull();
+  });
+});
+
+describe("Página Lista — Cento sem sabor ativo (dado simulado)", () => {
+  it("some da Lista, como produto inativo; com 1 sabor ativo continua", async () => {
+    doBanco = [
+      produto({ nome: "Cento Sem Sabor", Categoria: "Doces", tipo: "cento" }),
+      produto({ nome: "Cento Um Sabor", Categoria: "Doces", tipo: "cento" }),
+      produto({ nome: "Morango Banhado", Categoria: "Doces" }),
+    ];
+    // Sabor inativo chega com ativo = false (admin logado) ou null
+    // (anônimo, escondido pela RLS): nos dois casos não conta.
+    saboresDoBanco = [
+      sabor("Cento Sem Sabor", "Torta Inativa", false),
+      { cento_nome: "Cento Sem Sabor", subitem_nome: "Coxinha Inativa", ordem: 1, sabor: null },
+      sabor("Cento Um Sabor", "Morango Banhado"),
+      sabor("Cento Um Sabor", "Torta Inativa", false),
+    ];
+    await renderLista("doces");
+    expect(cardsNaOrdem()).toEqual(["Cento Um Sabor", "Morango Banhado"]);
+  });
+});
+
+describe("Página Lista — mínimo no card", () => {
+  it("aparece só com pedido_minimo > 1, com a unidade quando preenchida; vazio não quebra", async () => {
+    doBanco = [
+      produto({ nome: "Morango Banhado", Categoria: "Doces", preco: 2.5, pedido_minimo: 10, unidade_venda: "unidade" }),
+      produto({ nome: "Brigadeiro", Categoria: "Doces", preco: 3.5, pedido_minimo: 10 }),
+      produto({ nome: "Pudim", Categoria: "Doces", preco: 45, pedido_minimo: 1, unidade_venda: "kg" }),
+      produto({ nome: "Beijinho", Categoria: "Doces", preco: 5, tipo: "cento", pedido_minimo: 20 }),
+    ];
+    saboresDoBanco = [sabor("Beijinho", "Brigadeiro")];
+    await renderLista("doces");
+    expect(within(cardDe("Morango Banhado")).getByText("mín. 10 un")).toHaveClass("site-preco-minimo");
+    expect(within(cardDe("Brigadeiro")).getByText("mín. 10")).toBeInTheDocument();
+    expect(cardDe("Pudim").querySelector(".site-preco-minimo")).toBeNull();
+    // Cento ignora pedido_minimo.
+    expect(cardDe("Beijinho").querySelector(".site-preco-minimo")).toBeNull();
+    expect(document.body.textContent).not.toMatch(/null|undefined|None/);
   });
 });

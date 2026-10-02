@@ -8,17 +8,21 @@ import { Button, Icon } from "@/components/ds";
 import { LOJA } from "@/lib/site/config";
 import { ROTAS } from "@/lib/site/rotas";
 import { LINK_WHATSAPP_CONTATO } from "@/lib/site/whatsapp";
+import { useCarrinho } from "./CarrinhoProvider";
 import { Hive } from "./Hive";
 import { NAV_PRINCIPAL } from "./nav";
 
 // Cabeçalho do site público: logo, navegação (Home, Produtos, Sobre nós,
-// Contato) e sacola SEM contador — o contador entra com o carrinho.
+// Contato) e sacola com o contador do carrinho (número de itens diferentes;
+// some quando o carrinho está vazio). No HTML do servidor o carrinho é
+// vazio; o contador aparece assim que a página carrega no navegador.
 // Abaixo de 768px a navegação vira o botão de menu, que abre o painel de
 // tela cheia (<dialog> nativo: prende o foco, fecha com Esc e devolve o
 // foco pro botão ao fechar).
 export function SiteHeader() {
   const pathname = usePathname() ?? "/";
   const menuRef = useRef<HTMLDialogElement>(null);
+  const { totalItens } = useCarrinho();
 
   // Fecha o menu ao navegar (inclusive clicando no item da página atual).
   useEffect(() => {
@@ -43,8 +47,21 @@ export function SiteHeader() {
         </nav>
 
         <div className="site-header-actions">
-          <Link href={ROTAS.carrinho} className="site-icon-btn" aria-label="Sacola do pedido">
+          <Link
+            href={ROTAS.carrinho}
+            className="site-icon-btn site-sacola"
+            aria-label={
+              totalItens === 0
+                ? "Sacola do pedido, vazia"
+                : `Sacola do pedido, ${totalItens} ${totalItens === 1 ? "item" : "itens"}`
+            }
+          >
             <Icon name="shopping_bag" size={30} tone="inherit" />
+            {totalItens > 0 ? (
+              <span className="site-sacola-contador" data-testid="contador-sacola" aria-hidden="true">
+                {totalItens > 99 ? "99+" : totalItens}
+              </span>
+            ) : null}
           </Link>
           <button
             type="button"

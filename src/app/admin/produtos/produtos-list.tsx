@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import type { CategoriaProduto, Produto } from "@/lib/produtos/types";
 import { CATEGORIA_VALUES } from "@/lib/produtos/types";
 import { Card, Icon, Input, Button, Badge, Toggle } from "@/components/ds";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 import { ProductActionMenu } from "./product-action-menu";
 import { deleteProduto, updateProdutoAtivo, updateProdutoDestaque } from "./actions";
+import { concluirSalvarPendente } from "@/lib/admin/tempos";
 
 // Ícone de destaque, sem texto ao lado (só title/aria-label), reaproveitado
 // na tabela desktop. tone="default" (não "accent"): a auditoria de
@@ -72,6 +73,14 @@ function AtivoToggleCell({
 
 // Formatação manual (sem toLocaleString/Intl) para evitar divergência de
 // hidratação entre o ICU do servidor e o do navegador.
+// Bolo não tem preço no cadastro (vem do recheio × kg) nem pedido mínimo.
+function textoPreco(produto: Produto) {
+  return produto.tipo === "bolo" ? "Por recheio" : formatPreco(produto.preco);
+}
+function textoMinimo(produto: Produto) {
+  return produto.tipo === "bolo" ? "—" : `${produto.pedido_minimo} un.`;
+}
+
 function formatPreco(preco: number) {
   const [intPart, decPart] = preco.toFixed(2).split(".");
   const withThousands = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -103,7 +112,10 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
   const [search, setSearch] = useState("");
   const [chip, setChip] = useState<ChipValue>("Todos");
   const [produtoParaExcluir, setProdutoParaExcluir] = useState<string | null>(null);
-  // Produto já excluído, mas os arquivos das fotos extras não saíram do
+  // Registro de tempo (só na homologação): esta tela confirma o Salvar.
+  useEffect(() => concluirSalvarPendente("salvo"), []);
+
+  // Produto já excluído, mas os arquivos das fotos não saíram do
   // storage (ver deleteProduto).
   const [avisoExclusao, setAvisoExclusao] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -324,13 +336,13 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                       {produto.Categoria ?? "—"}
                     </td>
                     <td data-label="Preço" style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
-                      {formatPreco(produto.preco)}
+                      {textoPreco(produto)}
                     </td>
                     <td
                       data-label="Pedido mínimo"
                       style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums", color: "var(--pdm-muted)" }}
                     >
-                      {produto.pedido_minimo} un.
+                      {textoMinimo(produto)}
                     </td>
                     <td data-label="Destaque" style={{ padding: "16px 24px", textAlign: "center" }}>
                       <DestaqueIndicator show={destaqueOverrides[produto.nome] ?? produto.destaque} />
@@ -415,8 +427,10 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                       ) : null}
 
                       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-                        <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{formatPreco(produto.preco)}</span>
-                        <span style={{ fontSize: 13, color: "var(--pdm-muted)" }}>{produto.pedido_minimo} un. mín.</span>
+                        <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{textoPreco(produto)}</span>
+                        {produto.tipo === "bolo" ? null : (
+                          <span style={{ fontSize: 13, color: "var(--pdm-muted)" }}>{produto.pedido_minimo} un. mín.</span>
+                        )}
                       </div>
 
                       <div style={{ marginTop: 4, fontSize: 13 }}>

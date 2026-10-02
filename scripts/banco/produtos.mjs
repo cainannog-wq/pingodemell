@@ -6,7 +6,7 @@
 // (um ativo e um inativo, com fotos), então o teste não depende dos
 // produtos fictícios que existem hoje no banco.
 //
-// Uso: node scripts/banco/produtos.mjs [--com-migracao]
+// Uso: node scripts/banco/produtos.mjs [--com-migracao=<arquivo.sql>]
 
 import { cenario, descrever, emTransacaoDesfeita, registrar } from "./lib.mjs";
 

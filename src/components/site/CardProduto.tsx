@@ -3,11 +3,13 @@ import { Badge, ButtonLink, ProductCard } from "@/components/ds";
 import { Hive } from "@/components/site/Hive";
 import { ROTAS } from "@/lib/site/rotas";
 import { partesPrecoVitrine, type ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
+import { textoMinimoCurto } from "@/lib/vitrine/minimo";
 
-// Card de produto do site público, igual na Home ("Os mais pedidos") e na
-// Lista: foto (ou fundo da marca), nome, descrição curta, preço e botão.
-// Card inteiro e botão levam à interna do produto pelo id; nada vai para o
-// carrinho nesta entrega. As classes home-* vêm da Home e continuam com o
+// Card de produto do site público, igual na Home ("Os mais pedidos"), na
+// Lista e em "Combina com o seu pedido" (interna): foto (ou fundo da
+// marca), nome, descrição curta, preço (com o mínimo, quando > 1) e botão.
+// Card inteiro e botão levam à interna do produto pelo slug; o card não
+// põe nada no carrinho direto. As classes home-* vêm da Home e continuam com o
 // mesmo nome pra Home não mudar.
 
 // Foto do produto, ou o fundo da marca quando o produto ainda não tem foto.
@@ -31,14 +33,23 @@ export function FotoProduto({
 }
 
 // Preço do card. O valor ("R$ 95,99") nunca quebra no meio; a unidade
-// ("o cento") é um bloco à parte que fica na mesma linha quando cabe e
+// ("o kg", "o cento") é um bloco à parte que fica na mesma linha quando cabe e
 // desce inteiro para a linha de baixo quando não cabe (o espaço entre os
 // dois é o único ponto de quebra).
 // No celular a unidade usa o estilo de texto secundário.
-export function PrecoProduto({ produto }: { produto: Pick<ProdutoVitrine, "preco" | "tipo"> }) {
-  const { valor, unidade } = partesPrecoVitrine(produto);
+export function PrecoProduto({
+  produto,
+}: {
+  produto: Pick<ProdutoVitrine, "preco" | "tipo" | "unidade_venda" | "preco_a_partir_de">;
+}) {
+  const { prefixo, valor, unidade } = partesPrecoVitrine(produto);
   return (
     <span className="home-price">
+      {prefixo ? (
+        <>
+          <span className="site-preco-unidade">{prefixo}</span>{" "}
+        </>
+      ) : null}
       <span className="site-preco-valor">{valor}</span>
       {unidade ? (
         <>
@@ -48,6 +59,12 @@ export function PrecoProduto({ produto }: { produto: Pick<ProdutoVitrine, "preco
       ) : null}
     </span>
   );
+}
+
+// Interna do produto pelo slug. Produto sem slug (não deve existir depois
+// da etapa 1 da migração do slug) leva para a Lista.
+export function hrefDoProduto(produto: Pick<ProdutoVitrine, "slug">): string {
+  return produto.slug ? ROTAS.produto(produto.slug) : ROTAS.lista;
 }
 
 // maisPedido: selo "Mais pedido" sobre a foto (bloco de destaques da
@@ -61,8 +78,9 @@ export function CardProduto({
   sizes: string;
   maisPedido?: boolean;
 }) {
-  const href = ROTAS.produto(produto.id);
+  const href = hrefDoProduto(produto);
   const tituloId = `produto-${produto.id}`;
+  const minimo = textoMinimoCurto(produto);
   return (
     <ProductCard
       href={href}
@@ -80,9 +98,12 @@ export function CardProduto({
         </>
       }
     >
-      <PrecoProduto produto={produto} />
-      {/* Leva à interna do produto; nada é adicionado ao carrinho nesta
-          entrega. */}
+      <div className="site-preco-linha">
+        <PrecoProduto produto={produto} />
+        {minimo ? <span className="site-preco-minimo">{minimo}</span> : null}
+      </div>
+      {/* Leva à interna do produto, onde se escolhe a quantidade (e os
+          sabores, no Cento) antes de ir para o carrinho. */}
       <ButtonLink
         href={href}
         variant="primary"

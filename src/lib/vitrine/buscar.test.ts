@@ -18,6 +18,11 @@ function consulta() {
       chamadas.push({ metodo: "eq", args });
       return builder;
     },
+    // Uma linha: a primeira que o "banco" devolveria (ou nenhuma).
+    maybeSingle: async () => {
+      chamadas.push({ metodo: "maybeSingle", args: [] });
+      return { data: resposta.data?.[0] ?? null, error: resposta.error };
+    },
     then: (ok: (v: typeof resposta) => unknown, erro?: (e: unknown) => unknown) => Promise.resolve(resposta).then(ok, erro),
   };
   return builder;
@@ -37,12 +42,16 @@ function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {
   seq += 1;
   return {
     id: `id-${seq}`,
+    slug: `produto-${seq}`,
     nome: `Produto ${seq}`,
     descricao: null,
     preco: 10,
     image_url: null,
     Categoria: "Doces",
     tipo: "normal",
+    unidade_venda: null,
+    pedido_minimo: 1,
+    step_quantidade: "livre",
     ativo: true,
     destaque: true,
     atualizado_em: "2026-09-23T14:29:18.070Z",
@@ -112,5 +121,46 @@ describe("buscarMaisPedidos (Home) — mesmo cuidado", () => {
     expect(chamadas).toContainEqual({ metodo: "eq", args: ["ativo", true] });
     expect(chamadas).toContainEqual({ metodo: "eq", args: ["destaque", true] });
     expect(produtos.map((p) => p.nome)).toEqual(["Brigadeiro Gourmet"]);
+  });
+});
+
+describe("buscarProdutoPorSlug (interna) — só ativo, filtro na consulta", () => {
+  it("pede ao banco o slug e só ativo, e devolve o produto ativo", async () => {
+    const ativo = produto({ nome: "Brigadeiro Gourmet", slug: "brigadeiro-gourmet" });
+    resposta = { data: [ativo], error: null };
+    const { buscarProdutoPorSlug } = await import("./buscar");
+    expect(await buscarProdutoPorSlug("brigadeiro-gourmet")).toEqual(ativo);
+    expect(chamadas).toContainEqual({ metodo: "from", args: ["produtos"] });
+    expect(chamadas).toContainEqual({ metodo: "eq", args: ["slug", "brigadeiro-gourmet"] });
+    expect(chamadas).toContainEqual({ metodo: "eq", args: ["ativo", true] });
+  });
+
+  it("mesmo que o banco devolva um inativo (admin logado navegando no site), volta vazio", async () => {
+    resposta = { data: [produto({ nome: "Torta de Limão", slug: "torta-de-limao-fatia", ativo: false })], error: null };
+    const { buscarProdutoPorSlug } = await import("./buscar");
+    expect(await buscarProdutoPorSlug("torta-de-limao-fatia")).toBeNull();
+  });
+
+  it("slug inexistente volta vazio", async () => {
+    resposta = { data: [], error: null };
+    const { buscarProdutoPorSlug } = await import("./buscar");
+    expect(await buscarProdutoPorSlug("nao-existe")).toBeNull();
+  });
+
+  it("slug fora do formato volta vazio sem consultar o banco", async () => {
+    const { buscarProdutoPorSlug } = await import("./buscar");
+    for (const slug of ["", "Brigadeiro", "a--b", "-a", "a-", "a b", "../x", "3f1c9a52-0000-4000-8000-00000000000Z"]) {
+      expect(await buscarProdutoPorSlug(slug)).toBeNull();
+    }
+    expect(chamadas).toEqual([]);
+  });
+
+  it("falha do banco volta vazio e vai para o log", async () => {
+    resposta = { data: null, error: { message: "boom" } };
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { buscarProdutoPorSlug } = await import("./buscar");
+    expect(await buscarProdutoPorSlug("brigadeiro-gourmet")).toBeNull();
+    expect(erro).toHaveBeenCalled();
+    erro.mockRestore();
   });
 });

@@ -82,3 +82,22 @@ export function buildWhatsAppLink(whatsapp: string): string {
   const comPais = digitos.startsWith("55") ? digitos : `55${digitos}`;
   return `https://wa.me/${comPais}`;
 }
+
+// Valor da entrega no painel e na planilha. valor_entrega é obrigatório no
+// banco (padrão 0) e o site não define o valor: quem informa é a atendente.
+// Entrega com 0 é "a combinar"; retirada é "sem custo". Entrega grátis de
+// verdade não se distingue de "a combinar" enquanto a coluna for obrigatória.
+export function textoValorEntrega(pedido: { modo_entrega: "entrega" | "retirada"; valor_entrega: number }): string {
+  if (pedido.modo_entrega === "retirada") return "sem custo";
+  return pedido.valor_entrega > 0 ? formatMoeda(pedido.valor_entrega) : "a combinar";
+}
+
+// Quantidade do item no detalhe do pedido: kg no Bolo, centos no Cento, "un."
+// no resto (pedidos antigos, sem tipo, também "un.").
+export function textoQuantidadeItem(item: { quantidade: number; tipo?: string; unidade_venda?: string | null }): string {
+  if (item.tipo === "bolo") return `${item.quantidade} kg`;
+  if (item.tipo === "cento") return `${item.quantidade} ${item.quantidade === 1 ? "cento" : "centos"}`;
+  const unidade = item.unidade_venda?.trim();
+  if (item.tipo === "normal" && unidade && !/^unidades?$/i.test(unidade)) return `${item.quantidade} ${unidade}`;
+  return `${item.quantidade} un.`;
+}

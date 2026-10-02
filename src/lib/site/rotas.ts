@@ -3,10 +3,11 @@
 
 import type { CategoriaProduto } from "@/lib/produtos/types";
 
-// Valor do filtro na URL da Lista: a categoria do banco em minúsculas
-// (Bolos → bolos). Não é slug de produto, é só o nome da categoria.
+// Valor do filtro na URL da Lista: a categoria do banco em minúsculas e
+// com hífen no lugar do espaço (Bolos → bolos, Bento Cake → bento-cake).
+// Não é slug de produto, é só o nome da categoria.
 export function categoriaParaParametro(categoria: CategoriaProduto): string {
-  return categoria.toLowerCase();
+  return categoria.toLowerCase().replace(/\s+/g, "-");
 }
 
 export const ROTAS = {
@@ -14,11 +15,16 @@ export const ROTAS = {
   lista: "/produtos",
   listaPorCategoria: (categoria: CategoriaProduto) =>
     `/produtos?categoria=${categoriaParaParametro(categoria)}`,
-  // Interna do produto pelo id (uuid) — nunca pelo nome, que pode mudar.
-  produto: (id: string) => `/produtos/${id}`,
-  // Reservada pra página 4 (Carrinho): a sacola do cabeçalho já aponta pra
-  // cá e cai na 404 até a página existir.
+  // Interna do produto pelo slug (produtos.slug): gerado pelo banco a partir
+  // do nome no cadastro e fixo depois, mesmo que o produto seja renomeado.
+  // Nunca pelo nome nem pelo id.
+  produto: (slug: string) => `/produtos/${slug}`,
   carrinho: "/carrinho",
+  // Página 5 (Checkout), item 6: dados do pedido, data e hora.
+  checkout: "/checkout",
+  // Página 6 (Confirmação): depois que o servidor grava o pedido, o botão
+  // que abre o WhatsApp com a mensagem pronta.
+  confirmacao: "/confirmacao",
   quemSomos: "/quem-somos",
   contato: "/quem-somos#contato",
   prazos: "/#prazos",

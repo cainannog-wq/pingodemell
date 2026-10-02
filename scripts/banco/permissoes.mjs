@@ -5,14 +5,14 @@
 //
 // Também repete, com as mesmas regras, os alertas de segurança do
 // verificador da Supabase que dependem só do banco (0008, 0011, 0013,
-// 0028, 0029). Com --com-migracao, isso mostra como o verificador vai ficar
-// depois de aplicar a migração; o verificador de verdade só enxerga o que
-// já está em produção.
+// 0028, 0029). Com --com-migracao=<arquivo.sql>, isso mostra como o
+// verificador vai ficar depois de aplicar a migração; o verificador de
+// verdade só enxerga o que já está em produção.
 //
 // Tabela ou função nova em public que não esteja listada aqui faz o teste
 // falhar de propósito: quem cria o objeto decide e registra o esperado.
 //
-// Uso: node scripts/banco/permissoes.mjs [--com-migracao]
+// Uso: node scripts/banco/permissoes.mjs [--com-migracao=<arquivo.sql>]
 
 import { cenario, emTransacaoDesfeita, registrar } from "./lib.mjs";
 
@@ -22,10 +22,13 @@ const TABELAS = {
   produtos: ["S", SIUD],
   produto_fotos: ["S", SIUD],
   produto_cento_itens: ["S", SIUD],
+  recheios: ["S", SIUD],
   dias_off: ["S", SIUD],
   segunda_reaberturas: ["S", SIUD],
   pedidos: ["", "SUD"],
   pedidos_rate_limit: ["", ""],
+  // Interruptor da gravação (supabase/pedidos-gravacao.sql): só a chave de serviço.
+  pedidos_gravacao: ["", ""],
   heartbeat: ["", ""],
 };
 
@@ -33,15 +36,26 @@ const TABELAS = {
 const FUNCOES = {
   salvar_produto_fotos: { anon: false, authenticated: true },
   registrar_tentativa_pedido: { anon: false, authenticated: false },
+  // Gravação de pedido pelo site (supabase/pedidos-gravacao.sql): só a chave de serviço.
+  registrar_tentativa_pedido_v2: { anon: false, authenticated: false },
+  criar_pedido: { anon: false, authenticated: false },
   rls_auto_enable: { anon: false, authenticated: false },
   produto_fotos_limite: { anon: false, authenticated: false },
   produtos_set_atualizado_em: { anon: false, authenticated: false },
   pedidos_recalcular_totais: { anon: false, authenticated: false },
   pedidos_set_status_atualizado_em: { anon: false, authenticated: false },
+  // Catálogo de recheios (supabase/recheios-schema.sql): só gatilho.
+  recheios_set_atualizado_em: { anon: false, authenticated: false },
+  // Slug do produto (supabase/produtos-slug.sql): regra e gatilhos; ninguém
+  // da API executa.
+  produto_slug_base: { anon: false, authenticated: false },
+  produto_slug_livre: { anon: false, authenticated: false },
+  produtos_slug_no_cadastro: { anon: false, authenticated: false },
+  produtos_slug_imutavel: { anon: false, authenticated: false },
 };
 
 // Sem política de propósito: só a chave de serviço acessa.
-const RLS_SEM_POLITICA_ESPERADO = ["heartbeat", "pedidos_rate_limit"];
+const RLS_SEM_POLITICA_ESPERADO = ["heartbeat", "pedidos_rate_limit", "pedidos_gravacao"];
 
 const PRIVS = { S: "SELECT", I: "INSERT", U: "UPDATE", D: "DELETE" };
 
@@ -140,6 +154,31 @@ await emTransacaoDesfeita("Permissões por papel e alertas do verificador", asyn
     registrar("permissões 6. tabela nova nasce com RLS ligada (gatilho rls_auto_enable)", rows[0].relrowsecurity === true, `RLS: ${rows[0].relrowsecurity ? "ligada" : "DESLIGADA"}`);
   });
 
+  // Schema privado (supabase/exclusao-dados.sql): fora da API. Nenhum papel
+  // da API usa o schema, lê/grava tabela ou executa função dele, inclusive
+  // objeto novo que alguém crie lá depois.
+  {
+    const { rows } = await db.query(
+      `select r.papel, has_schema_privilege(r.papel, n.oid, 'USAGE') usa,
+         (select string_agg(c.relname, ', ') from pg_class c where c.relnamespace = n.oid and c.relkind in ('r', 'p', 'v', 'm')
+            and has_table_privilege(r.papel, c.oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')) tabelas,
+         (select string_agg(p.proname, ', ') from pg_proc p where p.pronamespace = n.oid
+            and has_function_privilege(r.papel, p.oid, 'EXECUTE')) funcoes
+       from pg_namespace n cross join (values ('anon'), ('authenticated'), ('service_role')) r(papel)
+       where n.nspname = 'privado' order by 1`
+    );
+    if (rows.length === 0) {
+      console.log("\n(schema privado ainda não existe: supabase/exclusao-dados.sql não aplicada)");
+    } else {
+      const abertos = rows.filter((r) => r.usa || r.tabelas || r.funcoes);
+      registrar(
+        "permissões 9. schema privado: anon, authenticated e service_role não usam o schema, nem tabela, nem função",
+        abertos.length === 0,
+        rows.map((r) => `${r.papel}: schema ${r.usa ? "SIM" : "não"}, tabelas ${r.tabelas ?? "nenhuma"}, funções ${r.funcoes ?? "nenhuma"}`).join("; ")
+      );
+    }
+  }
+
   // Storage: anônimo não tem política nenhuma em storage.objects.
   const { rows: storage } = await db.query(
     `select policyname, roles::text, cmd from pg_policies where schemaname = 'storage' and tablename = 'objects' order by 1`
@@ -173,7 +212,7 @@ await emTransacaoDesfeita("Permissões por papel e alertas do verificador", asyn
   const inesperados = achados.filter((a) => !a.includes("(intencional"));
   console.log("\nVerificador (regras de banco 0008/0011/0013/0028/0029):\n  " + (achados.join("\n  ") || "nenhum achado"));
   registrar(
-    "permissões 8. verificador: só os alertas intencionais (RLS sem política em heartbeat e pedidos_rate_limit)",
+    "permissões 8. verificador: só os alertas intencionais (RLS sem política em heartbeat, pedidos_rate_limit e pedidos_gravacao)",
     inesperados.length === 0,
     inesperados.length ? `inesperados: ${inesperados.join(" | ")}` : "ok"
   );

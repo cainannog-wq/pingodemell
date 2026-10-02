@@ -28,12 +28,16 @@ vi.mock("next/navigation", () => ({
 // Dado simulado (não lê o banco).
 const BASE: ProdutoVitrine = {
   id: "3f1c9a52-0000-4000-8000-000000000001",
+  slug: "bolo-de-chocolate-com-ninho",
   nome: "Bolo de Chocolate com Ninho",
   descricao: "Bolo inteiro de chocolate com recheio de ninho.",
   preco: 45,
   image_url: null,
   Categoria: "Bolos",
   tipo: "normal",
+  unidade_venda: null,
+  pedido_minimo: 1,
+  step_quantidade: "livre",
   ativo: true,
   destaque: true,
   atualizado_em: "2026-09-23T14:38:07.261Z",
@@ -61,13 +65,18 @@ describe("Home — seção Os mais pedidos", () => {
     expect(screen.getByRole("img", { name: "Foto de Bolo de Chocolate com Ninho" })).toBeInTheDocument();
   });
 
-  it("card e botão levam à interna pelo id (/produtos/{id}), nunca pelo nome", () => {
+  it("card e botão levam à interna pelo slug (/produtos/{slug}), nunca pelo id nem pelo nome", () => {
     render(<MaisPedidos produtos={[BASE]} />);
     const links = screen.getAllByRole("link");
     expect(links.length).toBeGreaterThanOrEqual(2);
     for (const link of links) {
-      expect(link).toHaveAttribute("href", `/produtos/${BASE.id}`);
+      expect(link).toHaveAttribute("href", "/produtos/bolo-de-chocolate-com-ninho");
     }
+  });
+
+  it("produto sem slug (não deve existir depois da migração) leva para a Lista", () => {
+    render(<MaisPedidos produtos={[{ ...BASE, slug: null }]} />);
+    for (const link of screen.getAllByRole("link")) expect(link).toHaveAttribute("href", "/produtos");
   });
 
   it("mostra 'o cento' só para produto do tipo cento", () => {

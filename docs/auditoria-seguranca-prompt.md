@@ -40,7 +40,7 @@ Como a tabela `pedidos` aceita escrita pública sem autenticação, os itens **B
 
 ### O que já foi testado antes
 
-Preencha esta tabela lendo `docs/roadmap-pingo-de-mell.md` e `docs/status-pingo-de-mell.md` antes de rodar qualquer coisa nova — não repita teste já coberto sem necessidade, mas **não aceite o resultado antigo sem reconferir o que a coluna "cobre fluxo real" pede**.
+Preencha esta tabela lendo o roadmap (fora do repositório desde 28/09/2026; peça ao Cainan) e `docs/status-pingo-de-mell.md` antes de rodar qualquer coisa nova — não repita teste já coberto sem necessidade, mas **não aceite o resultado antigo sem reconferir o que a coluna "cobre fluxo real" pede**.
 
 | Item | Já testado? | Quando | Como | Evidência | Cobre fluxo real ou só camada isolada |
 |---|---|---|---|---|---|
@@ -214,7 +214,7 @@ Se um item depender de decisão de negócio (ex. B26, condicional ao checkout ex
 4. **O que não pôde ser testado** — específico e honesto. Itens esperados aqui, salvo confirmação em contrário durante a execução: B22 (backup — depende do painel do Supabase), B23 (preview do Netlify — depende da conexão ainda pendente), B26 (mensagem do WhatsApp — depende do checkout ainda não implementado).
 5. **Riscos aceitos** — o que ficou sem correção de propósito, com justificativa.
 6. **Condicionais** — itens seguros hoje que viram críticos se uma decisão pendente for tomada num certo sentido. Usar explicitamente as duas decisões em aberto do projeto:
-   - **Foto de referência do bolo personalizado**: se a decisão for por upload no site (ainda não fechada com a cliente, ver `docs/escopo-pingo-de-mell.md`), B15 (upload sem restrição) sobe para crítico, porque passaria a aceitar upload de usuário anônimo, e ganha o item extra de "abuso de armazenamento por upload anônimo" que hoje não se aplica.
+   - **Foto de referência do bolo personalizado**: se a decisão for por upload no site (ainda não fechada com a cliente, ver o escopo, fora do repositório desde 28/09/2026), B15 (upload sem restrição) sobe para crítico, porque passaria a aceitar upload de usuário anônimo, e ganha o item extra de "abuso de armazenamento por upload anônimo" que hoje não se aplica.
    - **Checkout público (Fase 2, item 4)**: quando implementado, B13 e B26 precisam de reteste completo com o formulário real, porque hoje só foram testados na camada de RLS/banco, sem passar pela validação de tela nem pela montagem da mensagem do WhatsApp.
 7. **Manutenção contínua** — o que precisa ser reverificado depois da entrega, com que frequência, por quem (ex.: auditoria de dependência a cada trimestre; reteste de RLS toda vez que uma tabela nova for criada).
 8. **Limites desta auditoria** — declare explicitamente que cobre vetores conhecidos com as ferramentas disponíveis, e não equivale a teste de invasão profissional independente. Nunca afirme que o sistema está livre de vulnerabilidade.

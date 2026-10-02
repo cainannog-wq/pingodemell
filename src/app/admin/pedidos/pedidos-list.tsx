@@ -7,6 +7,7 @@ import { STATUS_BADGE_VARIANT, STATUS_LABEL, STATUS_OPTIONS } from "@/lib/pedido
 import { formatDataCurta, formatDataHoraCurta, formatHora, formatMoeda, brasiliaDiferencaDias, formatDiaGrupo } from "@/lib/pedidos/format";
 import { Card, Icon, Input, Button, Badge } from "@/components/ds";
 import type { BadgeVariant } from "@/components/ds/Badge";
+import type { ResumoPedidos } from "@/lib/pedidos/resumo";
 import { exportarPedidosCSV } from "./export-csv";
 
 const thStyle: CSSProperties = {
@@ -72,6 +73,11 @@ function StatCard({ label, mobileLabel, value }: { label: string; mobileLabel?: 
   );
 }
 
+// Etiqueta visível nos pedidos de teste quando eles são exibidos.
+export function EtiquetaTeste() {
+  return <Badge variant="outline">Teste</Badge>;
+}
+
 // Card individual do histórico mobile. O card inteiro é um link pro
 // detalhe do pedido (reorganização de 22/09/2026: antes era só o botão
 // "Ver pedido" dentro do card, ocupando quase metade da altura).
@@ -80,7 +86,15 @@ function PedidoMobileCard({ pedido }: { pedido: Pedido }) {
   return (
     <Link href={`/admin/pedidos/${pedido.numero}`} className="admin-mobile-card pedido-mobile-card">
       <div className="pedido-mobile-card-row1">
-        <span className="pedido-mobile-card-cliente">{pedido.cliente_nome}</span>
+        <span className="pedido-mobile-card-cliente">
+          {pedido.cliente_nome}
+          {pedido.teste ? (
+            <>
+              {" "}
+              <EtiquetaTeste />
+            </>
+          ) : null}
+        </span>
         <Badge variant={mobileBadgeVariant(pedido.status)}>{STATUS_LABEL[pedido.status]}</Badge>
       </div>
       <div className="pedido-mobile-card-entrega">
@@ -103,9 +117,14 @@ export function PedidosList({
   stats,
 }: {
   pedidos: Pedido[];
-  stats: { pedidosNoMes: number; aguardandoConfirmacao: number; entregues: number; valorNoMes: number };
+  stats: { semTeste: ResumoPedidos; comTeste: ResumoPedidos };
 }) {
   const [search, setSearch] = useState("");
+  // Pedidos de teste (gravados fora da produção, ou os de teste antigos)
+  // ficam escondidos por padrão: na lista, nos cards e na exportação.
+  const [mostrarTestes, setMostrarTestes] = useState(false);
+  const quantosTestes = pedidos.filter((p) => p.teste).length;
+  const resumo = mostrarTestes ? stats.comTeste : stats.semTeste;
   const [statusFiltro, setStatusFiltro] = useState<PedidoStatus | "todos">("todos");
   const [mostrarFinalizadosAntigos, setMostrarFinalizadosAntigos] = useState(false);
   // Instante "agora" travado no primeiro render (lazy initializer): evita
@@ -120,14 +139,15 @@ export function PedidosList({
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase();
     return pedidos.filter((p) => {
+      if (p.teste && !mostrarTestes) return false;
       const matchStatus = statusFiltro === "todos" || p.status === statusFiltro;
       if (!matchStatus) return false;
       if (!term) return true;
       return p.cliente_nome.toLowerCase().includes(term) || String(p.numero).includes(term);
     });
-  }, [pedidos, search, statusFiltro]);
+  }, [pedidos, search, statusFiltro, mostrarTestes]);
 
-  const totalCount = pedidos.length;
+  const totalCount = mostrarTestes ? pedidos.length : pedidos.length - quantosTestes;
   const hasFilter = search.trim().length > 0 || statusFiltro !== "todos";
   const resultLabel = rows.length === 1 ? "1 pedido" : `${rows.length} pedidos`;
 
@@ -183,7 +203,7 @@ export function PedidosList({
           <h1 className="admin-page-h1" style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
             Histórico de pedidos
           </h1>
-          <p style={{ margin: "4px 0 0", color: "var(--pdm-muted)" }}>Todo pedido fechado pelo WhatsApp fica registrado aqui.</p>
+          <p style={{ margin: "4px 0 0", color: "var(--pdm-muted)" }}>Todo pedido feito pelo site fica registrado aqui.</p>
         </div>
         <div className="admin-header-action-desktop">
           <Button variant="secondary" iconLeft="download" onClick={() => exportarPedidosCSV(rows)} disabled={rows.length === 0}>
@@ -193,10 +213,10 @@ export function PedidosList({
       </div>
 
       <div className="admin-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
-        <StatCard label="Pedidos no mês" value={String(stats.pedidosNoMes)} />
-        <StatCard label="Aguardando confirmação" mobileLabel="Aguardando" value={String(stats.aguardandoConfirmacao)} />
-        <StatCard label="Entregues" value={String(stats.entregues)} />
-        <StatCard label="Valor no mês" value={formatMoeda(stats.valorNoMes)} />
+        <StatCard label="Pedidos no mês" value={String(resumo.pedidosNoMes)} />
+        <StatCard label="Aguardando confirmação" mobileLabel="Aguardando" value={String(resumo.aguardandoConfirmacao)} />
+        <StatCard label="Entregues" value={String(resumo.entregues)} />
+        <StatCard label="Valor no mês" value={formatMoeda(resumo.valorNoMes)} />
       </div>
 
       <Card tone="white" padding="0">
@@ -224,6 +244,10 @@ export function PedidosList({
               </option>
             ))}
           </select>
+          <label className="pedidos-mostrar-testes">
+            <input type="checkbox" checked={mostrarTestes} onChange={(e) => setMostrarTestes(e.target.checked)} />
+            Mostrar pedidos de teste ({quantosTestes})
+          </label>
           <div style={{ marginLeft: "auto", fontSize: 14, color: "var(--pdm-muted)" }}>{resultLabel}</div>
         </div>
 
@@ -246,6 +270,12 @@ export function PedidosList({
                   <tr key={pedido.id} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                     <td className="admin-table-title" style={{ padding: "16px 24px", fontWeight: 700, color: "var(--pdm-brown)" }}>
                       #{pedido.numero}
+                      {pedido.teste ? (
+                        <>
+                          {" "}
+                          <EtiquetaTeste />
+                        </>
+                      ) : null}
                     </td>
                     <td data-label="Cliente" style={{ padding: "16px 24px" }}>
                       <div style={{ fontWeight: 600 }}>{pedido.cliente_nome}</div>
@@ -325,7 +355,9 @@ export function PedidosList({
               </h3>
               <p style={{ margin: 0, color: "var(--pdm-muted)" }}>
                 {totalCount === 0
-                  ? "Pedidos fechados pelo WhatsApp aparecem aqui assim que forem registrados."
+                  ? quantosTestes > 0 && !mostrarTestes
+                    ? "Os pedidos de teste estão escondidos. Marque \"Mostrar pedidos de teste\" para ver."
+                    : "Pedidos feitos pelo site aparecem aqui assim que forem registrados."
                   : "Ajuste a busca ou o filtro de status para ver os pedidos cadastrados."}
               </p>
               {hasFilter ? (

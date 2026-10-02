@@ -15,7 +15,7 @@ export type ItemLista = {
 };
 
 // Lê o `?categoria=` da URL (formato de ROTAS.listaPorCategoria: categoria
-// em minúsculas). Qualquer valor que não seja uma das 4 categorias — vazio,
+// em minúsculas). Qualquer valor que não seja uma das 5 categorias — vazio,
 // repetido, inventado — vale como "Todos" (null), sem erro.
 export function categoriaDoParametro(valor: string | string[] | undefined): CategoriaProduto | null {
   const texto = Array.isArray(valor) ? valor[0] : valor;

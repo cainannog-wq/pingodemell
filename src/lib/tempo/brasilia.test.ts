@@ -127,3 +127,21 @@ describe("datas de calendário (sem fuso)", () => {
     expect(diferencaEmDias("2026-09-28", "2026-09-27")).toBe(-1);
   });
 });
+
+describe("somarMesesNaData e instanteBrasilia", () => {
+  it("12 meses à frente, com o dia limitado ao fim do mês", async () => {
+    const { somarMesesNaData } = await import("./brasilia");
+    expect(somarMesesNaData("2026-09-29", 12)).toBe("2027-09-29");
+    expect(somarMesesNaData("2028-02-29", 12)).toBe("2029-02-28");
+    expect(somarMesesNaData("2026-01-31", 1)).toBe("2026-02-28");
+  });
+
+  it("data e hora de Brasília viram o instante certo, qualquer que seja o fuso do processo", async () => {
+    const { instanteBrasilia, partesBrasilia } = await import("./brasilia");
+    expect(instanteBrasilia("2026-10-17", "14:00")).toBe("2026-10-17T17:00:00.000Z");
+    // 22h30 de Brasília já é o dia seguinte em UTC.
+    expect(instanteBrasilia("2026-10-17", "22:30")).toBe("2026-10-18T01:30:00.000Z");
+    const p = partesBrasilia(instanteBrasilia("2026-12-31", "23:59"));
+    expect([p.ano, p.mes, p.dia, p.hora, p.minuto]).toEqual([2026, 12, 31, 23, 59]);
+  });
+});

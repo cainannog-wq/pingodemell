@@ -7,12 +7,16 @@ function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {
   seq += 1;
   return {
     id: `id-${seq}`,
+    slug: `produto-${seq}`,
     nome: `Produto ${seq}`,
     descricao: null,
     preco: 10,
     image_url: null,
     Categoria: "Doces",
     tipo: "normal",
+    unidade_venda: null,
+    pedido_minimo: 1,
+    step_quantidade: "livre",
     ativo: true,
     destaque: true,
     atualizado_em: "2026-09-23T14:29:18.070Z",
@@ -111,23 +115,46 @@ describe("Os mais pedidos — limite e ordem", () => {
 
 describe("Preço do card", () => {
   it("cento mostra 'R$ X o cento'", () => {
-    expect(formatarPrecoVitrine({ preco: 95, tipo: "cento" })).toBe("R$ 95,00 o cento");
+    expect(formatarPrecoVitrine({ preco: 95, tipo: "cento", unidade_venda: null })).toBe("R$ 95,00 o cento");
   });
 
-  it("demais tipos mostram só o preço, sem unidade", () => {
-    expect(formatarPrecoVitrine({ preco: 2.35, tipo: "normal" })).toBe("R$ 2,35");
-    expect(formatarPrecoVitrine({ preco: 1234.5, tipo: "normal" })).toBe("R$ 1.234,50");
+  it("sem unidade de venda (produto de hoje): só o preço, como antes", () => {
+    expect(formatarPrecoVitrine({ preco: 2.35, tipo: "normal", unidade_venda: null })).toBe("R$ 2,35");
+    expect(formatarPrecoVitrine({ preco: 1234.5, tipo: "normal", unidade_venda: null })).toBe("R$ 1.234,50");
+    expect(formatarPrecoVitrine({ preco: 10, tipo: "normal", unidade_venda: "   " })).toBe("R$ 10,00");
+  });
+
+  it("com unidade de venda: 'R$ X o kg', 'a unidade', 'o litro', 'o cento'", () => {
+    expect(formatarPrecoVitrine({ preco: 90, tipo: "normal", unidade_venda: "kg" })).toBe("R$ 90,00 o kg");
+    expect(formatarPrecoVitrine({ preco: 90, tipo: "normal", unidade_venda: "KG" })).toBe("R$ 90,00 o kg");
+    expect(formatarPrecoVitrine({ preco: 3.5, tipo: "normal", unidade_venda: "unidade" })).toBe("R$ 3,50 a unidade");
+    expect(formatarPrecoVitrine({ preco: 12, tipo: "normal", unidade_venda: "litro" })).toBe("R$ 12,00 o litro");
+    expect(formatarPrecoVitrine({ preco: 95, tipo: "normal", unidade_venda: "cento" })).toBe("R$ 95,00 o cento");
+  });
+
+  it("unidade fora da lista sugerida vira 'por {texto}'", () => {
+    expect(formatarPrecoVitrine({ preco: 40, tipo: "normal", unidade_venda: "caixa com 6" })).toBe("R$ 40,00 por caixa com 6");
+  });
+
+  it("tipo cento continua 'o cento' mesmo com outra unidade preenchida", () => {
+    expect(formatarPrecoVitrine({ preco: 95, tipo: "cento", unidade_venda: "kg" })).toBe("R$ 95,00 o cento");
   });
 });
 
 describe("Preço do card em partes", () => {
   it("cento separa o valor da unidade 'o cento'", () => {
-    const partes = partesPrecoVitrine({ preco: 95.99, tipo: "cento" });
+    const partes = partesPrecoVitrine({ preco: 95.99, tipo: "cento", unidade_venda: null });
     expect(partes.unidade).toBe("o cento");
     expect(partes.valor.replace(/s/g, " ")).toBe("R$ 95,99");
   });
 
-  it("produto comum não tem unidade", () => {
-    expect(partesPrecoVitrine({ preco: 2.5, tipo: "normal" }).unidade).toBeNull();
+  it("kg separa o valor da unidade 'o kg'", () => {
+    const partes = partesPrecoVitrine({ preco: 90, tipo: "normal", unidade_venda: "kg" });
+    expect(partes.unidade).toBe("o kg");
+    expect(partes.valor.replace(/s/g, " ")).toBe("R$ 90,00");
+  });
+
+  it("produto comum sem unidade de venda não tem unidade", () => {
+    expect(partesPrecoVitrine({ preco: 2.5, tipo: "normal", unidade_venda: null }).unidade).toBeNull();
   });
 });

@@ -12,11 +12,13 @@ function makeFromMock() {
   return vi.fn((table: string) => {
     if (table === "produtos") {
       return {
-        // select("nome"): checagem de nome repetido (nenhum). select("id"):
-        // id do produto em edição, usado pela galeria de fotos extras.
+        // select("nome"): checagem de nome repetido (nenhum).
+        // select("id, image_url"): id e capa do produto em edição.
         select: (colunas: string) => ({
           eq: () => ({
-            maybeSingle: async () => ({ data: colunas === "id" ? { id: "c7b3f34c-6f8f-4b39-a8fb-31369f1c4aee" } : null }),
+            maybeSingle: async () => ({
+              data: colunas.startsWith("id") ? { id: "c7b3f34c-6f8f-4b39-a8fb-31369f1c4aee", image_url: null } : null,
+            }),
           }),
         }),
         insert: async (payload: unknown) => {
@@ -62,6 +64,11 @@ vi.mock("@/lib/galeria/storage-servidor", () => ({
   limparArquivosSemLinha: vi.fn(async () => 0),
   apagarPastaDoProduto: vi.fn(async () => 0),
   criarEnviosAssinados: vi.fn(async () => []),
+  criarEnvioCapa: vi.fn(),
+  verificarCapaNova: vi.fn(async () => null),
+  urlDaCapa: vi.fn(),
+  limparPastaDaCapa: vi.fn(async () => 0),
+  apagarCapaAntiga: vi.fn(async () => "sem-capa"),
 }));
 
 vi.mock("next/cache", () => ({
@@ -96,6 +103,7 @@ const CAMPOS_CENTO = {
   pedido_minimo: "1",
   prazo_producao_dias: "2",
   step_quantidade: "livre",
+  categoria: "Doces",
   tipo: "cento",
 };
 

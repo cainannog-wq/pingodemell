@@ -5,7 +5,8 @@ import { Card, Icon, Button, Badge } from "@/components/ds";
 import { ConfirmDialog } from "./confirm-dialog";
 import { ObservacaoField } from "./observacao-field";
 import type { DiaOff, SegundaReabertura } from "@/lib/dias-off/types";
-import { diaDaSemana, diasNoMes, hojeBrasilia, lerDataIso, montarDataIso, somarMeses } from "@/lib/tempo/brasilia";
+import { diaDaSemana, hojeBrasilia, lerDataIso, somarMeses } from "@/lib/tempo/brasilia";
+import { gradeDoMes } from "@/lib/tempo/grade-do-mes";
 import {
   createDiaOff,
   deleteDiaOff,
@@ -28,11 +29,6 @@ const WEEKDAYS_FULL = [
   "quinta-feira", "sexta-feira", "sábado",
 ];
 
-// month é 0 a 11 (índice de MONTHS), como o cursor do calendário.
-function toIso(year: number, month: number, day: number) {
-  return montarDataIso(year, month + 1, day);
-}
-
 function isMondayIso(iso: string) {
   return diaDaSemana(iso) === SEGUNDA_FEIRA;
 }
@@ -47,22 +43,6 @@ function formatDiaLabel(iso: string) {
 // meio, como qualquer nome próprio de dia da semana em português.
 function capitalizeSentence(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-type Cell = { day: number; iso: string } | null;
-
-function buildMonthGrid(year: number, month: number): Cell[][] {
-  const firstWeekday = diaDaSemana(toIso(year, month, 1));
-  const daysInMonth = diasNoMes(year, month + 1);
-
-  const cells: Cell[] = [];
-  for (let i = 0; i < firstWeekday; i++) cells.push(null);
-  for (let day = 1; day <= daysInMonth; day++) cells.push({ day, iso: toIso(year, month, day) });
-  while (cells.length % 7 !== 0) cells.push(null);
-
-  const weeks: Cell[][] = [];
-  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
-  return weeks;
 }
 
 type AcaoPendente = { tipo: "marcar" | "remover" | "reabrir" | "fechar"; iso: string };
@@ -131,7 +111,8 @@ export function Calendario({ diasOff, reaberturas }: { diasOff: DiaOff[]; reaber
   const [acaoPendente, setAcaoPendente] = useState<AcaoPendente | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const weeks = useMemo(() => buildMonthGrid(cursor.year, cursor.month), [cursor]);
+  // cursor.month é 0 a 11 (índice de MONTHS); a grade usa 1 a 12.
+  const weeks = useMemo(() => gradeDoMes(cursor.year, cursor.month + 1), [cursor]);
 
   type ListItem = { tipo: "dia_off" | "reabertura"; iso: string; id: string; observacao: string };
   const itensListados = useMemo<ListItem[]>(() => {
@@ -335,7 +316,7 @@ export function Calendario({ diasOff, reaberturas }: { diasOff: DiaOff[]; reaber
                       }}
                       title={title}
                     >
-                      {cell.day}
+                      {cell.dia}
                       {cellErro && (
                         <span
                           style={{

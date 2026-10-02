@@ -30,10 +30,10 @@ const cabecalhos = {
   Prefer: "return=minimal",
 };
 
-async function chamar(metodo, caminho, corpo) {
+async function chamar(metodo, caminho, corpo, extras = {}) {
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/${caminho}`, {
     method: metodo,
-    headers: cabecalhos,
+    headers: { ...cabecalhos, ...extras },
     body: corpo === undefined ? undefined : JSON.stringify(corpo),
   });
   const texto = await res.text();
@@ -109,6 +109,38 @@ for (const tabela of ["pedidos_rate_limit", "heartbeat"]) {
 for (const tabela of ["produto_fotos", "produto_cento_itens", "dias_off", "segunda_reaberturas"]) {
   const r = await chamar("GET", `${tabela}?select=id&limit=1`);
   registrar(`http 11. anônimo lê ${tabela} (leitura pública)`, r.status === 200, limpar(resumo(r)));
+}
+// Slug (supabase/produtos-slug.sql). Antes da etapa 1 aplicada, a função
+// não existe e a resposta é 404 (PGRST202): falha, como as outras
+// verificações de correção ainda não aplicada.
+for (const funcao of ["produto_slug_base", "produto_slug_livre"]) {
+  const r = await chamar("GET", `rpc/${funcao}?p_nome=Prova`);
+  registrar(`http 12. anônimo não executa ${funcao} (sem permissão)`, semPermissao(r), resumo(r));
+}
+
+// Exclusão de dados (supabase/exclusao-dados.sql): o schema privado não está
+// na API. Só GET (PostgREST roda GET numa transação só de leitura: mesmo que
+// a função estivesse exposta, não apagaria nada). Pedido explícito do schema
+// pelo cabeçalho Accept-Profile e, sem ele, o nome procurado em public.
+{
+  const comPerfil = { "Accept-Profile": "privado" };
+  for (const [caminho, nome] of [
+    ["exclusao_registro?limit=1", "ler o registro"],
+    ["rpc/exclusao_agendada", "função agendada"],
+    ["rpc/exclusao_manual?p_teto=0", "função manual"],
+    ["rpc/exclusao_previa", "prévia"],
+  ]) {
+    const r = await chamar("GET", caminho, undefined, comPerfil);
+    registrar(
+      `http 13. schema privado recusado pela API (${nome}, Accept-Profile: privado)`,
+      r.status >= 400 && r.codigo === "PGRST106",
+      resumo(r)
+    );
+  }
+  for (const caminho of ["exclusao_registro?limit=1", "rpc/exclusao_agendada"]) {
+    const r = await chamar("GET", caminho);
+    registrar(`http 14. ${caminho.split("?")[0]} não existe em public`, r.status === 404 || r.codigo === "PGRST205" || r.codigo === "PGRST202", resumo(r));
+  }
 }
 
 resumir("Nada foi gravado.");

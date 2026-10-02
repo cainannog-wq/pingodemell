@@ -4,9 +4,17 @@ import Link from "next/link";
 import { useState, useTransition, type CSSProperties, type ReactNode } from "react";
 import type { Pedido, PedidoStatus } from "@/lib/pedidos/types";
 import { STATUS_BADGE_VARIANT, STATUS_LABEL } from "@/lib/pedidos/status";
-import { formatDataHoraCurta, formatDataHoraExtensa, formatMoeda, buildWhatsAppLink } from "@/lib/pedidos/format";
+import {
+  formatDataHoraCurta,
+  formatDataHoraExtensa,
+  formatMoeda,
+  buildWhatsAppLink,
+  textoQuantidadeItem,
+  textoValorEntrega,
+} from "@/lib/pedidos/format";
 import { Card, Icon, Button, Badge } from "@/components/ds";
 import { atualizarStatusPedido } from "../actions";
+import { EtiquetaTeste } from "../pedidos-list";
 
 const sectionTitleStyle: CSSProperties = {
   fontSize: 14,
@@ -22,7 +30,7 @@ type PassoTimeline = { label: string; detalhe: string; estado: EstadoPasso };
 
 function montarTimeline(pedido: Pedido): PassoTimeline[] {
   const recebido: PassoTimeline = {
-    label: "Pedido recebido pelo WhatsApp",
+    label: "Pedido registrado",
     detalhe: formatDataHoraCurta(pedido.criado_em),
     estado: "done",
   };
@@ -115,10 +123,11 @@ export function PedidoDetail({ pedido }: { pedido: Pedido }) {
               Pedido #{pedido.numero}
             </h1>
             <p style={{ margin: "4px 0 0", color: "var(--pdm-muted)" }}>
-              Recebido em {formatDataHoraExtensa(pedido.criado_em)} pelo WhatsApp.
+              Registrado pelo site em {formatDataHoraExtensa(pedido.criado_em)}.
             </p>
           </div>
           <div className="pedido-detail-header-actions" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {pedido.teste ? <EtiquetaTeste /> : null}
             <Badge variant={STATUS_BADGE_VARIANT[pedido.status]}>{STATUS_LABEL[pedido.status]}</Badge>
             <a
               href={buildWhatsAppLink(pedido.cliente_whatsapp)}
@@ -153,10 +162,11 @@ export function PedidoDetail({ pedido }: { pedido: Pedido }) {
                     <div>
                       <div style={{ fontWeight: 600 }}>{item.nome}</div>
                       {item.variacao ? <div style={{ fontSize: 14, color: "var(--pdm-muted)" }}>{item.variacao}</div> : null}
+                      {item.observacao ? <div style={{ fontSize: 14, color: "var(--pdm-muted)" }}>Obs.: {item.observacao}</div> : null}
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 24, alignItems: "baseline", flexShrink: 0 }}>
-                    <span style={{ color: "var(--pdm-muted)", fontVariantNumeric: "tabular-nums" }}>{item.quantidade} un.</span>
+                    <span style={{ color: "var(--pdm-muted)", fontVariantNumeric: "tabular-nums" }}>{textoQuantidadeItem(item)}</span>
                     <span style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums", minWidth: 90, textAlign: "right" }}>
                       {formatMoeda(item.quantidade * item.preco_unitario)}
                     </span>
@@ -173,12 +183,12 @@ export function PedidoDetail({ pedido }: { pedido: Pedido }) {
               <div style={{ display: "flex", justifyContent: "space-between", color: "var(--pdm-muted)" }}>
                 <span>Entrega ({pedido.modo_entrega === "retirada" ? "retirada na loja" : "entrega"})</span>
                 <span style={{ fontVariantNumeric: "tabular-nums" }}>
-                  {pedido.valor_entrega > 0 ? formatMoeda(pedido.valor_entrega) : "sem custo"}
+                  {textoValorEntrega(pedido)}
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 8 }}>
                 <span className="pedido-detail-total" style={{ fontFamily: "var(--font-heading)", fontSize: 22, color: "var(--pdm-brown)" }}>
-                  Total
+                  {textoValorEntrega(pedido) === "a combinar" ? "Total dos itens" : "Total"}
                 </span>
                 <span
                   className="pedido-detail-total"
