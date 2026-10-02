@@ -5,9 +5,12 @@
 -- Só roda com o ok do Cainan, a menos que o admin ou o site de produção
 -- estejam quebrados pela etapa 1. Depois da etapa 2 não vale mais como
 -- está (a coluna já seria obrigatória e o código já dependeria dela).
+-- A etapa 2 foi aplicada em 02/10/2026: desfazê-la antes, com
+-- supabase/produtos-slug-obrigatorio-desfazer.sql.
 --
 -- Sem begin/commit (quem aplica abre a transação). Provado numa transação
--- desfeita por scripts/banco/slug-desfazer.mjs (banco igual ao de antes).
+-- desfeita por scripts/banco/slug-migracao.mjs (banco igual ao de antes),
+-- só enquanto a etapa 2 não estava aplicada.
 
 set local lock_timeout = '2s';
 

@@ -86,7 +86,7 @@ for (const tabela of ["pedidos_rate_limit", "heartbeat"]) {
   registrar(`http 6. anônimo não lê ${tabela} (sem permissão)`, semPermissao(r), resumo(r));
 }
 {
-  const r = await chamar("POST", "produtos", { nome: "PROVA_HTTP", preco: "nao-e-numero", pedido_minimo: 1 });
+  const r = await chamar("POST", "produtos", { nome: "PROVA_HTTP", preco: "nao-e-numero", pedido_minimo: 1, Categoria: "Doces" });
   registrar("http 7. anônimo não grava produto (sem permissão)", semPermissao(r), resumo(r));
 }
 {

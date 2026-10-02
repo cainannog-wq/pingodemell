@@ -2,7 +2,7 @@
 @docs/status-pingo-de-mell.md
 
 Este arquivo guarda só regras técnicas (schema, RLS, rotas, scripts, testes,
-fluxo de homologação e de lote). Escopo, roadmap e regras de negócio ficam
+fluxo de PR e de homologação). Escopo, roadmap e regras de negócio ficam
 fora do repositório e chegam no prompt de cada PR; não copiar para cá nem
 para `docs/`. Decisão do Cainan em 28/09/2026, no PR 2d.
 
@@ -22,6 +22,8 @@ público em diante:
 
 Isso vale para qualquer migração aplicada via MCP do Supabase (ou qualquer
 outro caminho) neste projeto, não só para um PR específico.
+
+Migração não aditiva só vai a produção depois do merge, com ok explícito de Cainan; todo teste de banco que simula o estado antigo deve pular sozinho quando a migração já está aplicada, e teste que só omite a coluna deve passar um valor válido.
 
 Todo PR que traga migração de schema informa na descrição do PR qual das duas
 categorias acima ela é (aditiva ou não-aditiva) e se ela já foi aplicada em
@@ -86,9 +88,12 @@ Decisão fechada com o Cainan em 28/09/2026, no PR slug:
 - **Todo PR que mexe em gatilho ou função de `produtos` roda
   `node scripts/banco/rodar-todos.mjs` antes do merge** (com
   `--com-migracao=<arquivo.sql>` se a mudança ainda não estiver aplicada) e
-  mostra a saída no PR. A proteção da ordem dos gatilhos de edição (teste
-  `slug 13` em `scripts/banco/slug.mjs`) só existe nessa bateria de banco,
-  não no `npm run test`; sem rodá-la, ela não vale.
+  mostra a saída no PR, inclusive o resumo de testes pulados. A etapa 2 do
+  slug (aplicada em 02/10/2026) tirou do gatilho de edição o ramo que
+  dependia da ordem dos gatilhos; o teste `slug 13` em
+  `scripts/banco/slug.mjs` continua conferindo a ordem, só como registro, e
+  ela só volta a importar se `supabase/produtos-slug-obrigatorio-desfazer.sql`
+  for aplicado.
 
 ## Regra de fuso horário — "que dia é"
 
@@ -122,37 +127,38 @@ Decisão fechada com o Cainan em 24/09/2026, no PR noindex-homologacao:
   (`X-Robots-Tag: noindex, nofollow`, só com `CONTEXT === "branch-deploy"`,
   em `next.config.ts`).
 - **A homologação está sempre com "o PR em validação" ou "igual à
-  produção"**, nunca com código velho ou recusado. Para validar um PR:
+  produção"**, nunca com código velho ou recusado. Para validar um PR, a
+  branch `homologacao` passa para a branch do PR:
   `git push --force-with-lease origin <branch-do-pr>:homologacao`. Depois do
-  merge (ou se o PR for abandonado): `git push --force-with-lease origin
-  origin/main:homologacao`. Isso só move a branch `homologacao`; a `main` e a
-  produção não mudam. Nunca abrir PR a partir da `homologacao` nem para ela,
+  merge (ou se o PR for abandonado), volta para o último commit da `main` que
+  não seja do heartbeat: `git push --force-with-lease origin
+  <commit>:homologacao` (commit de heartbeat só muda `heartbeat-log.txt`, o
+  build seria pulado e o cabeçalho ficaria atrasado). Isso só move a branch
+  `homologacao`; a `main` e a produção não mudam. Nunca abrir PR a partir da `homologacao` nem para ela,
   e só branches nossas vão para lá (o servidor da homologação tem a chave de
   serviço).
 - **Um PR por vez em homologação.**
 - **O Cainan só valida depois que o Claude disser "homologação = commit X do
   PR Y"**, conferido na lista de deploys da Netlify (deploy "Branch Deploy:
   homologacao@<commit>", pronto) contra `git rev-parse origin/homologacao`.
-- Enquanto valer o fluxo em lote (seção abaixo), "igual à produção" passa a
-  ser **"igual à `lote`"** (a próxima produção): depois do merge na `lote`,
-  `git push --force-with-lease origin origin/lote:homologacao`.
+- **Deploy Previews estão desativados na Netlify.** A validação é sempre na
+  homologação.
 
-## Regra de custo — créditos da Netlify e merges em lote
+## Regra de custo — créditos da Netlify
 
 Decisão fechada com o Cainan em 25/09/2026, no PR economia-deploys;
 atualizada em 28/09/2026 com a troca de plano. Plano **Personal** da
 Netlify desde 28/09/2026: 1.000 créditos por ciclo (ciclo atual: 28/09 a
 27/10/2026), divididos entre os sites da conta. **Cada deploy de produção
-publicado custa 15 créditos**; Deploy Preview, branch deploy (homologação),
-build pulado e build que falha não custam. Se os créditos acabam, **todos os
-sites da conta saem do ar** até o ciclo virar, não só o pingodemell. Saldo e
-histórico em `docs/status-pingo-de-mell.md`, seção "Créditos da Netlify".
+publicado custa 15 créditos**; branch deploy (homologação), build pulado e
+build que falha não custam (Deploy Preview também não, mas está
+desativado). Se os créditos acabam, **todos os sites da conta saem do ar**
+até o ciclo virar, não só o pingodemell. Saldo e histórico em
+`docs/status-pingo-de-mell.md`, seção "Créditos da Netlify".
 
-- **Só merge na `main` gera deploy pago.** Nada de push direto na `main`.
-  Validação sempre na homologação ou em Deploy Preview.
+- **Só merge na `main` gera deploy pago.** Validação sempre na homologação.
 - **Deploy de produção liberado** com o plano Personal (a trava "nenhum
-  deploy de produção até 19/10/2026" do plano Free caiu em 28/09/2026). A
-  `main` continua recebendo só o PR da `lote`, quando o Cainan pedir.
+  deploy de produção até 19/10/2026" do plano Free caiu em 28/09/2026).
 - **Nunca usar "Trigger deploy" nem "Clear cache and deploy site" da página
   de Deploys** para forçar a homologação: publicam a produção (28/09/2026,
   15 créditos).
@@ -164,22 +170,22 @@ histórico em `docs/status-pingo-de-mell.md`, seção "Créditos da Netlify".
   `scripts/`, `.github/`, `heartbeat-log.txt` ou `.gitignore`. Qualquer
   outro arquivo gera deploy.
 
-Fluxo de merges em lote (vale até o ciclo virar e depois, se continuar útil):
+Fluxo de PR (desde 02/10/2026, quando a `lote` chegou à `main`; o fluxo de
+merges em lote acabou):
 
-1. A branch `lote` nasce igual à `main`. **Todo PR novo nasce da `lote` e é
-   aberto contra a `lote`**, não contra a `main`.
-2. A validação de cada PR continua na homologação, pelo fluxo acima
-   (gratuito). Depois do ok do Cainan, o PR é mergeado na `lote`, o que não
-   gera deploy nenhum, e a homologação volta a ficar igual à `lote`.
-3. **A `main` só recebe um PR da `lote` quando o Cainan pedir.** Esse PR é
-   conferido na homologação antes, e o merge gera um único deploy de
-   produção com tudo junto.
-4. Migração: aditiva pode ir para produção antes do merge da `lote` na
-   `main`, como hoje. Não aditiva só depois do merge da `lote` na `main`, na
-   ordem dos PRs, e cada PR que tiver uma informa isso na descrição.
-   Enquanto ela não é aplicada, o código na `lote` precisa funcionar com o
-   banco como está.
-5. Exceção: correção urgente em produção pode ir direto para a `main`, só
-   com o ok explícito do Cainan.
-6. **Antes de cada merge na `main`, o Claude diz quantos créditos restam e
-   quando o ciclo vira** (painel da Netlify, Usage & billing).
+1. **Todo PR nasce da `main`, numa branch própria, e é aberto contra a
+   `main`.** Ninguém dá push direto na `main`, exceto o commit do heartbeat
+   (`[skip netlify]`).
+2. A validação de cada PR é na homologação, pelo fluxo acima (gratuito).
+   Depois do ok do Cainan, o PR é mergeado na `main` (deploy de produção, se
+   mexer em arquivo do site) e a homologação volta ao último commit da
+   `main` que não seja do heartbeat.
+3. **Ruleset 24350639 da `main` (GitHub): só proíbe apagar a branch e force
+   push.** Não exige PR nem revisão; a regra do item 1 é de processo.
+4. Migração: aditiva pode ir para produção antes do merge do PR. Não aditiva
+   só depois do merge, com ok explícito do Cainan; enquanto ela não é
+   aplicada, o código na `main` precisa funcionar com o banco como está.
+5. Merge só quando o Cainan pedir.
+6. **Créditos: o Cainan confere o saldo à mão no painel da Netlify**
+   (Usage & billing). Não há piso de créditos que bloqueie push ou merge, e
+   o Claude não precisa informar o saldo antes do merge.

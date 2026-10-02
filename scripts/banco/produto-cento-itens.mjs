@@ -12,7 +12,7 @@ const SABOR = "PROVA_TRANSACAO_SABOR";
 
 async function criarProdutosDeProva(c) {
   await c.q(
-    "insert into public.produtos (nome, preco, pedido_minimo, tipo) values ($1, 1, 1, 'cento'), ($2, 1, 1, 'normal')",
+    "insert into public.produtos (nome, preco, pedido_minimo, tipo, \"Categoria\") values ($1, 1, 1, 'cento', 'Doces'), ($2, 1, 1, 'normal', 'Doces')",
     [CENTO, SABOR]
   );
 }
