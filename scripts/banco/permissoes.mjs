@@ -154,6 +154,31 @@ await emTransacaoDesfeita("Permissões por papel e alertas do verificador", asyn
     registrar("permissões 6. tabela nova nasce com RLS ligada (gatilho rls_auto_enable)", rows[0].relrowsecurity === true, `RLS: ${rows[0].relrowsecurity ? "ligada" : "DESLIGADA"}`);
   });
 
+  // Schema privado (supabase/exclusao-dados.sql): fora da API. Nenhum papel
+  // da API usa o schema, lê/grava tabela ou executa função dele, inclusive
+  // objeto novo que alguém crie lá depois.
+  {
+    const { rows } = await db.query(
+      `select r.papel, has_schema_privilege(r.papel, n.oid, 'USAGE') usa,
+         (select string_agg(c.relname, ', ') from pg_class c where c.relnamespace = n.oid and c.relkind in ('r', 'p', 'v', 'm')
+            and has_table_privilege(r.papel, c.oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')) tabelas,
+         (select string_agg(p.proname, ', ') from pg_proc p where p.pronamespace = n.oid
+            and has_function_privilege(r.papel, p.oid, 'EXECUTE')) funcoes
+       from pg_namespace n cross join (values ('anon'), ('authenticated'), ('service_role')) r(papel)
+       where n.nspname = 'privado' order by 1`
+    );
+    if (rows.length === 0) {
+      console.log("\n(schema privado ainda não existe: supabase/exclusao-dados.sql não aplicada)");
+    } else {
+      const abertos = rows.filter((r) => r.usa || r.tabelas || r.funcoes);
+      registrar(
+        "permissões 9. schema privado: anon, authenticated e service_role não usam o schema, nem tabela, nem função",
+        abertos.length === 0,
+        rows.map((r) => `${r.papel}: schema ${r.usa ? "SIM" : "não"}, tabelas ${r.tabelas ?? "nenhuma"}, funções ${r.funcoes ?? "nenhuma"}`).join("; ")
+      );
+    }
+  }
+
   // Storage: anônimo não tem política nenhuma em storage.objects.
   const { rows: storage } = await db.query(
     `select policyname, roles::text, cmd from pg_policies where schemaname = 'storage' and tablename = 'objects' order by 1`

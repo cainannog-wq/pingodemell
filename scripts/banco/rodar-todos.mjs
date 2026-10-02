@@ -25,6 +25,7 @@ const TESTES_DE_BANCO = [
   "gravacao-pedidos.mjs",
   "slug.mjs",
   "unidade-venda-kits.mjs",
+  "exclusao-dados.mjs",
 ];
 // Aplica a própria migração quando ela falta; não recebe --com-migracao.
 const TESTES_SEM_ARGUMENTO = ["slug-migracao.mjs"];
@@ -47,6 +48,23 @@ async function fotografar() {
          from public.${JSON.stringify(relname)} t`
       );
       foto[`public.${relname}`] = `${rows[0].n} linha(s), conteúdo ${rows[0].assinatura.slice(0, 10)}`;
+    }
+    // Rotina de exclusão (supabase/exclusao-dados.sql): registro e job, se já
+    // existirem.
+    const { rows: extras } = await db.query(
+      `select to_regclass('privado.exclusao_registro') is not null registro, to_regclass('cron.job') is not null cron`
+    );
+    if (extras[0].registro) {
+      const { rows } = await db.query(
+        `select count(*)::int n, coalesce(md5(string_agg(t::text, '|' order by t::text)), '-') assinatura from privado.exclusao_registro t`
+      );
+      foto["privado.exclusao_registro"] = `${rows[0].n} linha(s), conteúdo ${rows[0].assinatura.slice(0, 10)}`;
+    }
+    if (extras[0].cron) {
+      const { rows } = await db.query(
+        `select count(*)::int n, coalesce(md5(string_agg(jobname || schedule || command || active, '|' order by jobid)), '-') assinatura from cron.job`
+      );
+      foto["cron.job"] = `${rows[0].n} job(s), conteúdo ${rows[0].assinatura.slice(0, 10)}`;
     }
     for (const tabela of ["storage.buckets", "storage.objects", "auth.users", "auth.identities", "auth.sessions", "auth.refresh_tokens", "auth.audit_log_entries"]) {
       const { rows } = await db.query(`select count(*)::int n from ${tabela}`);
