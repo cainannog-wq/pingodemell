@@ -153,8 +153,6 @@ histórico em `docs/status-pingo-de-mell.md`, seção "Créditos da Netlify".
 - **Deploy de produção liberado** com o plano Personal (a trava "nenhum
   deploy de produção até 19/10/2026" do plano Free caiu em 28/09/2026). A
   `main` continua recebendo só o PR da `lote`, quando o Cainan pedir.
-- **Piso de segurança: abaixo de 15 créditos, nenhum push em nenhuma
-  branch** até o Cainan decidir, mesmo com o plano pago.
 - **Nunca usar "Trigger deploy" nem "Clear cache and deploy site" da página
   de Deploys** para forçar a homologação: publicam a produção (28/09/2026,
   15 créditos).
