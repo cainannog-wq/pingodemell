@@ -52,9 +52,22 @@ const semPermissao = (r) => r.codigo === "42501";
 console.log(`Chamadas HTTP com a chave anônima em ${env.SUPABASE_URL} (nenhuma grava)`);
 console.log("=".repeat(70));
 
+// Limite por IP. A função antiga sai em supabase/pedidos-permissoes.sql:
+// antes dela, a recusa é por permissão (42501); depois, a função não existe
+// (404 PGRST202). Os dois estados passam. A v2 (a usada pela rota) é sempre
+// recusada por permissão.
 {
   const r = await chamar("GET", "rpc/registrar_tentativa_pedido?p_ip=prova-http&p_janela_segundos=600&p_limite=5");
-  registrar("http 1. anônimo não executa registrar_tentativa_pedido", semPermissao(r), resumo(r));
+  const removida = r.status === 404 && r.codigo === "PGRST202";
+  registrar(
+    `http 1. anônimo não executa registrar_tentativa_pedido (${removida ? "removida por pedidos-permissoes.sql" : "sem permissão"})`,
+    semPermissao(r) || removida,
+    resumo(r)
+  );
+}
+{
+  const r = await chamar("GET", "rpc/registrar_tentativa_pedido_v2?p_ip=prova-http&p_janela_segundos=600&p_limite=5");
+  registrar("http 1b. anônimo não executa registrar_tentativa_pedido_v2 (sem permissão)", semPermissao(r), resumo(r));
 }
 {
   const r = await chamar("POST", "pedidos", {

@@ -19,7 +19,8 @@
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { cenario, descrever, emTransacaoDesfeita, raiz, registrar, SEM_PERMISSAO } from "./lib.mjs";
+import { cenario, descrever, emTransacaoDesfeita, raiz, registrar, rodarMigracao, SEM_PERMISSAO } from "./lib.mjs";
+import { estadoPermissoesPedidos, MIGRACAO_PERMISSOES_PEDIDOS } from "./estado-permissoes-pedidos.mjs";
 
 const rota = readFileSync(path.join(raiz, "src", "app", "api", "pedidos", "route.ts"), "utf8");
 const JANELA = rota
@@ -498,4 +499,36 @@ await emTransacaoDesfeita("Exclusão de dados: pedidos com mais de 12 meses e IP
       `${tabelas.map((t, i) => `${t} ${antes[i]} antes, ${depois[i]} depois`).join("; ")}; prévia: pedidos ${p.pedidos}, IPs ${p.pedidos_rate_limit}; função STABLE (não pode gravar): ${vol[0].provolatile === "s" ? "sim" : "NÃO"}`
     );
   });
+
+  // --- i. a rotina não depende do papel logado --------------------------
+  // supabase/pedidos-permissoes.sql tira o DELETE de authenticated em
+  // pedidos. A rotina é SECURITY DEFINER do postgres, dono da tabela, e a
+  // RLS de pedidos não é forçada: continua apagando. Sem a migração no
+  // banco, ela é aplicada dentro deste cenário (desfeito).
+  await cenario(db, async (c) => {
+    if ((await estadoPermissoesPedidos(c)) === "antes") await rodarMigracao(db, MIGRACAO_PERMISSOES_PEDIDOS);
+    const { rows: p } = await c.q("select has_table_privilege('authenticated', 'public.pedidos', 'DELETE') apaga");
+    const d = await datas(c);
+    const [candidato] = await fabricarPedidos(c, { dia: d.d12m1 });
+    const antes = await existentes(c, [candidato]);
+    await c.q("select privado.exclusao_agendada()");
+    const depois = await existentes(c, [candidato]);
+    const [ped] = (await ultimasLinhas(c)).filter((l) => l.tabela === "pedidos");
+    registrar(
+      "exclusão i1. sem DELETE para o logado em pedidos (pedidos-permissoes.sql), a função agendada ainda apaga o pedido candidato",
+      p[0].apaga === false && antes.has(candidato) && !depois.has(candidato) && ped?.origem === "agendada" && ped.status === "ok",
+      `logado tem DELETE em pedidos: ${p[0].apaga ? "SIM" : "não"}; candidato ${antes.has(candidato) ? "existia" : "NÃO EXISTIA"} e ${depois.has(candidato) ? "FICOU" : "sumiu"}; registro: ${ped ? linhaTexto(ped) : "SEM LINHA"}`
+    );
+  });
+  {
+    const { rows } = await db.query(
+      `select relname, relrowsecurity rls, relforcerowsecurity forca, pg_get_userbyid(relowner) dono
+       from pg_class where oid in ('public.pedidos'::regclass, 'public.pedidos_rate_limit'::regclass) order by relname`
+    );
+    registrar(
+      "exclusão i2. pedidos e pedidos_rate_limit: RLS não forçada e dono postgres (a rotina, que roda como o dono, não passa pela RLS)",
+      rows.length === 2 && rows.every((r) => r.forca === false && r.dono === "postgres"),
+      rows.map((r) => `${r.relname}: RLS ${r.rls ? "ligada" : "desligada"}, forçada ${r.forca ? "SIM" : "não"}, dono ${r.dono}`).join("; ")
+    );
+  }
 });

@@ -1,7 +1,8 @@
 // Roda todos os testes de scripts/banco/ e prova que nada foi gravado:
 // fotografa o banco antes e depois (linhas e conteúdo de cada tabela de
-// public, contagens de storage e auth, e o valor de cada contador) e
-// compara. Qualquer diferença faz o comando falhar.
+// public, contagens de storage e auth, o valor de cada contador, e as
+// permissões, políticas e funções de public) e compara. Qualquer diferença
+// faz o comando falhar.
 //
 // A fotografia é tirada numa conexão só de leitura.
 //
@@ -21,7 +22,7 @@ const TESTES_DE_BANCO = [
   "recheios.mjs",
   "dias-off.mjs",
   "pedidos.mjs",
-  "limite-pedidos.mjs",
+  "permissoes-pedidos.mjs",
   "gravacao-pedidos.mjs",
   "slug.mjs",
   "unidade-venda-kits.mjs",
@@ -75,6 +76,24 @@ async function fotografar() {
       `select schemaname || '.' || sequencename nome, last_value from pg_sequences where schemaname = 'public' order by 1`
     );
     for (const { nome, last_value } of contadores) foto[`contador ${nome}`] = `último valor ${last_value}`;
+    // Estrutura de acesso: permissões de tabela e de coluna, políticas e
+    // funções (definição e permissões) de public.
+    const { rows: acesso } = await db.query(
+      `select
+         (select md5(string_agg(c.relname || coalesce(c.relacl::text, '-'), '|' order by c.relname))
+            from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p', 'v', 'm')) tabelas,
+         (select coalesce(md5(string_agg(a.attrelid::regclass::text || a.attname || a.attacl::text, '|' order by a.attrelid::regclass::text, a.attname)), '-')
+            from pg_attribute a join pg_class c on c.oid = a.attrelid
+            where c.relnamespace = 'public'::regnamespace and a.attacl is not null) colunas,
+         (select md5(string_agg(polrelid::regclass::text || polname || polcmd::text || polroles::text || coalesce(pg_get_expr(polqual, polrelid), '') || coalesce(pg_get_expr(polwithcheck, polrelid), ''), '|' order by polrelid::regclass::text, polname))
+            from pg_policy p join pg_class c on c.oid = p.polrelid where c.relnamespace = 'public'::regnamespace) politicas,
+         (select count(*)::int || ' função(ões), ' || md5(string_agg(p.oid::regprocedure::text || coalesce(p.proacl::text, '-') || md5(pg_get_functiondef(p.oid)), '|' order by p.oid::regprocedure::text))
+            from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f') funcoes`
+    );
+    foto["permissões das tabelas de public"] = acesso[0].tabelas.slice(0, 10);
+    foto["permissões por coluna em public"] = acesso[0].colunas.slice(0, 10);
+    foto["políticas de public"] = acesso[0].politicas.slice(0, 10);
+    foto["funções de public"] = acesso[0].funcoes.replace(/[0-9a-f]{32}$/, (m) => m.slice(0, 10));
     return foto;
   } finally {
     await db.query("rollback").catch(() => {});
