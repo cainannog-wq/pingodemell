@@ -14,7 +14,8 @@
 //
 // Uso: node scripts/banco/permissoes.mjs [--com-migracao=<arquivo.sql>]
 
-import { cenario, emTransacaoDesfeita, registrar } from "./lib.mjs";
+import { cenario, emTransacaoDesfeita, pular, registrar } from "./lib.mjs";
+import { estadoPermissoesPedidos } from "./estado-permissoes-pedidos.mjs";
 
 const SIUD = "SIUD";
 const TABELAS = {
@@ -25,7 +26,9 @@ const TABELAS = {
   recheios: ["S", SIUD],
   dias_off: ["S", SIUD],
   segunda_reaberturas: ["S", SIUD],
-  pedidos: ["", "SUD"],
+  // Logado: lê e muda só o status (supabase/pedidos-permissoes.sql). Antes
+  // dela: "SUD" na tabela inteira (ESPERADO_ANTES abaixo).
+  pedidos: ["", "S"],
   pedidos_rate_limit: ["", ""],
   // Interruptor da gravação (supabase/pedidos-gravacao.sql): só a chave de serviço.
   pedidos_gravacao: ["", ""],
@@ -35,6 +38,8 @@ const TABELAS = {
 // Funções em public: quem, além do dono e da service_role, executa.
 const FUNCOES = {
   salvar_produto_fotos: { anon: false, authenticated: true },
+  // Removida por supabase/pedidos-permissoes.sql; fica aqui enquanto a
+  // migração não for aplicada (permissões 3 confere a remoção).
   registrar_tentativa_pedido: { anon: false, authenticated: false },
   // Gravação de pedido pelo site (supabase/pedidos-gravacao.sql): só a chave de serviço.
   registrar_tentativa_pedido_v2: { anon: false, authenticated: false },
@@ -57,6 +62,14 @@ const FUNCOES = {
 // Sem política de propósito: só a chave de serviço acessa.
 const RLS_SEM_POLITICA_ESPERADO = ["heartbeat", "pedidos_rate_limit", "pedidos_gravacao"];
 
+// UPDATE só em algumas colunas (permissão por coluna, sem UPDATE na tabela),
+// e sem REFERENCES nem TRIGGER na tabela.
+const UPDATE_SO_EM = { pedidos: { authenticated: ["status"] } };
+
+// Estado de antes de supabase/pedidos-permissoes.sql (testado só enquanto
+// ela não está no banco; depois, a linha sai como "pulado").
+const ESPERADO_ANTES = { pedidos: { authenticated: "SUD" } };
+
 const PRIVS = { S: "SELECT", I: "INSERT", U: "UPDATE", D: "DELETE" };
 
 await emTransacaoDesfeita("Permissões por papel e alertas do verificador", async (db) => {
@@ -66,7 +79,11 @@ await emTransacaoDesfeita("Permissões por papel e alertas do verificador", asyn
        has_table_privilege(r.papel, c.oid, 'UPDATE') u, has_table_privilege(r.papel, c.oid, 'DELETE') d,
        has_table_privilege(r.papel, c.oid, 'TRUNCATE') t,
        has_any_column_privilege(r.papel, c.oid, 'INSERT') i_coluna,
-       has_any_column_privilege(r.papel, c.oid, 'UPDATE') u_coluna
+       has_any_column_privilege(r.papel, c.oid, 'UPDATE') u_coluna,
+       has_table_privilege(r.papel, c.oid, 'REFERENCES') x, has_table_privilege(r.papel, c.oid, 'TRIGGER') g,
+       (select string_agg(a.attname, ',' order by a.attname) from pg_attribute a
+          where a.attrelid = c.oid and a.attnum > 0 and not a.attisdropped
+            and has_column_privilege(r.papel, c.oid, a.attname, 'UPDATE')) colunas_update
      from pg_class c join pg_namespace n on n.oid = c.relnamespace
      cross join (values ('anon'), ('authenticated')) r(papel)
      where n.nspname = 'public' and c.relkind in ('r', 'p', 'v', 'm', 'f')
@@ -81,6 +98,8 @@ await emTransacaoDesfeita("Permissões por papel e alertas do verificador", asyn
     desconhecidas.length ? `sem registro: ${desconhecidas.join(", ")}` : `${nomes.length} tabelas: ${nomes.join(", ")}`
   );
 
+  const pedidosAntes = (await estadoPermissoesPedidos(db)) === "antes";
+  const mostrar = (letras) => (letras ? letras.split("").map((k) => PRIVS[k]).join(", ") : "nada");
   for (const [tabela, [esperadoAnon, esperadoLogado]] of Object.entries(TABELAS)) {
     for (const [papel, esperado] of [["anon", esperadoAnon], ["authenticated", esperadoLogado]]) {
       const t = tabelas.find((x) => x.relname === tabela && x.papel === papel);
@@ -89,13 +108,34 @@ await emTransacaoDesfeita("Permissões por papel e alertas do verificador", asyn
         continue;
       }
       const tem = Object.keys(PRIVS).filter((k) => t[k.toLowerCase()]).join("");
-      const colunas = (!esperado.includes("I") && t.i_coluna) || (!esperado.includes("U") && t.u_coluna);
-      const ok = tem === esperado && !t.t && !colunas;
-      const mostrar = (letras) => (letras ? letras.split("").map((k) => PRIVS[k]).join(", ") : "nada");
+      const antes = ESPERADO_ANTES[tabela]?.[papel];
+      const soEm = UPDATE_SO_EM[tabela]?.[papel];
+
+      if (antes !== undefined) {
+        const nome = `permissões [${tabela}] ${papel}: ${mostrar(antes)} na tabela inteira, sem TRUNCATE (antes de pedidos-permissoes.sql)`;
+        if (pedidosAntes) {
+          const colunas = (!antes.includes("I") && t.i_coluna) || (!antes.includes("U") && t.u_coluna);
+          registrar(nome, tem === antes && !t.t && !colunas, `tem: ${mostrar(tem)}${t.t ? " + TRUNCATE" : ""}${colunas ? " + permissão em colunas" : ""}`);
+        } else {
+          pular(nome, "pedidos-permissoes.sql já está no banco (aplicada ou por --com-migracao); simula o estado de antes dela");
+        }
+      }
+
+      const nome =
+        `permissões [${tabela}] ${papel}: ${mostrar(esperado)}${esperado ? "" : " (nenhuma permissão)"}` +
+        `${soEm ? `, UPDATE só em ${soEm.join(", ")}, sem REFERENCES nem TRIGGER` : ""}, sem TRUNCATE`;
+      if (antes !== undefined && pedidosAntes) {
+        pular(nome, "pedidos-permissoes.sql não está no banco; rode com --com-migracao=supabase/pedidos-permissoes.sql");
+        continue;
+      }
+      const colunasAceitas = soEm ? t.colunas_update === soEm.join(",") : !t.u_coluna || esperado.includes("U");
+      const colunas = (!esperado.includes("I") && t.i_coluna) || !colunasAceitas;
+      const extras = soEm ? t.x || t.g : false;
       registrar(
-        `permissões [${tabela}] ${papel}: ${mostrar(esperado)}${esperado ? "" : " (nenhuma permissão)"}, sem TRUNCATE`,
-        ok,
-        `tem: ${mostrar(tem)}${t.t ? " + TRUNCATE" : ""}${colunas ? " + permissão em colunas" : ""}`
+        nome,
+        tem === esperado && !t.t && !colunas && !extras,
+        `tem: ${mostrar(tem)}${t.t ? " + TRUNCATE" : ""}${t.colunas_update && !esperado.includes("U") ? ` + UPDATE nas colunas ${t.colunas_update}` : ""}` +
+          `${soEm ? `; REFERENCES ${t.x ? "SIM" : "não"}, TRIGGER ${t.g ? "SIM" : "não"}` : ""}`
       );
     }
   }
@@ -127,7 +167,25 @@ await emTransacaoDesfeita("Permissões por papel e alertas do verificador", asyn
     );
   }
   const registrar_ = funcoes.find((f) => f.proname === "registrar_tentativa_pedido");
-  registrar("permissões 3. servidor (service_role) executa registrar_tentativa_pedido", registrar_?.service_role === true, `service_role: ${registrar_?.service_role}`);
+  const v2 = funcoes.find((f) => f.proname === "registrar_tentativa_pedido_v2");
+  if (pedidosAntes) {
+    registrar(
+      "permissões 3. servidor (service_role) executa registrar_tentativa_pedido (antes de pedidos-permissoes.sql)",
+      registrar_?.service_role === true,
+      `service_role: ${registrar_?.service_role}`
+    );
+    pular("permissões 3b. registrar_tentativa_pedido removida", "pedidos-permissoes.sql não está no banco; rode com --com-migracao=supabase/pedidos-permissoes.sql");
+  } else {
+    pular(
+      "permissões 3. servidor (service_role) executa registrar_tentativa_pedido (antes de pedidos-permissoes.sql)",
+      "pedidos-permissoes.sql já está no banco (aplicada ou por --com-migracao); simula o estado de antes dela"
+    );
+    registrar(
+      "permissões 3b. registrar_tentativa_pedido removida; o servidor (service_role) executa registrar_tentativa_pedido_v2",
+      !registrar_ && v2?.service_role === true,
+      `antiga: ${registrar_ ? "EXISTE" : "removida"}; v2 pelo service_role: ${v2?.service_role}`
+    );
+  }
 
   const { rows: seq } = await db.query(
     `select has_sequence_privilege('anon', 'public.pedidos_numero_seq', 'USAGE') anon,

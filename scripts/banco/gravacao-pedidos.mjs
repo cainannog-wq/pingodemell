@@ -13,7 +13,10 @@
 //     desfeito. A cópia sai do texto da função que está no banco (a de
 //     produção, ou a da migração com --com-migracao), só com o nome da
 //     tabela trocado;
-//   - a trava por chave: duas conexões com a mesma chave não entram juntas.
+//   - a trava por chave: duas conexões com a mesma chave não entram juntas;
+//   - o limite por IP (vindo de limite-pedidos.mjs, que testava a função
+//     antiga): anônimo e logado não alcançam pedidos_rate_limit, IPs
+//     independentes, a janela recomeça.
 //
 // Uso: node scripts/banco/gravacao-pedidos.mjs [--com-migracao=supabase/pedidos-gravacao.sql]
 
@@ -66,6 +69,24 @@ function chamada(funcao) {
   return `select ${CAMPOS} from ${funcao}($1, $2::uuid, $3::jsonb, $4, $5, $6, $7)`;
 }
 const args = (contexto, chave, corpo, teste, ip) => [contexto, chave, JSON.stringify(corpo), teste, ip, JANELA, LIMITE];
+
+// Cópia de criar_pedido sobre uma cópia de pedidos, criadas dentro do
+// cenário (desfeito), com a gravação dos demais ambientes ligada. Devolve a
+// chamada da cópia.
+async function montarCopia(c) {
+  await c.q("create table public.zz_prova_pedidos (like public.pedidos including all)");
+  await c.q(`create trigger trg_pedidos_recalcular_totais before insert on public.zz_prova_pedidos
+             for each row execute function public.pedidos_recalcular_totais()`);
+  const { rows: fonte } = await c.q(`select pg_get_functiondef('${ASSINATURA}'::regprocedure) def`);
+  const copia = fonte[0].def
+    .replace("public.criar_pedido(", "public.zz_prova_criar_pedido(")
+    .replace(/public\.pedidos(?![_\w])/g, "public.zz_prova_pedidos");
+  if (/public\.pedidos(?![_\w])/.test(copia)) throw new Error("a cópia ainda aponta para a tabela real");
+  await c.q(copia);
+  await c.q("grant execute on function public.zz_prova_criar_pedido(text, uuid, jsonb, boolean, text, integer, integer) to service_role");
+  await c.q("update public.pedidos_gravacao set ligada = true where contexto = 'fora_producao'");
+  return chamada("public.zz_prova_criar_pedido");
+}
 
 await emTransacaoDesfeita(`Gravação de pedido pelo site — criar_pedido (limite ${LIMITE} por IP a cada ${JANELA}s)`, async (db) => {
   // --- permissões ------------------------------------------------------
@@ -133,18 +154,7 @@ await emTransacaoDesfeita(`Gravação de pedido pelo site — criar_pedido (limi
 
   // --- cópia da função sobre cópia da tabela ---------------------------
   await cenario(db, async (c) => {
-    await c.q("create table public.zz_prova_pedidos (like public.pedidos including all)");
-    await c.q(`create trigger trg_pedidos_recalcular_totais before insert on public.zz_prova_pedidos
-               for each row execute function public.pedidos_recalcular_totais()`);
-    const { rows: fonte } = await c.q(`select pg_get_functiondef('${ASSINATURA}'::regprocedure) def`);
-    const copia = fonte[0].def
-      .replace("public.criar_pedido(", "public.zz_prova_criar_pedido(")
-      .replace(/public\.pedidos(?![_\w])/g, "public.zz_prova_pedidos");
-    if (/public\.pedidos(?![_\w])/.test(copia)) throw new Error("a cópia ainda aponta para a tabela real");
-    await c.q(copia);
-    await c.q("grant execute on function public.zz_prova_criar_pedido(text, uuid, jsonb, boolean, text, integer, integer) to service_role");
-    await c.q("update public.pedidos_gravacao set ligada = true where contexto = 'fora_producao'");
-    const f = chamada("public.zz_prova_criar_pedido");
+    const f = await montarCopia(c);
     const linhas = async () => (await c.q("select count(*)::int n from public.zz_prova_pedidos")).rows[0].n;
     const contagem = async (ip) => (await c.q("select contagem from public.pedidos_rate_limit where ip = $1", [ip])).rows[0]?.contagem ?? 0;
 
@@ -220,6 +230,53 @@ await emTransacaoDesfeita(`Gravação de pedido pelo site — criar_pedido (limi
       "gravação 11. linha do interruptor ausente (ou ambiente desconhecido) conta como desligado: nada gravado nem contado",
       r5.rows?.[0]?.r_situacao === "desligado" && r6.rows?.[0]?.r_situacao === "desligado" && (await contagem("prova-ip-4")) === 0 && (await linhas()) === 3 + LIMITE,
       `sem linha: ${r5.rows?.[0]?.r_situacao ?? descrever(r5)}; ambiente desconhecido: ${r6.rows?.[0]?.r_situacao ?? descrever(r6)}`
+    );
+  });
+
+  // --- limite por IP: verificações vindas de limite-pedidos.mjs ---------
+  // limite-pedidos.mjs testava a função antiga (registrar_tentativa_pedido,
+  // removida em supabase/pedidos-permissoes.sql). O que não tinha
+  // equivalente aqui veio para cá, contra a v2 (pela cópia de criar_pedido,
+  // como a rota chama).
+  for (const papel of ["anon", "authenticated"]) {
+    await cenario(db, async (c) => {
+      await c.como(papel);
+      const tentativas = [
+        ["ler", await c.tentar("select * from public.pedidos_rate_limit")],
+        ["gravar", await c.tentar("insert into public.pedidos_rate_limit (ip) values ('prova-papel')")],
+        ["alterar", await c.tentar("update public.pedidos_rate_limit set contagem = 0")],
+        ["apagar", await c.tentar("delete from public.pedidos_rate_limit")],
+      ];
+      registrar(
+        `gravação 13. ${papel === "anon" ? "anônimo" : "logado"} não lê, grava, altera nem apaga a tabela de tentativas (pedidos_rate_limit)`,
+        tentativas.every(([, r]) => !r.ok && r.code === SEM_PERMISSAO),
+        tentativas.map(([nome, r]) => `${nome}: ${descrever(r)}`).join("; ")
+      );
+    });
+  }
+
+  await cenario(db, async (c) => {
+    const f = await montarCopia(c);
+    await c.como("service_role");
+    const respostas = [];
+    for (let i = 1; i <= LIMITE + 1; i++) respostas.push((await c.tentar(f, args("fora_producao", novaChave(), pedido(), true, "prova-ip-5"))).rows?.[0]);
+    const outroIp = await c.tentar(f, args("fora_producao", novaChave(), pedido(), true, "prova-ip-6"));
+    await c.dono();
+    registrar(
+      "gravação 14. o bloqueio de um IP não afeta outro IP",
+      respostas[LIMITE]?.r_situacao === "bloqueado" && outroIp.rows?.[0]?.r_situacao === "criado",
+      `IP bloqueado: ${LIMITE + 1}º ${respostas[LIMITE]?.r_situacao}; outro IP: ${outroIp.rows?.[0]?.r_situacao ?? descrever(outroIp)}`
+    );
+
+    await c.q("update public.pedidos_rate_limit set janela_inicio = now() - make_interval(secs => $2 + 1) where ip = $1", ["prova-ip-5", JANELA]);
+    await c.como("service_role");
+    const depois = await c.tentar(f, args("fora_producao", novaChave(), pedido(), true, "prova-ip-5"));
+    await c.dono();
+    const { rows } = await c.q("select contagem from public.pedidos_rate_limit where ip = 'prova-ip-5'");
+    registrar(
+      "gravação 15. passada a janela, o contador do IP recomeça (o pedido grava e a contagem volta a 1)",
+      depois.rows?.[0]?.r_situacao === "criado" && rows[0]?.contagem === 1,
+      `${depois.rows?.[0]?.r_situacao ?? descrever(depois)}; contagem do IP ${rows[0]?.contagem}`
     );
   });
 

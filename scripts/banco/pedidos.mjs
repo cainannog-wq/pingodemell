@@ -18,7 +18,8 @@
 //
 // Uso: node scripts/banco/pedidos.mjs [--com-migracao=<arquivo.sql>]
 
-import { cenario, descrever, emTransacaoDesfeita, registrar, SEM_PERMISSAO } from "./lib.mjs";
+import { cenario, descrever, emTransacaoDesfeita, pular, registrar, SEM_PERMISSAO } from "./lib.mjs";
+import { estadoPermissoesPedidos } from "./estado-permissoes-pedidos.mjs";
 
 // Mesmo formato que src/app/api/pedidos/route.ts monta antes de gravar.
 function pedidoDoServidor(sobrescrever = {}) {
@@ -166,7 +167,22 @@ await emTransacaoDesfeita("Pedidos — gravação só pelo servidor, RLS e gatil
       alteraLogado.ok && alteraLogado.rows[0].status_atualizado_em.getTime() !== antes.getTime(),
       `status_atualizado_em ${antes.toISOString()} -> ${alteraLogado.rows?.[0]?.status_atualizado_em?.toISOString()}`
     );
+    // supabase/pedidos-permissoes.sql tira o DELETE do logado. Antes dela,
+    // o logado apagava; depois, é recusado (o resto da prova está em
+    // scripts/banco/permissoes-pedidos.mjs).
+    await c.dono();
+    const estado = await estadoPermissoesPedidos(c);
+    await c.como("authenticated");
     const apagaLogado = await c.tentar("delete from public.pedidos where id = $1", [id]);
-    registrar("pedidos 13. logado apaga pedido", apagaLogado.ok && apagaLogado.rowCount === 1, descrever(apagaLogado));
+    if (estado === "antes") {
+      registrar("pedidos 13. logado apaga pedido (antes de pedidos-permissoes.sql)", apagaLogado.ok && apagaLogado.rowCount === 1, descrever(apagaLogado));
+      pular("pedidos 13b. logado NÃO apaga pedido", "pedidos-permissoes.sql não está no banco; provado com a migração em permissoes-pedidos.mjs");
+    } else {
+      pular(
+        "pedidos 13. logado apaga pedido (antes de pedidos-permissoes.sql)",
+        "pedidos-permissoes.sql já está no banco (aplicada ou por --com-migracao); simula o estado de antes dela"
+      );
+      registrar("pedidos 13b. logado NÃO apaga pedido (pedidos-permissoes.sql)", !apagaLogado.ok && apagaLogado.code === SEM_PERMISSAO, descrever(apagaLogado));
+    }
   });
 });
