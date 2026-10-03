@@ -11,12 +11,19 @@
 // O robots.txt (src/app/robots.ts) NÃO participa: ele libera tudo, para o
 // Google conseguir visitar as páginas e ler o noindex.
 //
-// Checkout, Política de Privacidade e confirmação têm robots próprio e
-// continuam noindex com a constante em qualquer valor.
+// Checkout, Política de Privacidade, confirmação, carrinho, login e admin têm
+// robots próprio e continuam noindex com a constante em qualquer valor.
+// Admin, login e API recebem também o cabeçalho, sempre (ROTAS_SEMPRE_NOINDEX).
 
 export const SITE_INDEXAVEL = false;
 
-const NOINDEX = "noindex, nofollow";
+export const NOINDEX = "noindex, nofollow";
+
+// Rotas com X-Robots-Tag noindex, nofollow com SITE_INDEXAVEL em qualquer
+// valor e em qualquer contexto (PR fase4/indexacao-correcoes), no formato de
+// source do headers() do next.config.ts. "/admin/:path*" cobre também o
+// próprio "/admin".
+export const ROTAS_SEMPRE_NOINDEX = ["/admin/:path*", "/login", "/api/:path*"] as const;
 
 // Valor do X-Robots-Tag, ou null para não enviar o cabeçalho. A homologação
 // (branch deploy da Netlify) fica fora dos buscadores sempre, mesmo com o

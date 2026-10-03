@@ -14,6 +14,8 @@ import "./admin.css";
 export const metadata: Metadata = {
   title: "Pingo de Mell · Admin",
   description: "Painel administrativo da Pingo de Mell.",
+  // Fora dos buscadores com a trava de indexação em qualquer valor.
+  robots: { index: false, follow: false },
 };
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {

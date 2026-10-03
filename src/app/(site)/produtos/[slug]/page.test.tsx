@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { SITE_URL } from "@/lib/site/url";
 import { CarrinhoProvider } from "@/components/site/CarrinhoProvider";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { CHAVE_CARRINHO, reiniciarParaTeste } from "@/lib/carrinho/armazenamento";
@@ -303,7 +304,7 @@ describe("Interna — Cento", () => {
 });
 
 describe("Interna — metadados (PR fase4/seo-metadados)", () => {
-  const BASE = "https://pingodemell.netlify.app";
+  const BASE = SITE_URL;
   const PADRAO = "Feito sob encomenda pela Pingo de Mell. Escolha, monte o pedido e a gente combina o resto no WhatsApp.";
 
   async function metadadosDe(slug: string) {
