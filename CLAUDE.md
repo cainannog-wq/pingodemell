@@ -67,6 +67,14 @@ Decisão fechada com o Cainan em 24/09/2026, no PR seguranca-api:
   do merge, o "depois" das regras de banco sai de
   `node scripts/banco/permissoes.mjs --com-migracao=<arquivo.sql>`; o
   verificador de verdade roda de novo depois que a migração for aplicada.
+- **Ensaio avulso contra produção com ALTER ou REVOKE usa uma conexão só,
+  com `lock_timeout` e `statement_timeout` curtos na própria sessão.** Nunca
+  abra uma segunda conexão lendo a mesma tabela dentro de uma transação que
+  a altera (a bateria do repositório já faz isso em `scripts/banco/lib.mjs`).
+  A aplicação real é segura: o `lock_timeout` de 2 segundos cancela a
+  migração se a tabela estiver ocupada. Motivo: em 03/10/2026 um script
+  avulso abriu uma segunda conexão lendo `produtos` enquanto a primeira
+  segurava o ALTER, e a tabela ficou 2 minutos travada.
 
 ## Regra do slug do produto (URL amigável)
 
@@ -143,6 +151,11 @@ Decisão fechada com o Cainan em 24/09/2026, no PR noindex-homologacao:
   homologacao@<commit>", pronto) contra `git rev-parse origin/homologacao`.
 - **Deploy Previews estão desativados na Netlify.** A validação é sempre na
   homologação.
+- **Prova que depende de carregamento visual (logo, imagem preguiçosa,
+  captura de tela) usa a extensão Claude in Chrome ou o Chrome headless.** O
+  painel de navegador embutido do app pode estar oculto e não carrega imagem
+  com `loading=lazy`, o que gera falso negativo. Motivo: o logo do cabeçalho
+  pareceu sumir na Home em 03/10/2026 só por isso.
 
 ## Regra de custo — créditos da Netlify
 
