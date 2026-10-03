@@ -1,9 +1,16 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/supabase/dal";
 import { Card } from "@/components/ds";
 import { LoginForm } from "./login-form";
 import "./login.css";
+
+// O login não herda o título público do layout raiz.
+export const metadata: Metadata = {
+  title: "Entrar · Pingo de Mell",
+  description: "Painel administrativo da Pingo de Mell.",
+};
 
 export default async function LoginPage() {
   const user = await getAuthenticatedUser();

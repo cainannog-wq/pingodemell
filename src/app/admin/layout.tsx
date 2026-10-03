@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { requireAuth } from "@/lib/supabase/dal";
@@ -8,6 +9,12 @@ import { Crumb } from "./crumb";
 import { MobileHeaderNav } from "./mobile-header-nav";
 import { ADMIN_NAV_TOGGLE_ID } from "./nav-toggle";
 import "./admin.css";
+
+// O admin não herda o título público do layout raiz.
+export const metadata: Metadata = {
+  title: "Pingo de Mell · Admin",
+  description: "Painel administrativo da Pingo de Mell.",
+};
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const user = await requireAuth();

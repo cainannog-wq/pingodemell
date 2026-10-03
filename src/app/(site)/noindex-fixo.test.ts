@@ -24,3 +24,18 @@ describe("páginas que ficam noindex sempre", () => {
     expect(metadata.robots).toEqual({ index: false, follow: false });
   });
 });
+
+// Páginas noindex não recebem canonical nem Open Graph (PR
+// fase4/seo-metadados). O carrinho é noindex pela trava do layout raiz.
+describe("páginas noindex sem canonical nem Open Graph", () => {
+  it.each([
+    ["carrinho", () => import("./carrinho/page")],
+    ["checkout", () => import("./checkout/page")],
+    ["confirmação", () => import("./confirmacao/page")],
+    ["Política de Privacidade", () => import("./politica-de-privacidade/page")],
+  ] as const)("%s", async (_nome, carregar) => {
+    const { metadata } = await carregar();
+    expect(metadata.alternates).toBeUndefined();
+    expect(metadata.openGraph).toBeUndefined();
+  });
+});

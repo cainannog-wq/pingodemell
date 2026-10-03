@@ -285,3 +285,51 @@ describe("Página Lista — mínimo no card", () => {
     expect(document.body.textContent).not.toMatch(/null|undefined|None/);
   });
 });
+
+describe("Página Lista — metadados (PR fase4/seo-metadados)", () => {
+  const BASE = "https://pingodemell.netlify.app";
+
+  async function metadadosDa(categoria?: string | string[]) {
+    const { generateMetadata } = await import("./page");
+    return generateMetadata({ searchParams: Promise.resolve(categoria === undefined ? {} : { categoria }) });
+  }
+
+  it("categoria com produto ativo e disponível: título, descrição e canonical da categoria", async () => {
+    const m = await metadadosDa("bolos");
+    expect(m.title).toBe("Bolos de aniversário em Fazenda Rio Grande e Curitiba | Pingo de Mell");
+    expect(m.description).toMatch(/^Bolos de aniversário artesanais/);
+    expect(m.alternates?.canonical).toBe(`${BASE}/produtos?categoria=bolos`);
+    expect(m.openGraph).toMatchObject({ url: `${BASE}/produtos?categoria=bolos`, locale: "pt_BR", type: "website" });
+  });
+
+  it("valor em maiúsculas vale como a categoria, com o canonical no formato da URL", async () => {
+    expect((await metadadosDa("Doces")).alternates?.canonical).toBe(`${BASE}/produtos?categoria=doces`);
+  });
+
+  it("categoria válida sem produto ativo e disponível: os da Lista, canonical /produtos", async () => {
+    doBanco = CATALOGO.filter((p) => p.Categoria !== "Kits");
+    const m = await metadadosDa("kits");
+    expect(m.title).toBe("Produtos · Pingo de Mell");
+    expect(m.alternates?.canonical).toBe(`${BASE}/produtos`);
+  });
+
+  it("Cento sem sabor ativo não conta como produto da categoria", async () => {
+    doBanco = [produto({ nome: "Cento Só", Categoria: "Salgados", tipo: "cento" })];
+    saboresDoBanco = [];
+    expect((await metadadosDa("salgados")).alternates?.canonical).toBe(`${BASE}/produtos`);
+  });
+
+  it("produto inativo não conta como produto da categoria", async () => {
+    doBanco = [produto({ nome: "Inativo", Categoria: "Bebidas", ativo: false })];
+    expect((await metadadosDa("bebidas")).alternates?.canonical).toBe(`${BASE}/produtos`);
+  });
+
+  it("valor inválido ou ausente: os da Lista, canonical /produtos", async () => {
+    for (const valor of ["invalida", undefined, ""]) {
+      const m = await metadadosDa(valor);
+      expect(m.title, String(valor)).toBe("Produtos · Pingo de Mell");
+      expect(m.alternates?.canonical, String(valor)).toBe(`${BASE}/produtos`);
+      expect(m.openGraph).toMatchObject({ url: `${BASE}/produtos`, images: [{ url: `${BASE}/fotos/hero-principal.jpeg` }] });
+    }
+  });
+});
