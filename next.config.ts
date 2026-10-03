@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { SITE_INDEXAVEL, cabecalhoRobots } from "./src/lib/site/indexacao";
+import { NOINDEX, ROTAS_SEMPRE_NOINDEX, SITE_INDEXAVEL, cabecalhoRobots } from "./src/lib/site/indexacao";
 
 const supabaseHostname = process.env.SUPABASE_URL
   ? new URL(process.env.SUPABASE_URL).hostname
@@ -61,7 +61,12 @@ const nextConfig: NextConfig = {
       // sem abrir o painel. Só na homologação.
       if (process.env.COMMIT_REF) headers.push({ key: "X-Homologacao-Commit", value: process.env.COMMIT_REF });
     }
-    return [{ source: "/:path*", headers }];
+    // Admin, login e API ficam fora dos buscadores sempre, com a trava em
+    // qualquer valor e em qualquer contexto (PR fase4/indexacao-correcoes).
+    return [
+      { source: "/:path*", headers },
+      ...ROTAS_SEMPRE_NOINDEX.map((source) => ({ source, headers: [{ key: "X-Robots-Tag", value: NOINDEX }] })),
+    ];
   },
 };
 

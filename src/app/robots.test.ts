@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { SITE_URL } from "@/lib/site/url";
 
 // O robots.txt libera tudo mesmo com a trava ligada: com "Disallow: /" o
 // Google não visitaria as páginas e não leria o noindex (ver robots.ts).
@@ -38,11 +39,16 @@ describe("robots.txt (PR noindex-site e fase4/seo-metadados)", () => {
     expect(Object.keys(r).sort()).toEqual(["rules"]);
   });
 
-  it("com SITE_INDEXAVEL true: as mesmas regras e a linha Sitemap com o endereço absoluto", async () => {
+  it("com SITE_INDEXAVEL true: Allow para /, Disallow só para /admin e /api/ e a linha Sitemap com o endereço absoluto", async () => {
     const r = await robotsCom(true);
     const regra = regraUnica(r.rules);
     expect(regra.allow).toBe("/");
-    expect([regra.disallow ?? []].flat()).toHaveLength(0);
-    expect(r.sitemap).toBe("https://pingodemell.netlify.app/sitemap.xml");
+    expect([regra.disallow ?? []].flat()).toEqual(["/admin", "/api/"]);
+    // Carrinho, checkout, confirmação, login e Política ficam só com noindex
+    // (PR fase4/indexacao-correcoes): com Disallow o Google não leria o noindex.
+    for (const caminho of ["/carrinho", "/checkout", "/confirmacao", "/login", "/politica-de-privacidade"]) {
+      expect([regra.disallow ?? []].flat().some((d) => caminho.startsWith(d)), caminho).toBe(false);
+    }
+    expect(r.sitemap).toBe(`${SITE_URL}/sitemap.xml`);
   });
 });

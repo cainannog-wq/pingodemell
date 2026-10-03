@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { SITE_URL } from "@/lib/site/url";
 import { escaparXml, montarSitemap, type ProdutoSitemap } from "./sitemap";
 
-const BASE = "https://pingodemell.netlify.app";
+const BASE = SITE_URL;
 
 function p(slug: string | null, Categoria: ProdutoSitemap["Categoria"], atualizado_em = "2026-09-23T14:29:18.070Z"): ProdutoSitemap {
   return { slug, Categoria, atualizado_em };

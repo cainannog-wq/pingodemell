@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { SITE_URL } from "@/lib/site/url";
 
 // next/font/google só funciona com o compilador do Next; no teste basta a
 // classe da variável.
@@ -40,7 +41,7 @@ describe("título, descrição e endereço base do layout raiz (PR fase4/seo-met
     expect(metadata.description).toBe(
       "Bolos de aniversário, doces e salgados artesanais para festas em Fazenda Rio Grande e Curitiba. Monte seu pedido no site e finalize pelo WhatsApp."
     );
-    expect(String(metadata.metadataBase)).toBe("https://pingodemell.netlify.app/");
+    expect(String(metadata.metadataBase)).toBe(`${SITE_URL}/`);
     expect(metadata.alternates).toBeUndefined();
     expect(metadata.openGraph).toBeUndefined();
   });

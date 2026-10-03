@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { SITE_URL } from "@/lib/site/url";
 import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
 import { clienteSimulado, novoBanco, type BancoSimulado } from "@/test/banco-simulado";
 
@@ -74,7 +75,7 @@ describe("/sitemap.xml", () => {
     expect(r.headers.get("Content-Type")).toBe("application/xml");
     const xml = await r.text();
     const locs = [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]);
-    const BASE = "https://pingodemell.netlify.app";
+    const BASE = SITE_URL;
     expect(locs).toEqual([
       `${BASE}/`,
       `${BASE}/produtos`,

@@ -3,6 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { SITE_URL } from "@/lib/site/url";
 import type { LinhaSabor } from "@/lib/vitrine/cento";
 import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
 
@@ -287,7 +288,7 @@ describe("Página Lista — mínimo no card", () => {
 });
 
 describe("Página Lista — metadados (PR fase4/seo-metadados)", () => {
-  const BASE = "https://pingodemell.netlify.app";
+  const BASE = SITE_URL;
 
   async function metadadosDa(categoria?: string | string[]) {
     const { generateMetadata } = await import("./page");

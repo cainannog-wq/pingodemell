@@ -10,6 +10,8 @@ import "./login.css";
 export const metadata: Metadata = {
   title: "Entrar · Pingo de Mell",
   description: "Painel administrativo da Pingo de Mell.",
+  // Fora dos buscadores com a trava de indexação em qualquer valor.
+  robots: { index: false, follow: false },
 };
 
 export default async function LoginPage() {
