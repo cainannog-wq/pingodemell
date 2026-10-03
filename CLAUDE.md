@@ -160,18 +160,17 @@ Decisão fechada com o Cainan em 24/09/2026, no PR noindex-homologacao:
 ## Regra de custo — créditos da Netlify
 
 Decisão fechada com o Cainan em 25/09/2026, no PR economia-deploys;
-atualizada em 28/09/2026 com a troca de plano. Plano **Personal** da
-Netlify desde 28/09/2026: 1.000 créditos por ciclo (ciclo atual: 28/09 a
-27/10/2026), divididos entre os sites da conta. **Cada deploy de produção
-publicado custa 15 créditos**; branch deploy (homologação), build pulado e
-build que falha não custam (Deploy Preview também não, mas está
-desativado). Se os créditos acabam, **todos os sites da conta saem do ar**
-até o ciclo virar, não só o pingodemell. Saldo e histórico em
-`docs/status-pingo-de-mell.md`, seção "Créditos da Netlify".
+atualizada em 28/09/2026 (troca de plano) e em 03/10/2026 (fim do fluxo da
+`lote`). Plano **Personal** (pago) da Netlify desde 28/09/2026: 1.000
+créditos por mês, que **renovam todo mês** e são **da conta inteira**,
+divididos entre todos os sites dela. **Cada merge na `main` que muda
+arquivo do site gera um deploy de produção e custa 15 créditos**; branch
+deploy (homologação), build pulado e build que falha não custam (Deploy
+Preview também não, mas está desativado). Se os créditos acabam, **todos os
+sites da conta saem do ar** até o ciclo virar, não só o pingodemell. Saldo e
+histórico em `docs/status-pingo-de-mell.md`, seção "Créditos da Netlify".
 
 - **Só merge na `main` gera deploy pago.** Validação sempre na homologação.
-- **Deploy de produção liberado** com o plano Personal (a trava "nenhum
-  deploy de produção até 19/10/2026" do plano Free caiu em 28/09/2026).
 - **Nunca usar "Trigger deploy" nem "Clear cache and deploy site" da página
   de Deploys** para forçar a homologação: publicam a produção (28/09/2026,
   15 créditos).
@@ -181,24 +180,26 @@ até o ciclo virar, não só o pingodemell. Saldo e histórico em
 - **Regra de ignorar build** (`netlify.toml`, `scripts/netlify/ignorar-build.mjs`):
   a Netlify pula o build quando só mudou `docs/`, `*.md`, `supabase/*.sql`,
   `scripts/`, `.github/`, `heartbeat-log.txt` ou `.gitignore`. Qualquer
-  outro arquivo gera deploy.
+  outro arquivo gera deploy. **Não remover.**
 
-Fluxo de PR (desde 02/10/2026, quando a `lote` chegou à `main`; o fluxo de
-merges em lote acabou):
+Fluxo de PR (desde 02/10/2026; a branch `lote` deixou de ser usada em
+03/10/2026 e não é apagada):
 
 1. **Todo PR nasce da `main`, numa branch própria, e é aberto contra a
    `main`.** Ninguém dá push direto na `main`, exceto o commit do heartbeat
-   (`[skip netlify]`).
-2. A validação de cada PR é na homologação, pelo fluxo acima (gratuito).
-   Depois do ok do Cainan, o PR é mergeado na `main` (deploy de produção, se
-   mexer em arquivo do site) e a homologação volta ao último commit da
-   `main` que não seja do heartbeat.
+   (`[skip netlify]`). Nenhum PR usa a `lote` como base.
+2. A validação de cada PR é na homologação, pelo fluxo acima (gratuito), com
+   as três regras: um PR por vez; o Claude diz "homologação = commit X do
+   PR Y"; o Cainan só valida depois disso. Depois do ok, o PR é mergeado
+   direto na `main` (deploy de produção, se mexer em arquivo do site) e a
+   homologação volta ao último commit da `main` que não seja do heartbeat.
 3. **Ruleset 24350639 da `main` (GitHub): só proíbe apagar a branch e force
    push.** Não exige PR nem revisão; a regra do item 1 é de processo.
 4. Migração: aditiva pode ir para produção antes do merge do PR. Não aditiva
    só depois do merge, com ok explícito do Cainan; enquanto ela não é
    aplicada, o código na `main` precisa funcionar com o banco como está.
-5. Merge só quando o Cainan pedir.
+5. Merge só quando o Cainan pedir, ou quando ele der autonomia de merge para
+   aquele PR, com as condições escritas no prompt.
 6. **Créditos: o Cainan confere o saldo à mão no painel da Netlify**
    (Usage & billing). Não há piso de créditos que bloqueie push ou merge, e
    o Claude não precisa informar o saldo antes do merge.
