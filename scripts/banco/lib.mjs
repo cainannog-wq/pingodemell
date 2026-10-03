@@ -145,11 +145,21 @@ export async function conectar({ nome = "testes-transacao-desfeita", silencioso 
 }
 
 const resultados = [];
+const pulados = [];
 
 export function registrar(nome, ok, detalhe) {
   resultados.push({ nome, ok });
   console.log(`\n[${ok ? "PASS" : "FAIL"}] ${nome}`);
   if (detalhe) console.log(`       ${limpar(detalhe)}`);
+}
+
+// Teste que não se aplica ao estado do banco (ex.: simula o estado de
+// antes de uma migração não-aditiva que já está aplicada). Não conta como
+// falha e aparece no resumo. scripts/banco/rodar-todos.mjs conta as linhas
+// "[----] ... pulado:".
+export function pular(nome, motivo) {
+  pulados.push(nome);
+  console.log(`\n[----] ${nome} pulado: ${motivo}`);
 }
 
 // Roda `corpo(db)` numa transação que é SEMPRE desfeita.
@@ -178,7 +188,8 @@ export async function emTransacaoDesfeita(titulo, corpo) {
 export function resumir(final = "") {
   const falhas = resultados.filter((r) => !r.ok);
   console.log("\n" + "=".repeat(70));
-  console.log(`Resumo: ${resultados.length - falhas.length}/${resultados.length} verificações passaram. ${final}`.trim());
+  const textoPulados = pulados.length ? ` ${pulados.length} pulado(s).` : "";
+  console.log(`Resumo: ${resultados.length - falhas.length}/${resultados.length} verificações passaram.${textoPulados} ${final}`.trim());
   if (falhas.length) {
     console.log("Falharam:\n  - " + falhas.map((f) => f.nome).join("\n  - "));
     process.exitCode = 1;

@@ -73,8 +73,10 @@ const PRODUTOS_DEMO = [
     Categoria: "Salgados",
   },
   // Produtos acrescentados em 22/09/2026 pra dar cobertura de teste à
-  // reorganização mobile da listagem: uma bebida (categoria nova), um
-  // produto inativo e um produto sem categoria.
+  // reorganização mobile da listagem: uma bebida (categoria nova) e um
+  // produto inativo. O "Kit Festa Sortido" (sem categoria) saiu em
+  // 02/10/2026: o produto foi apagado de propósito e não deve voltar, e a
+  // categoria passou a ser obrigatória (supabase/produtos-categoria-obrigatoria.sql).
   {
     nome: "Suco de Laranja Natural (1L)",
     preco: 18.0,
@@ -89,12 +91,6 @@ const PRODUTOS_DEMO = [
     pedido_minimo: 4,
     Categoria: "Doces",
     ativo: false,
-  },
-  {
-    nome: "Kit Festa Sortido",
-    preco: 150.0,
-    descricao: "Kit sortido com bolo, doces e salgados — combinação sob consulta, ainda sem categoria fixa.",
-    pedido_minimo: 1,
   },
 ];
 

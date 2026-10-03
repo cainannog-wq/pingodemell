@@ -19,8 +19,8 @@ const INATIVO = "PROVA_TRANSACAO_INATIVO";
 // de update tem o que mudar.
 async function criarProdutosDeProva(c) {
   const { rows } = await c.q(
-    `insert into public.produtos (nome, preco, pedido_minimo, tipo, ativo, atualizado_em)
-     values ($1, 1, 1, 'normal', true, '2000-01-01'), ($2, 1, 1, 'normal', false, '2000-01-01')
+    `insert into public.produtos (nome, preco, pedido_minimo, tipo, ativo, atualizado_em, "Categoria")
+     values ($1, 1, 1, 'normal', true, '2000-01-01', 'Doces'), ($2, 1, 1, 'normal', false, '2000-01-01', 'Doces')
      returning nome, id`,
     [ATIVO, INATIVO]
   );
@@ -59,7 +59,7 @@ await emTransacaoDesfeita("Produtos e galeria — RLS e permissões", async (db)
     const peloId = await c.tentar("select nome from public.produtos where id = $1", [idInativo]);
     registrar("produtos 6. anônimo buscando um inativo pelo id não recebe nada", peloId.ok && peloId.rowCount === 0, descrever(peloId));
 
-    const ins = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo) values ('PROVA_ANON_INSERE', 1, 1)");
+    const ins = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo, \"Categoria\") values ('PROVA_ANON_INSERE', 1, 1, 'Doces')");
     registrar("produtos 2. anônimo não insere produto", !ins.ok, descrever(ins));
     const upd = await c.tentar("update public.produtos set preco = 0 where nome = $1", [ATIVO]);
     const del = await c.tentar("delete from public.produtos where nome = $1", [ATIVO]);
@@ -85,7 +85,7 @@ await emTransacaoDesfeita("Produtos e galeria — RLS e permissões", async (db)
       todos.ok && todos.rowCount === ref[0].total && todos.rows.some((p) => p.nome === INATIVO),
       `logado leu ${todos.rowCount} de ${ref[0].total}`
     );
-    const ins = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo) values ('PROVA_ADMIN_INSERE', 2, 1)");
+    const ins = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo, \"Categoria\") values ('PROVA_ADMIN_INSERE', 2, 1, 'Doces')");
     const upd = await c.tentar("update public.produtos set descricao = 'alterado na prova' where nome = $1", [ATIVO]);
     const del = await c.tentar("delete from public.produtos where nome = 'PROVA_ADMIN_INSERE'");
     registrar(

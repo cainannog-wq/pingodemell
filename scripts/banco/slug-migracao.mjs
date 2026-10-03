@@ -7,17 +7,26 @@
 //      desfeito: slug obrigatório e gatilho de edição sem o ramo
 //      "vazio -> preenchido";
 //   3. desfazer (supabase/produtos-slug-desfazer.sql), num cenário desfeito:
-//      o banco fica igual ao de antes da etapa 1 (estrutura e dados).
+//      o banco fica igual ao de antes da etapa 1 (estrutura e dados);
+//   4. desfazer da etapa 2 (supabase/produtos-slug-obrigatorio-desfazer.sql),
+//      num cenário desfeito: slug volta a aceitar vazio, gatilho de edição
+//      volta ao da etapa 1, e a etapa 2 pode ser aplicada de novo.
+//
+// Com a etapa 2 já aplicada no banco (02/10/2026), os cenários 7, 8 e 9
+// simulam o estado antigo (produto sem slug; desfazer a etapa 1 direto) e
+// são pulados, sem sair do arquivo.
 //
 // Uso: node scripts/banco/slug-migracao.mjs
 // (não usa --com-migracao: aplica a etapa 1 sozinho quando ela falta)
 
 import path from "node:path";
-import { cenario, descrever, emTransacaoDesfeita, raiz, registrar, rodarMigracao } from "./lib.mjs";
+import { cenario, descrever, emTransacaoDesfeita, pular, raiz, registrar, rodarMigracao } from "./lib.mjs";
 
 const ETAPA_1 = path.join(raiz, "supabase", "produtos-slug.sql");
 const ETAPA_2 = path.join(raiz, "supabase", "produtos-slug-obrigatorio.sql");
 const DESFAZER = path.join(raiz, "supabase", "produtos-slug-desfazer.sql");
+const DESFAZER_ETAPA_2 = path.join(raiz, "supabase", "produtos-slug-obrigatorio-desfazer.sql");
+const MOTIVO_ETAPA_2 = "etapa 2 aplicada no banco (slug NOT NULL); simula o estado de antes dela";
 
 // Fotografia de public, sem nada do slug (coluna, funções, gatilhos,
 // restrições e índices com "slug" no nome ficam de fora). Assim a mesma
@@ -84,6 +93,13 @@ async function temSlug(db) {
   return rows.length > 0;
 }
 
+async function slugObrigatorio(db) {
+  const { rows } = await db.query(
+    `select is_nullable from information_schema.columns where table_schema = 'public' and table_name = 'produtos' and column_name = 'slug'`
+  );
+  return rows[0]?.is_nullable === "NO";
+}
+
 async function objetosDoSlug(db) {
   const { rows } = await db.query(
     `select 'coluna produtos.slug' o from information_schema.columns where table_schema = 'public' and table_name = 'produtos' and column_name = 'slug'
@@ -97,6 +113,7 @@ async function objetosDoSlug(db) {
 await emTransacaoDesfeita("Slug — etapa 1 sobre os produtos existentes, etapa 2 e desfazer", async (db) => {
   const antes = await fotografar(db);
   const jaAplicada = await temSlug(db);
+  const etapa2NoBanco = await slugObrigatorio(db);
 
   if (jaAplicada) {
     console.log("\nEtapa 1 já está no banco: prova só a etapa 2 e o desfazer.");
@@ -161,10 +178,10 @@ await emTransacaoDesfeita("Slug — etapa 1 sobre os produtos existentes, etapa 
       `select is_nullable from information_schema.columns where table_schema = 'public' and table_name = 'produtos' and column_name = 'slug'`
     );
     const { rows: fn } = await c.q(`select pg_get_functiondef('public.produtos_slug_imutavel()'::regprocedure) def`);
-    await c.q("insert into public.produtos (nome, preco, pedido_minimo) values ('PROVA Etapa 2', 1, 1)");
+    await c.q("insert into public.produtos (nome, preco, pedido_minimo, \"Categoria\") values ('PROVA Etapa 2', 1, 1, 'Doces')");
     const renomeia = await c.tentar("update public.produtos set nome = 'PROVA Etapa 2 Renomeado' where nome = 'PROVA Etapa 2'");
     const troca = await c.tentar("update public.produtos set slug = 'outro' where nome = 'PROVA Etapa 2 Renomeado'");
-    const semSlug = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo, slug) values ('PROVA Etapa 2 B', 1, 1, null) returning slug");
+    const semSlug = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo, slug, \"Categoria\") values ('PROVA Etapa 2 B', 1, 1, null, 'Doces') returning slug");
     const { rows: acl } = await c.q(
       `select has_function_privilege('anon', 'public.produtos_slug_imutavel()', 'EXECUTE') anon,
               has_function_privilege('authenticated', 'public.produtos_slug_imutavel()', 'EXECUTE') logado`
@@ -177,11 +194,18 @@ await emTransacaoDesfeita("Slug — etapa 1 sobre os produtos existentes, etapa 
     );
   });
 
-  await cenario(db, async (c) => {
+  // 7, 8 e 9 simulam o estado de antes da etapa 2 (produto sem slug; o
+  // desfazer da etapa 1 sobre a coluna ainda opcional). Com a etapa 2 no
+  // banco, não se aplicam: o 10 cobre o desfazer que vale agora.
+  if (etapa2NoBanco) {
+    pular("slug-migração 7.", `${MOTIVO_ETAPA_2} (produto sem slug não existe mais)`);
+    pular("slug-migração 8.", `${MOTIVO_ETAPA_2} (desfazer da etapa 1 só depois do desfazer da etapa 2)`);
+    pular("slug-migração 9.", `${MOTIVO_ETAPA_2} (depende do 8)`);
+  } else await cenario(db, async (c) => {
     // Produto sem slug (gatilho de cadastro desligado só neste cenário):
     // a etapa 2 precisa recusar tudo.
     await c.q("alter table public.produtos disable trigger produtos_slug_no_cadastro");
-    await c.q("insert into public.produtos (nome, preco, pedido_minimo) values ('PROVA Sem Slug Etapa 2', 1, 1)");
+    await c.q("insert into public.produtos (nome, preco, pedido_minimo, \"Categoria\") values ('PROVA Sem Slug Etapa 2', 1, 1, 'Doces')");
     await c.q("alter table public.produtos enable trigger produtos_slug_no_cadastro");
     let r;
     await c.q("savepoint etapa2");
@@ -201,7 +225,7 @@ await emTransacaoDesfeita("Slug — etapa 1 sobre os produtos existentes, etapa 
   });
 
   // --- desfazer -------------------------------------------------------------
-  await cenario(db, async (c) => {
+  if (!etapa2NoBanco) await cenario(db, async (c) => {
     await rodarMigracao(db, DESFAZER);
     const depois = await fotografar(db);
     const dif = [...diferencas(antes.dados, depois.dados), ...diferencas(antes.estrutura, depois.estrutura)];
@@ -213,8 +237,53 @@ await emTransacaoDesfeita("Slug — etapa 1 sobre os produtos existentes, etapa 
     );
     // Depois do desfazer, o admin continua cadastrando e editando.
     await c.como("authenticated");
-    const cad = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo) values ('PROVA Depois Desfazer', 1, 1)");
+    const cad = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo, \"Categoria\") values ('PROVA Depois Desfazer', 1, 1, 'Doces')");
     const ed = await c.tentar("update public.produtos set nome = 'PROVA Depois Desfazer 2' where nome = 'PROVA Depois Desfazer'");
     registrar("slug-migração 9. desfazer: admin cadastra e edita normalmente depois", cad.ok && ed.ok, `cadastro ${descrever(cad)}; edição ${descrever(ed)}`);
+  });
+
+  // --- desfazer da etapa 2 ----------------------------------------------------
+  await cenario(db, async (c) => {
+    if (!etapa2NoBanco) await rodarMigracao(db, ETAPA_2);
+    await rodarMigracao(db, DESFAZER_ETAPA_2);
+    const { rows: col } = await c.q(
+      `select is_nullable from information_schema.columns where table_schema = 'public' and table_name = 'produtos' and column_name = 'slug'`
+    );
+    const { rows: fn } = await c.q(`select pg_get_functiondef('public.produtos_slug_imutavel()'::regprocedure) def`);
+    const { rows: gat } = await c.q(
+      `select tgenabled from pg_trigger where tgrelid = 'public.produtos'::regclass and tgname = 'produtos_slug_imutavel'`
+    );
+    const { rows: acl } = await c.q(
+      `select has_function_privilege('anon', 'public.produtos_slug_imutavel()', 'EXECUTE') anon,
+              has_function_privilege('authenticated', 'public.produtos_slug_imutavel()', 'EXECUTE') logado`
+    );
+    const depois = await fotografar(db);
+    const dif = [...diferencas(antes.dados, depois.dados), ...diferencas(antes.estrutura, depois.estrutura)];
+    // O ramo da etapa 1 volta: preencher um slug vazio mantém o atualizado_em.
+    await c.q("alter table public.produtos disable trigger produtos_slug_no_cadastro");
+    await c.q("insert into public.produtos (nome, preco, pedido_minimo, atualizado_em, \"Categoria\") values ('PROVA Desfazer Etapa 2', 1, 1, '2001-02-03 04:05:06+00', 'Doces')");
+    await c.q("alter table public.produtos enable trigger produtos_slug_no_cadastro");
+    await c.q("update public.produtos set slug = public.produto_slug_livre(nome) where nome = 'PROVA Desfazer Etapa 2'");
+    const { rows: p } = await c.q("select slug, atualizado_em from public.produtos where nome = 'PROVA Desfazer Etapa 2'");
+    const ramo = fn[0].def.includes("to_jsonb(new) - 'slug' - 'atualizado_em'") && fn[0].def.includes("new.atualizado_em := old.atualizado_em");
+    const preenche = p[0].slug === "prova-desfazer-etapa-2" && p[0].atualizado_em.toISOString() === "2001-02-03T04:05:06.000Z";
+    // E a etapa 2 pode ser aplicada de novo por cima.
+    let reaplica;
+    try {
+      await rodarMigracao(db, ETAPA_2);
+      const { rows } = await c.q(
+        `select is_nullable from information_schema.columns where table_schema = 'public' and table_name = 'produtos' and column_name = 'slug'`
+      );
+      reaplica = rows[0].is_nullable === "NO";
+    } catch (erro) {
+      reaplica = false;
+      console.log(`       etapa 2 de novo: ${erro.message}`);
+    }
+    registrar(
+      "slug-migração 10. desfazer da etapa 2: slug volta a aceitar vazio, gatilho de edição volta ao da etapa 1 (preencher mantém o atualizado_em), nada mais muda e a etapa 2 reaplica",
+      col[0].is_nullable === "YES" && ramo && gat[0]?.tgenabled === "O" && !acl[0].anon && !acl[0].logado && dif.length === 0 && preenche && reaplica,
+      `aceita vazio: ${col[0].is_nullable === "YES"}; ramo da etapa 1: ${ramo}; gatilho ${gat[0]?.tgenabled ?? "ausente"}; anon/logado executam: ${acl[0].anon}/${acl[0].logado}; ` +
+        `resto igual: ${dif.length === 0 ? "sim" : dif.join(" | ")}; preenchimento ${p[0].slug} ${p[0].atualizado_em.toISOString()}; etapa 2 de novo: ${reaplica}`
+    );
   });
 });

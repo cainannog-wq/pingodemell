@@ -25,6 +25,7 @@ const TESTES_DE_BANCO = [
   "gravacao-pedidos.mjs",
   "slug.mjs",
   "unidade-venda-kits.mjs",
+  "categoria.mjs",
   "exclusao-dados.mjs",
 ];
 // Aplica a própria migração quando ela falta; não recebe --com-migracao.
@@ -83,8 +84,16 @@ async function fotografar() {
 
 function rodar(arquivo, args) {
   console.log(`\n${"#".repeat(70)}\n# node scripts/banco/${arquivo} ${args.join(" ")}\n${"#".repeat(70)}`);
-  const r = spawnSync(process.execPath, [path.join(raiz, "scripts", "banco", arquivo), ...args], { stdio: "inherit" });
-  return r.status === 0;
+  // A saída passa adiante como está e é lida para contar os testes pulados
+  // (linhas "[----] ... pulado:", ver pular() em lib.mjs).
+  const r = spawnSync(process.execPath, [path.join(raiz, "scripts", "banco", arquivo), ...args], {
+    stdio: ["inherit", "pipe", "inherit"],
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  process.stdout.write(r.stdout ?? "");
+  const pulados = (r.stdout ?? "").split(/\r?\n/).filter((l) => l.startsWith("[----]")).map((l) => l.slice(7));
+  return { ok: r.status === 0, pulados };
 }
 
 const antes = await fotografar();
@@ -105,7 +114,11 @@ for (const chave of new Set([...Object.keys(antes), ...Object.keys(depois)])) {
 }
 
 console.log(`\n${"=".repeat(70)}\nResultado por script${comMigracao ? " (testes de banco com a migração aplicada DENTRO da transação desfeita)" : ""}\n${"=".repeat(70)}`);
-for (const [arquivo, ok] of resultados) console.log(`${ok ? "PASS" : "FAIL"}  ${arquivo}`);
+for (const [arquivo, { ok, pulados }] of resultados) {
+  console.log(`${ok ? "PASS" : "FAIL"}  ${arquivo}${pulados.length ? ` (${pulados.length} pulado(s))` : ""}`);
+}
+const todosPulados = resultados.flatMap(([arquivo, { pulados }]) => pulados.map((p) => `${arquivo}: ${p}`));
+console.log(`\nPulados: ${todosPulados.length}${todosPulados.length ? "\n  - " + todosPulados.join("\n  - ") : ""}`);
 console.log(mudou ? "\nFALHA: o banco mudou." : "\nBanco idêntico antes e depois: nada foi gravado.");
 
-if (mudou || resultados.some(([, ok]) => !ok)) process.exitCode = 1;
+if (mudou || resultados.some(([, r]) => !r.ok)) process.exitCode = 1;

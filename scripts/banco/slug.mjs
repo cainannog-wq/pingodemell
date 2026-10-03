@@ -13,7 +13,7 @@
 // atualizado_em dos produtos existentes e o SQL de desfazer ficam em
 // scripts/banco/slug-migracao.mjs.
 
-import { cenario, descrever, emTransacaoDesfeita, registrar, SEM_PERMISSAO } from "./lib.mjs";
+import { cenario, descrever, emTransacaoDesfeita, pular, registrar, SEM_PERMISSAO } from "./lib.mjs";
 
 const VIOLOU_CHECK = "23514";
 const VIOLOU_UNICO = "23505";
@@ -100,7 +100,7 @@ await emTransacaoDesfeita("Slug do produto — regra, gatilhos e permissões", a
       r.ok ? `"${r.rows[0].nome}" -> ${r.rows[0].slug}` : descrever(r)
     );
     await c.como("service_role");
-    const s = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo) values ('PROVA Carga Sem Slug', 1, 1) returning slug");
+    const s = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo, \"Categoria\") values ('PROVA Carga Sem Slug', 1, 1, 'Doces') returning slug");
     registrar(
       "slug 3. chave de serviço (script de carga) cadastra sem slug e lê o slug gerado",
       s.ok && s.rows[0].slug === "prova-carga-sem-slug",
@@ -128,7 +128,7 @@ await emTransacaoDesfeita("Slug do produto — regra, gatilhos e permissões", a
     const { rows: base } = await c.q("select nome, ativo from public.produtos where slug = 'coxinha-de-frango'");
     const { rows: livres } = await c.q("select count(*)::int n from public.produtos where slug in ('coxinha-de-frango-2', 'coxinha-de-frango-3')");
     if (base.length === 0 || livres[0].n > 0) {
-      console.log("\n[----] slug 5. pulado: o banco não tem mais coxinha-de-frango livre de -2/-3 (o slug 4 cobre a regra)");
+      pular("slug 5.", "o banco não tem mais coxinha-de-frango livre de -2/-3 (o slug 4 cobre a regra)");
       return;
     }
     await c.como("authenticated");
@@ -143,7 +143,7 @@ await emTransacaoDesfeita("Slug do produto — regra, gatilhos e permissões", a
 
   // --- 4. edição e renomeação mantêm o slug --------------------------
   await cenario(db, async (c) => {
-    await c.q("insert into public.produtos (nome, preco, pedido_minimo, atualizado_em) values ('PROVA Renomear', 1, 1, '2000-01-01')");
+    await c.q("insert into public.produtos (nome, preco, pedido_minimo, atualizado_em, \"Categoria\") values ('PROVA Renomear', 1, 1, '2000-01-01', 'Doces')");
     await c.como("authenticated");
     // Edição no formato do admin (updateProduto): colunas explícitas, sem slug.
     const edita = await c.tentar(
@@ -164,8 +164,8 @@ await emTransacaoDesfeita("Slug do produto — regra, gatilhos e permissões", a
   // --- 5. Cento: renomear um sabor mantém a cascata e o slug ---------
   await cenario(db, async (c) => {
     await c.q(
-      `insert into public.produtos (nome, preco, pedido_minimo, tipo, atualizado_em) values
-         ('PROVA Sabor', 1, 1, 'normal', '2000-01-01'), ('PROVA Cento', 1, 1, 'cento', '2000-01-01')`
+      `insert into public.produtos (nome, preco, pedido_minimo, tipo, atualizado_em, "Categoria") values
+         ('PROVA Sabor', 1, 1, 'normal', '2000-01-01', 'Doces'), ('PROVA Cento', 1, 1, 'cento', '2000-01-01', 'Doces')`
     );
     await c.q("insert into public.produto_cento_itens (cento_nome, subitem_nome, ordem) values ('PROVA Cento', 'PROVA Sabor', 0)");
     const { rows: antes } = await c.q("select nome, slug, atualizado_em from public.produtos where nome in ('PROVA Sabor', 'PROVA Cento') order by nome");
@@ -190,7 +190,7 @@ await emTransacaoDesfeita("Slug do produto — regra, gatilhos e permissões", a
 
   // --- 6. troca direta de slug recusada, para qualquer papel ----------
   await cenario(db, async (c) => {
-    await c.q("insert into public.produtos (nome, preco, pedido_minimo) values ('PROVA Trava', 1, 1)");
+    await c.q("insert into public.produtos (nome, preco, pedido_minimo, \"Categoria\") values ('PROVA Trava', 1, 1, 'Doces')");
     const tentativas = [];
     for (const papel of ["authenticated", "service_role", null]) {
       if (papel) await c.como(papel);
@@ -211,10 +211,10 @@ await emTransacaoDesfeita("Slug do produto — regra, gatilhos e permissões", a
   // --- 7. slug enviado no cadastro (só restauração de backup) --------
   await cenario(db, async (c) => {
     await c.como("service_role");
-    const valido = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo, slug) values ('PROVA Restaurado', 1, 1, 'endereco-original-9') returning slug");
-    const repetido = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo, slug) values ('PROVA Restaurado 2', 1, 1, 'endereco-original-9')");
-    const invalido = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo, slug) values ('PROVA Restaurado 3', 1, 1, 'Endereço Inválido')");
-    const vazio = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo, slug) values ('PROVA Vazio', 1, 1, '') returning slug");
+    const valido = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo, slug, \"Categoria\") values ('PROVA Restaurado', 1, 1, 'endereco-original-9', 'Doces') returning slug");
+    const repetido = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo, slug, \"Categoria\") values ('PROVA Restaurado 2', 1, 1, 'endereco-original-9', 'Doces')");
+    const invalido = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo, slug, \"Categoria\") values ('PROVA Restaurado 3', 1, 1, 'Endereço Inválido', 'Doces')");
+    const vazio = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo, slug, \"Categoria\") values ('PROVA Vazio', 1, 1, '', 'Doces') returning slug");
     registrar(
       "slug 9. slug enviado: aceito se válido e livre (restauração de backup); repetido e fora do formato recusados; vazio é gerado",
       valido.ok && valido.rows[0].slug === "endereco-original-9" &&
@@ -283,7 +283,7 @@ await emTransacaoDesfeita("Slug do produto — regra, gatilhos e permissões", a
       // Produto sem slug, como os 15 antes do preenchimento: o gatilho de
       // cadastro fica desligado só dentro deste cenário desfeito.
       await c.q("alter table public.produtos disable trigger produtos_slug_no_cadastro");
-      await c.q("insert into public.produtos (nome, preco, pedido_minimo, atualizado_em) values ('PROVA Sem Slug', 1, 1, '2001-02-03 04:05:06+00')");
+      await c.q("insert into public.produtos (nome, preco, pedido_minimo, atualizado_em, \"Categoria\") values ('PROVA Sem Slug', 1, 1, '2001-02-03 04:05:06+00', 'Doces')");
       await c.q("alter table public.produtos enable trigger produtos_slug_no_cadastro");
       await c.q("update public.produtos set slug = public.produto_slug_livre(nome) where nome = 'PROVA Sem Slug'");
       const { rows: p } = await c.q("select slug, atualizado_em from public.produtos where nome = 'PROVA Sem Slug'");
@@ -296,6 +296,6 @@ await emTransacaoDesfeita("Slug do produto — regra, gatilhos e permissões", a
       );
     });
   } else {
-    console.log("\n[----] slug 14. pulado: etapa 2 aplicada (slug obrigatório, sem preenchimento)");
+    pular("slug 14.", "etapa 2 aplicada (slug obrigatório, sem preenchimento)");
   }
 });
