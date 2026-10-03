@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Merriweather, Nunito, Yellowtail } from "next/font/google";
 import { SITE_INDEXAVEL, metadataRobots } from "@/lib/site/indexacao";
+import { SEO_SITE } from "@/lib/site/seo";
+import { SITE_URL } from "@/lib/site/url";
 import "@/styles/ds/styles.css";
 import "./globals.css";
 
@@ -44,8 +46,13 @@ const yellowtail = Yellowtail({
 });
 
 export const metadata: Metadata = {
-  title: "Pingo de Mell — Admin",
-  description: "Painel administrativo da Pingo de Mell.",
+  // Endereço base para os metadados com caminho relativo (src/lib/site/url.ts).
+  metadataBase: new URL(SITE_URL),
+  // Título e descrição padrão do site. Canonical e Open Graph ficam em cada
+  // página indexável (metadadosIndexaveis), nunca aqui: senão as páginas
+  // noindex herdariam.
+  title: SEO_SITE.titulo,
+  description: SEO_SITE.descricao,
   // Trava de indexação (src/lib/site/indexacao.ts): herdada por toda página
   // sem robots próprio.
   robots: metadataRobots(SITE_INDEXAVEL),

@@ -301,3 +301,52 @@ describe("Interna — Cento", () => {
     expect(salvo.linhas[0].sabores).toEqual([{ nome: "Empada de palmito", quantidade: 200 }]);
   });
 });
+
+describe("Interna — metadados (PR fase4/seo-metadados)", () => {
+  const BASE = "https://pingodemell.netlify.app";
+  const PADRAO = "Feito sob encomenda pela Pingo de Mell. Escolha, monte o pedido e a gente combina o resto no WhatsApp.";
+
+  async function metadadosDe(slug: string) {
+    const { generateMetadata } = await import("./page");
+    return generateMetadata({ params: Promise.resolve({ slug }) });
+  }
+
+  it("descrição vazia, só espaços ou nula usa o texto padrão; preenchida vale como está", async () => {
+    const casos: [string | null, string][] = [
+      ["", PADRAO],
+      ["   ", PADRAO],
+      [null, PADRAO],
+      ["Morango fresco banhado no chocolate.", "Morango fresco banhado no chocolate."],
+    ];
+    for (const [descricao, esperada] of casos) {
+      banco.tabelas.produtos = [{ ...MORANGO, descricao }];
+      expect((await metadadosDe("morango-banhado")).description, JSON.stringify(descricao)).toBe(esperada);
+    }
+  });
+
+  it("canonical e og:url pelo slug, sem parâmetro; imagem = capa do produto", async () => {
+    const m = await metadadosDe("morango-banhado");
+    expect(m.title).toBe("Morango Banhado · Pingo de Mell");
+    expect(m.alternates?.canonical).toBe(`${BASE}/produtos/morango-banhado`);
+    expect(m.openGraph).toMatchObject({
+      url: `${BASE}/produtos/morango-banhado`,
+      siteName: "Pingo de Mell",
+      locale: "pt_BR",
+      type: "website",
+      images: [{ url: "https://x/capa.jpg" }],
+    });
+  });
+
+  it("sem capa: imagem padrão do site", async () => {
+    const m = await metadadosDe("empada");
+    expect(m.openGraph).toMatchObject({ images: [{ url: `${BASE}/fotos/hero-principal.jpeg` }] });
+  });
+
+  it("produto inexistente ou inativo: sem canonical nem Open Graph", async () => {
+    for (const slug of ["nao-existe", "torta-de-limao"]) {
+      const m = await metadadosDe(slug);
+      expect(m.alternates, slug).toBeUndefined();
+      expect(m.openGraph, slug).toBeUndefined();
+    }
+  });
+});

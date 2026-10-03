@@ -6,6 +6,7 @@ import { Badge, Icon } from "@/components/ds";
 import { CardProduto, PrecoProduto } from "@/components/site/CardProduto";
 import { LOJA } from "@/lib/site/config";
 import { ROTAS } from "@/lib/site/rotas";
+import { metadadosIndexaveis } from "@/lib/site/seo";
 import { buscarInterna, buscarRelacionados } from "@/lib/vitrine/buscar";
 import { UNIDADES_POR_CENTO } from "@/lib/vitrine/cento";
 import { ehMaisPedido } from "@/lib/vitrine/mais-pedidos";
@@ -30,13 +31,24 @@ const DESCRICAO_PADRAO =
   "Feito sob encomenda pela Pingo de Mell. Escolha, monte o pedido e a gente combina o resto no WhatsApp.";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const interna = await carregar((await params).slug);
+  const { slug } = await params;
+  const interna = await carregar(slug);
   if (interna.estado === "nao-encontrado") return { title: "Página não encontrada · Pingo de Mell" };
   if (interna.estado === "erro") return { title: "Produto · Pingo de Mell" };
-  return {
-    title: `${interna.produto.nome} · Pingo de Mell`,
-    description: interna.produto.descricao ?? DESCRICAO_PADRAO,
-  };
+  const { produto } = interna;
+  return metadadosIndexaveis({
+    titulo: `${produto.nome} · Pingo de Mell`,
+    descricao: descricaoDoProduto(produto.descricao),
+    // Canonical sem ?editar nem outro parâmetro.
+    caminho: ROTAS.produto(produto.slug ?? slug),
+    imagem: produto.image_url ?? undefined,
+  });
+}
+
+// O cadastro grava descrição vazia como "" (não null): vazia ou só com
+// espaços usa o texto padrão.
+function descricaoDoProduto(descricao: string | null): string {
+  return descricao?.trim() ? descricao : DESCRICAO_PADRAO;
 }
 
 // Interna do produto (página 3 do site), pelo slug. Produto inexistente,
