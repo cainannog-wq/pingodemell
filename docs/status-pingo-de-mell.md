@@ -107,7 +107,7 @@ O bucket não tem limite de tamanho nem de tipo de arquivo; o limite fica no có
 
 Sobras sem limpeza automática (só vão para o log do servidor): capa antiga da **raiz** que falhou ao ser apagada depois da troca, e arquivos de um produto excluído quando a exclusão do arquivo falha depois de o produto já ter saído do banco. Quem acha: `node scripts/arquivos-sem-dono.mjs` (só leitura), que **roda antes da limpeza dos produtos fictícios e antes da carga real**.
 
-**Admin de produção até o lote chegar à `main`: ninguém troca capa por ele.** A produção ainda roda o código antigo, que grava a capa na raiz pela Server Action (limite de 1 MB, foto de celular recusada) e deixa sobrando a capa de `capa/{id}/`. Editar outros campos pelo admin de produção não mexe na capa e não quebra nada. Trocar capa só pela homologação até o merge do lote.
+**Ninguém troca capa pelo admin de produção até a conferência do passo 3 (capa em produção e scripts/arquivos-sem-dono.mjs)** (ver "Pendências de banco e de produção").
 
 Limite aceito: a RLS de `produto_fotos` esconde a lista de fotos de produto inativo, não os arquivos; quem tem a URL do arquivo continua abrindo (como a capa).
 
@@ -282,7 +282,7 @@ O lote chegou à `main` em 02/10/2026 (PR #32, `805cbd9`); a produção serve `6
    5. atualizar a tabela de migrações.
    O "Kit Festa Sortido", único produto sem categoria, foi apagado de propósito; o passo de movê-lo para Kits deixou de existir.
 
-3. **Antes da carga real**: apagar os recheios e produtos "(demo)" e cadastrar os recheios reais (Taami) e os produtos Smash Cake e Bento Cake reais pelo admin (ver "Bolo, Smash Cake e Bento Cake"; o desfazer está no cabeçalho de `supabase/dados-bolo-bento-teste.sql`).
+3. **Antes da carga real**: conferir a troca de capa em produção (uma troca pelo admin de produção, com o Cainan acompanhando, gravando em `capa/{id}/`) e rodar `node scripts/arquivos-sem-dono.mjs` (só leitura, tem que sair sem sobra); até essa conferência, ninguém troca capa pelo admin de produção. Depois, apagar os recheios e produtos "(demo)" e cadastrar os recheios reais (Taami) e os produtos Smash Cake e Bento Cake reais pelo admin (ver "Bolo, Smash Cake e Bento Cake"; o desfazer está no cabeçalho de `supabase/dados-bolo-bento-teste.sql`).
 
 4. **Data de vigência da Política de Privacidade** (PR `politica-de-privacidade`): fixada em 01/10/2026 (`DATA_VIGENCIA_POLITICA`, `src/app/(site)/politica-de-privacidade/politica.tsx`), por decisão do Cainan. A página foi a produção em 02/10/2026 dizendo "Vigente a partir de 01/10/2026"; se a data precisar mudar, é PR próprio.
 
