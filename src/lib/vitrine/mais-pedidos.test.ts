@@ -35,6 +35,15 @@ describe("Os mais pedidos — filtro", () => {
     expect(nomes(selecionarMaisPedidos(lista))).toEqual(["Brigadeiro ativo"]);
   });
 
+  it("deixa de fora Adicionais, mesmo ativo e com destaque; categoria desconhecida conta como as demais", () => {
+    const lista = [
+      produto({ nome: "Vela Número 5", Categoria: "Adicionais" }),
+      produto({ nome: "Brigadeiro", Categoria: "Doces" }),
+      produto({ nome: "Valor novo", Categoria: "Categoria Futura" as never }),
+    ];
+    expect(nomes(selecionarMaisPedidos(lista)).sort()).toEqual(["Brigadeiro", "Valor novo"]);
+  });
+
   it("deixa de fora bebida, mesmo ativa e com destaque", () => {
     const lista = [
       produto({ nome: "Coca-cola 2L", Categoria: "Bebidas" }),

@@ -33,6 +33,17 @@ describe("sitemap (PR fase4/seo-metadados)", () => {
     expect(locs(xml).filter((l) => l.includes("categoria="))).toEqual([`${BASE}/produtos?categoria=doces`]);
   });
 
+  it("Adicionais: fora enquanto vazia; com produto, entra no fim das categorias, com o valor da URL sem acento", () => {
+    expect(montarSitemap([p("beijinho", "Doces")])).not.toContain("categoria=adicionais");
+    const xml = montarSitemap([p("vela-5", "Adicionais"), p("beijinho", "Doces"), p("kit", "Kits")]);
+    expect(locs(xml).filter((l) => l.includes("categoria="))).toEqual([
+      `${BASE}/produtos?categoria=doces`,
+      `${BASE}/produtos?categoria=kits`,
+      `${BASE}/produtos?categoria=adicionais`,
+    ]);
+    expect(locs(xml)).toContain(`${BASE}/produtos/vela-5`);
+  });
+
   it("lastmod do produto é o atualizado_em em ISO; páginas fixas sem lastmod", () => {
     const xml = montarSitemap([p("beijinho", "Doces", "2026-09-23 15:16:11.846703+00")]);
     expect(xml).toContain(`<loc>${BASE}/produtos/beijinho</loc>\n    <lastmod>2026-09-23T15:16:11.846Z</lastmod>`);

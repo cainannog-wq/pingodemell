@@ -1,4 +1,5 @@
 import { formatMoeda } from "@/lib/pedidos/format";
+import { categoriaDoValor } from "@/lib/produtos/categorias";
 import type { CategoriaProduto, StepQuantidade, TipoProduto } from "@/lib/produtos/types";
 
 // Produto como a vitrine pública enxerga: só os campos que o site mostra
@@ -34,16 +35,18 @@ export const CAMPOS_VITRINE =
 
 export const LIMITE_MAIS_PEDIDOS = 10;
 
-// Produto que conta como "mais pedido": destaque ligado, fora bebida
-// (produto sem categoria conta como não bebida). Vale para a Home e para
-// o bloco de destaques do topo da Lista.
+// Produto que conta como "mais pedido": destaque ligado, fora as
+// categorias com entraEmMaisPedidos falso na lista única (Bebidas e
+// Adicionais). Produto sem categoria, ou com valor que a lista não conhece,
+// conta como as demais. Vale para a Home, para o bloco de destaques do topo
+// da Lista, para o selo da interna e para "Combina com o seu pedido".
 export function ehMaisPedido(produto: Pick<ProdutoVitrine, "destaque" | "Categoria">): boolean {
-  return produto.destaque === true && produto.Categoria !== "Bebidas";
+  return produto.destaque === true && categoriaDoValor(produto.Categoria)?.entraEmMaisPedidos !== false;
 }
 
 // Regra de "Os mais pedidos" da Home:
 // - só ativo E destaque (inativo não aparece em hipótese alguma);
-// - fora a categoria Bebidas (produto sem categoria conta como não bebida);
+// - fora Bebidas e Adicionais (ehMaisPedido);
 // - do editado mais recentemente pro mais antigo (atualizado_em), com
 //   desempate pelo nome;
 // - no máximo 10.

@@ -140,7 +140,7 @@ describe("Página Lista — estrutura", () => {
     expect(cardsNaOrdem()).toHaveLength(7);
   });
 
-  it("filtro tem as 6 categorias do CMS (com Kits e Bento Cake) mais 'Todos', como links da URL", async () => {
+  it("filtro tem as 7 categorias do CMS (com Kits, Bento Cake e Adicionais) mais 'Todos', como links da URL", async () => {
     await renderLista();
     const links = within(screen.getByRole("navigation", { name: "Categorias" })).getAllByRole("link");
     expect(links.map((a) => a.getAttribute("href"))).toEqual([
@@ -151,6 +151,7 @@ describe("Página Lista — estrutura", () => {
       "/produtos?categoria=salgados",
       "/produtos?categoria=bebidas",
       "/produtos?categoria=kits",
+      "/produtos?categoria=adicionais",
     ]);
     expect(links.filter((a) => a.getAttribute("aria-current") === "page")).toHaveLength(1);
   });
@@ -331,6 +332,59 @@ describe("Página Lista — metadados (PR fase4/seo-metadados)", () => {
       expect(m.title, String(valor)).toBe("Produtos · Pingo de Mell");
       expect(m.alternates?.canonical, String(valor)).toBe(`${BASE}/produtos`);
       expect(m.openGraph).toMatchObject({ url: `${BASE}/produtos`, images: [{ url: `${BASE}/fotos/hero-principal.jpeg` }] });
+    }
+  });
+});
+
+describe("Página Lista — categoria Adicionais (PR fase4/categorias-novas, dados simulados)", () => {
+  const BASE = SITE_URL;
+  const VELA = produto({ nome: "Vela Número 5", Categoria: "Adicionais", preco: 8, destaque: true });
+
+  async function metadadosDa(categoria: string) {
+    const { generateMetadata } = await import("./page");
+    return generateMetadata({ searchParams: Promise.resolve({ categoria }) });
+  }
+
+  it("vazia: mensagem com caminho para 'Todos', filtro Adicionais marcado", async () => {
+    await renderLista("adicionais");
+    expect(screen.getByText("Ainda não temos produtos nesta categoria.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Ver todos os produtos/ })).toHaveAttribute("href", "/produtos");
+    expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0);
+    expect(filtroAtual()).toHaveAttribute("href", "/produtos?categoria=adicionais");
+  });
+
+  it("vazia: título e descrição da Lista, canonical /produtos", async () => {
+    const m = await metadadosDa("adicionais");
+    expect(m.title).toBe("Produtos · Pingo de Mell");
+    expect(m.alternates?.canonical).toBe(`${BASE}/produtos`);
+  });
+
+  it("com produto: só ele, sem selo 'Mais pedido' mesmo em destaque, e com título e canonical da categoria", async () => {
+    doBanco = [...CATALOGO, VELA];
+    await renderLista("adicionais");
+    expect(cardsNaOrdem()).toEqual(["Vela Número 5"]);
+    expect(within(cardDe("Vela Número 5")).queryByText("Mais pedido")).not.toBeInTheDocument();
+    const m = await metadadosDa("adicionais");
+    expect(m.title).toBe("Adicionais para festas em Fazenda Rio Grande e Curitiba | Pingo de Mell");
+    expect(m.description).toBe(
+      "Velas, balões e adicionais para completar o seu pedido na Pingo de Mell, em Fazenda Rio Grande e Curitiba. Monte seu pedido no site e finalize pelo WhatsApp."
+    );
+    expect(m.alternates?.canonical).toBe(`${BASE}/produtos?categoria=adicionais`);
+  });
+
+  it("em 'Todos', o produto de Adicionais em destaque fica entre os demais, não no bloco do topo", async () => {
+    doBanco = [...CATALOGO, VELA];
+    await renderLista();
+    expect(cardsNaOrdem()[0]).toBe("Beijinho");
+    expect(cardsNaOrdem()).toContain("Vela Número 5");
+    expect(screen.getAllByText("Mais pedido")).toHaveLength(1);
+  });
+
+  it("valores parecidos que não são o da URL valem como 'Todos'", async () => {
+    for (const valor of ["adicional", "Adicionais ", "adicionais-"]) {
+      cleanup();
+      await renderLista(valor);
+      expect(filtroAtual(), valor).toHaveAttribute("href", valor.trim().toLowerCase() === "adicionais" ? "/produtos?categoria=adicionais" : "/produtos");
     }
   });
 });

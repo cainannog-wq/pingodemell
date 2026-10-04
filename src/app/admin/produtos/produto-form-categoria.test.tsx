@@ -87,12 +87,27 @@ describe("Formulário de produto — categoria obrigatória", () => {
     expect((screen.getByRole("option", { name: "Selecione a categoria" }) as HTMLOptionElement).disabled).toBe(true);
   });
 
-  it("oferece as 6 categorias, incluindo Kits e Bento Cake", () => {
+  it("oferece as 7 categorias, incluindo Kits, Bento Cake e Adicionais (no fim)", () => {
     render(<ProdutoForm action={acao} produtoId={PRODUTO} submitLabel="Salvar produto" />);
     const opcoes = Array.from(categoria().options)
       .filter((o) => !o.disabled)
       .map((o) => o.value);
-    expect(opcoes).toEqual(["Bolos", "Bento Cake", "Doces", "Salgados", "Bebidas", "Kits"]);
+    expect(opcoes).toEqual(["Bolos", "Bento Cake", "Doces", "Salgados", "Bebidas", "Kits", "Adicionais"]);
+  });
+
+  it("escolhendo Adicionais o campo fica válido e vai no envio", () => {
+    const { container } = render(<ProdutoForm action={acao} produtoId={PRODUTO} submitLabel="Salvar produto" />);
+    fireEvent.change(categoria(), { target: { value: "Adicionais" } });
+    expect(categoria().value).toBe("Adicionais");
+    expect(categoria().validity.valid).toBe(true);
+    expect(new FormData(container.querySelector("form")!).get("categoria")).toBe("Adicionais");
+  });
+
+  it("edição: abre com Adicionais quando é a categoria salva", () => {
+    render(
+      <ProdutoForm action={acao} produto={{ ...(PRODUTO_SALVO as object), Categoria: "Adicionais" } as never} produtoId={PRODUTO} submitLabel="Salvar alterações" />
+    );
+    expect(categoria().value).toBe("Adicionais");
   });
 
   it("escolhendo Kits o campo fica válido", () => {

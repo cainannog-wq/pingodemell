@@ -1,3 +1,5 @@
+import type { CategoriaProduto } from "./categorias";
+
 export const STEP_QUANTIDADE_VALUES = ["livre", "multiplos_5", "multiplos_10"] as const;
 export type StepQuantidade = (typeof STEP_QUANTIDADE_VALUES)[number];
 
@@ -7,11 +9,8 @@ export const STEP_QUANTIDADE_LABELS: Record<StepQuantidade, string> = {
   multiplos_10: "Múltiplos de 10",
 };
 
-// Mesma ordem do filtro da Lista e do cadastro. Espelha o enum
-// categoria_produto do banco (Kits entrou em supabase/categoria-kits.sql;
-// Bento Cake em supabase/categoria-bento-cake.sql).
-export const CATEGORIA_VALUES = ["Bolos", "Bento Cake", "Doces", "Salgados", "Bebidas", "Kits"] as const;
-export type CategoriaProduto = (typeof CATEGORIA_VALUES)[number];
+// Categorias: lista única em ./categorias (valor, rótulo, ordem, valor na URL).
+export { CATEGORIA_VALUES, type CategoriaProduto } from "./categorias";
 
 // Comportamento do produto na interna, no carrinho e no cadastro. Espelha
 // o enum produto_tipo do banco (bolo e bento_cake entraram em

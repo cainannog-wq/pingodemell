@@ -10,7 +10,7 @@ const TODOS = [SEO_SITE, ...Object.values(SEO_CATEGORIAS)];
 const HIFENS = /[-‐‑−–—]/;
 
 describe("textos de SEO (PR fase4/seo-metadados)", () => {
-  it("uma entrada para cada uma das 6 categorias", () => {
+  it("uma entrada para cada uma das 7 categorias", () => {
     expect(Object.keys(SEO_CATEGORIAS).sort()).toEqual([...CATEGORIA_VALUES].sort());
   });
 

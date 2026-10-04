@@ -14,6 +14,7 @@
 //
 // Uso: node scripts/banco/categoria.mjs [--com-migracao=supabase/produtos-categoria-obrigatoria.sql]
 
+import fs from "node:fs";
 import path from "node:path";
 import { cenario, comMigracao, descrever, emTransacaoDesfeita, pular, raiz, registrar, rodarMigracao } from "./lib.mjs";
 
@@ -25,6 +26,7 @@ const VALORES = ["Bolos", "Bento Cake", "Doces", "Salgados", "Bebidas", "Kits"];
 const ADICIONAIS = "Adicionais";
 // Valor de enum criado na mesma transação (unsafe use of new value).
 const ENUM_NOVO_NA_TRANSACAO = "55P04";
+const LISTA_DO_CODIGO = path.join(raiz, "src", "lib", "produtos", "categorias.ts");
 const MOTIVO = "categoria já é obrigatória (no banco ou por --com-migracao); simula o estado de antes dela";
 
 async function categoriaAceitaVazio(db) {
@@ -158,6 +160,27 @@ await emTransacaoDesfeita("Categoria obrigatória do produto", async (db) => {
 
   const { rows: semCat } = await db.query(`select count(*)::int n from public.produtos where "Categoria" is null`);
   registrar("categoria 0. nenhum produto real sem categoria (a migração não cancela)", semCat[0].n === 0, `${semCat[0].n} sem categoria`);
+
+  // 8. a lista única do código (src/lib/produtos/categorias.ts) tem
+  // exatamente os valores do enum do banco. Lida do arquivo como texto (o
+  // script não importa TypeScript). Com um valor novo criado nesta mesma
+  // transação (--com-migracao), o enum não pode ser lido: pulado.
+  await cenario(db, async (c) => {
+    const lido = await c.tentar("select enum_range(null::public.categoria_produto)::text[] v");
+    if (!lido.ok && lido.code === ENUM_NOVO_NA_TRANSACAO) {
+      pular("categoria 8.", "valor novo do enum criado nesta mesma transação (--com-migracao): o enum só pode ser lido depois do commit");
+      return;
+    }
+    if (!lido.ok) throw new Error(`leitura do enum: ${descrever(lido)}`);
+    const fonte = fs.readFileSync(LISTA_DO_CODIGO, "utf8");
+    const doCodigo = [...fonte.matchAll(/\{\s*valor:\s*"([^"]+)"/g)].map((m) => m[1]);
+    const doBanco = lido.rows[0].v;
+    registrar(
+      "categoria 8. lista única do código e enum do banco têm os mesmos valores",
+      doCodigo.length > 0 && doCodigo.length === doBanco.length && doCodigo.every((v) => doBanco.includes(v)),
+      `código (${doCodigo.length}): ${doCodigo.join(", ")}; banco (${doBanco.length}): ${doBanco.join(", ")}`
+    );
+  });
 
   await cenario(db, async (c) => {
     // A fotografia de "antes" é do estado sem a migração: tirada antes de
