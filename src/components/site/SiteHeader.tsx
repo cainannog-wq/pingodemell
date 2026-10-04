@@ -35,7 +35,7 @@ export function SiteHeader() {
     <header className="site-header">
       <div className="site-container site-header-inner">
         <Link href={ROTAS.home} className="site-header-logo" aria-label="Pingo de Mell — página inicial">
-          <Image src="/logo-gold.png" alt="" width={201} height={102} />
+          <Image src="/logo-gold.png" alt="" width={201} height={102} loading="eager" fetchPriority="high" />
         </Link>
 
         <nav className="site-nav" aria-label="Principal">

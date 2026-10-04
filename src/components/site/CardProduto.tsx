@@ -14,16 +14,28 @@ import { textoMinimoCurto } from "@/lib/vitrine/minimo";
 
 // Foto do produto, ou o fundo da marca quando o produto ainda não tem foto.
 // next/image carrega a foto só quando ela chega perto da tela
-// (loading="lazy" é o padrão dele).
+// (loading="lazy" é o padrão dele). prioridade: foto que está na primeira
+// tela (os primeiros cards da Lista), carregada já e com prioridade alta.
 export function FotoProduto({
   produto,
   sizes,
+  prioridade = false,
 }: {
   produto: Pick<ProdutoVitrine, "nome" | "image_url">;
   sizes: string;
+  prioridade?: boolean;
 }) {
   if (produto.image_url) {
-    return <Image src={produto.image_url} alt={`Foto de ${produto.nome}`} fill sizes={sizes} style={{ objectFit: "cover" }} />;
+    return (
+      <Image
+        src={produto.image_url}
+        alt={`Foto de ${produto.nome}`}
+        fill
+        sizes={sizes}
+        style={{ objectFit: "cover" }}
+        {...(prioridade ? { loading: "eager" as const, fetchPriority: "high" as const } : {})}
+      />
+    );
   }
   return (
     <div className="home-product-fallback" role="img" aria-label={`${produto.nome}: foto ainda não disponível`}>
@@ -73,10 +85,12 @@ export function CardProduto({
   produto,
   sizes,
   maisPedido = false,
+  prioridade = false,
 }: {
   produto: ProdutoVitrine;
   sizes: string;
   maisPedido?: boolean;
+  prioridade?: boolean;
 }) {
   const href = hrefDoProduto(produto);
   const tituloId = `produto-${produto.id}`;
@@ -89,7 +103,7 @@ export function CardProduto({
       description={produto.descricao}
       media={
         <>
-          <FotoProduto produto={produto} sizes={sizes} />
+          <FotoProduto produto={produto} sizes={sizes} prioridade={prioridade} />
           {maisPedido ? (
             <Badge variant="gold" className="site-selo-foto" style={{ textTransform: "none", letterSpacing: "normal" }}>
               Mais pedido

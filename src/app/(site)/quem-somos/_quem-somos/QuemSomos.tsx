@@ -73,7 +73,7 @@ export function QuemSomos() {
               width={1200}
               height={960}
               sizes="(max-width: 767px) 100vw, 520px"
-              priority
+              preload
             />
             <figcaption>
               <span className="qs-foto-nome">Taami Yaguiu</span>

@@ -7,6 +7,11 @@ import type { ItemLista } from "@/lib/vitrine/lista";
 // Largura de cada foto na grade: 2 colunas no celular, 3 no resto.
 const TAMANHOS_FOTO = "(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 275px";
 
+// Cards na primeira tela do celular (a primeira linha da grade de 2
+// colunas): foto carregada já e com prioridade alta, porque a primeira
+// delas costuma ser o maior elemento da tela (LCP).
+const CARDS_NA_PRIMEIRA_TELA = 2;
+
 // Grade única da Lista, já na ordem de montarLista (destaques com selo
 // primeiro, depois os outros). Sem subtítulo visível: o H2 existe só pra
 // leitor de tela, pra hierarquia seguir H1 → H2 → H3 (nome do produto).
@@ -52,9 +57,14 @@ export function ListaProdutos({
         {categoria ?? "Todos os produtos"}
       </h2>
       <ul className="lista-grade" role="list">
-        {itens.map(({ produto, maisPedido }) => (
+        {itens.map(({ produto, maisPedido }, i) => (
           <li key={produto.id}>
-            <CardProduto produto={produto} sizes={TAMANHOS_FOTO} maisPedido={maisPedido} />
+            <CardProduto
+              produto={produto}
+              sizes={TAMANHOS_FOTO}
+              maisPedido={maisPedido}
+              prioridade={i < CARDS_NA_PRIMEIRA_TELA}
+            />
           </li>
         ))}
       </ul>
