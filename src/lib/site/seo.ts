@@ -51,6 +51,11 @@ export const SEO_CATEGORIAS: Record<CategoriaProduto, TextoSeo> = {
     descricao:
       "Bento Cake personalizado com tema e recheio à sua escolha, em Fazenda Rio Grande e Curitiba. Monte seu pedido e finalize pelo WhatsApp.",
   },
+  Adicionais: {
+    titulo: "Adicionais para festas em Fazenda Rio Grande e Curitiba | Pingo de Mell",
+    descricao:
+      "Velas, balões e adicionais para completar o seu pedido na Pingo de Mell, em Fazenda Rio Grande e Curitiba. Monte seu pedido no site e finalize pelo WhatsApp.",
+  },
 };
 
 // Imagem do Open Graph das páginas sem foto própria (arquivo de public/).

@@ -38,6 +38,12 @@ describe("ofertas do rodapé do checkout", () => {
     expect(nomes).not.toContain("Sem destaque");
   });
 
+  it("Adicionais em destaque entra nas ofertas (fora de 'Os mais pedidos', como bebida) e vai direto ao carrinho", () => {
+    const vela = oferta({ nome: "Vela Número 5", Categoria: "Adicionais" });
+    expect(selecionarOfertas([vela], [], null, HOJE).map((o) => o.nome)).toEqual(["Vela Número 5"]);
+    expect(acaoDaOferta(vela)).toBe("adicionar");
+  });
+
   it("some o produto que já está no carrinho", () => {
     const a = oferta({ nome: "A" });
     const b = oferta({ nome: "B" });

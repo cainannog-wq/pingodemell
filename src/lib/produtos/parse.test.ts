@@ -80,8 +80,8 @@ describe("parseProdutoForm", () => {
     }
   });
 
-  it("aceita as 5 categorias, incluindo Kits", () => {
-    for (const categoria of ["Bolos", "Doces", "Salgados", "Bebidas", "Kits"]) {
+  it("aceita as categorias de produto normal, incluindo Kits e Adicionais", () => {
+    for (const categoria of ["Bolos", "Doces", "Salgados", "Bebidas", "Kits", "Adicionais"]) {
       const result = parseProdutoForm(buildFormData({ ...CAMPOS_VALIDOS, categoria }));
       expect(result.success).toBe(true);
       if (result.success) {
@@ -150,6 +150,13 @@ describe("parseProdutoForm", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error).toMatch(/categoria/i);
+    }
+  });
+
+  it("recusa valores parecidos com Adicionais (só o valor exato do banco vale)", () => {
+    for (const categoria of ["adicionais", "Adicional", "Velas e Balões", "ADICIONAIS"]) {
+      const result = parseProdutoForm(buildFormData({ ...CAMPOS_VALIDOS, categoria }));
+      expect(result.success, categoria).toBe(false);
     }
   });
 

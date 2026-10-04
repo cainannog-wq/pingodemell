@@ -1,13 +1,16 @@
 // Rotas do site público. As próximas páginas (Lista, interna do produto,
 // Quem Somos) devem usar exatamente estes caminhos.
 
-import type { CategoriaProduto } from "@/lib/produtos/types";
+import { categoriaDoValor, type CategoriaProduto } from "@/lib/produtos/categorias";
 
-// Valor do filtro na URL da Lista: a categoria do banco em minúsculas e
-// com hífen no lugar do espaço (Bolos → bolos, Bento Cake → bento-cake).
-// Não é slug de produto, é só o nome da categoria.
+// Valor do filtro na URL da Lista: o `parametro` da lista única
+// (Bolos → bolos, Bento Cake → bento-cake, Adicionais → adicionais).
+// Não é slug de produto, é só o nome da categoria. Valor que a lista não
+// conhece (vindo do banco antes de o código conhecê-lo) cai na regra antiga,
+// minúsculas com hífen no lugar do espaço, sem erro: a Lista lê esse valor
+// como "Todos".
 export function categoriaParaParametro(categoria: CategoriaProduto): string {
-  return categoria.toLowerCase().replace(/\s+/g, "-");
+  return categoriaDoValor(categoria)?.parametro ?? String(categoria).toLowerCase().replace(/\s+/g, "-");
 }
 
 export const ROTAS = {

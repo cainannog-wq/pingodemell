@@ -32,8 +32,8 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 // Lista de produtos (página 2 do site). Filtro por categoria na URL, no
-// formato de ROTAS.listaPorCategoria (?categoria=bolos|doces|salgados|
-// bebidas); qualquer outro valor mostra "Todos".
+// formato de ROTAS.listaPorCategoria (?categoria=bolos, bento-cake, doces,
+// salgados, bebidas, kits ou adicionais); qualquer outro valor mostra "Todos".
 export default async function ListaPage({ searchParams }: Props) {
   const categoria = categoriaDoParametro((await searchParams).categoria);
   const itens = await carregar(categoria);
