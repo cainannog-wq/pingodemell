@@ -35,7 +35,9 @@ export function SiteHeader() {
     <header className="site-header">
       <div className="site-container site-header-inner">
         <Link href={ROTAS.home} className="site-header-logo" aria-label="Pingo de Mell — página inicial">
-          <Image src="/logo-gold.png" alt="" width={201} height={102} />
+          {/* Sempre na primeira tela: carrega já, sem loading="lazy". Sem
+              fetchPriority="high", para não disputar banda com o hero. */}
+          <Image src="/logo-gold.png" alt="" width={201} height={102} loading="eager" />
         </Link>
 
         <nav className="site-nav" aria-label="Principal">

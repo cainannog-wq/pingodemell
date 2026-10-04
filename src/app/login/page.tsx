@@ -55,7 +55,7 @@ export default async function LoginPage() {
           height={102}
           className="login-logo"
           style={{ height: "auto", display: "block" }}
-          priority
+          preload
         />
         <div>
           <h1

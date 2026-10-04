@@ -66,7 +66,7 @@ export function Galeria({ fotos, nome }: { fotos: FotoProduto[]; nome: string })
               alt={foto.alt}
               fill
               sizes="(max-width: 767px) 100vw, 572px"
-              priority={i === 0}
+              preload={i === 0}
               style={{ objectFit: "cover" }}
             />
           </div>

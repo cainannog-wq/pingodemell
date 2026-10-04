@@ -32,7 +32,10 @@ const VARIANTS: Record<string, CSSProperties> = {
   secondaryHover: { background: "var(--pdm-brown)", color: "var(--pdm-white)" },
   ghost: { background: "transparent", color: "var(--pdm-brown)", borderColor: "transparent" },
   ghostHover: { background: "rgba(139,89,42,.08)" },
-  whatsapp: { background: "var(--pdm-whatsapp)", color: "var(--pdm-white)", borderColor: "transparent" },
+  // Texto escuro sobre o verde: o branco tinha 1,98:1 (mínimo 4,5:1). Preto
+  // (--ink-900) fica 10,59:1 no verde e 6,77:1 no verde do hover, a mesma
+  // combinação do botão grande da Confirmação.
+  whatsapp: { background: "var(--pdm-whatsapp)", color: "var(--ink-900)", borderColor: "transparent" },
   whatsappHover: { background: "#1da851" },
 };
 
