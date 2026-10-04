@@ -346,6 +346,8 @@ Padrão para objeto novo: desde `seguranca-api.sql`, toda função nova criada p
 
 ## Verificador de segurança do Supabase (security advisors)
 
+Em 04/10/2026 05:37 UTC (verificador real, depois de `categoria-adicionais.sql`): igual ao de 03/10, sem alerta novo: INFO RLS sem política em `privado.exclusao_registro`, `heartbeat`, `pedidos_gravacao` e `pedidos_rate_limit` (intencionais); WARN proteção de senha vazada desligada. O "antes" do verificador real não foi rodado neste PR; o ensaio de regras de banco antes de aplicar foi `rodar-todos.mjs --com-migracao=supabase/categoria-adicionais.sql` (inclui `permissoes.mjs`, código 0). A migração só acrescenta um valor de enum, sem tabela, função nem política.
+
 Depois de aplicadas `produtos-categoria-obrigatoria.sql` e `pedidos-permissoes.sql` (03/10/2026): a saída do verificador real não está entre as provas registradas neste PR (não verificado aqui).
 
 Em 03/10/2026 01:12 UTC (verificador real, "antes" do PR `permissoes-pedidos`): igual ao de 02/10 abaixo, sem alerta novo: INFO RLS sem política em `privado.exclusao_registro`, `heartbeat`, `pedidos_gravacao` e `pedidos_rate_limit` (intencionais); WARN proteção de senha vazada desligada. O "depois" de `pedidos-permissoes.sql`, antes de aplicada, é `permissoes.mjs` com `--com-migracao=supabase/pedidos-permissoes.sql`: só os 3 INFO intencionais de `public` (a regra do script não olha `privado` nem o Auth); a migração só tira permissões, apaga uma política e uma função, sem objeto novo. O verificador real roda de novo depois de aplicada.
