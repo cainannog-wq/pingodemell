@@ -1,8 +1,8 @@
 /* Fontes — Merriweather, Nunito, Yellowtail (script substituta de Stars&Love,
-   ver readme do design system) e o ícone Material Symbols Rounded, todas do
-   Google Fonts. Merriweather/Nunito/Yellowtail auto-hospedadas via
+   ver readme do design system) e o ícone Material Symbols Rounded, todas
+   servidas pelo próprio site. Merriweather/Nunito/Yellowtail via
    next/font/google em src/app/layout.tsx (custom properties consumidas em
-   typography.css); Material Symbols Rounded continua via <link
-   rel="stylesheet"> ali mesmo, por não ser suportada pelo carregador do
-   next/font. Sem @import aqui: o Turbopack descarta @import de URL externa
+   typography.css); os ícones são um subconjunto em src/fonts/, carregado
+   por next/font/local (src/fonts/icones.ts, variável --font-icones, usada
+   pelo Icon.tsx). Sem @import aqui: o Turbopack descarta @import de URL externa
    dentro de CSS local importado. */

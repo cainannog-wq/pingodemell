@@ -1,12 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SITE_URL } from "@/lib/site/url";
 
-// next/font/google só funciona com o compilador do Next; no teste basta a
-// classe da variável.
+// next/font/google e next/font/local só funcionam com o compilador do Next;
+// no teste basta a classe da variável.
 vi.mock("next/font/google", () => {
   const fonte = () => ({ variable: "fonte", className: "fonte" });
   return { Geist: fonte, Geist_Mono: fonte, Merriweather: fonte, Nunito: fonte, Yellowtail: fonte };
 });
+vi.mock("next/font/local", () => ({ default: () => ({ variable: "fonte", className: "fonte" }) }));
 
 async function metadataDoLayout(indexavel?: boolean) {
   vi.resetModules();

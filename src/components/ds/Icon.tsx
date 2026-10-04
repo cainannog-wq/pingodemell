@@ -1,7 +1,11 @@
 import type { CSSProperties, HTMLAttributes } from "react";
+import type { IconeNome } from "@/lib/icones";
 
 // Material Symbols Rounded, estilo preenchido (FILL 1) — biblioteca oficial
 // da marca (ver _ds/.../readme.md). Porta de components/core/Icon.jsx.
+// A fonte é um subconjunto hospedado pelo site (src/fonts/icones.ts), com
+// só os nomes de src/lib/icones.ts; a família chega pela variável
+// --font-icones, posta no <html> pelo layout raiz.
 export type IconTone = "default" | "accent" | "onDark" | "ink" | "inherit";
 
 const TONES: Record<IconTone, string> = {
@@ -21,7 +25,7 @@ export function Icon({
   className,
   ...rest
 }: {
-  name: string;
+  name: IconeNome;
   size?: number;
   color?: string;
   tone?: IconTone;
@@ -33,7 +37,7 @@ export function Icon({
       className={["material-symbols-rounded", className].filter(Boolean).join(" ")}
       aria-hidden="true"
       style={{
-        fontFamily: '"Material Symbols Rounded"',
+        fontFamily: "var(--font-icones)",
         fontWeight: 400,
         fontStyle: "normal",
         fontSize: size + "px",

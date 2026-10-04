@@ -2,12 +2,15 @@
 
 import { useState, type CSSProperties, type ElementType, type ButtonHTMLAttributes, type Ref } from "react";
 import { Icon } from "./Icon";
+import type { IconeNome } from "@/lib/icones";
 import { WhatsAppMark } from "./WhatsAppMark";
 
-// iconLeft/iconRight recebem o nome de um ícone Material Symbols, ou o
+// iconLeft/iconRight recebem o nome de um ícone da lista (src/lib/icones.ts), ou o
 // valor especial "whatsapp", que desenha a marca oficial do WhatsApp
 // (usada no site público: "Peça pelo WhatsApp", "Fale conosco").
-function ButtonIcon({ name }: { name: string }) {
+export type ButtonIconName = IconeNome | "whatsapp";
+
+function ButtonIcon({ name }: { name: ButtonIconName }) {
   if (name === "whatsapp") return <WhatsAppMark size={20} />;
   return <Icon name={name} size={20} tone="inherit" />;
 }
@@ -54,8 +57,8 @@ export function Button({
 }: {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  iconLeft?: string;
-  iconRight?: string;
+  iconLeft?: ButtonIconName;
+  iconRight?: ButtonIconName;
   fullWidth?: boolean;
   as?: ElementType;
   style?: CSSProperties;

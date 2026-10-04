@@ -2,6 +2,7 @@
 
 import { useState, type CSSProperties, type InputHTMLAttributes, type Ref } from "react";
 import { Icon } from "./Icon";
+import type { IconeNome } from "@/lib/icones";
 
 // Porta de components/forms/Input.jsx.
 export function Input({
@@ -12,7 +13,7 @@ export function Input({
   ref,
   ...rest
 }: {
-  icon?: string;
+  icon?: IconeNome;
   invalid?: boolean;
   // Botão "x" dentro do campo, só aparece quando há valor. Opcional — quem
   // não passar continua com o Input igual antes.

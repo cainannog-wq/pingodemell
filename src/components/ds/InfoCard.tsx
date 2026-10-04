@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Icon } from "./Icon";
+import type { IconeNome } from "@/lib/icones";
 
 // Porta de components/content/InfoCard.jsx: ícone + título em script +
 // texto. `align="start"` é a versão compacta (alinhada à esquerda), usada
@@ -12,7 +13,7 @@ export function InfoCard({
   compact = false,
   style,
 }: {
-  icon?: string;
+  icon?: IconeNome;
   title: string;
   children: ReactNode;
   align?: "center" | "start";

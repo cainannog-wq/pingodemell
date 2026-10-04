@@ -13,6 +13,7 @@ import {
   textoValorEntrega,
 } from "@/lib/pedidos/format";
 import { Card, Icon, Button, Badge } from "@/components/ds";
+import type { IconeNome } from "@/lib/icones";
 import { atualizarStatusPedido } from "../actions";
 import { EtiquetaTeste } from "../pedidos-list";
 
@@ -63,7 +64,7 @@ function montarTimeline(pedido: Pedido): PassoTimeline[] {
   ];
 }
 
-function InfoRow({ icon, label, children }: { icon: string; label: string; children: ReactNode }) {
+function InfoRow({ icon, label, children }: { icon: IconeNome; label: string; children: ReactNode }) {
   return (
     <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
       <Icon name={icon} size={20} tone="accent" style={{ marginTop: 2 }} />

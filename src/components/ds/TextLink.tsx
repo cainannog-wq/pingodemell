@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { Icon } from "./Icon";
+import type { IconeNome } from "@/lib/icones";
 
 // Porta de components/core/TextLink.jsx: link marrom com ícone opcional
 // depois do texto, sublinhado no hover.
@@ -13,7 +14,7 @@ export function TextLink({
   style,
 }: {
   href: string;
-  icon?: string;
+  icon?: IconeNome;
   children: ReactNode;
   style?: CSSProperties;
 }) {
