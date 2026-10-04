@@ -5,7 +5,7 @@
 // prova direto; sem ela, aplica a migração num cenário desfeito e prova o
 // mesmo. Assim a bateria passa nos dois estados:
 //   - cadastro sem categoria recusado (admin e chave de serviço);
-//   - cadastro com cada um dos 6 valores do enum aceito;
+//   - cadastro com cada valor do enum aceito (6, ou 7 com Adicionais);
 //   - edição para categoria vazia recusada;
 //   - cadastro e edição no formato do admin continuam funcionando;
 //   - o desfazer volta a coluna a aceitar vazio, sem mexer em mais nada.
@@ -20,7 +20,11 @@ import { cenario, comMigracao, descrever, emTransacaoDesfeita, pular, raiz, regi
 const MIGRACAO = path.join(raiz, "supabase", "produtos-categoria-obrigatoria.sql");
 const DESFAZER = path.join(raiz, "supabase", "produtos-categoria-desfazer.sql");
 const VIOLOU_NOT_NULL = "23502";
+// Os 6 valores de antes; Adicionais (sétimo) entra em categoria-adicionais.sql.
 const VALORES = ["Bolos", "Bento Cake", "Doces", "Salgados", "Bebidas", "Kits"];
+const ADICIONAIS = "Adicionais";
+// Valor de enum criado na mesma transação (unsafe use of new value).
+const ENUM_NOVO_NA_TRANSACAO = "55P04";
 const MOTIVO = "categoria já é obrigatória (no banco ou por --com-migracao); simula o estado de antes dela";
 
 async function categoriaAceitaVazio(db) {
@@ -83,17 +87,36 @@ async function provar(db, c, antes) {
     `admin ${descrever(semAdmin)}; serviço ${descrever(semServico)}; vazio explícito ${descrever(nuloExplicito)}`
   );
 
-  // 2. cada um dos 6 valores aceito
-  const { rows: e } = await c.q("select enum_range(null::public.categoria_produto)::text[] v");
+  // 2. cada valor do enum aceito: os 6 de antes e, depois de
+  // categoria-adicionais.sql aplicada, Adicionais (7). Com a migração só na
+  // mesma transação (--com-migracao), o enum não pode ser lido (55P04): o
+  // teste dos 6 roda e o de Adicionais é pulado.
+  const lido = await c.tentar("select enum_range(null::public.categoria_produto)::text[] v");
+  const enumNovoNaTransacao = !lido.ok && lido.code === ENUM_NOVO_NA_TRANSACAO;
+  if (!lido.ok && !enumNovoNaTransacao) throw new Error(`leitura do enum: ${descrever(lido)}`);
+  const noEnum = lido.ok ? lido.rows[0].v : null;
+  const comAdicionais = noEnum?.includes(ADICIONAIS) === true;
+  const valores = comAdicionais ? [...VALORES, ADICIONAIS] : VALORES;
   await c.como("authenticated");
   const cadastros = [];
-  for (const valor of VALORES) cadastros.push([valor, await cadastrarComoAdmin(c, `PROVA Cat ${valor}`, valor)]);
+  for (const valor of valores) cadastros.push([valor, await cadastrarComoAdmin(c, `PROVA Cat ${valor}`, valor)]);
   await c.dono();
   registrar(
-    "categoria 2. cadastro com cada um dos 6 valores do enum aceito",
-    e[0].v.length === 6 && VALORES.every((v) => e[0].v.includes(v)) && cadastros.every(([, r]) => r.ok && r.rowCount === 1),
-    `enum: ${e[0].v.join(", ")}; ${cadastros.map(([v, r]) => `${v} ${r.ok ? "aceito" : descrever(r)}`).join("; ")}`
+    `categoria 2. cadastro com cada um dos ${valores.length} valores do enum aceito`,
+    (noEnum === null || (noEnum.length === valores.length && valores.every((v) => noEnum.includes(v)))) &&
+      cadastros.every(([, r]) => r.ok && r.rowCount === 1),
+    `enum: ${noEnum ? noEnum.join(", ") : "não legível (valor novo criado nesta transação)"}; ${cadastros.map(([v, r]) => `${v} ${r.ok ? "aceito" : descrever(r)}`).join("; ")}`
   );
+  if (!comAdicionais) {
+    pular(
+      "categoria 2b.",
+      enumNovoNaTransacao
+        ? "Adicionais criado nesta mesma transação (--com-migracao): o Postgres só deixa usar o valor depois do commit"
+        : "Adicionais ainda não está no enum (categoria-adicionais.sql não aplicada)"
+    );
+  } else {
+    registrar("categoria 2b. Adicionais é o sétimo valor do enum, depois de Bento Cake", noEnum[6] === ADICIONAIS && noEnum[5] === "Bento Cake", `enum: ${noEnum.join(", ")}`);
+  }
 
   // 3. edição para vazio recusada; 4. edição no formato do admin funciona
   await c.como("authenticated");

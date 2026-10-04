@@ -1,0 +1,19 @@
+-- Desfazer de categoria-adicionais.sql: NÃO existe desfazer limpo.
+--
+-- O Postgres não tem "alter type ... drop value". Tirar 'Adicionais' do enum
+-- categoria_produto exigiria criar um tipo novo sem o valor, converter a
+-- coluna produtos."Categoria" para ele (reescreve a tabela, trava produtos)
+-- e trocar os tipos: uma migração não-aditiva, que só vai a produção depois
+-- de merge e com ok explícito do Cainan. Não vale a pena: um valor de enum
+-- sem nenhum produto é inofensivo (nenhuma consulta ordena por categoria).
+--
+-- Se for preciso voltar atrás, sem apagar o valor:
+--   1. tirar 'Adicionais' da lista de categorias do código
+--      (src/lib/produtos/categorias.ts), num PR próprio: o admin deixa de
+--      oferecer a categoria e o servidor passa a recusá-la;
+--   2. antes do merge desse PR, mudar de categoria (pelo admin) todo produto
+--      que estiver em Adicionais. Conferência, só leitura:
+--
+-- select id, nome, ativo from public.produtos where "Categoria" = 'Adicionais';
+--
+-- Este arquivo não executa nenhuma mudança.
