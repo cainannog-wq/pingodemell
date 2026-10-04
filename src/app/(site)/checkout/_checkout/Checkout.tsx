@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Button, Icon, Input, Select, Textarea, TextLink } from "@/components/ds";
+import type { IconeNome } from "@/lib/icones";
 import { useCarrinho } from "@/components/site/CarrinhoProvider";
 import { Hive } from "@/components/site/Hive";
 import { PilhaDeAvisos, type Aviso } from "@/components/site/PilhaDeAvisos";
@@ -936,7 +937,7 @@ function Opcao({
   nome: string;
   valor: string;
   escolhido: boolean;
-  icone: string;
+  icone: IconeNome;
   titulo: string;
   texto: string;
   descricaoId: string;

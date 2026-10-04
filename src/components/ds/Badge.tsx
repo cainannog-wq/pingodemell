@@ -1,5 +1,6 @@
 import type { CSSProperties, HTMLAttributes } from "react";
 import { Icon } from "./Icon";
+import type { IconeNome } from "@/lib/icones";
 
 // Porta de components/core/Badge.jsx.
 export type BadgeVariant =
@@ -58,7 +59,7 @@ export function Badge({
 }: {
   variant?: BadgeVariant;
   shape?: "pill" | "round";
-  icon?: string;
+  icon?: IconeNome;
   style?: CSSProperties;
 } & HTMLAttributes<HTMLSpanElement>) {
   const round = shape === "round";

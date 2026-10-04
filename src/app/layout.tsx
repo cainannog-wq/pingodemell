@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Merriweather, Nunito, Yellowtail } from "next/font/google";
+import { fonteIcones } from "@/fonts/icones";
 import { SITE_INDEXAVEL, metadataRobots } from "@/lib/site/indexacao";
 import { SEO_SITE } from "@/lib/site/seo";
 import { SITE_URL } from "@/lib/site/url";
@@ -19,7 +20,9 @@ const geistMono = Geist_Mono({
 // Fontes do design system, auto-hospedadas pelo next/font/google: baixadas
 // em build time e servidas pela própria origem, sem <link> pra
 // fonts.googleapis.com (que bloqueava a renderização — diagnóstico de
-// 22/09/2026 em docs/status-pingo-de-mell.md). As CSS custom properties
+// 22/09/2026 em docs/status-pingo-de-mell.md). Os ícones também são da
+// própria origem: subconjunto por next/font/local (src/fonts/icones.ts).
+// As CSS custom properties
 // geradas (--font-merriweather etc.) são consumidas em
 // src/styles/ds/tokens/typography.css.
 const merriweather = Merriweather({
@@ -62,21 +65,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} ${merriweather.variable} ${nunito.variable} ${yellowtail.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable} ${merriweather.variable} ${nunito.variable} ${yellowtail.variable} ${fonteIcones.variable}`}
     >
-      <head>
-        {/* Material Symbols Rounded (ícones) não é servível pelo next/font/google
-            (fonte de eixo variável de uso especial, fora da lista suportada pelo
-            carregador) — preconnect + display=swap reduz o impacto do <link>
-            continuar externo, mantendo o comportamento atual do Icon.tsx
-            (font-variation-settings inline). */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0&display=swap"
-        />
-      </head>
       <body>{children}</body>
     </html>
   );

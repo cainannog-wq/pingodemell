@@ -1,8 +1,9 @@
 import { InfoCard } from "@/components/ds";
+import type { IconeNome } from "@/lib/icones";
 
 // "Combinado desde já" — texto fixo do layout. id="prazos" é o destino do
 // link "Prazos" do rodapé. O layout tem textos mais curtos no mobile.
-const CARDS = [
+const CARDS: { icon: IconeNome; titulo: string; desktop: string; mobile: string }[] = [
   {
     icon: "storefront",
     titulo: "Horário da loja",

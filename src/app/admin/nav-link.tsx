@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { Icon } from "@/components/ds";
+import type { IconeNome } from "@/lib/icones";
 import { ADMIN_NAV_TOGGLE_ID } from "./nav-toggle";
 
 // A gaveta de navegação do mobile é um checkbox puro em CSS (sem estado em
@@ -25,7 +26,7 @@ export function NavLink({
   children,
 }: {
   href: string;
-  icon: string;
+  icon: IconeNome;
   /** Match only the exact path, instead of any path under `href`. */
   exact?: boolean;
   /** When not exact, treat paths under this prefix as NOT active (e.g. a more specific sibling route). */

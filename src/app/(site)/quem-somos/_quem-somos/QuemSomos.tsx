@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Badge, Icon, InfoCard } from "@/components/ds";
+import type { IconeNome } from "@/lib/icones";
 import { Hive } from "@/components/site/Hive";
 import { LOJA, urlInstagram } from "@/lib/site/config";
 import { LINK_WHATSAPP_SEM_MENSAGEM } from "@/lib/site/whatsapp";
@@ -21,7 +22,7 @@ const HISTORIA_DESKTOP = [
 const HISTORIA_MOBILE =
   "Quem começou tudo foi a Taami, em 2009, em casa, com receitas de família. Hoje atendemos Fazenda Rio Grande com bolos, salgados, doces tradicionais, personalizados e finos. O cuidado é o que não mudou.";
 
-const VALORES = [
+const VALORES: { icone: IconeNome; titulo: string; desktop: string; mobile: string }[] = [
   {
     icone: "favorite",
     titulo: "Cuidado",
