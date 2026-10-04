@@ -15,7 +15,9 @@ import { textoMinimoCurto } from "@/lib/vitrine/minimo";
 // Foto do produto, ou o fundo da marca quando o produto ainda não tem foto.
 // next/image carrega a foto só quando ela chega perto da tela
 // (loading="lazy" é o padrão dele). prioridade: foto que está na primeira
-// tela (os primeiros cards da Lista), carregada já e com prioridade alta.
+// tela (os primeiros cards da Lista), carregada já, sem esperar o layout.
+// Sem fetchPriority="high": medido com o Lighthouse, a prioridade alta fazia
+// essas fotos disputarem banda com as fontes e atrasava o LCP.
 export function FotoProduto({
   produto,
   sizes,
@@ -33,7 +35,7 @@ export function FotoProduto({
         fill
         sizes={sizes}
         style={{ objectFit: "cover" }}
-        {...(prioridade ? { loading: "eager" as const, fetchPriority: "high" as const } : {})}
+        loading={prioridade ? "eager" : undefined}
       />
     );
   }

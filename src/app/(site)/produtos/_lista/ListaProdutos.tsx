@@ -7,10 +7,11 @@ import type { ItemLista } from "@/lib/vitrine/lista";
 // Largura de cada foto na grade: 2 colunas no celular, 3 no resto.
 const TAMANHOS_FOTO = "(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 275px";
 
-// Cards na primeira tela do celular (a primeira linha da grade de 2
-// colunas): foto carregada já e com prioridade alta, porque a primeira
-// delas costuma ser o maior elemento da tela (LCP).
-const CARDS_NA_PRIMEIRA_TELA = 2;
+// Cards na primeira tela do celular: as 2 primeiras linhas da grade de 2
+// colunas cabem inteiras em 390x844 (medido no Chrome: a foto da 2ª linha
+// termina em 764px). A foto deles carrega já (sem loading="lazy"), porque
+// uma delas costuma ser o maior elemento da tela (LCP).
+const CARDS_NA_PRIMEIRA_TELA = 4;
 
 // Grade única da Lista, já na ordem de montarLista (destaques com selo
 // primeiro, depois os outros). Sem subtítulo visível: o H2 existe só pra

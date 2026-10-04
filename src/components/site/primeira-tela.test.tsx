@@ -69,14 +69,14 @@ function produto(n: number): ProdutoVitrine {
 }
 
 describe("Primeira tela — Lista", () => {
-  it("os 2 primeiros cards (primeira linha no celular) carregam já e com prioridade alta; os outros, preguiçosos", () => {
-    render(<ListaProdutos categoria={null} itens={[1, 2, 3, 4].map((n) => ({ produto: produto(n), maisPedido: false }))} />);
-    const fotos = [1, 2, 3, 4].map((n) => screen.getByAltText(`Foto de Produto ${n}`));
-    for (const foto of fotos.slice(0, 2)) {
+  it("os 4 primeiros cards (2 primeiras linhas no celular) carregam já, sem prioridade alta; os outros, preguiçosos", () => {
+    render(<ListaProdutos categoria={null} itens={[1, 2, 3, 4, 5, 6].map((n) => ({ produto: produto(n), maisPedido: false }))} />);
+    const fotos = [1, 2, 3, 4, 5, 6].map((n) => screen.getByAltText(`Foto de Produto ${n}`));
+    for (const foto of fotos.slice(0, 4)) {
       expect(foto).toHaveAttribute("data-loading", "eager");
-      expect(foto).toHaveAttribute("data-fetchpriority", "high");
+      expect(foto).toHaveAttribute("data-fetchpriority", "padrao");
     }
-    for (const foto of fotos.slice(2)) {
+    for (const foto of fotos.slice(4)) {
       expect(foto).toHaveAttribute("data-loading", "padrao");
       expect(foto).toHaveAttribute("data-fetchpriority", "padrao");
     }
@@ -84,11 +84,11 @@ describe("Primeira tela — Lista", () => {
 });
 
 describe("Primeira tela — cabeçalho", () => {
-  it("o logo do cabeçalho carrega já e com prioridade alta; o logo do menu fechado continua preguiçoso", () => {
+  it("o logo do cabeçalho carrega já, sem prioridade alta; o logo do menu fechado continua preguiçoso", () => {
     const { container } = render(<SiteHeader />);
     const logo = container.querySelector('img[src="/logo-gold.png"]');
     expect(logo).toHaveAttribute("data-loading", "eager");
-    expect(logo).toHaveAttribute("data-fetchpriority", "high");
+    expect(logo).toHaveAttribute("data-fetchpriority", "padrao");
     const logoMenu = container.querySelector('img[src="/logo-mono-cream.png"]');
     expect(logoMenu).toHaveAttribute("data-loading", "padrao");
   });
