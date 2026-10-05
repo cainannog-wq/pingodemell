@@ -1,4 +1,5 @@
 import { LOJA, WHATSAPP } from "@/lib/site/config";
+import { VERSAO_POLITICA } from "@/lib/site/politica-versao";
 
 // Texto da Política de Privacidade, versão 1, em redação formal. A redação
 // é do Cainan e passa por validação jurídica: nada aqui é reescrito,
@@ -14,7 +15,9 @@ import { LOJA, WHATSAPP } from "@/lib/site/config";
 //
 // Esta página não lê o banco, não grava nada e não tem JavaScript próprio.
 
-export const VERSAO_POLITICA = 1;
+// A versão mora em src/lib/site/politica-versao.ts (lida também pelo banner
+// de consentimento e pela trava do GA4); daqui só é repassada.
+export { VERSAO_POLITICA };
 
 // "AAAA-MM-DD". 01/10/2026, decidida e validada pelo Cainan na homologação
 // (29/09/2026). Nula, a página omite a frase "Vigente a partir de" e mostra

@@ -5,9 +5,10 @@ import userEvent from "@testing-library/user-event";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import type { ReactNode } from "react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { SiteChrome } from "@/components/site/SiteChrome";
 import { reiniciarParaTeste } from "@/lib/carrinho/armazenamento";
+import { CHAVE_CONSENTIMENTO, gravarConsentimento, reiniciarConsentimentoParaTeste } from "@/lib/consentimento/consentimento";
 import { CHAVE_IDEMPOTENCIA, CHAVE_RETRATO } from "@/lib/pedidos/retrato";
 
 // O que o site público guarda no navegador. A Política de Privacidade
@@ -15,8 +16,15 @@ import { CHAVE_IDEMPOTENCIA, CHAVE_RETRATO } from "@/lib/pedidos/retrato";
 // (localStorage), o formulário do checkout, o resumo do pedido enviado
 // (pdm-pedido-enviado-v1, lido pela /confirmacao) e o código que evita
 // pedido duplicado (pdm-checkout-chave-v1, uuid sem dado pessoal), os três
-// no sessionStorage. Qualquer chave ou cookie novo quebra este teste: aí o
-// texto da política precisa de versão nova ANTES do merge.
+// no sessionStorage. Qualquer outra chave ou cookie quebra este teste.
+//
+// Exceção conhecida (PR 2 da Fase 4): com ID do GA4 efetivo, o banner de
+// consentimento grava pdm-consentimento-v1 e, com o aceite, a etiqueta grava
+// os cookies _ga. A Política v1 ainda não descreve isso: ela e o banner
+// divergem até a versão 2. Por isso a produção é travada (src/lib/analitica/
+// id.ts: build de produção com a Política abaixo da versão 2 não tem ID), e
+// só a homologação mostra o banner até lá. Sem ID, nada disso existe, e os
+// percursos abaixo provam isso.
 
 vi.setConfig({ testTimeout: 30_000 });
 
@@ -86,6 +94,17 @@ vi.mock("@/lib/supabase/client", () => ({
   }),
 }));
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+// Sem ID do GA4 (o estado da produção hoje): nenhuma chave nova.
+function semGa4() {
+  vi.stubEnv("GA4_ID", "");
+  vi.stubEnv("CONTEXTO_NETLIFY", "branch-deploy");
+  reiniciarConsentimentoParaTeste();
+}
+
 beforeAll(() => {
   // O jsdom não implementa <dialog> (menu do cabeçalho).
   HTMLDialogElement.prototype.close ??= function () {};
@@ -115,7 +134,8 @@ async function visitar(pagina: string, ui: ReactNode) {
 }
 
 describe("Armazenamento do navegador no site público", () => {
-  it("Home → Lista → interna → carrinho → checkout → Política: só pdm-carrinho-v1, pdm-checkout-v1 e pdm-checkout-chave-v1, sem cookie", async () => {
+  it("sem ID do GA4, Home → Lista → interna → carrinho → checkout → Política: só pdm-carrinho-v1, pdm-checkout-v1 e pdm-checkout-chave-v1, sem cookie", async () => {
+    semGa4();
     window.localStorage.clear();
     window.sessionStorage.clear();
     reiniciarParaTeste();
@@ -155,7 +175,8 @@ describe("Armazenamento do navegador no site público", () => {
     });
   });
 
-  it("Home → Quem Somos → Home não cria nem apaga chave nem cookie", async () => {
+  it("sem ID do GA4, Home → Quem Somos → Home não cria nem apaga chave nem cookie", async () => {
+    semGa4();
     window.localStorage.clear();
     window.sessionStorage.clear();
     reiniciarParaTeste();
@@ -207,7 +228,28 @@ describe("Armazenamento do navegador no site público", () => {
       )
       .sort();
     console.log("[armazenamento] arquivos do site que usam armazenamento do navegador:", usam);
-    expect(usam).toEqual(["lib/carrinho/armazenamento.ts", "lib/checkout/rascunho.ts", "lib/pedidos/retrato.ts"]);
+    expect(usam).toEqual([
+      "lib/carrinho/armazenamento.ts",
+      "lib/checkout/rascunho.ts",
+      // Só com ID do GA4 efetivo (ver o comentário do topo).
+      "lib/consentimento/consentimento.ts",
+      "lib/pedidos/retrato.ts",
+    ]);
+  });
+
+  it("com ID do GA4, o aceite cria só pdm-consentimento-v1, sem cookie", async () => {
+    vi.stubEnv("GA4_ID", "G-TESTE00000");
+    vi.stubEnv("CONTEXTO_NETLIFY", "branch-deploy");
+    reiniciarConsentimentoParaTeste();
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+    reiniciarParaTeste();
+
+    const { default: QuemSomosPage } = await import("./quem-somos/page");
+    await visitar("Quem Somos com ID", <QuemSomosPage />);
+    gravarConsentimento("aceito");
+    await new Promise((r) => setTimeout(r, 0));
+    expect(estadoDoNavegador()).toEqual({ localStorage: [CHAVE_CONSENTIMENTO], sessionStorage: [], cookies: "" });
   });
 
   it("as chaves de sessionStorage do envio são exatamente pdm-pedido-enviado-v1 e pdm-checkout-chave-v1", () => {
