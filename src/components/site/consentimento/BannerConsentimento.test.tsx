@@ -7,6 +7,7 @@ import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CHAVE_CONSENTIMENTO, reiniciarConsentimentoParaTeste } from "@/lib/consentimento/consentimento";
+import * as gtag from "@/lib/analitica/gtag";
 import { BannerConsentimento } from "./BannerConsentimento";
 import { ConsentimentoProvider } from "./ConsentimentoProvider";
 import { LinkPreferencias } from "./LinkPreferencias";
@@ -140,7 +141,7 @@ describe("com ID do GA4 efetivo", () => {
 
   it("reabertura pelo rodapé: escolha atual visível, foco no banner, e o foco volta ao link ao escolher", async () => {
     comId();
-    salvo("aceito");
+    salvo("recusado");
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(<Tela />);
     const link = screen.getByRole("button", { name: "Preferências de privacidade" });
@@ -149,17 +150,39 @@ describe("com ID do GA4 efetivo", () => {
     const regiao = banner()!;
     expect(regiao).toBeInTheDocument();
     expect(document.activeElement).toBe(regiao);
-    expect(screen.getByText("Sua escolha atual: Aceito")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Aceitar" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Recusar" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByText("Sua escolha atual: Recusado")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Aceitar" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Recusar" })).toHaveAttribute("aria-pressed", "true");
 
-    await user.click(screen.getByRole("button", { name: "Recusar" }));
+    await user.click(screen.getByRole("button", { name: "Aceitar" }));
     expect(banner()).toBeNull();
-    expect(JSON.parse(window.localStorage.getItem(CHAVE_CONSENTIMENTO)!).escolha).toBe("recusado");
+    expect(JSON.parse(window.localStorage.getItem(CHAVE_CONSENTIMENTO)!).escolha).toBe("aceito");
     expect(document.activeElement).toBe(link);
 
     await user.click(link);
-    expect(screen.getByText("Sua escolha atual: Recusado")).toBeInTheDocument();
+    expect(screen.getByText("Sua escolha atual: Aceito")).toBeInTheDocument();
+  });
+
+  it("revogar: recusar pela reabertura depois de ter aceitado chama a revogação com o ID (desliga, apaga _ga e recarrega)", async () => {
+    comId();
+    salvo("aceito");
+    const revogar = vi.spyOn(gtag, "revogar").mockImplementation(() => {});
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<Tela />);
+    await user.click(screen.getByRole("button", { name: "Preferências de privacidade" }));
+    await user.click(screen.getByRole("button", { name: "Recusar" }));
+    expect(revogar).toHaveBeenCalledTimes(1);
+    expect(revogar).toHaveBeenCalledWith(ID);
+    expect(JSON.parse(window.localStorage.getItem(CHAVE_CONSENTIMENTO)!).escolha).toBe("recusado");
+  });
+
+  it("recusar sem ter aceitado antes não revoga nada", async () => {
+    comId();
+    const revogar = vi.spyOn(gtag, "revogar").mockImplementation(() => {});
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<Tela />);
+    await user.click(screen.getByRole("button", { name: "Recusar" }));
+    expect(revogar).not.toHaveBeenCalled();
   });
 
   it("antes de montar não há banner: o HTML do servidor é igual sem e com ID, e a hidratação não reclama", async () => {

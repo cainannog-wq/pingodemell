@@ -36,6 +36,7 @@ import { mensagemSemRegistro, montarRetrato } from "@/lib/pedidos/confirmacao";
 import { montarCorpo } from "@/lib/pedidos/envio";
 import { enviarPedido } from "@/lib/pedidos/enviar";
 import { chaveIdempotencia, lerRetrato, salvarRetrato, trocarChaveIdempotencia } from "@/lib/pedidos/retrato";
+import { enviarUmaVezPorChave, jaEnviadoPorChave } from "@/lib/analitica/gtag";
 import { LOJA } from "@/lib/site/config";
 import { ROTAS } from "@/lib/site/rotas";
 import { diaDaSemana, hojeBrasilia, somarDias } from "@/lib/tempo/brasilia";
@@ -204,9 +205,11 @@ function Formulario({
   // WhatsApp. Zera só com um sucesso.
   const falhas = useRef(0);
 
-  // A chave de idempotência nasce ao abrir o checkout e fica na aba.
+  // A chave de idempotência nasce ao abrir o checkout e fica na aba. GA4
+  // (PR 2 da Fase 4): begin_checkout uma vez por chave (guarda na memória da
+  // aba: recarregar a página manda de novo).
   useEffect(() => {
-    chaveIdempotencia();
+    enviarUmaVezPorChave("begin_checkout", chaveIdempotencia());
   }, []);
   const [hoje] = useState(() => hojeBrasilia());
   const bloqueados = useMemo(() => new Set(diasOff), [diasOff]);
@@ -284,7 +287,13 @@ function Formulario({
     enviando.current = false;
 
     if (resultado.tipo === "ok") {
-      salvarRetrato(montarRetrato({ dados, linhas, resposta: resultado.resposta, prazo }));
+      // Se a saída de emergência já mandou pedido_enviado com esta chave, o
+      // retrato nasce marcado: o mesmo pedido não conta duas vezes.
+      const chave = chaveIdempotencia();
+      salvarRetrato({
+        ...montarRetrato({ dados, linhas, resposta: resultado.resposta, prazo }),
+        medido: { exibida: false, enviado: jaEnviadoPorChave("pedido_enviado", chave) },
+      });
       apagarRascunho();
       trocarChaveIdempotencia();
       aoSair();
@@ -751,7 +760,12 @@ function Formulario({
               mensagemSemRegistro={mostraSaida(envio) ? mensagemSemRegistro(dados, linhas, "instabilidade") : null}
               aoTentar={() => aoEnviar()}
               aoLiberar={() => setEnvio((atual) => (atual.tipo === "limite" ? { ...atual, liberado: true } : atual))}
-              aoAbrirSemRegistro={() => setAvisoSemRegistro(true)}
+              aoAbrirSemRegistro={() => {
+                // GA4: pedido_enviado uma vez por chave (o whatsapp_clique sai
+                // junto, pela origem do link).
+                enviarUmaVezPorChave("pedido_enviado", chaveIdempotencia());
+                setAvisoSemRegistro(true);
+              }}
               avisoSemRegistro={avisoSemRegistro}
             />
             <p className="checkout-sem-pagamento">

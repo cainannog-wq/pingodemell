@@ -1,19 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import type { AtributosWhatsApp } from "@/lib/site/whatsapp";
 import { WhatsAppMark } from "./WhatsAppMark";
 
 // Porta de components/core/WhatsAppFab.jsx (versão recolhida, 64×64):
 // botão flutuante fixo no canto inferior direito, presente em todas as
 // páginas do site público. Abre a conversa numa aba nova.
-export function WhatsAppFab({ href, label, className }: { href: string; label: string; className?: string }) {
+// O link (href, nova aba e a origem do clique para o GA4) vem pronto de
+// atributosWhatsApp (src/lib/site/whatsapp.ts).
+export function WhatsAppFab({ label, className, ...link }: { label: string; className?: string } & AtributosWhatsApp) {
   const [hover, setHover] = useState(false);
 
   return (
     <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
+      {...link}
       aria-label={`${label} pelo WhatsApp (abre em nova aba)`}
       title={label}
       className={className}

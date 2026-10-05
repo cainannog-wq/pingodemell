@@ -2,7 +2,7 @@ import Image from "next/image";
 import { Badge, Button, ButtonLink } from "@/components/ds";
 import { Hive } from "@/components/site/Hive";
 import { ROTAS } from "@/lib/site/rotas";
-import { LINK_WHATSAPP_CONTATO } from "@/lib/site/whatsapp";
+import { LINK_WHATSAPP_CONTATO, atributosWhatsApp } from "@/lib/site/whatsapp";
 
 export function Hero() {
   return (
@@ -30,9 +30,7 @@ export function Hero() {
             </ButtonLink>
             <Button
               as="a"
-              href={LINK_WHATSAPP_CONTATO}
-              target="_blank"
-              rel="noopener noreferrer"
+              {...atributosWhatsApp("home", LINK_WHATSAPP_CONTATO)}
               variant="secondary"
               size="lg"
               iconLeft="whatsapp"

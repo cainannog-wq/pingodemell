@@ -44,6 +44,7 @@ vi.mock("next/link", () => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
   usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
   notFound: () => {
     throw new Error("404");
   },
@@ -229,6 +230,9 @@ describe("Armazenamento do navegador no site público", () => {
       .sort();
     console.log("[armazenamento] arquivos do site que usam armazenamento do navegador:", usam);
     expect(usam).toEqual([
+      // Só apaga os cookies _ga na revogação (recusar depois de aceitar);
+      // os cookies são da etiqueta do GA4, com ID efetivo e aceite.
+      "lib/analitica/gtag.ts",
       "lib/carrinho/armazenamento.ts",
       "lib/checkout/rascunho.ts",
       // Só com ID do GA4 efetivo (ver o comentário do topo).

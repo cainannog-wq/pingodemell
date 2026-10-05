@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { WhatsAppFab } from "@/components/ds";
-import { LINK_WHATSAPP_CONTATO } from "@/lib/site/whatsapp";
+import { LINK_WHATSAPP_CONTATO, atributosWhatsApp } from "@/lib/site/whatsapp";
+import { Analitica } from "./analitica/Analitica";
 import { CarrinhoProvider } from "./CarrinhoProvider";
 import { BannerConsentimento, EspacoDoBanner } from "./consentimento/BannerConsentimento";
 import { ConsentimentoProvider } from "./consentimento/ConsentimentoProvider";
@@ -25,12 +26,14 @@ export function SiteChrome({ children }: { children: ReactNode }) {
             Pular para o conteúdo
           </a>
           <BannerConsentimento />
+          {/* GA4: só com ID efetivo e a escolha "aceito". */}
+          <Analitica />
           <SiteHeader />
           <main id="conteudo" className="site-main">
             {children}
           </main>
           <SiteFooter />
-          <WhatsAppFab href={LINK_WHATSAPP_CONTATO} label="Fale conosco" className="site-fab" />
+          <WhatsAppFab {...atributosWhatsApp("flutuante", LINK_WHATSAPP_CONTATO)} label="Fale conosco" className="site-fab" />
           <EspacoDoBanner />
         </div>
       </ConsentimentoProvider>

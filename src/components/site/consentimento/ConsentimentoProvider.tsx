@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useMontado } from "@/components/site/useMontado";
+import { revogar } from "@/lib/analitica/gtag";
 import { lerIdGa4 } from "@/lib/analitica/id";
 import {
   assinarConsentimento,
@@ -50,14 +51,21 @@ export function ConsentimentoProvider({ children }: { children: ReactNode }) {
 
   const escolher = useCallback(
     (escolha: Escolha) => {
+      const anterior = consentimento?.escolha;
       gravarConsentimento(escolha);
+      // Revogar (recusar depois de ter aceitado): desliga o envio, apaga os
+      // cookies _ga e recarrega a página, já sem GA4.
+      if (anterior === "aceito" && escolha === "recusado" && id) {
+        revogar(id);
+        return;
+      }
       if (reaberto) {
         setReaberto(false);
         // O foco volta ao link do rodapé (o banner some em seguida).
         quemReabriu.current?.focus();
       }
     },
-    [reaberto]
+    [reaberto, consentimento, id]
   );
 
   const valor = useMemo(

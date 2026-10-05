@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { enviarEvento } from "@/lib/analitica/gtag";
 import { assinar, gravar, lerNoNavegador, lerNoServidor } from "@/lib/carrinho/armazenamento";
 import {
   adicionarLinha,
@@ -48,7 +49,13 @@ export function CarrinhoProvider({ children }: { children: ReactNode }) {
 
   // Cada ação lê o estado salvo na hora (não o do último render), para duas
   // ações seguidas não se atropelarem.
-  const adicionar = useCallback((nova: NovaLinha) => gravar(adicionarLinha(lerNoNavegador(), nova, novoId)), []);
+  // GA4 (PR 2 da Fase 4): add_to_cart só aqui, só com o produto (slug e
+  // nome), sem preço, quantidade nem valor. Substituir (edição confirmada),
+  // alterar a quantidade e desfazer não são adição e não mandam nada.
+  const adicionar = useCallback((nova: NovaLinha) => {
+    gravar(adicionarLinha(lerNoNavegador(), nova, novoId));
+    enviarEvento("add_to_cart", { items: [nova.slug ? { item_id: nova.slug, item_name: nova.nome } : { item_name: nova.nome }] });
+  }, []);
   const alterar = useCallback((id: string, linha: LinhaCarrinho) => gravar(alterarLinha(lerNoNavegador(), id, linha)), []);
   const remover = useCallback((id: string) => gravar(removerLinha(lerNoNavegador(), id)), []);
   const reinserir = useCallback(

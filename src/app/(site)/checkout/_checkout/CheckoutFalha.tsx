@@ -1,6 +1,6 @@
 import { ButtonLink, Icon } from "@/components/ds";
 import { ROTAS } from "@/lib/site/rotas";
-import { LINK_WHATSAPP_CONTATO } from "@/lib/site/whatsapp";
+import { LINK_WHATSAPP_CONTATO, atributosWhatsApp } from "@/lib/site/whatsapp";
 
 // Falha do banco ao ler o calendário (dias sem produção) ou os produtos:
 // sem isso as datas liberadas não são confiáveis, então o formulário não
@@ -19,7 +19,7 @@ export function CheckoutFalha() {
           <ButtonLink href={ROTAS.carrinho} variant="secondary" size="md" iconLeft="arrow_back">
             Voltar ao pedido
           </ButtonLink>
-          <ButtonLink href={LINK_WHATSAPP_CONTATO} variant="whatsapp" size="md" iconLeft="whatsapp" target="_blank" rel="noopener noreferrer">
+          <ButtonLink {...atributosWhatsApp("checkout_falha", LINK_WHATSAPP_CONTATO)} variant="whatsapp" size="md" iconLeft="whatsapp">
             Falar com a gente
           </ButtonLink>
         </div>

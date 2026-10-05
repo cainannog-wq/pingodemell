@@ -11,9 +11,10 @@ import { apagarRascunho } from "@/lib/checkout/rascunho";
 import { formatMoeda } from "@/lib/pedidos/format";
 import { TEXTO_ENTREGA_DECORACAO } from "@/lib/pedidos/mensagem";
 import { apagarRetrato, lerRetrato, salvarRetrato, trocarChaveIdempotencia, type Retrato } from "@/lib/pedidos/retrato";
-import { LOJA, WHATSAPP } from "@/lib/site/config";
+import { LOJA } from "@/lib/site/config";
 import { ROTAS } from "@/lib/site/rotas";
-import { linkWhatsApp } from "@/lib/site/whatsapp";
+import { LINK_WHATSAPP_GERAL, atributosWhatsApp, linkWhatsApp } from "@/lib/site/whatsapp";
+import { enviarEvento } from "@/lib/analitica/gtag";
 import { TEXTO_DECORACAO } from "@/lib/vitrine/bolo";
 
 // Tela de confirmação (PR confirmacao-e-gravacao). Três situações:
@@ -27,8 +28,6 @@ import { TEXTO_DECORACAO } from "@/lib/vitrine/bolo";
 //
 // O WhatsApp abre só pelo clique real no link (nova aba). Nada de
 // redirecionamento automático nem window.open depois de chamada assíncrona.
-
-const LINK_WHATSAPP_GERAL = `https://wa.me/${WHATSAPP.numero}`;
 
 type RefTitulo = RefObject<HTMLHeadingElement | null>;
 
@@ -65,7 +64,7 @@ function SemRetrato({ titulo }: { titulo: RefTitulo }) {
             gente no WhatsApp com o seu nome.
           </p>
           <div className="confirmacao-neutra-acoes">
-            <ButtonLink href={LINK_WHATSAPP_GERAL} variant="whatsapp" size="lg" iconLeft="whatsapp" target="_blank" rel="noopener noreferrer">
+            <ButtonLink {...atributosWhatsApp("confirmacao_sem_retrato", LINK_WHATSAPP_GERAL)} variant="whatsapp" size="lg" iconLeft="whatsapp">
               Falar com a gente no WhatsApp
               <span className="site-visually-hidden"> (abre em nova aba)</span>
             </ButtonLink>
@@ -83,14 +82,41 @@ function ComRetrato({ retrato, titulo, aoMudar }: { retrato: Retrato; titulo: Re
   const registrado = retrato.modo === "registrado";
   const url = linkWhatsApp(retrato.mensagem);
 
-  // Sem registro: o pedido "sai" no clique do WhatsApp. Esvazia o carrinho,
-  // apaga o rascunho e troca a chave (o próximo pedido é outro).
+  // GA4 (PR 2 da Fase 4): confirmacao_exibida uma vez por pedido. A marca
+  // fica no próprio retrato (recarregar não repete) e só é gravada quando o
+  // evento sai (sem aceite, nada sai e nada é marcado).
+  const exibidaMedida = useRef(false);
+  useEffect(() => {
+    if (exibidaMedida.current) return;
+    exibidaMedida.current = true;
+    const atual = lerRetrato() ?? retrato;
+    if (atual.medido?.exibida) return;
+    if (!enviarEvento("confirmacao_exibida")) return;
+    const marcado = { ...atual, medido: { exibida: true, enviado: atual.medido?.enviado ?? false } };
+    salvarRetrato(marcado);
+    aoMudar(marcado);
+  }, [retrato, aoMudar]);
+
+  // Clique no botão final (nova aba, síncrono, sem esperar nada):
+  // - pedido_enviado uma vez por pedido (marca no retrato; o whatsapp_clique
+  //   sai junto, pela origem do link, e os dois não se somam);
+  // - sem registro: o pedido "sai" aqui. Esvazia o carrinho, apaga o
+  //   rascunho e troca a chave (o próximo pedido é outro).
   function aoAbrirWhatsApp() {
-    if (!retrato.pendenteEsvaziar) return;
-    limpar();
-    apagarRascunho();
-    trocarChaveIdempotencia();
-    const atualizado = { ...retrato, pendenteEsvaziar: false };
+    let atualizado = lerRetrato() ?? retrato;
+    let mudou = false;
+    if (!atualizado.medido?.enviado && enviarEvento("pedido_enviado")) {
+      atualizado = { ...atualizado, medido: { exibida: atualizado.medido?.exibida ?? false, enviado: true } };
+      mudou = true;
+    }
+    if (atualizado.pendenteEsvaziar) {
+      mudou = true;
+      limpar();
+      apagarRascunho();
+      trocarChaveIdempotencia();
+      atualizado = { ...atualizado, pendenteEsvaziar: false };
+    }
+    if (!mudou) return;
     salvarRetrato(atualizado);
     aoMudar(atualizado);
   }
@@ -120,7 +146,7 @@ function ComRetrato({ retrato, titulo, aoMudar }: { retrato: Retrato; titulo: Re
       <div className="site-container confirmacao-corpo">
         <div className="confirmacao-principal">
           <section className="confirmacao-acoes" aria-label="Enviar o pedido">
-            <a className="confirmacao-whatsapp" href={url} target="_blank" rel="noopener noreferrer" onClick={aoAbrirWhatsApp}>
+            <a className="confirmacao-whatsapp" {...atributosWhatsApp("confirmacao", url)} onClick={aoAbrirWhatsApp}>
               <WhatsAppMark size={26} />
               Enviar pelo WhatsApp
               <span className="site-visually-hidden"> (abre em nova aba)</span>

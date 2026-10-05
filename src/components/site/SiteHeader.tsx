@@ -7,7 +7,7 @@ import { useEffect, useRef } from "react";
 import { Button, Icon } from "@/components/ds";
 import { LOJA } from "@/lib/site/config";
 import { ROTAS } from "@/lib/site/rotas";
-import { LINK_WHATSAPP_CONTATO } from "@/lib/site/whatsapp";
+import { LINK_WHATSAPP_CONTATO, atributosWhatsApp } from "@/lib/site/whatsapp";
 import { useCarrinho } from "./CarrinhoProvider";
 import { Hive } from "./Hive";
 import { NAV_PRINCIPAL } from "./nav";
@@ -111,9 +111,7 @@ export function SiteHeader() {
           </div>
           <Button
             as="a"
-            href={LINK_WHATSAPP_CONTATO}
-            target="_blank"
-            rel="noopener noreferrer"
+            {...atributosWhatsApp("menu", LINK_WHATSAPP_CONTATO)}
             variant="whatsapp"
             size="md"
             fullWidth

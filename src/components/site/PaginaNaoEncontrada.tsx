@@ -10,7 +10,9 @@ import { ROTAS } from "@/lib/site/rotas";
 //   SiteChrome — montar de novo duplicaria cabeçalho e rodapé.
 export function PaginaNaoEncontrada() {
   return (
-    <section className="site-simple">
+    // data-pagina-404: o GA4 manda o caminho fixo /404, nunca o endereço
+    // digitado (src/lib/analitica/gtag.ts).
+    <section className="site-simple" data-pagina-404="">
       <Hive />
       <div className="site-container site-simple-inner">
         <Icon name="cake" size={48} color="var(--gold-400)" />
