@@ -1667,3 +1667,103 @@ input.site-seletor-valor {
   color: var(--ink-900);
   resize: vertical;
 }
+
+/* ---------- Banner de consentimento (PR 2 da Fase 4) ----------
+   BannerConsentimento.tsx mede, em execução, a altura do banner e a da
+   barra fixa da página (carrinho ou interna, só no celular) e as põe em
+   --banner-altura e --banner-base no <html>. Sem banner, as duas somem e
+   tudo volta ao lugar de sempre. */
+
+.site-consentimento {
+  position: fixed;
+  left: 0;
+  right: 0;
+  /* Acima da barra fixa do carrinho e da interna, quando há. */
+  bottom: var(--banner-base, 0px);
+  /* Entre as barras fixas (50) e o botão flutuante e os avisos (60). */
+  z-index: 55;
+  padding-block: 12px calc(12px + env(safe-area-inset-bottom));
+  background: var(--surface-raised);
+  color: var(--text-body);
+  border-top: 1px solid var(--border-subtle);
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.1);
+}
+/* Com a barra fixa embaixo, a área segura já está na barra. */
+.site-consentimento[data-sobre-barra="true"] {
+  padding-bottom: 12px;
+}
+.site-consentimento:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+.site-consentimento-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px 24px;
+}
+.site-consentimento-textos {
+  flex: 1;
+  min-width: 0;
+}
+.site-consentimento-textos p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.site-consentimento-atual {
+  margin-top: 4px !important;
+  font-weight: var(--fw-semibold);
+}
+.site-consentimento-botoes {
+  flex: none;
+  display: flex;
+  gap: 12px;
+}
+@media (max-width: 767px) {
+  .site-consentimento-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .site-consentimento-botoes > * {
+    flex: 1;
+  }
+}
+
+/* O botão flutuante e os avisos sobem a altura do banner. translate (e não
+   bottom): não conta como mudança de layout no CLS e soma ao transform do
+   hover do botão e ao translateX dos avisos. */
+.pdm-site .site-fab,
+.pdm-site .avisos {
+  translate: 0 calc(-1 * var(--banner-altura, 0px));
+}
+
+/* Fim da página e foco do teclado fora de baixo do banner. */
+.site-consentimento-espaco {
+  height: var(--banner-altura, 0px);
+}
+html:has(.pdm-site) {
+  scroll-padding-bottom: calc(var(--banner-altura, 0px) + var(--banner-base, 0px));
+}
+
+/* "Preferências de privacidade" no rodapé: botão com a cara dos links. */
+.pdm-site .site-footer-preferencias {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  color: var(--cream-100);
+  cursor: pointer;
+}
+.pdm-site .site-footer-preferencias:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 767px) {
+  .pdm-site .site-footer-preferencias {
+    font-size: 14px;
+  }
+}

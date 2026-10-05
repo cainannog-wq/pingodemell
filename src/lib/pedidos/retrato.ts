@@ -45,7 +45,13 @@ export type Retrato = {
   // Item com prazo de produção maior que a data escolhida.
   prazo: { nome: string; dias: number } | null;
   pendenteEsvaziar: boolean;
+  // GA4 (PR 2 da Fase 4): eventos deste pedido já enviados, para cada um
+  // sair uma vez só (recarregar a /confirmacao ou clicar duas vezes não
+  // repete). Opcional: retrato sem o campo conta como nada enviado.
+  medido?: Medido;
 };
+
+export type Medido = { exibida: boolean; enviado: boolean };
 
 let naMemoria: string | null = null;
 
@@ -90,10 +96,16 @@ export function lerRetratoDe(salvo: string | null): Retrato | null {
       temBolo: r.temBolo === true,
       prazo: prazo && texto(prazo.nome, 300) && inteiro(prazo.dias) ? { nome: prazo.nome, dias: prazo.dias } : null,
       pendenteEsvaziar: r.pendenteEsvaziar === true,
+      medido: r.medido === undefined ? undefined : lerMedido(r.medido),
     };
   } catch {
     return null;
   }
+}
+
+function lerMedido(v: unknown): Medido {
+  const m = v && typeof v === "object" ? (v as Record<string, unknown>) : {};
+  return { exibida: m.exibida === true, enviado: m.enviado === true };
 }
 
 export function lerRetrato(): Retrato | null {

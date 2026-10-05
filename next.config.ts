@@ -21,6 +21,12 @@ const nextConfig: NextConfig = {
     // "production" grava pedido de verdade; qualquer outro valor (ou vazio)
     // grava o pedido marcado como teste e usa o interruptor "fora_producao".
     CONTEXTO_NETLIFY: process.env.CONTEXT ?? "",
+    // ID de medição do GA4 (src/lib/analitica/id.ts). Público, mas nunca
+    // escrito no código: só a variável GA4_ID da Netlify o traz. Ausente,
+    // vira "" (e não undefined), para o servidor e o navegador lerem o mesmo
+    // valor; vazio ou fora do formato, o site não tem banner nem etiqueta.
+    // No build de produção, a trava por versão da Política zera o ID.
+    GA4_ID: process.env.GA4_ID ?? "",
   },
   images: {
     remotePatterns: supabaseHostname
@@ -39,9 +45,8 @@ const nextConfig: NextConfig = {
   // (confirmado testando contra o deploy real) — headers() do proprio
   // Next.js e o mecanismo que o plugin de fato honra.
   //
-  // Sem CSP explicita ainda: o projeto ainda vai ganhar GA4/Clarity na
-  // Fase 4 do roadmap, e definir CSP antes disso so pra refazer depois nao
-  // vale a pena — revisitar quando essas tags entrarem.
+  // Sem CSP explicita ainda. Uma CSP futura precisa liberar o GA4
+  // (src/lib/analitica/): googletagmanager.com e google-analytics.com.
   async headers() {
     const headers = [
       { key: "X-Frame-Options", value: "DENY" },

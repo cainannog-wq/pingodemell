@@ -3,7 +3,7 @@ import { Badge, Icon, InfoCard } from "@/components/ds";
 import type { IconeNome } from "@/lib/icones";
 import { Hive } from "@/components/site/Hive";
 import { LOJA, urlInstagram } from "@/lib/site/config";
-import { LINK_WHATSAPP_SEM_MENSAGEM } from "@/lib/site/whatsapp";
+import { LINK_WHATSAPP_SEM_MENSAGEM, atributosWhatsApp } from "@/lib/site/whatsapp";
 import { MapaIlustrado } from "./MapaIlustrado";
 
 // Quem Somos (página 7 do handoff). Texto e foto são os do handoff, trazidos
@@ -153,9 +153,7 @@ export function QuemSomos() {
             <li>
               <a
                 className="qs-contato-item qs-contato-whatsapp"
-                href={LINK_WHATSAPP_SEM_MENSAGEM}
-                target="_blank"
-                rel="noopener noreferrer"
+                {...atributosWhatsApp("quem_somos", LINK_WHATSAPP_SEM_MENSAGEM)}
               >
                 <Icon name="chat" size={26} tone="accent" />
                 <span>

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { ButtonLink, Icon } from "@/components/ds";
 import { Hive } from "@/components/site/Hive";
 import { ROTAS } from "@/lib/site/rotas";
-import { LINK_WHATSAPP_CONTATO } from "@/lib/site/whatsapp";
+import { LINK_WHATSAPP_CONTATO, atributosWhatsApp } from "@/lib/site/whatsapp";
 
 // Carrinho sem linhas (design: vazio-d.png). Volta para o catálogo ou fala
 // com a loja no WhatsApp. `extra`: o checkout, depois de um envio, põe aqui o
@@ -23,7 +23,7 @@ export function CarrinhoVazio({ extra }: { extra?: ReactNode } = {}) {
           <ButtonLink href={ROTAS.lista} variant="primary" size="lg" iconRight="arrow_forward">
             Ver o catálogo
           </ButtonLink>
-          <ButtonLink href={LINK_WHATSAPP_CONTATO} variant="whatsapp" size="lg" iconLeft="whatsapp" target="_blank" rel="noopener noreferrer">
+          <ButtonLink {...atributosWhatsApp("carrinho_vazio", LINK_WHATSAPP_CONTATO)} variant="whatsapp" size="lg" iconLeft="whatsapp">
             Falar com a gente
           </ButtonLink>
         </div>

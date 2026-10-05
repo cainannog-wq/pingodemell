@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button, Icon, WhatsAppMark } from "@/components/ds";
 import { CopiarMensagem } from "@/components/site/CopiarMensagem";
 import type { Mensagem } from "@/lib/pedidos/mensagem";
+import { atributosWhatsApp } from "@/lib/site/whatsapp";
 
 // Falha, erro de validação e bloqueio do envio, no próprio checkout, com o
 // formulário preservado (decisão do Cainan, PR confirmacao-e-gravacao):
@@ -116,9 +117,7 @@ export function PainelEnvio({
         <div className="checkout-saida">
           <a
             className="checkout-saida-link"
-            href={mensagemSemRegistro.url}
-            target="_blank"
-            rel="noopener noreferrer"
+            {...atributosWhatsApp("saida_sem_registro", mensagemSemRegistro.url)}
             onClick={aoAbrirSemRegistro}
           >
             <WhatsAppMark size={20} />

@@ -1,4 +1,6 @@
-import { LOJA, WHATSAPP } from "@/lib/site/config";
+import { LOJA } from "@/lib/site/config";
+import { VERSAO_POLITICA } from "@/lib/site/politica-versao";
+import { LINK_WHATSAPP_GERAL, atributosWhatsApp } from "@/lib/site/whatsapp";
 
 // Texto da Política de Privacidade, versão 1, em redação formal. A redação
 // é do Cainan e passa por validação jurídica: nada aqui é reescrito,
@@ -14,7 +16,9 @@ import { LOJA, WHATSAPP } from "@/lib/site/config";
 //
 // Esta página não lê o banco, não grava nada e não tem JavaScript próprio.
 
-export const VERSAO_POLITICA = 1;
+// A versão mora em src/lib/site/politica-versao.ts (lida também pelo banner
+// de consentimento e pela trava do GA4); daqui só é repassada.
+export { VERSAO_POLITICA };
 
 // "AAAA-MM-DD". 01/10/2026, decidida e validada pelo Cainan na homologação
 // (29/09/2026). Nula, a página omite a frase "Vigente a partir de" e mostra
@@ -48,7 +52,6 @@ export const SECOES_POLITICA = [
 type IdSecao = (typeof SECOES_POLITICA)[number]["id"];
 
 const EXTERNO = { target: "_blank", rel: "noopener noreferrer" } as const;
-const LINK_WHATSAPP = `https://wa.me/${WHATSAPP.numero}`;
 const LINK_ANPD = "https://www.gov.br/anpd";
 
 function Secao({ id, children }: { id: IdSecao; children: React.ReactNode }) {
@@ -99,7 +102,7 @@ export function PoliticaDePrivacidade({ dataVigencia }: { dataVigencia: string |
         <p>
           O canal de atendimento ao Titular, para o exercício de direitos e para quaisquer questões relativas ao
           tratamento de dados pessoais, é o WhatsApp{" "}
-          <a href={LINK_WHATSAPP} {...EXTERNO}>
+          <a {...atributosWhatsApp("politica", LINK_WHATSAPP_GERAL)}>
             {LOJA.telefone}
             <span className="site-visually-hidden"> (abre em nova aba)</span>
           </a>
