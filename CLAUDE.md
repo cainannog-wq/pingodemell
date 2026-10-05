@@ -124,6 +124,27 @@ Decisão fechada com o Cainan em 24/09/2026, no PR fuso-brasilia:
   horário crítico (depois das 21h de Brasília). `RELOGIO_TESTE=<instante>
   npm run test` fixa o relógio da suíte inteira para provar isso.
 
+## Regra do consentimento e do GA4
+
+Decisão fechada com o Cainan em 05/10/2026, no PR 2 da Fase 4
+(`fase4/pr2-banner-ga4`):
+
+- **Todo PR que mexa em banner, consentimento ou GA4 roda
+  `npm run test:consentimento`** (Playwright, fora do `npm run test`) e cola
+  no PR a saída com a contagem de testes executados e pulados. Teste pulado
+  não conta como passou. O script usa o Chrome instalado na máquina, o ID de
+  mentira `G-TESTE00000` e intercepta o Google, o WhatsApp e qualquer
+  escrita (POST `/api/pedidos`, escrita na Supabase).
+- **`GA4_ID` só existe na Netlify com escopo Branch deploys até a Política
+  de Privacidade v2.** O ID real nunca entra no código, num arquivo
+  versionado nem num teste. A produção é protegida também no código: com o
+  contexto de build `production` e `VERSAO_POLITICA` menor que 2, o ID
+  efetivo é nulo (`src/lib/analitica/id.ts`); o PR da v2 destrava ao subir a
+  versão.
+- O teste interceptado não executa o `gtag.js` real: não prova o que ele
+  envia nem que a medição aprimorada está desligada no painel do GA4. Isso
+  se prova no DebugView.
+
 ## Regra de processo — homologação dos PRs de admin
 
 Decisão fechada com o Cainan em 24/09/2026, no PR noindex-homologacao:
