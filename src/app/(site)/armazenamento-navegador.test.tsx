@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { SiteChrome } from "@/components/site/SiteChrome";
 import { reiniciarParaTeste } from "@/lib/carrinho/armazenamento";
-import { CHAVE_CONSENTIMENTO, gravarConsentimento, reiniciarConsentimentoParaTeste } from "@/lib/consentimento/consentimento";
+import { CHAVE_CONSENTIMENTO, reiniciarConsentimentoParaTeste } from "@/lib/consentimento/consentimento";
 import { CHAVE_IDEMPOTENCIA, CHAVE_RETRATO } from "@/lib/pedidos/retrato";
 
 // O que o site público guarda no navegador. A Política de Privacidade
@@ -247,7 +247,9 @@ describe("Armazenamento do navegador no site público", () => {
 
     const { default: QuemSomosPage } = await import("./quem-somos/page");
     await visitar("Quem Somos com ID", <QuemSomosPage />);
-    gravarConsentimento("aceito");
+    // Antes da escolha: nada gravado.
+    expect(estadoDoNavegador()).toEqual({ localStorage: [], sessionStorage: [], cookies: "" });
+    await userEvent.setup().click(screen.getByRole("button", { name: "Aceitar" }));
     await new Promise((r) => setTimeout(r, 0));
     expect(estadoDoNavegador()).toEqual({ localStorage: [CHAVE_CONSENTIMENTO], sessionStorage: [], cookies: "" });
   });

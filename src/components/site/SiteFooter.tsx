@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LOJA } from "@/lib/site/config";
 import { ROTAS } from "@/lib/site/rotas";
+import { LinkPreferencias } from "./consentimento/LinkPreferencias";
 import { Hive } from "./Hive";
 
 // "Política de privacidade" não está no layout do Claude Design; entrou
@@ -37,6 +38,8 @@ export function SiteFooter() {
               {link.rotulo}
             </Link>
           ))}
+          {/* Só com ID do GA4 efetivo (reabre o banner de consentimento). */}
+          <LinkPreferencias />
         </nav>
       </div>
     </footer>
