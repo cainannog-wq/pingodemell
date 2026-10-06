@@ -352,19 +352,54 @@ export function linhaValida(v: unknown): v is LinhaCarrinho {
   return false;
 }
 
-export function lerCarrinho(salvo: string | null): LinhaCarrinho[] {
-  if (!salvo) return [];
+// Validade do carrinho (PR perf/vitrine-consultas-cache): o carrinho guardado
+// no navegador vale até VALIDADE_CARRINHO_HORAS depois da última alteração
+// (adicionar, remover, ajustar quantidade ou editar); cada alteração renova
+// o prazo. Passado o prazo, é descartado em silêncio ao carregar. O instante
+// da última alteração vai no campo opcional alteradoEm, na mesma chave e
+// versão: carrinho gravado antes deste campo continua valendo e recebe a
+// data na primeira leitura. Compara dois instantes, não decide "que dia é"
+// (regra do fuso no CLAUDE.md).
+export const VALIDADE_CARRINHO_HORAS = 48;
+const VALIDADE_CARRINHO_MS = VALIDADE_CARRINHO_HORAS * 60 * 60 * 1000;
+
+export type CarrinhoLido = {
+  linhas: LinhaCarrinho[];
+  // Passou do prazo: a leitura devolve vazio e o guardado deve ser apagado.
+  vencido: boolean;
+  // Gravado antes do campo de data (ou com data ilegível): vale, e deve
+  // receber a data desta leitura.
+  semData: boolean;
+};
+
+export function lerCarrinhoGuardado(salvo: string | null, agora: number): CarrinhoLido {
+  const nada = { linhas: [], vencido: false, semData: false };
+  if (!salvo) return nada;
   try {
     const dados = JSON.parse(salvo) as unknown;
-    if (typeof dados !== "object" || dados === null) return [];
-    const { versao, linhas } = dados as { versao?: unknown; linhas?: unknown };
-    if (versao !== VERSAO_CARRINHO || !Array.isArray(linhas)) return [];
-    return linhas.filter(linhaValida).slice(0, MAX_LINHAS);
+    if (typeof dados !== "object" || dados === null) return nada;
+    const { versao, linhas, alteradoEm } = dados as { versao?: unknown; linhas?: unknown; alteradoEm?: unknown };
+    if (versao !== VERSAO_CARRINHO || !Array.isArray(linhas)) return nada;
+    const instante = typeof alteradoEm === "string" ? Date.parse(alteradoEm) : NaN;
+    if (Number.isFinite(instante) && agora - instante > VALIDADE_CARRINHO_MS) return { linhas: [], vencido: true, semData: false };
+    return { linhas: linhas.filter(linhaValida).slice(0, MAX_LINHAS), vencido: false, semData: !Number.isFinite(instante) };
   } catch {
-    return [];
+    return nada;
   }
 }
 
-export function escreverCarrinho(linhas: LinhaCarrinho[]): string {
-  return JSON.stringify({ versao: VERSAO_CARRINHO, linhas });
+export function lerCarrinho(salvo: string | null, agora: number = Date.now()): LinhaCarrinho[] {
+  return lerCarrinhoGuardado(salvo, agora).linhas;
+}
+
+// Toda gravação é uma alteração: renova o prazo.
+export function escreverCarrinho(linhas: LinhaCarrinho[], agora: number = Date.now()): string {
+  return JSON.stringify({ versao: VERSAO_CARRINHO, alteradoEm: new Date(agora).toISOString(), linhas });
+}
+
+// O mesmo texto guardado, só com a data acrescentada (carrinho de antes do
+// campo alteradoEm). As linhas ficam exatamente como estavam.
+export function carimbarCarrinho(salvo: string, agora: number): string {
+  const dados = JSON.parse(salvo) as Record<string, unknown>;
+  return JSON.stringify({ ...dados, alteradoEm: new Date(agora).toISOString() });
 }
