@@ -28,8 +28,8 @@ function consulta() {
   return builder;
 }
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn(async () => ({
+vi.mock("@/lib/supabase/publico", () => ({
+  createPublicClient: vi.fn(() => ({
     from: (tabela: string) => {
       chamadas.push({ metodo: "from", args: [tabela] });
       return consulta();

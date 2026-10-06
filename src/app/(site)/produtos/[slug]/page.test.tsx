@@ -31,16 +31,19 @@ vi.mock("next/link", () => ({
 }));
 
 class NaoEncontrado extends Error {}
+const buscaDaUrl = vi.hoisted(() => ({ atual: "" }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
   usePathname: () => "/produtos/x",
+  // A busca da URL, lida no navegador (ConfigEditavelDaUrl).
+  useSearchParams: () => new URLSearchParams(buscaDaUrl.atual),
   notFound: () => {
     throw new NaoEncontrado("404");
   },
 }));
 
 let banco: BancoSimulado;
-vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn(async () => clienteSimulado(banco)) }));
+vi.mock("@/lib/supabase/publico", () => ({ createPublicClient: vi.fn(() => clienteSimulado(banco)) }));
 
 let seq = 0;
 function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {

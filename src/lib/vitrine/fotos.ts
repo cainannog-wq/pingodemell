@@ -19,28 +19,20 @@ export function montarFotos(
   return urls.map((url, i) => ({ url, alt: textoAlternativo(produto.nome, i + 1, urls.length) }));
 }
 
-// Caminhos das fotos extras pelo slug do produto, na ordem da posição. A
-// junção com produtos pelo slug deixa a consulta sair junto com a do
-// produto (buscarInterna), sem esperar o id. Quem decide se o produto está
-// ativo é a consulta do produto: sem ela, as fotos não são usadas. Para o
-// anônimo, a RLS de produto_fotos e a de produtos (na junção) já escondem as
-// fotos de produto inativo. Retorna null em caso de erro (a interna mostra
-// só a capa).
-export async function lerFotosExtras(supabase: SupabaseClient, slug: string): Promise<string[] | null> {
+// Endereços públicos das fotos extras pelo slug do produto, na ordem da
+// posição. A junção com produtos pelo slug deixa a consulta sair junto com
+// a do produto (buscarInterna), sem esperar o id. Quem decide se o produto
+// está ativo é a consulta do produto: sem ela, as fotos não são usadas. Para
+// o anônimo, a RLS de produto_fotos e a de produtos (na junção) já escondem
+// as fotos de produto inativo. LANÇA erro em caso de falha (a leitura fica
+// no cache da vitrine, que não guarda erro; a interna mostra só a capa).
+export async function lerFotosExtras(supabase: SupabaseClient, slug: string): Promise<string[]> {
   const { data, error } = await supabase
     .from("produto_fotos")
     .select("caminho, produto:produtos!inner(slug)")
     .eq("produto.slug", slug)
     .order("posicao", { ascending: true });
 
-  if (error) {
-    console.error("Falha ao buscar as fotos extras:", error.message);
-    return null;
-  }
-  return (data ?? []).map((linha) => linha.caminho as string);
-}
-
-// Endereço público de um arquivo do bucket de fotos.
-export function urlPublicaDaFoto(supabase: SupabaseClient, caminho: string): string {
-  return supabase.storage.from(BUCKET_FOTOS).getPublicUrl(caminho).data.publicUrl;
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((linha) => supabase.storage.from(BUCKET_FOTOS).getPublicUrl(linha.caminho as string).data.publicUrl);
 }

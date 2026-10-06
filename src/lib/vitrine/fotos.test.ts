@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { clienteSimulado, novoBanco, type BancoSimulado } from "@/test/banco-simulado";
 import { lerFotosExtras, montarFotos } from "./fotos";
 
@@ -40,11 +40,11 @@ describe("montarFotos", () => {
 });
 
 describe("lerFotosExtras (pelo slug, em paralelo com o produto)", () => {
-  it("devolve os caminhos das extras na ordem da posição, filtrando pelo slug do produto", async () => {
+  it("devolve os endereços das extras na ordem da posição, filtrando pelo slug do produto", async () => {
     expect(await lerFotosExtras(clienteSimulado(banco) as never, "morango-banhado")).toEqual([
-      `galeria/${MORANGO}/a.webp`,
-      `galeria/${MORANGO}/b.webp`,
-      `galeria/${MORANGO}/c.webp`,
+      `https://storage/galeria/${MORANGO}/a.webp`,
+      `https://storage/galeria/${MORANGO}/b.webp`,
+      `https://storage/galeria/${MORANGO}/c.webp`,
     ]);
     expect(banco.consultas).toContain("produto_fotos.produto.slug=morango-banhado");
   });
@@ -53,10 +53,8 @@ describe("lerFotosExtras (pelo slug, em paralelo com o produto)", () => {
     expect(await lerFotosExtras(clienteSimulado(banco) as never, "torta-de-limao-fatia")).toEqual([]);
   });
 
-  it("falha do banco devolve null (a interna mostra só a capa)", async () => {
+  it("falha do banco lança erro (o cache não guarda erro; a interna mostra só a capa)", async () => {
     banco.falhas.add("produto_fotos");
-    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(await lerFotosExtras(clienteSimulado(banco) as never, "morango-banhado")).toBeNull();
-    erro.mockRestore();
+    await expect(lerFotosExtras(clienteSimulado(banco) as never, "morango-banhado")).rejects.toThrow("falha simulada");
   });
 });

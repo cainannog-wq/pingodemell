@@ -70,8 +70,10 @@ const COCA = {
   atualizado_em: "2026-09-23T14:29:18.070Z",
 };
 const TABELAS: Record<string, Record<string, unknown>[]> = { produtos: [COCA] };
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn(async () => ({
+// O mesmo banco para o cliente com sessão (checkout) e o sem sessão (vitrine,
+// desde o PR perf/vitrine-consultas-cache).
+function clienteMinimo() {
+  return {
     from: (tabela: string) => {
       const filtros: [string, unknown][] = [];
       const linhas = () => (TABELAS[tabela] ?? []).filter((l) => filtros.every(([c, v]) => l[c] === v));
@@ -87,8 +89,10 @@ vi.mock("@/lib/supabase/server", () => ({
       return b;
     },
     storage: { from: () => ({ getPublicUrl: (c: string) => ({ data: { publicUrl: `https://storage/${c}` } }) }) },
-  })),
-}));
+  };
+}
+vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn(async () => clienteMinimo()) }));
+vi.mock("@/lib/supabase/publico", () => ({ createPublicClient: vi.fn(() => clienteMinimo()) }));
 vi.mock("@/lib/supabase/client", () => ({
   createClient: vi.fn(() => {
     throw new Error("o site público não consulta o banco pelo navegador");

@@ -8,7 +8,7 @@ let erroDoBanco: { code?: string; message: string } | null = null;
 let linhasAtualizadas: { id: string }[] = [{ id: "x" }];
 
 vi.mock("@/lib/supabase/dal", () => ({ requireAuth: vi.fn().mockResolvedValue({ id: "user-1" }) }));
-vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), updateTag: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(async () => ({

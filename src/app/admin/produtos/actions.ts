@@ -24,6 +24,13 @@ import {
 } from "@/lib/galeria/storage-servidor";
 import { galeriaMudou, gravarGaleria, lerFotosAtuais, limparSobras } from "./galeria-servidor";
 import { apagarArquivosDoProduto, concluirTrocaDeCapa, limparSobrasCapa } from "./capa-servidor";
+import { invalidarVitrine } from "@/lib/vitrine/cache";
+
+// Cache da vitrine (src/lib/vitrine/cache.ts): toda ação que grava algo que
+// a cliente vê chama invalidarVitrine() logo depois da gravação principal e
+// de novo em cada saída posterior (sabores do Cento, galeria e capa são
+// gravados depois; uma visita no meio do Salvar não deixa um retrato pela
+// metade no cache). Teste: src/app/admin/invalidacao-vitrine.test.ts.
 
 export type ProdutoFormState = {
   error?: string;
@@ -200,6 +207,7 @@ export async function createProduto(
     await descartar();
     return { error: `Não foi possível salvar o produto: ${error.message}` };
   }
+  invalidarVitrine();
 
   if (capa) await limparSobrasCapa(supabase, produtoId);
 
@@ -207,6 +215,7 @@ export async function createProduto(
     const subitensError = await salvarSubitensCento(supabase, nome, subitens);
     if (subitensError) {
       await descartar(novas.length > 0, false);
+      invalidarVitrine();
       return { error: subitensError };
     }
   }
@@ -215,6 +224,7 @@ export async function createProduto(
     const erroGaleria = await gravarGaleria(supabase, produtoId, galeria.itens);
     if (erroGaleria) {
       await limparSobras(supabase, produtoId);
+      invalidarVitrine();
       return {
         error: `Produto salvo, mas as fotos extras não foram salvas: ${erroGaleria} Abra o produto na listagem para adicioná-las de novo.`,
       };
@@ -222,6 +232,7 @@ export async function createProduto(
     await limparSobras(supabase, produtoId);
   }
 
+  invalidarVitrine();
   revalidatePath("/admin/produtos");
   redirect("/admin/produtos");
 }
@@ -350,6 +361,7 @@ export async function updateProduto(
     await descartar();
     return { error: `Não foi possível salvar o produto: ${error.message}` };
   }
+  invalidarVitrine();
 
   // A troca de capa já está gravada: a antiga sai do storage agora,
   // aconteça o que acontecer com subitens e galeria.
@@ -362,6 +374,7 @@ export async function updateProduto(
   const subitensError = await salvarSubitensCento(supabase, nome, tipo === "cento" ? subitens : []);
   if (subitensError) {
     if (novas.length > 0) await limparSobras(supabase, produtoId);
+    invalidarVitrine();
     return { error: subitensError };
   }
 
@@ -371,6 +384,7 @@ export async function updateProduto(
     const erroGaleria = await gravarGaleria(supabase, produtoId, itensGaleria);
     if (erroGaleria) {
       await limparSobras(supabase, produtoId);
+      invalidarVitrine();
       return {
         error: `Produto salvo, mas as fotos extras não foram atualizadas: ${erroGaleria} Suas alterações nas fotos continuam na tela; clique em Salvar de novo.`,
       };
@@ -378,6 +392,7 @@ export async function updateProduto(
     await limparSobras(supabase, produtoId);
   }
 
+  invalidarVitrine();
   revalidatePath("/admin/produtos");
   redirect("/admin/produtos");
 }
@@ -399,6 +414,7 @@ export async function updateProdutoAtivo(
     return { error: `Não foi possível atualizar o status: ${error.message}` };
   }
 
+  invalidarVitrine();
   revalidatePath("/admin/produtos");
   return {};
 }
@@ -419,6 +435,7 @@ export async function updateProdutoDestaque(
     return { error: `Não foi possível atualizar o destaque: ${error.message}` };
   }
 
+  invalidarVitrine();
   revalidatePath("/admin/produtos");
   return {};
 }
@@ -445,6 +462,7 @@ export async function deleteProduto(nome: string): Promise<{ aviso?: string }> {
     throw new Error(`Não foi possível excluir o produto: ${error.message}`);
   }
 
+  invalidarVitrine();
   revalidatePath("/admin/produtos");
 
   if (produto && ehUuid(produto.id)) {

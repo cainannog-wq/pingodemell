@@ -10,7 +10,7 @@ import { textoMinimo, textoMinimoCurto } from "./minimo";
 // simulado (nada real): disponibilidade por catálogo de recheios, "a partir
 // de", filtro da categoria Bento Cake.
 let banco: BancoSimulado;
-vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn(async () => clienteSimulado(banco)) }));
+vi.mock("@/lib/supabase/publico", () => ({ createPublicClient: vi.fn(() => clienteSimulado(banco)) }));
 
 let seq = 0;
 function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {

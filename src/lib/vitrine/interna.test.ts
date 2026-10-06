@@ -6,7 +6,7 @@ import type { ProdutoVitrine } from "./mais-pedidos";
 // banco simulado (nada real). Os casos de Cento com 1 e 0 sabor ativo são
 // dados simulados: nenhum produto real é desativado para provar isso.
 let banco: BancoSimulado;
-vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn(async () => clienteSimulado(banco)) }));
+vi.mock("@/lib/supabase/publico", () => ({ createPublicClient: vi.fn(() => clienteSimulado(banco)) }));
 
 let seq = 0;
 function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {
@@ -162,8 +162,8 @@ describe("Home e Combina com o seu pedido", () => {
 // independente sai junto, numa viagem só.
 describe("uma viagem só ao banco", () => {
   afterEach(async () => {
-    const { createClient } = await import("@/lib/supabase/server");
-    vi.mocked(createClient).mockImplementation(async () => clienteSimulado(banco) as never);
+    const { createPublicClient } = await import("@/lib/supabase/publico");
+    vi.mocked(createPublicClient).mockImplementation(() => clienteSimulado(banco) as never);
   });
 
   function clienteContado() {
@@ -200,8 +200,8 @@ describe("uma viagem só ao banco", () => {
 
   async function comClienteContado() {
     const contado = clienteContado();
-    const { createClient } = await import("@/lib/supabase/server");
-    vi.mocked(createClient).mockImplementation(async () => contado.cliente as never);
+    const { createPublicClient } = await import("@/lib/supabase/publico");
+    vi.mocked(createPublicClient).mockImplementation(() => contado.cliente as never);
     return contado;
   }
 

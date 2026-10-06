@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/supabase/dal";
 import { ehUuid } from "@/lib/galeria/regras";
 import { parseRecheioForm } from "@/lib/recheios/parse";
+import { invalidarVitrine } from "@/lib/vitrine/cache";
 
 export type RecheioFormState = { error?: string };
 
@@ -29,6 +30,9 @@ export async function createRecheio(_prev: RecheioFormState, formData: FormData)
     return { error: `Não foi possível salvar o recheio: ${error.message}` };
   }
 
+  // Recheio muda o que a cliente vê (opções, "a partir de" do Bolo, Bolo e
+  // Bento disponíveis): o cache da vitrine é refeito na próxima visita.
+  invalidarVitrine();
   revalidatePath("/admin/recheios");
   redirect("/admin/recheios");
 }
@@ -46,6 +50,7 @@ export async function updateRecheio(id: string, _prev: RecheioFormState, formDat
     if (error.code === "23505") return { error: MENSAGEM_NOME_REPETIDO };
     return { error: `Não foi possível salvar o recheio: ${error.message}` };
   }
+  invalidarVitrine();
   if (!data || data.length === 0) return { error: "Recheio não encontrado. Ele pode ter sido excluído." };
 
   revalidatePath("/admin/recheios");
@@ -61,6 +66,7 @@ export async function updateRecheioAtivo(id: string, ativo: boolean): Promise<{ 
   const { error } = await supabase.from("recheios").update({ ativo }).eq("id", id);
   if (error) return { error: `Não foi possível atualizar o status: ${error.message}` };
 
+  invalidarVitrine();
   revalidatePath("/admin/recheios");
   return {};
 }

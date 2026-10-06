@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { cache } from "react";
+import { Suspense, cache } from "react";
 import { Badge, Icon } from "@/components/ds";
 import { CardProduto, PrecoProduto } from "@/components/site/CardProduto";
 import { LOJA } from "@/lib/site/config";
@@ -15,14 +15,23 @@ import { variacaoDoProduto } from "@/lib/vitrine/variacao";
 import { ConfigAvulso } from "./_interna/ConfigAvulso";
 import { ConfigBento } from "./_interna/ConfigBento";
 import { ConfigEditavel } from "./_interna/ConfigEditavel";
+import { ConfigEditavelDaUrl } from "./_interna/ConfigEditavelDaUrl";
 import { Galeria } from "./_interna/Galeria";
 import "./interna.css";
 
-type Props = {
-  params: Promise<{ slug: string }>;
-  // ?editar={id da linha do carrinho}: abre Cento ou Bolo para editar essa linha.
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-};
+type Props = { params: Promise<{ slug: string }> };
+
+// Página inteira em cache, servida pela borda (PR perf/vitrine-consultas-
+// cache): cada produto é montado na primeira visita (nenhum no build) e de
+// novo a cada 60 s (PRAZO_VITRINE_SEGUNDOS, src/lib/vitrine/cache.ts; o Next
+// exige o número escrito aqui), ou na hora quando o admin salva algo que
+// muda a vitrine. Nada aqui lê cookie, sessão nem a busca da URL: o
+// ?editar= do carrinho é lido no navegador (ConfigEditavelDaUrl).
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  return [];
+}
 
 // Uma busca só por requisição, dividida entre generateMetadata e a página.
 const carregar = cache((slug: string) => buscarInterna(slug));
@@ -60,24 +69,16 @@ function descricaoDoProduto(descricao: string | null): string {
 // Todos gravam no carrinho do navegador ("Adicionar ao pedido") e atualizam
 // o contador do cabeçalho. Cento e Bolo também abrem em modo edição, pelo ícone
 // de editar do carrinho (?editar={id da linha}, ver ConfigEditavel).
-export default async function ProdutoPage({ params, searchParams }: Props) {
+export default async function ProdutoPage({ params }: Props) {
   // "Os mais pedidos" (para "Combina com o seu pedido") sai junto com o
   // produto, na mesma viagem ao banco.
   const [interna, maisPedidos] = await Promise.all([carregar((await params).slug), buscarMaisPedidos()]);
-  const editar = (await searchParams)?.editar;
-  const editarId = (Array.isArray(editar) ? editar[0] : editar) || null;
   if (interna.estado === "nao-encontrado") notFound();
 
-  if (interna.estado === "erro") {
-    return (
-      <div className="site-container interna-falha">
-        <div className="lista-aviso">
-          <Icon name="error" size={28} tone="accent" />
-          <p>Não conseguimos carregar este produto agora. Tente de novo em alguns instantes.</p>
-        </div>
-      </div>
-    );
-  }
+  // Falha do banco: lança erro em vez de montar o aviso. Assim a página com
+  // falha não é guardada: o Next continua servindo a versão anterior e, se
+  // não houver nenhuma, mostra o aviso de falha de error.tsx.
+  if (interna.estado === "erro") throw new Error("Falha ao carregar o produto.");
 
   const { produto, sabores, recheios, fotos } = interna;
   const relacionados = selecionarRelacionados(maisPedidos, produto.id);
@@ -141,9 +142,16 @@ export default async function ProdutoPage({ params, searchParams }: Props) {
           <div className="interna-divisor" />
 
           {variacao === "cento" ? (
-            <ConfigEditavel key={editarId ?? "novo"} tipo="cento" produto={produto} sabores={sabores} editarId={editarId} />
+            // Sem o JavaScript (HTML guardado), a configuração comum; no
+            // navegador, ConfigEditavelDaUrl lê o ?editar= e entra no modo
+            // edição quando ele existe.
+            <Suspense fallback={<ConfigEditavel tipo="cento" produto={produto} sabores={sabores} editarId={null} />}>
+              <ConfigEditavelDaUrl tipo="cento" produto={produto} sabores={sabores} />
+            </Suspense>
           ) : variacao === "bolo" ? (
-            <ConfigEditavel key={editarId ?? "novo"} tipo="bolo" produto={produto} recheios={recheios} editarId={editarId} />
+            <Suspense fallback={<ConfigEditavel tipo="bolo" produto={produto} recheios={recheios} editarId={null} />}>
+              <ConfigEditavelDaUrl tipo="bolo" produto={produto} recheios={recheios} />
+            </Suspense>
           ) : variacao === "bento" ? (
             <ConfigBento produto={produto} recheios={recheios} />
           ) : (
