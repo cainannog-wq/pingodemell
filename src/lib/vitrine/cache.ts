@@ -14,6 +14,8 @@ import { unstable_cache, updateTag } from "next/cache";
 // um número escrito na própria página (o Next o lê no build); o teste
 // cache.test.ts confere que ele é igual a PRAZO_VITRINE_SEGUNDOS.
 
+// O cache vale por deploy (Blobs do deploy, no adaptador da Netlify): todo
+// build novo começa vazio, e a primeira visita de cada página o preenche.
 export const ETIQUETA_VITRINE = "vitrine";
 export const PRAZO_VITRINE_SEGUNDOS = 3600;
 
