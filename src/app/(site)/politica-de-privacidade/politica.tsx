@@ -163,9 +163,10 @@ export function PoliticaDePrivacidade({ dataVigencia }: { dataVigencia: string |
           carrinho; e (c) a ocorrência dos eventos de início do pedido, de exibição da confirmação, de envio do pedido
           e de clique nos botões de WhatsApp, estes com a indicação da área do sítio eletrônico em que o botão se
           encontra. Não são enviados nome, WhatsApp, email, endereço, observações, número do pedido nem valores.
-          Independentemente do que o Controlador envia, o Google Analytics coleta por conta própria um identificador
-          do navegador, gravado em cookie, o endereço IP, a partir do qual o Google deduz cidade, região e país e
-          descarta o endereço completo, e dados do navegador, do idioma, do aparelho e da tela do Titular.
+          Segundo a documentação do Google, o Google Analytics coleta por conta própria, independentemente do que o
+          Controlador envia, um identificador do navegador, gravado em cookie, o endereço IP, do qual deduz cidade,
+          região e país e descarta o endereço completo, e dados do navegador, do idioma, do aparelho e da tela do
+          Titular.
         </p>
       </Secao>
 
