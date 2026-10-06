@@ -81,7 +81,7 @@ describe("loja do consentimento no navegador", () => {
       versao: 1,
       escolha: "aceito",
       data: "2026-10-05",
-      versaoPolitica: 1,
+      versaoPolitica: 2,
     });
     expect(lerConsentimento()?.escolha).toBe("aceito");
     expect(aviso).toHaveBeenCalledTimes(1);

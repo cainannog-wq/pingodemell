@@ -44,8 +44,8 @@ describe("trava de produção pela versão da Política", () => {
   it.each(["branch-deploy", "deploy-preview", "", undefined])("fora de produção (%s) com versão 1: passa", (contexto) => {
     expect(idGa4Efetivo(ID, contexto, 1)).toBe(ID);
   });
-  it("a versão vigente é a 1: a produção está travada", () => {
-    expect(VERSAO_POLITICA).toBe(1);
+  it("a versão vigente é a 2: a trava por versão não segura mais a produção (só a ausência de GA4_ID)", () => {
+    expect(VERSAO_POLITICA).toBe(2);
   });
 });
 
@@ -55,8 +55,26 @@ describe("lerIdGa4 lê o ambiente do build", () => {
     vi.stubEnv("CONTEXTO_NETLIFY", "branch-deploy");
     expect(lerIdGa4()).toBe(ID);
   });
-  it("produção com GA4_ID: nulo (trava)", () => {
+  it("produção com GA4_ID e versaoPolitica 1: nulo (trava por versão)", async () => {
     vi.stubEnv("GA4_ID", ID);
+    vi.stubEnv("CONTEXTO_NETLIFY", "production");
+    vi.resetModules();
+    vi.doMock("@/lib/site/politica-versao", () => ({ VERSAO_POLITICA: 1 }));
+    try {
+      const { lerIdGa4: lerComVersao1 } = await import("./id");
+      expect(lerComVersao1()).toBeNull();
+    } finally {
+      vi.doUnmock("@/lib/site/politica-versao");
+      vi.resetModules();
+    }
+  });
+  it("produção com GA4_ID e a versão vigente (2): o ID", () => {
+    vi.stubEnv("GA4_ID", ID);
+    vi.stubEnv("CONTEXTO_NETLIFY", "production");
+    expect(lerIdGa4()).toBe(ID);
+  });
+  it("produção sem GA4_ID: nulo", () => {
+    vi.stubEnv("GA4_ID", "");
     vi.stubEnv("CONTEXTO_NETLIFY", "production");
     expect(lerIdGa4()).toBeNull();
   });

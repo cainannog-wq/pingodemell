@@ -13,7 +13,7 @@ afterEach(() => {
 
 it("na homologação, o config leva debug_mode: true", () => {
   vi.stubEnv("GA4_ID", "G-TESTE00000");
-  window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "aceito", data: "2026-10-05", versaoPolitica: 1 }));
+  window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "aceito", data: "2026-10-05", versaoPolitica: 2 }));
   reiniciarConsentimentoParaTeste();
   iniciarGtag("G-TESTE00000");
   const config = (window.dataLayer ?? []).map((a) => Array.from(a as ArrayLike<unknown>)).find((c) => c[0] === "config");
