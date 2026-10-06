@@ -14,13 +14,13 @@ const HOME = "src/app/(site)/page.tsx";
 const INTERNA = "src/app/(site)/produtos/[slug]/page.tsx";
 
 describe("emCacheDaVitrine", () => {
-  it("guarda com a etiqueta 'vitrine' e o prazo de 1 hora (3600 s)", async () => {
+  it("guarda com a etiqueta 'vitrine' e o prazo de 24 horas (86400 s)", async () => {
     const { emCacheDaVitrine, ETIQUETA_VITRINE, PRAZO_VITRINE_SEGUNDOS } = await import("./cache");
     expect(ETIQUETA_VITRINE).toBe("vitrine");
-    expect(PRAZO_VITRINE_SEGUNDOS).toBe(3600);
+    expect(PRAZO_VITRINE_SEGUNDOS).toBe(86400);
     const leitura = async () => 1;
     emCacheDaVitrine(leitura, "teste");
-    expect(unstableCache).toHaveBeenCalledWith(leitura, ["teste"], { tags: ["vitrine"], revalidate: 3600 });
+    expect(unstableCache).toHaveBeenCalledWith(leitura, ["teste"], { tags: ["vitrine"], revalidate: 86400 });
   });
 
   it("invalidarVitrine expira a etiqueta 'vitrine' na hora (updateTag)", async () => {

@@ -17,7 +17,11 @@ import { unstable_cache, updateTag } from "next/cache";
 // O cache vale por deploy (Blobs do deploy, no adaptador da Netlify): todo
 // build novo começa vazio, e a primeira visita de cada página o preenche.
 export const ETIQUETA_VITRINE = "vitrine";
-export const PRAZO_VITRINE_SEGUNDOS = 3600;
+// 24 horas (decisão do Cainan em 06/10/2026; antes 60 s e 1 hora). Mudança
+// feita fora do admin (SQL à mão, scripts de carga) pode levar até 24 horas
+// para aparecer: a regra operacional é salvar qualquer produto no admin (a
+// ação invalida a etiqueta inteira) ou fazer um deploy (cache novo).
+export const PRAZO_VITRINE_SEGUNDOS = 86400;
 
 // Guarda o resultado de uma leitura pública da vitrine, por argumentos. A
 // leitura LANÇA erro em caso de falha: erro não é guardado, então nada que
