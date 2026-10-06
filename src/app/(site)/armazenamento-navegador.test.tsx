@@ -20,10 +20,10 @@ import { CHAVE_IDEMPOTENCIA, CHAVE_RETRATO } from "@/lib/pedidos/retrato";
 //
 // Exceção conhecida (PR 2 da Fase 4): com ID do GA4 efetivo, o banner de
 // consentimento grava pdm-consentimento-v1 e, com o aceite, a etiqueta grava
-// os cookies _ga. A Política v1 ainda não descreve isso: ela e o banner
-// divergem até a versão 2. Por isso a produção é travada (src/lib/analitica/
-// id.ts: build de produção com a Política abaixo da versão 2 não tem ID), e
-// só a homologação mostra o banner até lá. Sem ID, nada disso existe, e os
+// os cookies _ga. A Política v2 (PR 5 da Fase 4) descreve isso na seção 8.
+// Desde ela, a trava por versão (src/lib/analitica/id.ts) não segura mais a
+// produção: o banner só não aparece lá porque a GA4_ID não existe no
+// contexto de produção da Netlify. Sem ID, nada disso existe, e os
 // percursos abaixo provam isso.
 
 vi.setConfig({ testTimeout: 30_000 });

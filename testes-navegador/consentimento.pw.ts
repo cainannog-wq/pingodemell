@@ -147,7 +147,7 @@ test("(h) escolha com 181 dias pergunta de novo (com 180, não)", async ({ page 
 
 test("(i) versaoPolitica diferente pergunta de novo", async ({ page }) => {
   await page.goto("/quem-somos");
-  await gravarEscolha(page, "aceito", hojeBrasilia(), 2);
+  await gravarEscolha(page, "aceito", hojeBrasilia(), 99);
   await page.reload();
   await expect(banner(page)).toBeVisible();
   expect(registro.google).toEqual([]);

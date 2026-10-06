@@ -24,7 +24,7 @@ function eventos(): [string, unknown][] {
     .map((c) => [c[1] as string, c[2]]);
 }
 function aceitar() {
-  window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "aceito", data: "2026-10-05", versaoPolitica: 1 }));
+  window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "aceito", data: "2026-10-05", versaoPolitica: 2 }));
   reiniciarConsentimentoParaTeste();
 }
 
@@ -53,19 +53,46 @@ describe("sem consentimento ou sem ID, nada", () => {
     expect(window.gtag).toBeUndefined();
   });
   it("recusado: nada", () => {
-    window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "recusado", data: "2026-10-05", versaoPolitica: 1 }));
+    window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "recusado", data: "2026-10-05", versaoPolitica: 2 }));
     reiniciarConsentimentoParaTeste();
     expect(enviarEvento("add_to_cart", { items: [{ item_id: "x", item_name: "X" }] })).toBe(false);
     expect(window.dataLayer).toBeUndefined();
   });
-  it("aceito mas sem ID efetivo (vazio, ou produção com a Política v1): nada", () => {
+  it("aceito mas sem ID efetivo (GA4_ID vazio, fora ou dentro de produção): nada", () => {
     aceitar();
     vi.stubEnv("GA4_ID", "");
     expect(enviarEvento("begin_checkout")).toBe(false);
-    vi.stubEnv("GA4_ID", ID);
     vi.stubEnv("CONTEXTO_NETLIFY", "production");
     expect(enviarEvento("begin_checkout")).toBe(false);
     expect(window.dataLayer).toBeUndefined();
+  });
+  it("aceito, produção com GA4_ID e versaoPolitica 1: nada (trava por versão)", async () => {
+    vi.stubEnv("CONTEXTO_NETLIFY", "production");
+    vi.resetModules();
+    vi.doMock("@/lib/site/politica-versao", () => ({ VERSAO_POLITICA: 1 }));
+    try {
+      const consentimento = await import("@/lib/consentimento/consentimento");
+      const gtag = await import("./gtag");
+      // Aceite gravado na mesma versão 1: só a trava pode barrar o envio.
+      window.localStorage.setItem(
+        CHAVE_CONSENTIMENTO,
+        JSON.stringify({ versao: 1, escolha: "aceito", data: "2026-10-05", versaoPolitica: 1 })
+      );
+      consentimento.reiniciarConsentimentoParaTeste();
+      expect(consentimento.lerConsentimento()?.escolha).toBe("aceito");
+      expect(gtag.enviarEvento("begin_checkout")).toBe(false);
+      expect(gtag.registrarPageView()).toBe(false);
+      expect(window.dataLayer).toBeUndefined();
+    } finally {
+      vi.doUnmock("@/lib/site/politica-versao");
+      vi.resetModules();
+    }
+  });
+  it("aceito, produção com GA4_ID e a versão vigente (2): envia", () => {
+    aceitar();
+    vi.stubEnv("CONTEXTO_NETLIFY", "production");
+    expect(enviarEvento("begin_checkout")).toBe(true);
+    expect(eventos()).toEqual([["begin_checkout", {}]]);
   });
 });
 

@@ -8,6 +8,7 @@ import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CHAVE_CONSENTIMENTO, reiniciarConsentimentoParaTeste } from "@/lib/consentimento/consentimento";
 import * as gtag from "@/lib/analitica/gtag";
+import { VERSAO_POLITICA } from "@/lib/site/politica-versao";
 import { BannerConsentimento } from "./BannerConsentimento";
 import { ConsentimentoProvider } from "./ConsentimentoProvider";
 import { LinkPreferencias } from "./LinkPreferencias";
@@ -42,7 +43,7 @@ function comId(id = ID) {
   vi.stubEnv("CONTEXTO_NETLIFY", "branch-deploy");
 }
 
-function salvo(escolha: "aceito" | "recusado", data = "2026-10-05", versaoPolitica = 1) {
+function salvo(escolha: "aceito" | "recusado", data = "2026-10-05", versaoPolitica = 2) {
   window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha, data, versaoPolitica }));
 }
 
@@ -73,12 +74,47 @@ describe("sem ID do GA4 efetivo", () => {
     expect(Object.keys(window.localStorage)).toEqual([]);
   });
 
-  it("produção com a Política v1: sem banner nem link, mesmo com GA4_ID", () => {
+  it("produção com GA4_ID e versaoPolitica 1: sem banner nem link (trava por versão)", async () => {
     vi.stubEnv("GA4_ID", ID);
+    vi.stubEnv("CONTEXTO_NETLIFY", "production");
+    vi.resetModules();
+    vi.doMock("@/lib/site/politica-versao", () => ({ VERSAO_POLITICA: 1 }));
+    try {
+      const { ConsentimentoProvider: Provider1 } = await import("./ConsentimentoProvider");
+      const { BannerConsentimento: Banner1 } = await import("./BannerConsentimento");
+      const { LinkPreferencias: Link1 } = await import("./LinkPreferencias");
+      render(
+        <Provider1>
+          <Banner1 />
+          <footer>
+            <Link1 />
+          </footer>
+        </Provider1>
+      );
+      expect(banner()).toBeNull();
+      expect(screen.queryByRole("button", { name: "Preferências de privacidade" })).toBeNull();
+    } finally {
+      vi.doUnmock("@/lib/site/politica-versao");
+      vi.resetModules();
+    }
+  });
+
+  it("produção sem GA4_ID: sem banner nem link", () => {
+    vi.stubEnv("GA4_ID", "");
     vi.stubEnv("CONTEXTO_NETLIFY", "production");
     render(<Tela />);
     expect(banner()).toBeNull();
     expect(screen.queryByRole("button", { name: "Preferências de privacidade" })).toBeNull();
+  });
+});
+
+describe("produção com GA4_ID e a versão vigente (2)", () => {
+  it("banner e link aparecem (a trava por versão não segura mais)", () => {
+    vi.stubEnv("GA4_ID", ID);
+    vi.stubEnv("CONTEXTO_NETLIFY", "production");
+    render(<Tela />);
+    expect(banner()).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Preferências de privacidade" })).toBeInTheDocument();
   });
 });
 
@@ -112,7 +148,7 @@ describe("com ID do GA4 efetivo", () => {
       versao: 1,
       escolha,
       data: "2026-10-05",
-      versaoPolitica: 1,
+      versaoPolitica: 2,
     });
     expect(banner()).toBeNull();
     expect(screen.getByRole("button", { name: "Preferências de privacidade" })).toBeInTheDocument();
@@ -134,7 +170,7 @@ describe("com ID do GA4 efetivo", () => {
 
     window.localStorage.clear();
     reiniciarConsentimentoParaTeste();
-    salvo("aceito", "2026-10-05", 2);
+    salvo("aceito", "2026-10-05", VERSAO_POLITICA + 1);
     render(<Tela />);
     expect(banner()).toBeInTheDocument();
   });

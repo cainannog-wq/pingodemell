@@ -83,7 +83,7 @@ export function diasAntes(dataIso: string, dias: number): string {
   return `${alvo.getUTCFullYear()}-${dois(alvo.getUTCMonth() + 1)}-${dois(alvo.getUTCDate())}`;
 }
 
-export async function gravarEscolha(page: Page, escolha: "aceito" | "recusado", data = hojeBrasilia(), versaoPolitica = 1) {
+export async function gravarEscolha(page: Page, escolha: "aceito" | "recusado", data = hojeBrasilia(), versaoPolitica = 2) {
   await page.evaluate(
     ([e, d, v]) => window.localStorage.setItem("pdm-consentimento-v1", JSON.stringify({ versao: 1, escolha: e, data: d, versaoPolitica: v })),
     [escolha, data, versaoPolitica] as const

@@ -99,7 +99,7 @@ beforeEach(() => {
   reiniciarAnaliticaParaTeste();
   vi.stubEnv("GA4_ID", "G-TESTE00000");
   vi.stubEnv("CONTEXTO_NETLIFY", "branch-deploy");
-  window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "aceito", data: "2026-10-05", versaoPolitica: 1 }));
+  window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "aceito", data: "2026-10-05", versaoPolitica: 2 }));
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-06T01:30:00Z"));
   vi.stubGlobal("fetch", rede);

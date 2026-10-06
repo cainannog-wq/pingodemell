@@ -24,6 +24,9 @@ export const LOJA = {
   telefone: "(41) 98800-2315",
   instagram: "@pingodemell.frg",
   cnpj: "22.066.065/0001-72",
+  // Correio eletrônico de atendimento ao titular, citado na seção 1 da
+  // Política de Privacidade (só ela o lê).
+  emailPrivacidade: "taamyaguiu@yahoo.com.br",
   avaliacoesGoogleUrl:
     "https://www.google.com/search?q=pingo+de+mell#lrd=0x94dc5570c97917bd:0x6afc7f109f7f4b13,1",
 } as const;

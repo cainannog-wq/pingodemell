@@ -7,5 +7,6 @@
 //   diferente (src/lib/consentimento/consentimento.ts);
 // - a trava de produção do GA4 (src/lib/analitica/id.ts): com versão menor
 //   que 2, o build de produção nunca envia nada, mesmo com GA4_ID definida.
-//   A versão 2 da Política destrava.
-export const VERSAO_POLITICA = 1;
+//   A versão 2 da Política (PR 5 da Fase 4) destravou: desde ela, o que
+//   impede a medição na produção é só a GA4_ID não existir lá.
+export const VERSAO_POLITICA = 2;
