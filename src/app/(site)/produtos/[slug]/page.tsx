@@ -7,9 +7,9 @@ import { CardProduto, PrecoProduto } from "@/components/site/CardProduto";
 import { LOJA } from "@/lib/site/config";
 import { ROTAS } from "@/lib/site/rotas";
 import { metadadosIndexaveis } from "@/lib/site/seo";
-import { buscarInterna, buscarRelacionados } from "@/lib/vitrine/buscar";
+import { buscarInterna, buscarMaisPedidos } from "@/lib/vitrine/buscar";
 import { UNIDADES_POR_CENTO } from "@/lib/vitrine/cento";
-import { ehMaisPedido } from "@/lib/vitrine/mais-pedidos";
+import { ehMaisPedido, selecionarRelacionados } from "@/lib/vitrine/mais-pedidos";
 import { textoMinimo } from "@/lib/vitrine/minimo";
 import { variacaoDoProduto } from "@/lib/vitrine/variacao";
 import { ConfigAvulso } from "./_interna/ConfigAvulso";
@@ -61,7 +61,9 @@ function descricaoDoProduto(descricao: string | null): string {
 // o contador do cabeçalho. Cento e Bolo também abrem em modo edição, pelo ícone
 // de editar do carrinho (?editar={id da linha}, ver ConfigEditavel).
 export default async function ProdutoPage({ params, searchParams }: Props) {
-  const interna = await carregar((await params).slug);
+  // "Os mais pedidos" (para "Combina com o seu pedido") sai junto com o
+  // produto, na mesma viagem ao banco.
+  const [interna, maisPedidos] = await Promise.all([carregar((await params).slug), buscarMaisPedidos()]);
   const editar = (await searchParams)?.editar;
   const editarId = (Array.isArray(editar) ? editar[0] : editar) || null;
   if (interna.estado === "nao-encontrado") notFound();
@@ -78,7 +80,7 @@ export default async function ProdutoPage({ params, searchParams }: Props) {
   }
 
   const { produto, sabores, recheios, fotos } = interna;
-  const relacionados = await buscarRelacionados(produto.id);
+  const relacionados = selecionarRelacionados(maisPedidos, produto.id);
   const variacao = variacaoDoProduto(produto);
   const cento = variacao === "cento";
   const minimo = textoMinimo(produto);

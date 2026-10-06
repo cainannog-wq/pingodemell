@@ -33,7 +33,14 @@ let saboresDoBanco: LinhaSabor[] = [];
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(async () => ({
     from: (tabela: string) => {
-      const dados = tabela === "produto_cento_itens" ? saboresDoBanco : doBanco;
+      // Os sabores vêm embutidos em cada produto, como no select com
+      // "sabores:produto_cento_itens!..." (buscar.ts); recheios, nenhum.
+      const dados =
+        tabela === "produto_cento_itens"
+          ? saboresDoBanco
+          : tabela === "recheios"
+            ? []
+            : doBanco.map((p) => ({ ...p, sabores: saboresDoBanco.filter((s) => s.cento_nome === p.nome) }));
       const b = {
         select: () => b,
         eq: () => b,

@@ -77,10 +77,15 @@ describe("Lista — Bolo, Bento Cake e Smash Cake", () => {
     expect(todos).toEqual(expect.arrayContaining(["Smash Cake", "Bento Flork"]));
   });
 
-  it("só consulta recheios quando há Bolo ou Bento na lista", async () => {
+  // Desde o PR perf/vitrine-consultas-cache os recheios saem sempre, em
+  // paralelo com os produtos (uma viagem só); sem Bolo nem Bento na lista,
+  // a falha deles não muda nada na tela.
+  it("sem Bolo nem Bento na lista, falha dos recheios não derruba a Lista", async () => {
     banco = novoBanco({ produtos: [DOCE, SMASH], recheios: [REC_BOLO], produto_cento_itens: [] });
-    await buscarLista(null);
-    expect(banco.consultas.some((c) => c.startsWith("recheios."))).toBe(false);
+    banco.falhas.add("recheios");
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect((await buscarLista(null))!.map((i) => i.produto.nome)).toEqual(expect.arrayContaining([DOCE.nome, SMASH.nome]));
+    erro.mockRestore();
   });
 
   it("falha na consulta dos recheios: a Lista devolve null (aviso de falha, não 'vazia')", async () => {
