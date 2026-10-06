@@ -24,7 +24,7 @@ export { VERSAO_POLITICA };
 // "AAAA-MM-DD": o dia do merge da versão, no calendário de Brasília. Nula,
 // a página omite a frase "Vigente a partir de" e mostra só "Versão N." —
 // para uma versão nova ainda sem data. Não inventar data.
-export const DATA_VIGENCIA_POLITICA: string | null = null;
+export const DATA_VIGENCIA_POLITICA: string | null = "2026-10-06";
 
 // Formata "AAAA-MM-DD" como "DD/MM/AAAA" só com texto: a data já é o dia
 // de vigência, sem fuso nenhum a converter (regra do CLAUDE.md: nada de

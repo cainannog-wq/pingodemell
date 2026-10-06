@@ -268,12 +268,14 @@ describe("Política de Privacidade — página", () => {
 });
 
 describe("Política de Privacidade — versão e data de vigência", () => {
-  it("versão 2, ainda sem data de vigência (a data entra no commit do dia do merge)", () => {
+  it("versão 2, vigente a partir do dia do merge (06/10/2026, calendário de Brasília)", () => {
     expect(VERSAO_POLITICA).toBe(2);
-    expect(DATA_VIGENCIA_POLITICA).toBeNull();
+    expect(DATA_VIGENCIA_POLITICA).toBe("2026-10-06");
     // A página de verdade usa a constante.
     render(<PoliticaDePrivacidadePage />);
-    expect(document.querySelector(".politica-versao")).toHaveTextContent(/^Versão 2\.$/);
+    expect(document.querySelector(".politica-versao")).toHaveTextContent(
+      /^Versão 2\. Vigente a partir de 06\/10\/2026\.$/
+    );
     expect(document.body.innerHTML).not.toMatch(/\{\{|\}\}/);
   });
 
