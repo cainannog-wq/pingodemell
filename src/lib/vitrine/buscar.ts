@@ -24,7 +24,7 @@ type Supabase = SupabaseClient;
 //   paralelo, e a falha deles só conta quando há Bolo ou Bento Cake na tela;
 //   na interna, as fotos extras saem em paralelo, pelo slug.
 // - Cada leitura fica no cache da vitrine (cache.ts: etiqueta "vitrine",
-//   60 s, invalidada pelas ações do admin). Por isso a vitrine lê SEMPRE
+//   1 hora, invalidada pelas ações do admin). Por isso a vitrine lê SEMPRE
 //   com o cliente sem sessão (o mesmo que o anônimo vê, nunca o do admin
 //   logado): o que entra no cache é servido para todo mundo. As leituras em
 //   cache lançam erro em caso de falha (erro não é guardado); quem chama
@@ -206,7 +206,8 @@ async function lerVitrine(
 // regra completa em selecionarMaisPedidos (bebida fora, ordem, limite) —
 // a regra fica numa função pura, coberta por teste automatizado.
 // Em caso de erro, a seção simplesmente não aparece na Home (decisão do
-// Cainan em 06/10/2026: a Home sem a seção pode ficar guardada até 60 s).
+// Cainan em 06/10/2026: a Home sem a seção pode ficar guardada até o prazo do
+// cache, 1 hora desde o commit 4 do PR).
 export async function buscarMaisPedidos(): Promise<ProdutoVitrine[]> {
   const produtos = await lerVitrine({ destaque: true }, "Falha ao buscar 'Os mais pedidos':");
   return produtos ? selecionarMaisPedidos(produtos) : [];

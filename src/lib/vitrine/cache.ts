@@ -15,7 +15,7 @@ import { unstable_cache, updateTag } from "next/cache";
 // cache.test.ts confere que ele é igual a PRAZO_VITRINE_SEGUNDOS.
 
 export const ETIQUETA_VITRINE = "vitrine";
-export const PRAZO_VITRINE_SEGUNDOS = 60;
+export const PRAZO_VITRINE_SEGUNDOS = 3600;
 
 // Guarda o resultado de uma leitura pública da vitrine, por argumentos. A
 // leitura LANÇA erro em caso de falha: erro não é guardado, então nada que

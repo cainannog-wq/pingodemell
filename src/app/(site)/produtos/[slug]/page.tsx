@@ -23,11 +23,11 @@ type Props = { params: Promise<{ slug: string }> };
 
 // Página inteira em cache, servida pela borda (PR perf/vitrine-consultas-
 // cache): cada produto é montado na primeira visita (nenhum no build) e de
-// novo a cada 60 s (PRAZO_VITRINE_SEGUNDOS, src/lib/vitrine/cache.ts; o Next
+// novo a cada 1 hora (PRAZO_VITRINE_SEGUNDOS, src/lib/vitrine/cache.ts; o Next
 // exige o número escrito aqui), ou na hora quando o admin salva algo que
 // muda a vitrine. Nada aqui lê cookie, sessão nem a busca da URL: o
 // ?editar= do carrinho é lido no navegador (ConfigEditavelDaUrl).
-export const revalidate = 60;
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   return [];
