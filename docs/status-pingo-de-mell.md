@@ -307,6 +307,21 @@ Sem migração e sem função de banco. Decisões do Cainan em 06/10/2026 (Parad
   | T0 + 70 min, repetição | 0,42 s | 0,41 s | 0,42 s |
 
   **Hipótese mais provável, NÃO VERIFICADA, pelos cabeçalhos:** a página só responde em ~0,1 s quando a cópia do nó de borda mais próximo ainda está no prazo (`"Netlify Edge"; hit`, Produto em T0 + 15). Quando a cópia da borda está vencida (`fwd=stale`), a borda **não** a entrega na hora: encaminha à camada Durable, e isso custou ~2,4 s mesmo com a Durable no prazo (Home em T0 + 15, `Durable hit; ttl=2522`), o que aponta para a Durable longe do visitante (a função e o Blobs ficam em `iad`/us-east) mais o caminho de ida. Depois de 1 hora sem visitas, a Durable também vence (`ttl` negativo) e o pedido chega à função, que pode estar fria (Home 2,32 s; Lista, dinâmica, 3,43 s). A cópia da Home na borda estava vencida havia 5557 s em T0 + 15 com `Age: 1079`: a borda guardou a Home com um prazo próprio, menor que o da Durable (não verificado por quê). Conclusão: aumentar o prazo reduz as idas à função, mas não evita os ~2 s de quando a cópia da borda vence. Com isso o Cainan decidiu o prazo de 24 horas (commit `a4fd4db`).
+- **Prova de invalidação da Home com o prazo de 24 horas** (07/10/2026, homologação `a4fd4db`, ponta `6986e3b`, só GET na Home, escrita só no Bento Cake Flork (demo), único produto de demonstração em "Os mais pedidos", pelo admin com o Cainan logado):
+
+  | Horário (UTC) | Preço na Home | Posição do Flork | Cache-Status |
+  |---|---|---|---|
+  | 03:17:58 (antes) | R$ 60,00 | 2ª | `"Netlify Edge"; hit; ttl=64167` (96 ms) |
+  | **03:18:21,72 Salvar com R$ 61,00** (`atualizado_em`) | | | |
+  | 03:18:22 | R$ 60,00 | 2ª | `"Netlify Durable"; hit; ttl=64142`, `"Netlify Edge"; fwd=stale` |
+  | 03:18:26 | **R$ 61,00** | 1ª | `"Next.js"; fwd=miss`, `"Netlify Durable"; fwd=stale; ttl=64139`, `Age: 1` |
+  | 03:18:29 | R$ 61,00 | 1ª | `"Netlify Edge"; hit; ttl=86397` |
+  | **03:19:02,70 Salvar com R$ 60,00** (restauração) | | | |
+  | 03:19:03 | R$ 61,00 | 1ª | `"Netlify Durable"; hit; ttl=86362` |
+  | 03:19:07 | **R$ 60,00** | 1ª | `"Next.js"; fwd=miss`, `"Netlify Durable"; fwd=stale; ttl=86358`, `Age: 2` |
+  | 03:19:10 | R$ 60,00 | 1ª | `"Netlify Edge"; hit; ttl=86397` |
+
+  A Home mostrou o preço novo cerca de 4 a 5 s depois de cada Salvar (a leitura de 1 s depois ainda veio da cópia antiga), com 17 a 24 horas de prazo restante na camada Durable: só a invalidação explica. Banco depois: valor numérico igual (`60 = 60.00`), linha idêntica à original com o preço em 2 casas (md5 `ffca02ed…`), texto `60` em vez de `60.00` (mesma diferença aceita antes); 17 produtos, 15 ativos. **Efeito aceito pelo Cainan:** `atualizado_em` do Flork passou a 07/10/2026 03:19:02 UTC e ele subiu do 2º para o 1º lugar de "Os mais pedidos" (a ordem é por `atualizado_em`); na produção, a mesma ordem aparece quando o cache dela for refeito.
 - **Prova de invalidação no admin da homologação** (06/10/2026, homologação `da999c1`, prazo de 1 hora, com o Cainan logado e autorização dele): Smash Cake (demo), sem destaque. Antes: preço `70.00` no banco e "R$ 70,00" na página guardada na borda (`"Netlify Durable"; hit; ttl=3549`). Salvar pelo admin com R$ 71,00 às 19:16:16 UTC; 12 s depois a página mostrou "R$ 71,00" (`"Next.js"; fwd=miss`, `"Netlify Durable"; fwd=stale; ttl=3497`: ainda com quase 1 hora de prazo, só a invalidação explica). Restauração pelo admin (R$ 70,00) às 19:17:14 UTC; a página voltou a "R$ 70,00" (`ttl=3521`, `fwd=miss`). No banco: valor numérico igual (`70 = 70.00`), os outros 12 campos iguais e a linha idêntica à original com o preço em 2 casas (md5 `a66985fd…`); **diferença aceita pelo Cainan**: o texto do preço era `70.00` e ficou `70` (coluna `numeric` sem casas fixas; o admin grava sem as casas). `atualizado_em` mudou de 29/09/2026 00:54 para 06/10/2026 19:17:14 UTC (todo Salvar muda; sem efeito na ordem de "Os mais pedidos", o produto não tem destaque). 17 produtos, 15 ativos, iguais.
 
 ## Validade do carrinho (PR `perf/vitrine-consultas-cache`)
