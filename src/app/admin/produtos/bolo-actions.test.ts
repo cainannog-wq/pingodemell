@@ -50,7 +50,7 @@ vi.mock("@/lib/galeria/storage-servidor", () => ({
   limparPastaDaCapa: vi.fn(async () => 0),
   apagarCapaAntiga: vi.fn(async () => "sem-capa"),
 }));
-vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), updateTag: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn(async () => ({ from: fromMock })) }));
 

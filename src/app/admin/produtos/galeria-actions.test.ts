@@ -31,7 +31,7 @@ const storage = {
 };
 
 vi.mock("@/lib/supabase/dal", () => ({ requireAuth: () => requireAuth() }));
-vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), updateTag: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: (url: string) => redirect(url) }));
 vi.mock("@/lib/galeria/storage-servidor", () => ({
   verificarArquivosNovos: (...a: unknown[]) => storage.verificarArquivosNovos(...(a as [])),

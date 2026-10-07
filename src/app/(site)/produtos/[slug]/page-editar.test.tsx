@@ -31,16 +31,19 @@ vi.mock("next/link", () => ({
 }));
 
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+const buscaDaUrl = vi.hoisted(() => ({ atual: "" }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
   usePathname: () => "/produtos/x",
+  // A busca da URL, lida no navegador (ConfigEditavelDaUrl).
+  useSearchParams: () => new URLSearchParams(buscaDaUrl.atual),
   notFound: () => {
     throw new Error("404");
   },
 }));
 
 let banco: BancoSimulado;
-vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn(async () => clienteSimulado(banco)) }));
+vi.mock("@/lib/supabase/publico", () => ({ createPublicClient: vi.fn(() => clienteSimulado(banco)) }));
 
 let seq = 0;
 function produto(parcial: Partial<ProdutoVitrine>): ProdutoVitrine {
@@ -173,10 +176,9 @@ const salvo = (): LinhaCarrinho[] => JSON.parse(window.localStorage.getItem(CHAV
 
 async function renderInterna(slug: string, editar?: string) {
   const { default: ProdutoPage } = await import("./page");
-  const ui = await ProdutoPage({
-    params: Promise.resolve({ slug }),
-    searchParams: Promise.resolve(editar ? { editar } : {}),
-  });
+  // O ?editar= é lido no navegador (useSearchParams), não pelo servidor.
+  buscaDaUrl.atual = editar ? `editar=${encodeURIComponent(editar)}` : "";
+  const ui = await ProdutoPage({ params: Promise.resolve({ slug }) });
   reiniciarParaTeste();
   return render(<CarrinhoProvider>{ui}</CarrinhoProvider>);
 }
@@ -455,4 +457,30 @@ describe("Editar Cento", () => {
     expect(linhas[1]).toMatchObject({ tipo: "cento", quantidade: 1 });
     expect(push).not.toHaveBeenCalled();
   });
+});
+
+// PR perf/vitrine-consultas-cache: a interna fica em cache na borda e o
+// ?editar= é lido no navegador. Com ele na URL, a configuração comum (com
+// "Adicionar ao pedido") nunca chega a aparecer no navegador: nem por um
+// instante antes de o modo edição entrar, então não há como adicionar uma
+// linha nova por engano.
+describe("?editar= lido no navegador (interna em cache)", () => {
+  for (const [rotulo, slug, linha] of [
+    ["Bolo", "bolo-de-chocolate", () => linhaBolo("l-bolo")],
+    ["Cento", "cento-de-salgados", () => linhaCento("l-cento")],
+  ] as const) {
+    it(`${rotulo}: com ?editar=, o botão 'Adicionar ao pedido' não aparece em nenhum momento`, async () => {
+      gravar([linha(), avulso]);
+      const vistos: string[] = [];
+      const observador = new MutationObserver(() => {
+        for (const b of document.querySelectorAll("button")) vistos.push(b.textContent ?? "");
+      });
+      observador.observe(document.body, { childList: true, subtree: true, characterData: true });
+      await renderInterna(slug, rotulo === "Bolo" ? "l-bolo" : "l-cento");
+      observador.disconnect();
+      expect(vistos.some((t) => t.includes("Salvar alteração"))).toBe(true);
+      expect(vistos.some((t) => t.includes("Adicionar ao pedido"))).toBe(false);
+      expect(botaoSalvar()).toBeInTheDocument();
+    });
+  }
 });

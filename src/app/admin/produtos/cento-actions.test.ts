@@ -73,6 +73,7 @@ vi.mock("@/lib/galeria/storage-servidor", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
+  updateTag: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({

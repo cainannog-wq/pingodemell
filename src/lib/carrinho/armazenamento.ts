@@ -1,4 +1,4 @@
-import { escreverCarrinho, lerCarrinho, type LinhaCarrinho } from "./regras";
+import { carimbarCarrinho, escreverCarrinho, lerCarrinhoGuardado, type LinhaCarrinho } from "./regras";
 
 // Onde o carrinho mora: localStorage do navegador, chave pdm-carrinho-v1.
 // Sobrevive a recarregar e a fechar a aba, e fica igual entre abas abertas
@@ -35,11 +35,38 @@ function lerTexto(): string | null {
   }
 }
 
+// Grava o texto sem avisar os ouvintes (usado só pela própria leitura:
+// carimbar a data ou apagar o vencido não muda as linhas que a tela já vê).
+function guardarTexto(texto: string | null): void {
+  naMemoria = texto;
+  if (soNaMemoria) return;
+  try {
+    if (texto === null) window.localStorage.removeItem(CHAVE_CARRINHO);
+    else window.localStorage.setItem(CHAVE_CARRINHO, texto);
+  } catch {
+    soNaMemoria = true;
+  }
+}
+
+// Validade (regras.ts, VALIDADE_CARRINHO_HORAS): carrinho vencido é
+// descartado em silêncio (apagado, a tela vê vazio); carrinho sem data
+// recebe a data desta leitura. O texto em cache passa a ser o guardado, para
+// a leitura seguinte devolver o mesmo array (exigência do React).
 export function lerNoNavegador(): LinhaCarrinho[] {
   const texto = lerTexto();
   if (texto !== textoEmCache) {
-    textoEmCache = texto;
-    linhasEmCache = lerCarrinho(texto);
+    const agora = Date.now();
+    const lido = lerCarrinhoGuardado(texto, agora);
+    let guardado = texto;
+    if (lido.vencido) {
+      guardado = null;
+      guardarTexto(null);
+    } else if (lido.semData && texto !== null && lido.linhas.length > 0) {
+      guardado = carimbarCarrinho(texto, agora);
+      guardarTexto(guardado);
+    }
+    textoEmCache = guardado;
+    linhasEmCache = lido.linhas.length === 0 ? VAZIO : lido.linhas;
   }
   return linhasEmCache;
 }

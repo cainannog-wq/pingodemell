@@ -30,10 +30,17 @@ vi.mock("next/navigation", () => ({
 // `saboresDoBanco` (produto_cento_itens), sem ler nada real.
 let doBanco: ProdutoVitrine[] = [];
 let saboresDoBanco: LinhaSabor[] = [];
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn(async () => ({
+vi.mock("@/lib/supabase/publico", () => ({
+  createPublicClient: vi.fn(() => ({
     from: (tabela: string) => {
-      const dados = tabela === "produto_cento_itens" ? saboresDoBanco : doBanco;
+      // Os sabores vêm embutidos em cada produto, como no select com
+      // "sabores:produto_cento_itens!..." (buscar.ts); recheios, nenhum.
+      const dados =
+        tabela === "produto_cento_itens"
+          ? saboresDoBanco
+          : tabela === "recheios"
+            ? []
+            : doBanco.map((p) => ({ ...p, sabores: saboresDoBanco.filter((s) => s.cento_nome === p.nome) }));
       const b = {
         select: () => b,
         eq: () => b,
