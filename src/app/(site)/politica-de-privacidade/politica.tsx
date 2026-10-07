@@ -1,3 +1,4 @@
+import { BotaoPreferencias } from "@/components/site/consentimento/BotaoPreferencias";
 import { LOJA } from "@/lib/site/config";
 import { VERSAO_POLITICA } from "@/lib/site/politica-versao";
 import { LINK_WHATSAPP_GERAL, atributosWhatsApp } from "@/lib/site/whatsapp";
@@ -15,7 +16,13 @@ import { LINK_WHATSAPP_GERAL, atributosWhatsApp } from "@/lib/site/whatsapp";
 // a mesma fonte do rodapé (src/lib/site/config.ts). Se algum deles mudar
 // lá, o texto aqui muda junto — e a política precisa de versão nova.
 //
-// Esta página não lê o banco, não grava nada e não tem JavaScript próprio.
+// Versão 3 (07/10/2026, PR de ajustes visuais): só a seção 8 mudou, o botão
+// "Preferências de privacidade" saiu do rodapé e passou a ficar nesta página
+// (logo depois do parágrafo que o cita). Subir a versão pergunta de novo a
+// quem já tinha escolhido (decisão do Cainan).
+//
+// Esta página não lê o banco e não grava nada. O único JavaScript próprio é
+// o botão "Preferências de privacidade" (só com o GA4 habilitado).
 
 // A versão mora em src/lib/site/politica-versao.ts (lida também pelo banner
 // de consentimento e pela trava do GA4); daqui só é repassada.
@@ -24,7 +31,7 @@ export { VERSAO_POLITICA };
 // "AAAA-MM-DD": o dia do merge da versão, no calendário de Brasília. Nula,
 // a página omite a frase "Vigente a partir de" e mostra só "Versão N." —
 // para uma versão nova ainda sem data. Não inventar data.
-export const DATA_VIGENCIA_POLITICA: string | null = "2026-10-06";
+export const DATA_VIGENCIA_POLITICA: string | null = "2026-10-07";
 
 // Formata "AAAA-MM-DD" como "DD/MM/AAAA" só com texto: a data já é o dia
 // de vigência, sem fuso nenhum a converter (regra do CLAUDE.md: nada de
@@ -323,12 +330,13 @@ export function PoliticaDePrivacidade({ dataVigencia }: { dataVigencia: string |
         </p>
         <p>
           O Titular pode alterar sua escolha a qualquer tempo, pelo botão &quot;Preferências de privacidade&quot;,
-          disponível no rodapé do sítio eletrônico sempre que a ferramenta de análise estiver habilitada. Se o Titular
+          disponível nesta página sempre que a ferramenta de análise estiver habilitada. Se o Titular
           revogar um aceite anterior, a página é recarregada e os cookies da ferramenta de análise são apagados do
           navegador. Em qualquer caso, depois da recusa novas coletas deixam de ocorrer. A escolha é registrada no
           armazenamento do navegador e vale por 180 dias; depois desse prazo, ou quando esta Política for alterada de
           modo que exija nova escolha, o aviso é exibido novamente.
         </p>
+        <BotaoPreferencias />
         <p>
           Os demais dados armazenados no navegador, descritos na seção 2.5, são necessários ao funcionamento do
           carrinho e do pedido e são gravados independentemente dessa escolha.

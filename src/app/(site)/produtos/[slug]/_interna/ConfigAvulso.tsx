@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useCarrinho } from "@/components/site/CarrinhoProvider";
 import { Seletor } from "@/components/site/Seletor";
 import { normalizarObservacao } from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
@@ -16,6 +15,7 @@ import {
   quantidadeMaxima,
 } from "@/lib/vitrine/quantidade";
 import { Observacao } from "./Observacao";
+import { useAdicionarEIrAoCarrinho } from "./edicao";
 import { PainelAdicionar } from "./PainelAdicionar";
 
 // Configuração do produto avulso (tipo normal): quantidade respeitando o
@@ -25,7 +25,7 @@ import { PainelAdicionar } from "./PainelAdicionar";
 // digitado à mão é conferido e, ao sair do campo, vai para o valor aceito
 // mais próximo.
 export function ConfigAvulso({ produto }: { produto: ProdutoVitrine }) {
-  const { adicionar } = useCarrinho();
+  const { adicionarEIr, indo } = useAdicionarEIrAoCarrinho();
   const minimo = quantidadeInicial(produto.pedido_minimo, produto.step_quantidade);
   const [texto, setTexto] = useState(String(minimo));
   const [observacao, setObservacao] = useState("");
@@ -45,7 +45,7 @@ export function ConfigAvulso({ produto }: { produto: ProdutoVitrine }) {
 
   function aoAdicionar() {
     if (!valida) return;
-    adicionar({
+    const foi = adicionarEIr({
       tipo: "normal",
       produtoId: produto.id,
       slug: produto.slug,
@@ -60,7 +60,7 @@ export function ConfigAvulso({ produto }: { produto: ProdutoVitrine }) {
       foto: produto.image_url,
       observacao: normalizarObservacao(observacao),
     });
-    setAdicionado(true);
+    if (foi) setAdicionado(true);
   }
 
   return (
@@ -109,6 +109,7 @@ export function ConfigAvulso({ produto }: { produto: ProdutoVitrine }) {
         erro={valida ? null : erro}
         adicionado={adicionado}
         aoAdicionar={aoAdicionar}
+        indo={indo}
       />
     </>
   );

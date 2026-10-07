@@ -829,3 +829,38 @@ describe("Checkout — envio do pedido", () => {
     expect(screen.queryByRole("link", { name: /Ver o último pedido enviado/ })).toBeNull();
   });
 });
+
+// PR de ajustes visuais (07/10/2026): saem os cinco subtítulos das seções;
+// ficam os títulos, o aviso das datas bloqueadas, a frase do pagamento e o
+// texto de abertura.
+describe("Checkout — seções sem subtítulo", () => {
+  const SUBTITULOS = [
+    "É por aqui que a gente vai te responder.",
+    "A data manda no prazo. As que não dão já aparecem bloqueadas.",
+    "Retirada na loja ou entrega no endereço que você escolher.",
+    "A ocasião ajuda a gente a caprichar. O pagamento é combinado no WhatsApp.",
+    "Qualquer coisa que a gente precise saber.",
+  ];
+
+  it("nenhum dos cinco subtítulos; títulos, aviso, frase do pagamento e abertura mantidos", async () => {
+    await abrir();
+    for (const sub of SUBTITULOS) expect(document.body).not.toHaveTextContent(sub);
+    const titulos = Array.from(document.querySelectorAll(".checkout-secao h2")).map((h) => h.textContent);
+    expect(titulos).toEqual(["Seus dados", "Quando é a festa?", "Como você quer receber?", "Detalhes do pedido", "Observações gerais"]);
+    // O cabeçalho de cada seção tem só o número e o título.
+    for (const cabeca of document.querySelectorAll(".checkout-secao-cabeca")) expect(cabeca.querySelector("p")).toBeNull();
+    expect(screen.getByText("Por que algumas datas ficam bloqueadas")).toBeInTheDocument();
+    expect(screen.getByText("Nada é cobrado aqui no site. A gente confirma tudo e combina o pagamento pelo WhatsApp.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Preencha seus dados e envie seu pedido pelo WhatsApp. A gente confirma tudo e combina o pagamento por lá.")
+    ).toBeInTheDocument();
+    // Nenhuma referência de acessibilidade aponta para um elemento que não existe.
+    for (const el of document.querySelectorAll("[aria-describedby], [aria-labelledby]")) {
+      for (const atributo of ["aria-describedby", "aria-labelledby"]) {
+        for (const id of (el.getAttribute(atributo) ?? "").split(/\s+/).filter(Boolean)) {
+          expect(document.getElementById(id), `${atributo}="${id}"`).not.toBeNull();
+        }
+      }
+    }
+  });
+});

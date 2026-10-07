@@ -34,9 +34,6 @@ export function ComoFunciona() {
         <div className="home-como-head">
           <span className="home-kicker">Encomendas</span>
           <h2 id="home-como-titulo">Como funciona o seu pedido</h2>
-          <p className="home-como-lead site-so-desktop">
-            Quatro passos. O último acontece no WhatsApp, com uma pessoa da nossa equipe.
-          </p>
         </div>
 
         <ol className="home-steps">

@@ -9,4 +9,4 @@
 //   que 2, o build de produção nunca envia nada, mesmo com GA4_ID definida.
 //   A versão 2 da Política (PR 5 da Fase 4) destravou: desde ela, o que
 //   impede a medição na produção é só a GA4_ID não existir lá.
-export const VERSAO_POLITICA = 2;
+export const VERSAO_POLITICA = 3;

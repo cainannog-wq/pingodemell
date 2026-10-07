@@ -11,7 +11,7 @@ import * as gtag from "@/lib/analitica/gtag";
 import { VERSAO_POLITICA } from "@/lib/site/politica-versao";
 import { BannerConsentimento } from "./BannerConsentimento";
 import { ConsentimentoProvider } from "./ConsentimentoProvider";
-import { LinkPreferencias } from "./LinkPreferencias";
+import { BotaoPreferencias } from "./BotaoPreferencias";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children: ReactNode }) => (
@@ -30,10 +30,8 @@ function Tela() {
       <BannerConsentimento />
       <main>
         <p>Conteúdo</p>
+        <BotaoPreferencias />
       </main>
-      <footer>
-        <LinkPreferencias />
-      </footer>
     </ConsentimentoProvider>
   );
 }
@@ -43,7 +41,7 @@ function comId(id = ID) {
   vi.stubEnv("CONTEXTO_NETLIFY", "branch-deploy");
 }
 
-function salvo(escolha: "aceito" | "recusado", data = "2026-10-05", versaoPolitica = 2) {
+function salvo(escolha: "aceito" | "recusado", data = "2026-10-05", versaoPolitica = VERSAO_POLITICA) {
   window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha, data, versaoPolitica }));
 }
 
@@ -82,13 +80,13 @@ describe("sem ID do GA4 efetivo", () => {
     try {
       const { ConsentimentoProvider: Provider1 } = await import("./ConsentimentoProvider");
       const { BannerConsentimento: Banner1 } = await import("./BannerConsentimento");
-      const { LinkPreferencias: Link1 } = await import("./LinkPreferencias");
+      const { BotaoPreferencias: Botao1 } = await import("./BotaoPreferencias");
       render(
         <Provider1>
           <Banner1 />
-          <footer>
-            <Link1 />
-          </footer>
+          <main>
+            <Botao1 />
+          </main>
         </Provider1>
       );
       expect(banner()).toBeNull();
@@ -108,7 +106,7 @@ describe("sem ID do GA4 efetivo", () => {
   });
 });
 
-describe("produção com GA4_ID e a versão vigente (2)", () => {
+describe("produção com GA4_ID e a versão vigente (3)", () => {
   it("banner e link aparecem (a trava por versão não segura mais)", () => {
     vi.stubEnv("GA4_ID", ID);
     vi.stubEnv("CONTEXTO_NETLIFY", "production");
@@ -148,7 +146,7 @@ describe("com ID do GA4 efetivo", () => {
       versao: 1,
       escolha,
       data: "2026-10-05",
-      versaoPolitica: 2,
+      versaoPolitica: VERSAO_POLITICA,
     });
     expect(banner()).toBeNull();
     expect(screen.getByRole("button", { name: "Preferências de privacidade" })).toBeInTheDocument();
@@ -175,7 +173,7 @@ describe("com ID do GA4 efetivo", () => {
     expect(banner()).toBeInTheDocument();
   });
 
-  it("reabertura pelo rodapé: escolha atual visível, foco no banner, e o foco volta ao link ao escolher", async () => {
+  it("reabertura pelo botão da Política: escolha atual visível, foco no banner, e o foco volta ao botão ao escolher", async () => {
     comId();
     salvo("recusado");
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });

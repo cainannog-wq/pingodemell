@@ -7,7 +7,7 @@ import { WhatsAppMark } from "./WhatsAppMark";
 
 // iconLeft/iconRight recebem o nome de um ícone da lista (src/lib/icones.ts), ou o
 // valor especial "whatsapp", que desenha a marca oficial do WhatsApp
-// (usada no site público: "Peça pelo WhatsApp", "Fale conosco").
+// (usada no site público: "Fale conosco").
 export type ButtonIconName = IconeNome | "whatsapp";
 
 function ButtonIcon({ name }: { name: ButtonIconName }) {

@@ -14,7 +14,7 @@ import {
 } from "@/lib/consentimento/consentimento";
 
 // Estado do consentimento no site público (PR 2 da Fase 4), dividido entre
-// o banner, o link "Preferências de privacidade" do rodapé e, a partir da
+// o banner, o botão "Preferências de privacidade" da Política e, a partir da
 // etapa da medição, a etiqueta do GA4.
 //
 // - id: o ID do GA4 efetivo, lido só depois de montar (src/lib/analitica/

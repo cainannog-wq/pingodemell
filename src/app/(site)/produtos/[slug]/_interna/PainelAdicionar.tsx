@@ -15,6 +15,7 @@ export function PainelAdicionar({
   erro,
   adicionado,
   aoAdicionar,
+  indo = false,
   rotulo = "Adicionar ao pedido",
   rotuloBarra = "Adicionar",
   mensagemAdicionado = "Adicionado ao pedido",
@@ -26,6 +27,8 @@ export function PainelAdicionar({
   erro: string | null;
   adicionado: boolean;
   aoAdicionar: () => void;
+  // Confirmado e a caminho do carrinho: botão desligado até a página sair.
+  indo?: boolean;
   // Em modo edição (Cento e Bolo) o botão é "Salvar alteração" / "Salvar".
   rotulo?: string;
   rotuloBarra?: string;
@@ -55,7 +58,7 @@ export function PainelAdicionar({
             {valor}
           </span>
         </div>
-        <Button variant="primary" size="lg" fullWidth iconLeft="add_shopping_cart" disabled={!podeAdicionar} onClick={aoAdicionar}>
+        <Button variant="primary" size="lg" fullWidth iconLeft="add_shopping_cart" disabled={!podeAdicionar || indo} onClick={aoAdicionar}>
           {rotulo}
         </Button>
         {aviso}
@@ -78,7 +81,7 @@ export function PainelAdicionar({
               {valor}
             </span>
           </div>
-          <Button variant="primary" size="md" fullWidth iconLeft="add_shopping_cart" disabled={!podeAdicionar} onClick={aoAdicionar}>
+          <Button variant="primary" size="md" fullWidth iconLeft="add_shopping_cart" disabled={!podeAdicionar || indo} onClick={aoAdicionar}>
             {rotuloBarra}
           </Button>
         </div>

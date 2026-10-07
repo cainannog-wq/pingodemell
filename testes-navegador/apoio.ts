@@ -1,4 +1,5 @@
 import { expect, type BrowserContext, type Page } from "@playwright/test";
+import { VERSAO_POLITICA } from "../src/lib/site/politica-versao";
 
 // Apoio dos testes de navegador do consentimento (PR 2 da Fase 4).
 //
@@ -83,7 +84,7 @@ export function diasAntes(dataIso: string, dias: number): string {
   return `${alvo.getUTCFullYear()}-${dois(alvo.getUTCMonth() + 1)}-${dois(alvo.getUTCDate())}`;
 }
 
-export async function gravarEscolha(page: Page, escolha: "aceito" | "recusado", data = hojeBrasilia(), versaoPolitica = 2) {
+export async function gravarEscolha(page: Page, escolha: "aceito" | "recusado", data = hojeBrasilia(), versaoPolitica = VERSAO_POLITICA) {
   await page.evaluate(
     ([e, d, v]) => window.localStorage.setItem("pdm-consentimento-v1", JSON.stringify({ versao: 1, escolha: e, data: d, versaoPolitica: v })),
     [escolha, data, versaoPolitica] as const
@@ -91,7 +92,8 @@ export async function gravarEscolha(page: Page, escolha: "aceito" | "recusado", 
 }
 
 export const banner = (page: Page) => page.getByRole("region", { name: "Preferências de privacidade" });
-export const linkPreferencias = (page: Page) => page.locator(".site-footer-preferencias");
+// Desde 07/10/2026 o botão fica só na seção 8 da Política (id "cookies").
+export const botaoPreferencias = (page: Page) => page.getByRole("button", { name: "Preferências de privacidade" });
 
 // Retrato sintético do pedido (dados inventados), gravado no sessionStorage
 // da aba, para a /confirmacao. Nenhum pedido é enviado.

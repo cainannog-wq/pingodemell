@@ -145,23 +145,6 @@ function ComRetrato({ retrato, titulo, aoMudar }: { retrato: Retrato; titulo: Re
 
       <div className="site-container confirmacao-corpo">
         <div className="confirmacao-principal">
-          <section className="confirmacao-acoes" aria-label="Enviar o pedido">
-            <a className="confirmacao-whatsapp" {...atributosWhatsApp("confirmacao", url)} onClick={aoAbrirWhatsApp}>
-              <WhatsAppMark size={26} />
-              Enviar pelo WhatsApp
-              <span className="site-visually-hidden"> (abre em nova aba)</span>
-            </a>
-            <p className="confirmacao-nota">O WhatsApp abre em nova aba com a mensagem pronta. É só tocar em enviar.</p>
-            <p className="confirmacao-nota">
-              Ao enviar, seus dados vão para o WhatsApp da loja. Veja a <TextLink href={ROTAS.privacidade}>Política de Privacidade</TextLink>.
-            </p>
-            <CopiarMensagem
-              texto={retrato.mensagem}
-              destaque={!retrato.cabe}
-              instrucao={retrato.cabe ? undefined : "Se a mensagem não aparecer no WhatsApp, copie e cole na conversa."}
-            />
-          </section>
-
           <section className="confirmacao-resumo" aria-labelledby="confirmacao-resumo-titulo">
             <h2 id="confirmacao-resumo-titulo">Resumo do pedido</h2>
             <ul className="confirmacao-itens">
@@ -206,6 +189,23 @@ function ComRetrato({ retrato, titulo, aoMudar }: { retrato: Retrato; titulo: Re
               <Icon name="photo_camera" size={20} color="var(--pdm-info)" />
               <span>Tem foto de referência? Mande na conversa do WhatsApp, depois da mensagem.</span>
             </p>
+          </section>
+
+          <section className="confirmacao-acoes" aria-label="Enviar o pedido">
+            <a className="confirmacao-whatsapp" {...atributosWhatsApp("confirmacao", url)} onClick={aoAbrirWhatsApp}>
+              <WhatsAppMark size={26} />
+              Enviar pelo WhatsApp
+              <span className="site-visually-hidden"> (abre em nova aba)</span>
+            </a>
+            <p className="confirmacao-nota">O WhatsApp abre em nova aba com a mensagem pronta. É só tocar em enviar.</p>
+            <p className="confirmacao-nota">
+              Ao enviar, seus dados vão para o WhatsApp da loja. Veja a <TextLink href={ROTAS.privacidade}>Política de Privacidade</TextLink>.
+            </p>
+            <CopiarMensagem
+              texto={retrato.mensagem}
+              destaque={!retrato.cabe}
+              instrucao={retrato.cabe ? undefined : "Se a mensagem não aparecer no WhatsApp, copie e cole na conversa."}
+            />
           </section>
 
           <section className="confirmacao-previa" aria-labelledby="confirmacao-previa-titulo">

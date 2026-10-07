@@ -183,16 +183,21 @@ describe("Quem Somos", () => {
     }
   });
 
-  it("menu, menu mobile e rodapé levam à página; só Sobre nós é a página atual", () => {
+  it("menu, menu mobile e rodapé levam à página; só Sobre nós é a página atual; Contato só no menu", () => {
     montar();
     for (const nome of ["Principal", "Principal (menu)", "Rodapé"]) {
       const nav = screen.getByRole("navigation", { name: nome, hidden: true });
       const sobre = within(nav).getByRole("link", { name: /Sobre nós/, hidden: true });
-      const contato = within(nav).getByRole("link", { name: /Contato/, hidden: true });
       expect(sobre).toHaveAttribute("href", ROTAS.quemSomos);
+      if (nome === "Rodapé") {
+        // O rodapé perdeu "Contato" e "Prazos" em 07/10/2026.
+        expect(within(nav).queryByRole("link", { name: /Contato/, hidden: true })).toBeNull();
+        continue;
+      }
+      const contato = within(nav).getByRole("link", { name: /Contato/, hidden: true });
       expect(contato).toHaveAttribute("href", ROTAS.contato);
       expect(contato).not.toHaveAttribute("aria-current");
-      if (nome !== "Rodapé") expect(sobre).toHaveAttribute("aria-current", "page");
+      expect(sobre).toHaveAttribute("aria-current", "page");
     }
     expect(ROTAS.quemSomos).toBe("/quem-somos");
     expect(ROTAS.contato).toBe("/quem-somos#contato");
