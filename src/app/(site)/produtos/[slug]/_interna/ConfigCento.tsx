@@ -36,7 +36,7 @@ function textoCentos(n: number): string {
 // Sabor que já não está ativo não entra; a soma só fecha quando a cliente
 // completa.
 export function ConfigCento({ produto, sabores, edicao }: { produto: ProdutoVitrine; sabores: string[]; edicao?: Edicao }) {
-  const { confirmar, emEdicao, virouNovo } = useConfirmacao(edicao);
+  const { confirmar, emEdicao, virouNovo, indo } = useConfirmacao(edicao);
   const gravada = edicao?.linha.tipo === "cento" ? edicao.linha : null;
   const [centos, setCentos] = useState(gravada?.quantidade ?? 1);
   const [distribuicao, setDistribuicao] = useState<Distribuicao>(() => {
@@ -185,6 +185,7 @@ export function ConfigCento({ produto, sabores, edicao }: { produto: ProdutoVitr
         erro={valida ? null : erro}
         adicionado={adicionado}
         aoAdicionar={aoAdicionar}
+        indo={indo}
         rotulo={emEdicao ? ROTULO_SALVAR : ROTULO_ADICIONAR}
         rotuloBarra={emEdicao ? "Salvar" : "Adicionar"}
         mensagemAdicionado={virouNovo ? AVISO_VIROU_ITEM_NOVO : undefined}

@@ -46,7 +46,7 @@ export function ConfigBolo({
   recheios: RecheioVitrine[];
   edicao?: Edicao;
 }) {
-  const { confirmar, emEdicao, virouNovo } = useConfirmacao(edicao);
+  const { confirmar, emEdicao, virouNovo, indo } = useConfirmacao(edicao);
   const grupos = agruparRecheiosDoBolo(recheios);
   const gravada = edicao?.linha.tipo === "bolo" ? edicao.linha : null;
   const [texto, setTexto] = useState(String(gravada?.quantidade ?? KG_MINIMO));
@@ -182,6 +182,7 @@ export function ConfigBolo({
         erro={valida ? null : erro}
         adicionado={adicionado}
         aoAdicionar={aoAdicionar}
+        indo={indo}
         rotulo={emEdicao ? ROTULO_SALVAR : ROTULO_ADICIONAR}
         rotuloBarra={emEdicao ? "Salvar" : "Adicionar"}
         mensagemAdicionado={virouNovo ? AVISO_VIROU_ITEM_NOVO : undefined}

@@ -354,7 +354,7 @@ function Formulario({
         <div className="checkout-coluna-form">
           <ResumoDosErros visivel={tentou} erros={listaErros} />
 
-          <Secao numero={1} id="checkout-secao-dados" titulo="Seus dados" sub="É por aqui que a gente vai te responder.">
+          <Secao numero={1} id="checkout-secao-dados" titulo="Seus dados">
             <div className="checkout-campos">
               <CampoTexto aoSair={tocar} campo="nome" obrigatorio erro={erroVisivel("nome")}>
                 <Input
@@ -446,7 +446,6 @@ function Formulario({
             numero={2}
             id="checkout-secao-quando"
             titulo="Quando é a festa?"
-            sub="A data manda no prazo. As que não dão já aparecem bloqueadas."
           >
             <div className="checkout-quando">
               <div className="checkout-quando-cal">
@@ -540,7 +539,6 @@ function Formulario({
             numero={3}
             id="checkout-secao-receber"
             titulo="Como você quer receber?"
-            sub="Retirada na loja ou entrega no endereço que você escolher."
           >
             <fieldset className="checkout-grupo" data-campo="modo">
               <legend className="site-visually-hidden">Como você quer receber? (obrigatório)</legend>
@@ -667,7 +665,6 @@ function Formulario({
             numero={4}
             id="checkout-secao-detalhes"
             titulo="Detalhes do pedido"
-            sub="A ocasião ajuda a gente a caprichar. O pagamento é combinado no WhatsApp."
           >
             <div className="checkout-campos">
               <CampoTexto campo="ocasiao" erro={undefined}>
@@ -715,7 +712,7 @@ function Formulario({
             </div>
           </Secao>
 
-          <Secao numero={5} id="checkout-secao-obs" titulo="Observações gerais" sub="Qualquer coisa que a gente precise saber.">
+          <Secao numero={5} id="checkout-secao-obs" titulo="Observações gerais">
             <CampoTexto campo="observacoes" erro={undefined} dica={`Até ${MAXIMO.observacoes} caracteres. As observações de cada item continuam no item.`}>
               <Textarea
                 id={ids.observacoes}
@@ -863,13 +860,11 @@ function Secao({
   numero,
   id,
   titulo,
-  sub,
   children,
 }: {
   numero: number;
   id: string;
   titulo: string;
-  sub: string;
   children: ReactNode;
 }) {
   return (
@@ -878,10 +873,7 @@ function Secao({
         <span className="checkout-secao-numero" aria-hidden="true">
           {numero}
         </span>
-        <div>
-          <h2 id={`${id}-titulo`}>{titulo}</h2>
-          <p>{sub}</p>
-        </div>
+        <h2 id={`${id}-titulo`}>{titulo}</h2>
       </div>
       <div className="checkout-secao-corpo">{children}</div>
     </section>

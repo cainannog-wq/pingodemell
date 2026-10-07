@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { LOJA } from "@/lib/site/config";
 import { ROTAS } from "@/lib/site/rotas";
-import { LinkPreferencias } from "./consentimento/LinkPreferencias";
 import { Hive } from "./Hive";
 
 // "Política de privacidade" não está no layout do Claude Design; entrou
@@ -10,8 +9,6 @@ import { Hive } from "./Hive";
 const LINKS_RODAPE = [
   { rotulo: "Produtos", href: ROTAS.lista },
   { rotulo: "Sobre nós", href: ROTAS.quemSomos },
-  { rotulo: "Prazos", href: ROTAS.prazos },
-  { rotulo: "Contato", href: ROTAS.contato },
   { rotulo: "Política de privacidade", href: ROTAS.privacidade },
 ];
 
@@ -38,8 +35,6 @@ export function SiteFooter() {
               {link.rotulo}
             </Link>
           ))}
-          {/* Só com ID do GA4 efetivo (reabre o banner de consentimento). */}
-          <LinkPreferencias />
         </nav>
       </div>
     </footer>

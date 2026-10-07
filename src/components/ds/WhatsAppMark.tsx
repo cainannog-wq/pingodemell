@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 
 // Marca oficial do WhatsApp (public/icons/whatsapp.png), decorativa: quem
-// usa sempre tem o texto ("Peça pelo WhatsApp", "Fale conosco") ou um
+// usa sempre tem o texto ("Fale conosco", "Enviar pelo WhatsApp") ou um
 // aria-label ao lado. Porta do .ds-mark-whatsapp do handoff.
 export function WhatsAppMark({ size = 24, style }: { size?: number; style?: CSSProperties }) {
   return (

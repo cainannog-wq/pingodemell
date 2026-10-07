@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { VERSAO_POLITICA } from "@/lib/site/politica-versao";
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -170,7 +171,7 @@ beforeEach(() => {
   push.mockClear();
   vi.stubEnv("GA4_ID", "G-TESTE00000");
   vi.stubEnv("CONTEXTO_NETLIFY", "branch-deploy");
-  window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "aceito", data: "2026-10-01", versaoPolitica: 2 }));
+  window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "aceito", data: "2026-10-01", versaoPolitica: VERSAO_POLITICA }));
   chamadas = [];
   respostas = [];
   vi.stubGlobal(

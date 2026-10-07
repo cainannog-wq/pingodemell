@@ -207,6 +207,12 @@ describe("Interna — Bolo", () => {
         observacao: "tema unicórnio",
       },
     ]);
+    // Adicionar leva ao carrinho; um segundo bolo é uma volta à interna.
+    cleanup();
+    await renderInterna("bolo-de-chocolate");
+    fireEvent.click(screen.getByRole("radio", { name: /Brigadeiro/ }));
+    fireEvent.click(screen.getByRole("radio", { name: "Quadrado" }));
+    fireEvent.change(screen.getByRole("textbox", { name: /observação/i }), { target: { value: "tema unicórnio" } });
     fireEvent.click(botaoAdicionar());
     expect(contador()).toHaveTextContent("2");
     expect(salvo()).toHaveLength(2);
@@ -241,8 +247,14 @@ describe("Interna — Bento Cake", () => {
     await renderInterna("bento-flork");
     fireEvent.click(screen.getByRole("radio", { name: "Ninho" }));
     fireEvent.click(botaoAdicionar());
+    // Adicionar leva ao carrinho; cada adição seguinte é uma volta à interna.
+    cleanup();
+    await renderInterna("bento-flork");
+    fireEvent.click(screen.getByRole("radio", { name: "Ninho" }));
     fireEvent.click(botaoAdicionar());
     expect(salvo()).toMatchObject([{ tipo: "bento", produtoId: BENTO.id, quantidade: 4, preco: 60, recheio: { id: NINHO.id, nome: "Ninho" } }]);
+    cleanup();
+    await renderInterna("bento-flork");
     fireEvent.click(screen.getByRole("radio", { name: "Brigadeiro" }));
     fireEvent.click(botaoAdicionar());
     expect(salvo()).toHaveLength(2);

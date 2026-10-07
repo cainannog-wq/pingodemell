@@ -508,11 +508,6 @@ body:has(.pdm-site) {
   gap: 16px;
   margin-top: 8px;
 }
-.home-hero-note {
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--text-muted);
-}
 .home-hero-media {
   position: relative;
 }
@@ -579,11 +574,6 @@ body:has(.pdm-site) {
     gap: 10px;
     margin-top: 0;
     width: 100%;
-  }
-  .home-hero-note {
-    order: 3;
-    font-size: 13px;
-    margin-top: -6px;
   }
 }
 
@@ -956,11 +946,6 @@ body:has(.pdm-site) {
 }
 .pdm-site .home-como h2 {
   color: var(--cream-100);
-}
-.home-como-lead {
-  font-size: 17px;
-  color: var(--brown-100);
-  max-width: 640px;
 }
 .home-steps {
   display: grid;
@@ -1743,27 +1728,4 @@ input.site-seletor-valor {
 }
 html:has(.pdm-site) {
   scroll-padding-bottom: calc(var(--banner-altura, 0px) + var(--banner-base, 0px));
-}
-
-/* "Preferências de privacidade" no rodapé: botão com a cara dos links. */
-.pdm-site .site-footer-preferencias {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--tap-min);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  font-size: 15px;
-  color: var(--cream-100);
-  cursor: pointer;
-}
-.pdm-site .site-footer-preferencias:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-@media (max-width: 767px) {
-  .pdm-site .site-footer-preferencias {
-    font-size: 14px;
-  }
 }

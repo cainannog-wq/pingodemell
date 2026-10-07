@@ -8,7 +8,7 @@ import {
   gravarRetrato,
   hojeBrasilia,
   interceptar,
-  linkPreferencias,
+  botaoPreferencias,
   semEscritas,
   temDataLayer,
   type Registro,
@@ -107,10 +107,16 @@ test("(f) ?editar=abc cortado no page_location e no page_referrer; referrer exte
   expect(JSON.stringify(await eventos(page))).not.toContain("editar");
 });
 
-test("(g) revogar pelo rodapé: desliga, apaga _ga e _ga_TESTE00000 e recarrega; depois, nada ao Google", async ({ page, context, baseURL }) => {
+test("(g) revogar pelo botão da Política: desliga, apaga _ga e _ga_TESTE00000 e recarrega; depois, nada ao Google", async ({ page, context, baseURL }) => {
   await page.goto("/quem-somos");
   await aceitarNaTela(page);
   await expect.poll(() => registro.google.length).toBe(1);
+  // Fora da Política o botão não existe (nem no rodapé).
+  await expect(page.locator("footer")).toBeVisible();
+  await expect(botaoPreferencias(page)).toHaveCount(0);
+  await page.goto("/politica-de-privacidade");
+  await expect(page.locator("#cookies").getByRole("button", { name: "Preferências de privacidade" })).toBeVisible();
+  await expect(page.locator("footer").getByRole("button", { name: "Preferências de privacidade" })).toHaveCount(0);
   const host = new URL(baseURL!).hostname;
   await context.addCookies([
     { name: "_ga", value: "GA1.1.1.1", domain: host, path: "/" },
@@ -119,7 +125,7 @@ test("(g) revogar pelo rodapé: desliga, apaga _ga e _ga_TESTE00000 e recarrega;
   ]);
   const antes = registro.google.length;
 
-  await linkPreferencias(page).click();
+  await botaoPreferencias(page).click();
   await expect(banner(page).getByText("Sua escolha atual: Aceito")).toBeVisible();
   const recarga = page.waitForEvent("load");
   await banner(page).getByRole("button", { name: "Recusar" }).click();

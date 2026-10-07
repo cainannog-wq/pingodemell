@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { VERSAO_POLITICA } from "@/lib/site/politica-versao";
 import { somarDias } from "@/lib/tempo/brasilia";
 import {
   CHAVE_CONSENTIMENTO,
@@ -81,7 +82,7 @@ describe("loja do consentimento no navegador", () => {
       versao: 1,
       escolha: "aceito",
       data: "2026-10-05",
-      versaoPolitica: 2,
+      versaoPolitica: VERSAO_POLITICA,
     });
     expect(lerConsentimento()?.escolha).toBe("aceito");
     expect(aviso).toHaveBeenCalledTimes(1);

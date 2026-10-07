@@ -78,6 +78,11 @@
   font-size: var(--fs-h3);
   line-height: var(--lh-h3);
 }
+/* Botão "Preferências de privacidade" (seção 8): no tamanho do texto, não
+   esticado na coluna. */
+.politica-preferencias {
+  display: flex;
+}
 .politica-secao ul {
   display: flex;
   flex-direction: column;
