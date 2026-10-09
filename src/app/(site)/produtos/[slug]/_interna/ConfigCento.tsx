@@ -28,7 +28,7 @@ function textoCentos(n: number): string {
 // Configuração do produto tipo Cento (regras em src/lib/vitrine/cento.ts):
 // número de centos (1, 2, 3..., sem pedido mínimo nem step do cadastro) e
 // a distribuição das 100 × centos unidades entre os sabores ativos, numa
-// combinação só, em passos de 5. O botão só liga com a soma exata.
+// combinação só, em passos de 10. O botão só liga com a soma exata.
 // Com 1 sabor ativo, o total inteiro vai para ele, sem distribuição.
 //
 // Em modo edição (edicao, vindo do ?editar= do carrinho) começa preenchido com

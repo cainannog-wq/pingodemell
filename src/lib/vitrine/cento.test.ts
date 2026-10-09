@@ -6,6 +6,7 @@ import {
   composicaoValida,
   distribuicaoInicial,
   MAX_CENTOS,
+  PASSO_SABOR,
   passoCentos,
   podeAumentar,
   saboresAtivos,
@@ -49,7 +50,7 @@ describe("sabores ativos do Cento", () => {
   });
 });
 
-describe("distribuição: soma exata de 100 × centos, em passos de 5", () => {
+describe("distribuição: soma exata de 100 × centos, em passos de 10", () => {
   const SABORES = ["Coxinha", "Kibe", "Risole"];
 
   it("total = 100 × centos", () => {
@@ -64,26 +65,64 @@ describe("distribuição: soma exata de 100 × centos, em passos de 5", () => {
     expect(composicaoValida({ Coxinha: 300 }, ["Coxinha"], 3)).toBe(true);
   });
 
-  it("+ e − de 5 em 5, nunca abaixo de 0, e o + trava quando a soma chega ao total", () => {
+  it("o passo de cada sabor é 10", () => {
+    expect(PASSO_SABOR).toBe(10);
+  });
+
+  it("+ soma de 10 em 10 até 100 num sabor só, e o + trava no total", () => {
+    let d: Distribuicao = distribuicaoInicial(SABORES, 1);
+    const vistos: number[] = [];
+    for (let i = 0; i < 10; i++) {
+      d = alterarSabor(d, "Coxinha", 1, 1);
+      vistos.push(d.Coxinha);
+    }
+    expect(vistos).toEqual([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
+    expect(podeAumentar(d, "Coxinha", 1)).toBe(false);
+    expect(alterarSabor(d, "Coxinha", 1, 1)).toBe(d);
+    expect(composicaoValida(d, SABORES, 1)).toBe(true);
+  });
+
+  it("+ em dois sabores: 50 e 50 fecham o cento", () => {
+    let d: Distribuicao = distribuicaoInicial(SABORES, 1);
+    for (let i = 0; i < 5; i++) d = alterarSabor(d, "Coxinha", 1, 1);
+    for (let i = 0; i < 5; i++) d = alterarSabor(d, "Kibe", 1, 1);
+    expect(d).toEqual({ Coxinha: 50, Kibe: 50, Risole: 0 });
+    expect(situacaoDistribuicao(d, 1)).toMatchObject({ soma: 100, total: 100, completa: true });
+    expect(composicaoValida(d, SABORES, 1)).toBe(true);
+  });
+
+  it("− de 10 volta a 0 e nunca fica abaixo de zero", () => {
     let d: Distribuicao = distribuicaoInicial(SABORES, 1);
     d = alterarSabor(d, "Coxinha", 1, 1);
-    expect(d.Coxinha).toBe(5);
-    d = alterarSabor(d, "Coxinha", -1, 1);
+    expect(d.Coxinha).toBe(10);
     d = alterarSabor(d, "Coxinha", -1, 1);
     expect(d.Coxinha).toBe(0);
-    for (let i = 0; i < 10; i++) d = alterarSabor(d, "Coxinha", 1, 1);
-    for (let i = 0; i < 4; i++) d = alterarSabor(d, "Kibe", 1, 1);
-    for (let i = 0; i < 6; i++) d = alterarSabor(d, "Risole", 1, 1);
+    const zerado = d;
+    d = alterarSabor(d, "Coxinha", -1, 1);
+    expect(d).toBe(zerado);
+    expect(d.Coxinha).toBe(0);
+  });
+
+  it("+ e − de 10 em 10 em três sabores; o + trava quando a soma chega ao total", () => {
+    let d: Distribuicao = distribuicaoInicial(SABORES, 1);
+    for (let i = 0; i < 5; i++) d = alterarSabor(d, "Coxinha", 1, 1);
+    for (let i = 0; i < 2; i++) d = alterarSabor(d, "Kibe", 1, 1);
+    for (let i = 0; i < 3; i++) d = alterarSabor(d, "Risole", 1, 1);
     expect(d).toEqual({ Coxinha: 50, Kibe: 20, Risole: 30 });
     expect(podeAumentar(d, "Kibe", 1)).toBe(false);
     expect(alterarSabor(d, "Kibe", 1, 1)).toBe(d);
     expect(composicaoValida(d, SABORES, 1)).toBe(true);
   });
 
-  it("2 centos: 200 numa combinação só", () => {
+  it("2 centos: total 200 numa combinação só, e o passo continua 10", () => {
     let d: Distribuicao = distribuicaoInicial(SABORES, 2);
-    for (let i = 0; i < 24; i++) d = alterarSabor(d, "Coxinha", 1, 2);
-    for (let i = 0; i < 16; i++) d = alterarSabor(d, "Kibe", 1, 2);
+    expect(situacaoDistribuicao(d, 2).total).toBe(200);
+    d = alterarSabor(d, "Coxinha", 1, 2);
+    expect(d.Coxinha).toBe(10);
+    for (let i = 0; i < 11; i++) d = alterarSabor(d, "Coxinha", 1, 2);
+    for (let i = 0; i < 8; i++) d = alterarSabor(d, "Kibe", 1, 2);
+    expect(d).toEqual({ Coxinha: 120, Kibe: 80, Risole: 0 });
+    expect(podeAumentar(d, "Risole", 2)).toBe(false);
     expect(situacaoDistribuicao(d, 2)).toMatchObject({ soma: 200, total: 200, falta: 0, completa: true });
     expect(composicaoValida(d, SABORES, 2)).toBe(true);
     expect(composicaoValida(d, SABORES, 1)).toBe(false);
@@ -101,9 +140,10 @@ describe("distribuição: soma exata de 100 × centos, em passos de 5", () => {
     expect(composicaoValida(d, SABORES, 1)).toBe(false);
   });
 
-  it("recusa quantidade fora do passo de 5, negativa, sabor de fora ou sabor faltando", () => {
+  it("recusa quantidade fora do passo de 10, negativa, sabor de fora ou sabor faltando", () => {
     expect(composicaoValida({ Coxinha: 52, Kibe: 48, Risole: 0 }, SABORES, 1)).toBe(false);
-    expect(composicaoValida({ Coxinha: 105, Kibe: -5, Risole: 0 }, SABORES, 1)).toBe(false);
+    expect(composicaoValida({ Coxinha: 55, Kibe: 45, Risole: 0 }, SABORES, 1)).toBe(false);
+    expect(composicaoValida({ Coxinha: 110, Kibe: -10, Risole: 0 }, SABORES, 1)).toBe(false);
     expect(composicaoValida({ Coxinha: 50, Kibe: 50, Pizza: 0 }, SABORES, 1)).toBe(false);
     expect(composicaoValida({ Coxinha: 50, Kibe: 50 }, SABORES, 1)).toBe(false);
     expect(composicaoValida({}, [], 1)).toBe(false);

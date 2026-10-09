@@ -410,8 +410,8 @@ describe("Editar Cento", () => {
       id: "l-cento",
       quantidade: 2,
       sabores: [
-        { nome: "Risole de carne", quantidade: 115 },
-        { nome: "Empada de palmito", quantidade: 85 },
+        { nome: "Risole de carne", quantidade: 110 },
+        { nome: "Empada de palmito", quantidade: 90 },
       ],
       observacao: "sem cebola",
     });
@@ -451,7 +451,7 @@ describe("Editar Cento", () => {
     gravar(lista);
     await renderInterna("cento-de-salgados", "outra-linha");
     expect(aviso(TEXTO_PERDIDO)).toBeInTheDocument();
-    for (let i = 0; i < 20; i++) fireEvent.click(screen.getByRole("button", { name: "Aumentar Risole de carne" }));
+    for (let i = 0; i < 10; i++) fireEvent.click(screen.getByRole("button", { name: "Aumentar Risole de carne" }));
     fireEvent.click(botaoAdicionar());
     const linhas = salvo();
     expect(linhas).toHaveLength(2);

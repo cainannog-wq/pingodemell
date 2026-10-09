@@ -247,6 +247,14 @@ describe("Interna — Cento", () => {
     expect(screen.getByText("0 de 100 selecionados")).toBeInTheDocument();
     expect(botaoAdicionar()).toBeDisabled();
     expect(screen.queryByText(/Tipo de preparo|Embalagem/)).toBeNull();
+    expect(screen.getByText("Distribua as 100 unidades entre os sabores, de 10 em 10. Pode dividir como quiser.")).toBeInTheDocument();
+    expect(screen.queryByText(/de 5 em 5/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Aumentar Risole de carne" }));
+    expect(screen.getByText("10 de 100 selecionados")).toBeInTheDocument();
+    // Soma diferente do total: o botão de adicionar continua desligado.
+    expect(botaoAdicionar()).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Diminuir Risole de carne" }));
+    expect(screen.getByText("0 de 100 selecionados")).toBeInTheDocument();
   });
 
   it("botão só liga com a soma exata; 2 centos pedem 200 numa combinação só", async () => {
@@ -254,8 +262,8 @@ describe("Interna — Cento", () => {
     const mais = (sabor: string, vezes: number) => {
       for (let i = 0; i < vezes; i++) fireEvent.click(screen.getByRole("button", { name: `Aumentar ${sabor}` }));
     };
-    mais("Risole de carne", 12);
-    mais("Empada de palmito", 8);
+    mais("Risole de carne", 6);
+    mais("Empada de palmito", 4);
     expect(screen.getByText("100 de 100 selecionados")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Aumentar Risole de carne" })).toBeDisabled();
     expect(botaoAdicionar()).toBeEnabled();
@@ -264,7 +272,7 @@ describe("Interna — Cento", () => {
     expect(screen.getByText("100 de 200 selecionados")).toBeInTheDocument();
     expect(botaoAdicionar()).toBeDisabled();
     expect(within(resumo()).getByText("Complete as 200 unidades para adicionar.")).toBeInTheDocument();
-    mais("Risole de carne", 20);
+    mais("Risole de carne", 10);
     expect(screen.getByText("200 de 200 selecionados")).toBeInTheDocument();
     expect(within(resumo()).getByText("2 centos × R$ 95,99")).toBeInTheDocument();
 
@@ -286,7 +294,7 @@ describe("Interna — Cento", () => {
   it("diminuir os centos depois de distribuir mostra quanto passou e desliga o botão", async () => {
     await renderInterna("cento-de-salgados");
     fireEvent.click(screen.getByRole("button", { name: "Aumentar número de centos" }));
-    for (let i = 0; i < 40; i++) fireEvent.click(screen.getByRole("button", { name: "Aumentar Risole de carne" }));
+    for (let i = 0; i < 20; i++) fireEvent.click(screen.getByRole("button", { name: "Aumentar Risole de carne" }));
     fireEvent.click(screen.getByRole("button", { name: "Diminuir número de centos" }));
     expect(screen.getByText("Passou 100 unidades")).toBeInTheDocument();
     expect(botaoAdicionar()).toBeDisabled();

@@ -104,9 +104,13 @@ describe("carrinho — alterar, remover e o que fica salvo no navegador", () => 
       { ...boa, tipo: "outro" },
       { id: "x", tipo: "cento", produtoId: "c", slug: null, nome: "C", preco: 1, observacao: null, quantidade: 1, sabores: [{ nome: "A", quantidade: 70 }] },
       { id: "y", tipo: "cento", produtoId: "c", slug: null, nome: "C", preco: 1, observacao: null, quantidade: 1, sabores: [{ nome: "A", quantidade: 52 }, { nome: "B", quantidade: 48 }] },
+      // Passo de 10 desde o PR cento/passo-10: 55 e 45 (o antigo passo 5) saem.
+      { id: "z", tipo: "cento", produtoId: "c", slug: null, nome: "C", preco: 1, observacao: null, quantidade: 1, sabores: [{ nome: "A", quantidade: 55 }, { nome: "B", quantidade: 45 }] },
       "texto",
       null,
     ];
     expect(lerCarrinho(JSON.stringify({ versao: 1, linhas: [boa, ...ruins] }))).toEqual([boa]);
+    const cento10 = { id: "w", tipo: "cento", produtoId: "c", slug: null, nome: "C", preco: 1, observacao: null, quantidade: 2, sabores: [{ nome: "A", quantidade: 120 }, { nome: "B", quantidade: 80 }] };
+    expect(lerCarrinho(JSON.stringify({ versao: 1, linhas: [cento10] }))).toEqual([cento10]);
   });
 });

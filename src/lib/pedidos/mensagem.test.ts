@@ -33,11 +33,11 @@ export const GRANDE: LinhaCarrinho[] = [
   ...CINCO.map((l) => ({ ...l, observacao: `${l.observacao ?? ""}${OBS_LONGA}`.trim() })),
   {
     id: "g1", tipo: "cento", produtoId: "22222222-2222-4222-8222-222222222222", slug: null, nome: "Cento de salgados sortidos",
-    preco: 95, quantidade: 4, observacao: null, sabores: SABORES.map((nome) => ({ nome, quantidade: 25 })),
+    preco: 95, quantidade: 4, observacao: null, sabores: SABORES.map((nome, i) => ({ nome, quantidade: i % 2 ? 30 : 20 })),
   },
   {
     id: "g2", tipo: "cento", produtoId: "abababab-abab-4bab-8bab-abababababab", slug: null, nome: "Cento de docinho",
-    preco: 110, quantidade: 3, observacao: null, sabores: DOCES.map((nome) => ({ nome, quantidade: 25 })),
+    preco: 110, quantidade: 3, observacao: null, sabores: DOCES.map((nome, i) => ({ nome, quantidade: i % 2 ? 30 : 20 })),
   },
 ];
 const DADOS_GRANDE = {
@@ -221,6 +221,6 @@ describe("caminho sem registro", () => {
     const m = mensagemSemRegistro(DADOS_GRANDE, GRANDE, "instabilidade");
     expect(m.formato).toBe("completo");
     expect(m.cabe).toBe(false);
-    expect(m.texto).toContain("Sabores: Coxinha 25, Risoles de carne 25");
+    expect(m.texto).toContain("Sabores: Coxinha 20, Risoles de carne 30");
   });
 });
