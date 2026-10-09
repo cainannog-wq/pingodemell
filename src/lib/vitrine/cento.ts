@@ -7,7 +7,7 @@ import type { ProdutoVitrine } from "./mais-pedidos";
 // Regras:
 // - conta em número de centos (1, 2, 3...), sem pedido_minimo nem step;
 // - cada cento vale 100 unidades fixas; o total (100 × centos) é
-//   distribuído numa combinação só entre os sabores, em passos de 5, e a
+//   distribuído numa combinação só entre os sabores, em passos de 10, e a
 //   soma tem que bater exatamente com o total;
 // - sabor é outro produto do catálogo; só conta o que está ativo;
 // - 1 sabor ativo: o total cai inteiro nele, sem distribuição;
@@ -15,7 +15,7 @@ import type { ProdutoVitrine } from "./mais-pedidos";
 //   Home e da Lista, e a interna cai na 404). Sem estado novo no banco.
 
 export const UNIDADES_POR_CENTO = 100;
-export const PASSO_SABOR = 5;
+export const PASSO_SABOR = 10;
 // Teto de segurança do seletor. Mais que isso é conversa no WhatsApp.
 export const MAX_CENTOS = 50;
 
@@ -109,7 +109,7 @@ export function situacaoDistribuicao(distribuicao: Distribuicao, centos: number)
   };
 }
 
-// + e − de um sabor: 5 por clique, nunca abaixo de 0 e nunca acima do que
+// + e − de um sabor: 10 por clique, nunca abaixo de 0 e nunca acima do que
 // falta para o total (o + trava quando a soma chega ao total). Sabor fora da
 // lista não muda nada.
 export function podeAumentar(distribuicao: Distribuicao, sabor: string, centos: number): boolean {
@@ -126,7 +126,7 @@ export function alterarSabor(distribuicao: Distribuicao, sabor: string, direcao:
 }
 
 // Composição que pode ir para o carrinho: centos válidos, só sabores da
-// lista (todos presentes), cada quantidade inteira, >= 0 e em passos de 5,
+// lista (todos presentes), cada quantidade inteira, >= 0 e em passos de 10,
 // e a soma exatamente igual a 100 × centos.
 export function composicaoValida(distribuicao: Distribuicao, sabores: string[], centos: number): boolean {
   if (!centosValidos(centos) || sabores.length === 0) return false;
