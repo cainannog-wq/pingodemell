@@ -44,8 +44,8 @@ describe("trava de produção pela versão da Política", () => {
   it.each(["branch-deploy", "deploy-preview", "", undefined])("fora de produção (%s) com versão 1: passa", (contexto) => {
     expect(idGa4Efetivo(ID, contexto, 1)).toBe(ID);
   });
-  it("a versão vigente é a 2: a trava por versão não segura mais a produção (só a ausência de GA4_ID)", () => {
-    expect(VERSAO_POLITICA).toBe(2);
+  it("a versão vigente é a 3: a trava por versão não segura mais a produção (só a ausência de GA4_ID)", () => {
+    expect(VERSAO_POLITICA).toBe(3);
   });
 });
 

@@ -95,7 +95,7 @@ const TEXTO_LITERAL = [
   "8. Cookies e Ferramentas de Análise",
   "O sítio eletrônico utiliza cookies de análise de audiência somente com o consentimento do Titular. O aviso com as opções Aceitar e Recusar é exibido sempre que a ferramenta de análise estiver habilitada no sítio eletrônico. Enquanto o Titular não escolher, nenhum cookie de análise é gravado e nenhum dado é enviado ao Google.",
   "Se o Titular aceitar, a ferramenta Google Analytics grava no navegador dois cookies, denominados _ga e _ga_ seguido do código da propriedade de medição, com validade de 180 dias, para distinguir visitantes e medir o uso do sítio eletrônico, na forma descrita na seção 2.7. O Controlador não utiliza cookies de publicidade, não ativa os recursos de publicidade e de sinais do Google e não utiliza identificação de usuário.",
-  'O Titular pode alterar sua escolha a qualquer tempo, pelo botão "Preferências de privacidade", disponível no rodapé do sítio eletrônico sempre que a ferramenta de análise estiver habilitada. Se o Titular revogar um aceite anterior, a página é recarregada e os cookies da ferramenta de análise são apagados do navegador. Em qualquer caso, depois da recusa novas coletas deixam de ocorrer. A escolha é registrada no armazenamento do navegador e vale por 180 dias; depois desse prazo, ou quando esta Política for alterada de modo que exija nova escolha, o aviso é exibido novamente.',
+  'O Titular pode alterar sua escolha a qualquer tempo, pelo botão "Preferências de privacidade", disponível nesta página sempre que a ferramenta de análise estiver habilitada. Se o Titular revogar um aceite anterior, a página é recarregada e os cookies da ferramenta de análise são apagados do navegador. Em qualquer caso, depois da recusa novas coletas deixam de ocorrer. A escolha é registrada no armazenamento do navegador e vale por 180 dias; depois desse prazo, ou quando esta Política for alterada de modo que exija nova escolha, o aviso é exibido novamente.',
   "Os demais dados armazenados no navegador, descritos na seção 2.5, são necessários ao funcionamento do carrinho e do pedido e são gravados independentemente dessa escolha.",
   "9. Alterações desta Política",
   "A versão e a data de vigência desta Política constam no topo desta página. Havendo alteração relevante, esta será publicada nesta página, com a indicação da nova versão e da nova data de vigência. Quando a alteração modificar as finalidades, as ferramentas ou os terceiros descritos nesta Política, o aviso de cookies será exibido novamente ao Titular.",
@@ -268,20 +268,20 @@ describe("Política de Privacidade — página", () => {
 });
 
 describe("Política de Privacidade — versão e data de vigência", () => {
-  it("versão 2, vigente a partir do dia do merge (06/10/2026, calendário de Brasília)", () => {
-    expect(VERSAO_POLITICA).toBe(2);
-    expect(DATA_VIGENCIA_POLITICA).toBe("2026-10-06");
+  it("versão 3, vigente a partir de 07/10/2026 (calendário de Brasília)", () => {
+    expect(VERSAO_POLITICA).toBe(3);
+    expect(DATA_VIGENCIA_POLITICA).toBe("2026-10-07");
     // A página de verdade usa a constante.
     render(<PoliticaDePrivacidadePage />);
     expect(document.querySelector(".politica-versao")).toHaveTextContent(
-      /^Versão 2\. Vigente a partir de 06\/10\/2026\.$/
+      /^Versão 3\. Vigente a partir de 07\/10\/2026\.$/
     );
     expect(document.body.innerHTML).not.toMatch(/\{\{|\}\}/);
   });
 
-  it("com a data nula, mostra só 'Versão 2.' e nenhum campo entre chaves", () => {
+  it("com a data nula, mostra só 'Versão 3.' e nenhum campo entre chaves", () => {
     const { container } = render(<PoliticaDePrivacidade dataVigencia={null} />);
-    expect(container.querySelector(".politica-versao")).toHaveTextContent(/^Versão 2\.$/);
+    expect(container.querySelector(".politica-versao")).toHaveTextContent(/^Versão 3\.$/);
     expect(container.textContent).not.toContain("Vigente");
     expect(container.innerHTML).not.toMatch(/\{\{|\}\}/);
   });
@@ -289,7 +289,7 @@ describe("Política de Privacidade — versão e data de vigência", () => {
   it("com uma data de teste, a frase de vigência aparece com essa data", () => {
     const { container } = render(<PoliticaDePrivacidade dataVigencia="2026-10-20" />);
     expect(container.querySelector(".politica-versao")).toHaveTextContent(
-      /^Versão 2\. Vigente a partir de 20\/10\/2026\.$/
+      /^Versão 3\. Vigente a partir de 20\/10\/2026\.$/
     );
     expect(container.innerHTML).not.toMatch(/\{\{|\}\}/);
   });

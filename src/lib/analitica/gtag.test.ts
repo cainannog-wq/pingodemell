@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 // @vitest-environment-options {"url": "https://pingodemell.netlify.app/produtos?categoria=bolos&utm_source=x#topo"}
+import { VERSAO_POLITICA } from "@/lib/site/politica-versao";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CHAVE_CONSENTIMENTO, reiniciarConsentimentoParaTeste } from "@/lib/consentimento/consentimento";
 import {
@@ -24,7 +25,7 @@ function eventos(): [string, unknown][] {
     .map((c) => [c[1] as string, c[2]]);
 }
 function aceitar() {
-  window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "aceito", data: "2026-10-05", versaoPolitica: 2 }));
+  window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "aceito", data: "2026-10-05", versaoPolitica: VERSAO_POLITICA }));
   reiniciarConsentimentoParaTeste();
 }
 
@@ -53,7 +54,7 @@ describe("sem consentimento ou sem ID, nada", () => {
     expect(window.gtag).toBeUndefined();
   });
   it("recusado: nada", () => {
-    window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "recusado", data: "2026-10-05", versaoPolitica: 2 }));
+    window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "recusado", data: "2026-10-05", versaoPolitica: VERSAO_POLITICA }));
     reiniciarConsentimentoParaTeste();
     expect(enviarEvento("add_to_cart", { items: [{ item_id: "x", item_name: "X" }] })).toBe(false);
     expect(window.dataLayer).toBeUndefined();
@@ -88,7 +89,7 @@ describe("sem consentimento ou sem ID, nada", () => {
       vi.resetModules();
     }
   });
-  it("aceito, produção com GA4_ID e a versão vigente (2): envia", () => {
+  it("aceito, produção com GA4_ID e a versão vigente (3): envia", () => {
     aceitar();
     vi.stubEnv("CONTEXTO_NETLIFY", "production");
     expect(enviarEvento("begin_checkout")).toBe(true);

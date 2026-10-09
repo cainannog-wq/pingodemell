@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { VERSAO_POLITICA } from "@/lib/site/politica-versao";
 import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useConfirmacao } from "@/app/(site)/produtos/[slug]/_interna/edicao";
@@ -73,7 +74,7 @@ beforeEach(() => {
   vi.stubEnv("CONTEXTO_NETLIFY", "branch-deploy");
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-10-06T01:30:00Z"));
-  window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "aceito", data: "2026-10-05", versaoPolitica: 2 }));
+  window.localStorage.setItem(CHAVE_CONSENTIMENTO, JSON.stringify({ versao: 1, escolha: "aceito", data: "2026-10-05", versaoPolitica: VERSAO_POLITICA }));
 });
 afterEach(() => {
   cleanup();
@@ -121,9 +122,18 @@ describe("add_to_cart", () => {
     expect(resultado).toBe("substituiu");
     expect(eventos().map((e) => e[0])).toEqual(["add_to_cart"]);
 
-    // A linha mudou depois que a edição abriu: vira item novo e conta.
+    // Segundo clique na mesma página (já a caminho do carrinho): ignorado.
     act(() => {
       resultado = api().confirmacao.confirmar({ ...BOLO, quantidade: 4 });
+    });
+    expect(resultado).toBe("ignorado");
+    expect(eventos().map((e) => e[0])).toEqual(["add_to_cart"]);
+    cleanup();
+
+    // A linha mudou depois que a edição abriu: vira item novo e conta.
+    const outra = montar(edicao);
+    act(() => {
+      resultado = outra.api().confirmacao.confirmar({ ...BOLO, quantidade: 4 });
     });
     expect(resultado).toBe("adicionou");
     expect(eventos().map((e) => e[0])).toEqual(["add_to_cart", "add_to_cart"]);

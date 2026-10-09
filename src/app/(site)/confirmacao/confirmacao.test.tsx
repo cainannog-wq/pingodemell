@@ -194,3 +194,49 @@ it("rota fora do Google e sem dado do pedido no título", () => {
   expect(metadata.robots).toEqual({ index: false, follow: false });
   expect(String(metadata.title)).toBe("Enviar pedido · Pingo de Mell");
 });
+
+// PR de ajustes visuais (07/10/2026): na coluna principal, o resumo vem
+// primeiro, depois o envio (botão, linha da nova aba, aviso de privacidade
+// colado ao botão e "Copiar mensagem") e por fim a prévia. A ordem é a do
+// HTML (teclado e leitor de tela seguem a tela); a lateral vem depois.
+describe("Confirmação: ordem dos blocos no HTML", () => {
+  it.each([
+    ["registrado", () => REGISTRADO],
+    ["sem registro", () => montarRetrato({ dados: DADOS_TESTE, linhas: CINCO, resposta: null, prazo: null })],
+  ])("%s: resumo, envio, prévia; depois a lateral", async (_, retrato) => {
+    salvarRetrato(retrato());
+    abrir();
+    await screen.findByRole("heading", { level: 1, name: "Falta só enviar" });
+    const principal = document.querySelector(".confirmacao-principal")!;
+    expect(Array.from(principal.children).map((el) => el.className)).toEqual([
+      "confirmacao-resumo",
+      "confirmacao-acoes",
+      "confirmacao-previa",
+    ]);
+    expect(principal.nextElementSibling?.className).toBe("confirmacao-lateral");
+
+    // Dentro do envio, a ordem de sempre.
+    const envio = within(principal.querySelector(".confirmacao-acoes") as HTMLElement);
+    const ordem = [
+      envio.getByRole("link", { name: /^Enviar pelo WhatsApp/ }),
+      envio.getByText(/^O WhatsApp abre em nova aba com a mensagem pronta/),
+      envio.getByText(/^Ao enviar, seus dados vão para o WhatsApp da loja/),
+      envio.getByRole("button", { name: /Copiar mensagem/ }),
+    ];
+    for (let i = 1; i < ordem.length; i++) {
+      expect(ordem[i - 1].compareDocumentPosition(ordem[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+    // O aviso de privacidade fica logo depois da linha da nova aba, que vem logo depois do botão.
+    expect(ordem[0].nextElementSibling).toBe(ordem[1]);
+    expect(ordem[1].nextElementSibling).toBe(ordem[2]);
+
+    // Ordem de foco: o resumo não tem nada focável, então o primeiro foco da
+    // coluna é o botão do WhatsApp, depois o link da Política e "Copiar mensagem".
+    const focaveis = Array.from(principal.querySelectorAll<HTMLElement>("a[href], button")).map(
+      (el) => el.textContent?.replace(/\s+/g, " ").trim()
+    );
+    expect(focaveis[0]).toMatch(/^Enviar pelo WhatsApp/);
+    expect(focaveis[1]).toBe("Política de Privacidade");
+    expect(focaveis[2]).toMatch(/Copiar mensagem/);
+  });
+});

@@ -322,7 +322,9 @@ describe("Editar Bolo — desistir e perder o vínculo", () => {
     expect(linhas[0]).toEqual(lista[0]);
     expect(linhas[1]).toEqual(lista[1]);
     expect(linhas[2]).toMatchObject({ tipo: "bolo", quantidade: 1, recheio: { nome: "Morango" } });
-    expect(push).not.toHaveBeenCalled();
+    // Fora do modo edição é a adição comum, que leva ao carrinho (07/10/2026).
+    expect(push).toHaveBeenCalledTimes(1);
+    expect(push).toHaveBeenCalledWith("/carrinho");
   });
 
   it("linha de outro produto ou de outro tipo não serve de vínculo", async () => {
@@ -455,7 +457,9 @@ describe("Editar Cento", () => {
     expect(linhas).toHaveLength(2);
     expect(linhas[0]).toEqual(lista[0]);
     expect(linhas[1]).toMatchObject({ tipo: "cento", quantidade: 1 });
-    expect(push).not.toHaveBeenCalled();
+    // Fora do modo edição é a adição comum, que leva ao carrinho (07/10/2026).
+    expect(push).toHaveBeenCalledTimes(1);
+    expect(push).toHaveBeenCalledWith("/carrinho");
   });
 });
 

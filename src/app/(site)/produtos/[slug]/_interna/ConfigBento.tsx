@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useCarrinho } from "@/components/site/CarrinhoProvider";
 import { Seletor } from "@/components/site/Seletor";
 import { normalizarObservacao } from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
@@ -11,6 +10,7 @@ import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
 import { erroQuantidade, normalizarQuantidade, passoQuantidade, quantidadeInicial, quantidadeMaxima } from "@/lib/vitrine/quantidade";
 import { EscolhaRecheio } from "./EscolhaRecheio";
 import { Observacao } from "./Observacao";
+import { useAdicionarEIrAoCarrinho } from "./edicao";
 import { PainelAdicionar } from "./PainelAdicionar";
 
 // Configuração do produto tipo Bento Cake: cada tema é um produto com preço
@@ -19,7 +19,7 @@ import { PainelAdicionar } from "./PainelAdicionar";
 // pedido, e a quantidade (respeitando o pedido mínimo do cadastro; o Bento
 // não usa step). Recheios diferentes são linhas diferentes do carrinho.
 export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; recheios: RecheioVitrine[] }) {
-  const { adicionar } = useCarrinho();
+  const { adicionarEIr, indo } = useAdicionarEIrAoCarrinho();
   const opcoes = recheiosDoBento(recheios);
   const minimo = quantidadeInicial(produto.pedido_minimo, "livre");
   const [texto, setTexto] = useState(String(minimo));
@@ -43,7 +43,7 @@ export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; re
 
   function aoAdicionar() {
     if (!valida || !recheio) return;
-    adicionar({
+    const foi = adicionarEIr({
       tipo: "bento",
       produtoId: produto.id,
       slug: produto.slug,
@@ -56,7 +56,7 @@ export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; re
       foto: produto.image_url,
       observacao: normalizarObservacao(observacao),
     });
-    setAdicionado(true);
+    if (foi) setAdicionado(true);
   }
 
   return (
@@ -110,6 +110,7 @@ export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; re
         erro={valida ? null : erro}
         adicionado={adicionado}
         aoAdicionar={aoAdicionar}
+        indo={indo}
       />
     </>
   );

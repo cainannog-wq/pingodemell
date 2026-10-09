@@ -140,7 +140,6 @@ describe("varredura do código: links wa.me só pelo auxiliar", () => {
       [
         "components/site/SiteChrome.tsx flutuante",
         "components/site/SiteHeader.tsx menu",
-        "app/(site)/_home/Hero.tsx home",
         "app/(site)/quem-somos/_quem-somos/QuemSomos.tsx quem_somos",
         "app/(site)/politica-de-privacidade/politica.tsx politica",
         "app/(site)/carrinho/_carrinho/CarrinhoVazio.tsx carrinho_vazio",
@@ -181,7 +180,6 @@ describe("montagem das telas: todo link wa.me tem origem válida", () => {
 
   it.each([
     ["site (flutuante, menu) com a Quem Somos", () => <SiteChrome><QuemSomos /></SiteChrome>, ["flutuante", "menu", "quem_somos"]],
-    ["Home (destaque)", () => <Hero />, ["home"]],
     ["Política", () => <PoliticaDePrivacidade dataVigencia="2026-10-01" />, ["politica"]],
     ["carrinho vazio", () => <CarrinhoVazio />, ["carrinho_vazio"]],
     ["falha do checkout", () => <CheckoutFalha />, ["checkout_falha"]],
@@ -202,5 +200,13 @@ describe("montagem das telas: todo link wa.me tem origem válida", () => {
   ] as const)("%s", (_, tela, esperado) => {
     render(tela());
     expect([...new Set(origensNaTela())]).toEqual([...esperado]);
+  });
+
+  // O "Peça pelo WhatsApp" do destaque saiu em 07/10/2026. A origem "home"
+  // continua na lista, sem uso (decisão do Cainan).
+  it("Home (destaque): sem link wa.me", () => {
+    render(<Hero />);
+    expect(document.querySelectorAll('a[href^="https://wa.me/"]')).toHaveLength(0);
+    expect(ORIGENS_WHATSAPP).toContain("home");
   });
 });

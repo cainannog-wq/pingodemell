@@ -16,7 +16,8 @@ import "./site.css";
 // contador do cabeçalho e o "Adicionar ao pedido" da interna leem o mesmo
 // estado. O ConsentimentoProvider (PR 2 da Fase 4) guarda a escolha de
 // cookies: o banner vem logo depois do "Pular para o conteúdo" na ordem do
-// documento (fixo na base da tela) e o link de preferências, no rodapé.
+// documento (fixo na base da tela); o botão de preferências fica na seção 8
+// da Política (desde 07/10/2026; antes, no rodapé).
 export function SiteChrome({ children }: { children: ReactNode }) {
   return (
     <CarrinhoProvider>

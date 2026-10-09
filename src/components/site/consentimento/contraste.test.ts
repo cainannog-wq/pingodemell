@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { contrastRatio } from "@/lib/design/contrast";
 
-// Contraste do banner de consentimento e do link do rodapé, calculado dos
+// Contraste do banner de consentimento e do botão da Política, calculado dos
 // tokens de src/styles/ds/tokens/colors.css (resolvendo var(--x)), com as
 // cores que o código usa (site.css "Banner de consentimento", Button
 // secondary e TextLink).
@@ -38,10 +38,11 @@ describe("contraste do banner de consentimento", () => {
   it("contorno de foco (--focus-ring) sobre o fundo: pelo menos 3:1", () => {
     expect(contrastRatio(token("focus-ring"), fundo)).toBeGreaterThanOrEqual(3);
   });
-  it("Preferências de privacidade (--cream-100) sobre o rodapé (--footer-bg): pelo menos 4,5:1", () => {
-    expect(contrastRatio(token("cream-100"), token("footer-bg"))).toBeGreaterThanOrEqual(4.5);
+  it("Preferências de privacidade na Política (secondary: --pdm-brown sobre --surface-page; hover: branco sobre --pdm-brown): pelo menos 4,5:1", () => {
+    expect(contrastRatio(token("pdm-brown"), token("surface-page"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(token("pdm-white"), token("pdm-brown"))).toBeGreaterThanOrEqual(4.5);
   });
-  it("alvo de toque: --tap-min é 44px (altura mínima do Button md e do link do rodapé)", () => {
+  it("alvo de toque: --tap-min é 44px (altura mínima do Button md: Aceitar, Recusar e Preferências de privacidade)", () => {
     const espacos = readFileSync(join(process.cwd(), "src/styles/ds/tokens/spacing.css"), "utf8");
     expect(espacos).toMatch(/--tap-min:\s*44px;/);
   });
