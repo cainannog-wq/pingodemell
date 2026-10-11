@@ -119,7 +119,7 @@ describe("Formulário de produto — tipo Bolo", () => {
 });
 
 describe("Formulário de produto — tipo Bento Cake", () => {
-  it("escolher Bento Cake trava a categoria; preço e mínimo ficam; step e unidade somem", () => {
+  it("escolher Bento Cake trava a categoria; preço, mínimo e unidade ficam; step some", () => {
     renderNovo();
     escolherTipo("bento_cake");
     expect(categoria().value).toBe("Bento Cake");
@@ -127,10 +127,26 @@ describe("Formulário de produto — tipo Bento Cake", () => {
     expect(campo(/^Preço/)).toBeInTheDocument();
     expect(campo(/Quantidade mínima/)).toBeInTheDocument();
     expect(campo(/Step de quantidade/)).toBeNull();
-    expect(campo(/Unidade de venda/)).toBeNull();
+    expect(campo(/Unidade de venda/)).toBeInTheDocument();
     const dados = enviado();
     expect(dados.get("categoria")).toBe("Bento Cake");
     expect(dados.get("tipo")).toBe("bento_cake");
+  });
+
+  it("editar um Bento Cake combo abre com \"o combo\" na unidade e envia o valor, sem step", () => {
+    const comboSalvo = {
+      ...(BOLO_SALVO as object),
+      nome: "Bento Cake com 6 doces",
+      Categoria: "Bento Cake",
+      tipo: "bento_cake",
+      preco: 75,
+      unidade_venda: "o combo",
+    } as never;
+    render(<ProdutoForm action={acao} produto={comboSalvo} produtoId={PRODUTO} submitLabel="Salvar alterações" />);
+    expect((campo(/Unidade de venda/) as HTMLInputElement).value).toBe("o combo");
+    const dados = enviado();
+    expect(dados.get("unidade_venda")).toBe("o combo");
+    expect(dados.has("step_quantidade")).toBe(false);
   });
 
   it("escolher a categoria Bento Cake põe o tipo em Bento Cake", () => {

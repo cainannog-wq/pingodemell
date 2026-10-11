@@ -136,3 +136,26 @@ describe("ProdutosList — busca e chips de categoria", () => {
     expect(screen.queryByText("Pão de Mel")).not.toBeInTheDocument();
   });
 });
+
+describe("Lista do admin: mínimo na unidade de venda, sem \"un.\"", () => {
+  afterEach(() => cleanup());
+
+  it("\"10 kits\", \"1 combo\" (Bento Cake combo), \"1 unidade\" (Bento simples) e \"3\" (sem unidade)", () => {
+    render(
+      <ProdutosList
+        produtos={[
+          { ...PRODUTO, id: "a1", nome: "Kit Escolar Individual", Categoria: "Kits", unidade_venda: "o kit", pedido_minimo: 10 },
+          { ...PRODUTO, id: "a2", nome: "Bento Cake com 6 doces", Categoria: "Bento Cake", tipo: "bento_cake", unidade_venda: "o combo" },
+          { ...PRODUTO, id: "a3", nome: "Bento Cake Flork", Categoria: "Bento Cake", tipo: "bento_cake", unidade_venda: null },
+          { ...PRODUTO, id: "a4", nome: "Sem unidade", unidade_venda: null, pedido_minimo: 3 },
+        ]}
+      />
+    );
+    expect(screen.getAllByText("10 kits").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("mín. 10 kits").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("1 combo").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("1 unidade").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("3").length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toMatch(/\d un\./);
+  });
+});

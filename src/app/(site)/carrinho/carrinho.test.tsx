@@ -346,8 +346,8 @@ describe("Carrinho — quantidade por tipo", () => {
     ]);
     const kit = itemOuFalha("l-kit");
     expect(paragrafo(kit, "R$ 26,00 o kit")).toBeInTheDocument();
-    expect(within(kit).getByText("kits · mín. 10 kits")).toBeInTheDocument();
-    expect(kit.textContent).not.toMatch(/por o|10 o kit/);
+    expect(within(kit).getByText("kits · mín. 10")).toBeInTheDocument();
+    expect(kit.textContent).not.toMatch(/por o|10 o kit|mín\. 10 kits/);
     const caixa = itemOuFalha("l-caixa");
     expect(paragrafo(caixa, "R$ 160,00 a caixa")).toBeInTheDocument();
     expect(within(caixa).getByText("caixa")).toBeInTheDocument();
@@ -369,7 +369,22 @@ describe("Carrinho — quantidade por tipo", () => {
     expect(b.getByRole("textbox")).toHaveValue("2");
     expect(b.getByRole("button", { name: /^Diminuir / })).toBeDisabled();
     expect(b.getByText("R$ 90,00")).toBeInTheDocument();
-    expect(b.getByText("unidades · mín. 2 unidades")).toBeInTheDocument();
+    expect(b.getByText("unidades · mín. 2")).toBeInTheDocument();
+  });
+
+  it("Bento Cake combo: \"R$ 75,00 o combo\" e \"combos\" ao lado do seletor, sem \"cada\" nem \"unidades\"", () => {
+    abrir([{ ...bento, id: "l-combo", nome: "Bento Cake com 6 doces", preco: 75, quantidade: 2, pedidoMinimo: 1, unidade_venda: "o combo" }]);
+    const combo = itemOuFalha("l-combo");
+    expect(paragrafo(combo, "R$ 75,00 o combo")).toBeInTheDocument();
+    expect(within(combo).getByText("combos")).toBeInTheDocument();
+    expect(combo.textContent).not.toMatch(/cada|unidade/);
+  });
+
+  it("Bento Cake de antes do campo (sem unidade gravada) continua em unidades, com \"cada\"", () => {
+    abrir([{ ...bento, id: "l-antigo", quantidade: 2, pedidoMinimo: 1 }]);
+    const antigo = itemOuFalha("l-antigo");
+    expect(paragrafo(antigo, "R$ 45,00 cada")).toBeInTheDocument();
+    expect(within(antigo).getByText("unidades")).toBeInTheDocument();
   });
 
   it("Cento e Bolo continuam como foram gravados depois de mexer nas outras linhas", async () => {

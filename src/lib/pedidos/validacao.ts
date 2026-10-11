@@ -52,7 +52,7 @@ const CAMPOS_ITEM: Record<ItemEnvio["tipo"], string[]> = {
   normal: [...CAMPOS_ITEM_BASE, "unidade_venda"],
   cento: [...CAMPOS_ITEM_BASE, "sabores"],
   bolo: [...CAMPOS_ITEM_BASE, "recheio", "formato"],
-  bento: [...CAMPOS_ITEM_BASE, "recheio"],
+  bento: [...CAMPOS_ITEM_BASE, "recheio", "unidade_venda"],
 };
 const MAX_POR_TIPO: Record<ItemEnvio["tipo"], [number, number]> = {
   normal: [1, MAX_QUANTIDADE],
@@ -188,7 +188,8 @@ function item(v: unknown): { gravado: ItemGravado; centavos: number } {
     observacao,
   };
 
-  if (tipo === "normal") {
+  // Bento Cake: "o combo" no combo (só para exibir; não muda o valor).
+  if (tipo === "normal" || tipo === "bento") {
     gravado.unidade_venda =
       o.unidade_venda === null || o.unidade_venda === undefined
         ? null

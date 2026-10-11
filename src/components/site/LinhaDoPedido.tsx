@@ -9,6 +9,7 @@ import { FORMATO_BOLO_LABELS } from "@/lib/vitrine/bolo";
 import { UNIDADES_POR_CENTO } from "@/lib/vitrine/cento";
 import { textoUnidadeVenda } from "@/lib/vitrine/mais-pedidos";
 import { textoQuantidadeNaUnidade } from "@/lib/vitrine/minimo";
+import { bentoCombo, unidadeDoBento } from "@/lib/vitrine/unidade";
 
 // Exibição de uma linha do carrinho por tipo (Avulso, Cento, Bolo, Bento
 // Cake; o Smash Cake é um avulso), igual na página do carrinho e no resumo
@@ -68,7 +69,7 @@ export function DetalhesDaLinha({ linha }: { linha: LinhaCarrinho }) {
       <>
         <p>Recheio: {linha.recheio.nome}</p>
         <p>
-          <Dinheiro valor={linha.preco} /> cada
+          <Dinheiro valor={linha.preco} /> {bentoCombo(linha.unidade_venda) ? unidadeDoBento(linha.unidade_venda).preco : "cada"}
         </p>
       </>
     );
@@ -82,10 +83,11 @@ export function DetalhesDaLinha({ linha }: { linha: LinhaCarrinho }) {
   );
 }
 
-// Quantidade como texto fixo: "20 unidades", "2 kg", "2 centos", "3 unidades".
+// Quantidade como texto fixo: "20 unidades", "2 kg", "2 centos", "3 unidades"
+// (Bento Cake simples), "2 combos" (Bento Cake combo).
 export function textoQuantidadeDaLinha(linha: LinhaCarrinho): string {
   if (linha.tipo === "normal") return textoQuantidadeNaUnidade(linha.quantidade, linha.unidade_venda);
   if (linha.tipo === "bolo") return `${linha.quantidade} kg`;
   if (linha.tipo === "cento") return `${linha.quantidade} ${linha.quantidade === 1 ? "cento" : "centos"}`;
-  return `${linha.quantidade} ${linha.quantidade === 1 ? "unidade" : "unidades"}`;
+  return textoQuantidadeNaUnidade(linha.quantidade, unidadeDoBento(linha.unidade_venda).chave);
 }

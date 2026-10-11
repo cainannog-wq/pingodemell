@@ -90,7 +90,7 @@ export function ProdutoForm({
   // Quais campos valem depende do tipo (a mesma regra da vitrine e do
   // servidor): o Bolo não usa preço, quantidade mínima, step nem unidade
   // (o preço vem do recheio × kg); o Bento Cake tem peso fechado, sem step
-  // nem unidade.
+  // (a unidade aparece: "o combo" no combo, "unidade" no simples).
   const variacao = variacaoDoProduto({ tipo });
   const bolo = variacao === "bolo";
   const bento = variacao === "bento";
@@ -340,12 +340,16 @@ export function ProdutoForm({
                 />
               </Field>
             </div>
-            {!bolo && !bento && (
+            {!bolo && (
             <div className="produto-form-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginTop: 24 }}>
               <Field
                 label="Unidade de venda"
                 htmlFor="f-unidade"
-                hint="Aparece no preço do card (ex.: R$ 90,00 o kg). Vazio mostra só o preço. Quantidade é sempre inteira: em kg, sem meio quilo."
+                hint={
+                  bento
+                    ? "Combo: escreva \"o combo\" (o preço aparece como R$ 95,00 o combo). Bento Cake simples: \"unidade\" ou vazio."
+                    : "Aparece no preço do card (ex.: R$ 90,00 o kg). Vazio mostra só o preço. Quantidade é sempre inteira: em kg, sem meio quilo."
+                }
               >
                 <Input
                   id="f-unidade"

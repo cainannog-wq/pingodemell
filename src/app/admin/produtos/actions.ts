@@ -283,7 +283,7 @@ export async function updateProduto(
     destaque,
     ativo,
     tipo,
-    semCamposDePreco,
+    naoGravarNaEdicao,
     subitens,
   } = parsed.data;
 
@@ -341,15 +341,11 @@ export async function updateProduto(
     ativo,
     tipo,
   };
-  // Bolo: o preço vem do recheio × kg, e preço, pedido mínimo, step e
-  // unidade não valem. O formulário nem os mostra, então a edição não
-  // grava nada neles: o que já estava no banco fica como está.
-  if (semCamposDePreco) {
-    delete update.preco;
-    delete update.pedido_minimo;
-    delete update.step_quantidade;
-    delete update.unidade_venda;
-  }
+  // Campo que o formulário não mostra para este tipo não é gravado: o que
+  // já estava no banco fica como está (Bolo: preço, pedido mínimo, step e
+  // unidade; Bento Cake: step). Antes, salvar um Bento Cake apagava a
+  // unidade e voltava o step para livre.
+  for (const coluna of naoGravarNaEdicao) delete update[coluna];
   if (capa) update.image_url = urlDaCapa(produtoId, capa);
 
   const { error } = await supabase
