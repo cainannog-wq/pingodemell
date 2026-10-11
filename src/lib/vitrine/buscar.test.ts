@@ -73,36 +73,38 @@ beforeEach(() => {
   resposta = { data: DO_BANCO_COM_INATIVOS, error: null };
 });
 
+const TODOS = { categoria: null, busca: "", ordem: "recomendados", pagina: 1 } as const;
+
 describe("buscarLista — admin logado navegando no site", () => {
   it("pede só ativos ao banco", async () => {
     const { buscarLista } = await import("./buscar");
-    await buscarLista(null);
+    await buscarLista(TODOS);
     expect(chamadas).toContainEqual({ metodo: "from", args: ["produtos"] });
     expect(chamadas).toContainEqual({ metodo: "eq", args: ["ativo", true] });
   });
 
-  it("mesmo que o banco devolva inativos, nenhum aparece em 'Todos'", async () => {
+  it("mesmo que o banco devolva inativos, nenhum aparece em 'Todos' (sem categoria também fica fora)", async () => {
     const { buscarLista } = await import("./buscar");
-    const itens = await buscarLista(null);
-    const nomes = itens!.map((i) => i.produto.nome);
-    expect(nomes).toEqual(["Brigadeiro Gourmet", "Empada de palmito", "Kit Festa Sortido"]);
+    const resultado = await buscarLista(TODOS);
+    const nomes = resultado!.itens.map((i) => i.produto.nome);
+    expect(nomes).toEqual(["Brigadeiro Gourmet", "Empada de palmito"]);
   });
 
-  it("mesmo que o banco devolva inativos, nenhum aparece na categoria filtrada", async () => {
+  it("mesmo que o banco devolva inativos, nenhum aparece na categoria filtrada; o filtro é no código (uma leitura para todas)", async () => {
     const { buscarLista } = await import("./buscar");
     for (const categoria of ["Doces", "Salgados"] as const) {
-      const itens = await buscarLista(categoria);
-      expect(itens!.length).toBeGreaterThan(0);
-      expect(itens!.every((i) => i.produto.ativo)).toBe(true);
-      expect(chamadas).toContainEqual({ metodo: "eq", args: ["Categoria", categoria] });
+      const resultado = await buscarLista({ ...TODOS, categoria });
+      expect(resultado!.itens.length).toBeGreaterThan(0);
+      expect(resultado!.itens.every((i) => i.produto.ativo && i.produto.Categoria === categoria)).toBe(true);
     }
+    expect(chamadas.some((c) => c.metodo === "eq" && c.args[0] === "Categoria")).toBe(false);
   });
 
   it("falha do banco devolve null (a página mostra aviso de falha, não 'categoria vazia')", async () => {
     resposta = { data: null, error: { message: "boom" } };
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     const { buscarLista } = await import("./buscar");
-    expect(await buscarLista("Doces")).toBeNull();
+    expect(await buscarLista({ ...TODOS, categoria: "Doces" })).toBeNull();
     erro.mockRestore();
   });
 });

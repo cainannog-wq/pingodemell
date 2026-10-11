@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clienteSimulado, novoBanco, type BancoSimulado } from "@/test/banco-simulado";
 import type { ProdutoVitrine } from "./mais-pedidos";
 
+const TODOS = { categoria: null, busca: "", ordem: "recomendados", pagina: 1 } as const;
+
 // buscarInterna, "Os mais pedidos" e "Combina com o seu pedido" contra o
 // banco simulado (nada real). Os casos de Cento com 1 e 0 sabor ativo são
 // dados simulados: nenhum produto real é desativado para provar isso.
@@ -217,7 +219,7 @@ describe("uma viagem só ao banco", () => {
     for (const buscar of ["lista", "home"] as const) {
       const contado = await comClienteContado();
       const { buscarLista, buscarMaisPedidos } = await import("./buscar");
-      await (buscar === "lista" ? buscarLista(null) : buscarMaisPedidos());
+      await (buscar === "lista" ? buscarLista(TODOS) : buscarMaisPedidos());
       expect([...contado.primeiras()!].sort()).toEqual(["produtos", "recheios"]);
       expect(contado.saidas).toHaveLength(2);
     }
@@ -230,7 +232,7 @@ describe("sabor inativo escondido, nos dois papéis", () => {
       montar(papel);
       const { buscarLista, buscarMaisPedidos, buscarInterna } = await import("./buscar");
       expect((await buscarMaisPedidos()).map((p) => p.nome)).not.toContain("Cento Zero");
-      expect((await buscarLista(null))!.map((i) => i.produto.nome)).not.toContain("Cento Zero");
+      expect((await buscarLista(TODOS))!.itens.map((i) => i.produto.nome)).not.toContain("Cento Zero");
       const um = await buscarInterna("cento-um");
       expect(um.estado === "ok" && um.sabores).toEqual(["Empada"]);
     });
@@ -239,7 +241,7 @@ describe("sabor inativo escondido, nos dois papéis", () => {
   it("os sabores embutidos não vão junto com o produto para a tela", async () => {
     const { buscarLista, buscarMaisPedidos, buscarInterna } = await import("./buscar");
     for (const p of await buscarMaisPedidos()) expect(p).not.toHaveProperty("sabores");
-    for (const i of (await buscarLista(null))!) expect(i.produto).not.toHaveProperty("sabores");
+    for (const i of (await buscarLista(TODOS))!.itens) expect(i.produto).not.toHaveProperty("sabores");
     const r = await buscarInterna("cento-dois");
     expect(r.estado === "ok" && r.produto).not.toHaveProperty("sabores");
   });
@@ -261,7 +263,7 @@ describe("falha parcial", () => {
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     const { buscarInterna, buscarLista } = await import("./buscar");
     expect(await buscarInterna("cento-dois")).toEqual({ estado: "erro" });
-    expect(await buscarLista(null)).toBeNull();
+    expect(await buscarLista(TODOS)).toBeNull();
     erro.mockRestore();
   });
 });

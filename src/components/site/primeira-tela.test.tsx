@@ -70,7 +70,20 @@ function produto(n: number): ProdutoVitrine {
 
 describe("Primeira tela — Lista", () => {
   it("os 4 primeiros cards (2 primeiras linhas no celular) carregam já, sem prioridade alta; os outros, preguiçosos", () => {
-    render(<ListaProdutos categoria={null} itens={[1, 2, 3, 4, 5, 6].map((n) => ({ produto: produto(n), maisPedido: false }))} />);
+    render(
+      <ListaProdutos
+        parametros={{ categoria: null, busca: "", ordem: "recomendados", pagina: 1 }}
+        resultado={{
+          itens: [1, 2, 3, 4, 5, 6].map((n) => ({ produto: produto(n), maisPedido: false })),
+          total: 6,
+          pagina: 1,
+          totalPaginas: 1,
+          ordem: "recomendados",
+          maisPedidosDisponivel: false,
+          temProdutosSemBusca: true,
+        }}
+      />
+    );
     const fotos = [1, 2, 3, 4, 5, 6].map((n) => screen.getByAltText(`Foto de Produto ${n}`));
     for (const foto of fotos.slice(0, 4)) {
       expect(foto).toHaveAttribute("data-loading", "eager");

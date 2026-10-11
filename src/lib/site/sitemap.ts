@@ -2,11 +2,12 @@
 // por teste. A rota (src/app/sitemap.xml/route.ts) só busca os dados e
 // responde 404 enquanto o site não for indexável.
 //
-// Entram: Home, Lista, Quem Somos, cada categoria com pelo menos 1 produto
+// Entram: Home, Lista, Quem Somos, cada categoria da Lista com pelo menos 1 produto
 // ativo e disponível e cada produto ativo e disponível pelo slug. Ficam de
 // fora: carrinho, checkout, confirmação, Política, login, admin e API.
 
 import { CATEGORIA_VALUES } from "@/lib/produtos/types";
+import { categoriaEstaNaLista } from "@/lib/vitrine/lista";
 import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
 import { ROTAS } from "./rotas";
 import { urlDoSite } from "./url";
@@ -30,7 +31,9 @@ function lastmod(atualizadoEm: string | null): string | null {
 // vitrine, semIndisponiveis).
 export function montarSitemap(produtos: ProdutoSitemap[]): string {
   const comSlug = produtos.filter((p): p is ProdutoSitemap & { slug: string } => Boolean(p.slug));
-  const categorias = CATEGORIA_VALUES.filter((c) => produtos.some((p) => p.Categoria === c));
+  // Só as categorias da Lista: Adicionais e Bebidas não têm filtro na Lista
+  // (o endereço delas mostra "Todos").
+  const categorias = CATEGORIA_VALUES.filter((c) => categoriaEstaNaLista(c) && produtos.some((p) => p.Categoria === c));
 
   const entradas: { caminho: string; lastmod: string | null }[] = [
     { caminho: ROTAS.home, lastmod: null },
