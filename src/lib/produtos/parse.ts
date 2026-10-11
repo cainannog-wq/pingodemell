@@ -29,11 +29,18 @@ export type ParsedProduto = {
   // preencher as colunas obrigatórias; a edição NÃO os grava (preserva o
   // que já está no banco).
   semCamposDePreco: boolean;
+  // Colunas que o formulário não mostra para este tipo: a edição NÃO as
+  // grava, e o que já está no banco fica como está. Bolo: preço, mínimo,
+  // step e unidade. Bento Cake: step (peso fechado). Os valores acima
+  // dessas colunas só servem para o cadastro novo.
+  naoGravarNaEdicao: ColunaEscondida[];
   // Nomes dos produtos usados como subitens, na ordem escolhida no
   // formulário. Só tem efeito quando tipo === "cento"; para tipo
   // "normal" vem sempre vazio, mesmo que o campo chegue preenchido.
   subitens: string[];
 };
+
+export type ColunaEscondida = "preco" | "pedido_minimo" | "step_quantidade" | "unidade_venda";
 
 export type ParseProdutoResult =
   | { success: true; data: ParsedProduto }
@@ -75,8 +82,8 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
   const bento = variacao === "bento";
 
   // Bolo: nada disso vale (preço do recheio × kg). Bento: peso fechado, sem
-  // unidade nem step. Os campos escondidos do formulário nem chegam aqui, e
-  // qualquer valor que chegue é ignorado.
+  // step; a unidade vale ("o combo" ou "unidade"). Os campos escondidos do
+  // formulário nem chegam aqui, e qualquer valor que chegue é ignorado.
   const preco = bolo ? 0 : normalizePreco(precoRaw);
   const pedido_minimo = bolo ? 1 : Number(pedidoMinimoRaw);
   const prazo_producao_dias = Number(prazoRaw);
@@ -102,15 +109,15 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
   if (!bolo && !bento && !STEP_QUANTIDADE_VALUES.includes(stepRaw as StepQuantidade)) {
     return { success: false, error: "Selecione um step de quantidade." };
   }
-  // Categoria obrigatória no formulário (a coluna ainda aceita nulo no
-  // banco: o NOT NULL fica para quando o lote for para a main).
+  // Categoria obrigatória no formulário (e no banco, NOT NULL desde
+  // produtos-categoria-obrigatoria.sql).
   if (!categoriaRaw) {
     return { success: false, error: "Selecione a categoria do produto." };
   }
   if (!CATEGORIA_VALUES.includes(categoriaRaw as CategoriaProduto)) {
     return { success: false, error: "Selecione uma categoria válida." };
   }
-  if (!bolo && !bento && unidadeVenda.length > UNIDADE_VENDA_MAX) {
+  if (!bolo && unidadeVenda.length > UNIDADE_VENDA_MAX) {
     return {
       success: false,
       error: `A unidade de venda tem no máximo ${UNIDADE_VENDA_MAX} caracteres (ex.: kg, unidade, litro).`,
@@ -159,13 +166,18 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
       descricao,
       pedido_minimo,
       categoria: categoriaRaw as CategoriaProduto,
-      unidade_venda: bolo || bento ? null : unidadeVenda || null,
+      unidade_venda: bolo ? null : unidadeVenda || null,
       prazo_producao_dias,
       step_quantidade: bolo || bento ? "livre" : (stepRaw as StepQuantidade),
       destaque,
       ativo,
       tipo,
       semCamposDePreco: bolo,
+      naoGravarNaEdicao: bolo
+        ? ["preco", "pedido_minimo", "step_quantidade", "unidade_venda"]
+        : bento
+          ? ["step_quantidade"]
+          : [],
       subitens,
     },
   };

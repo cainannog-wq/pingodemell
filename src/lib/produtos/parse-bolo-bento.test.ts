@@ -29,11 +29,26 @@ describe("parseProdutoForm — Bolo e Bento Cake", () => {
     });
   });
 
-  it("Bento Cake: exige preço e mínimo; step e unidade não valem", () => {
+  it("Bento Cake: exige preço e mínimo; step não vale; a unidade vale", () => {
     const sem = parseProdutoForm(form({ ...BASE, categoria: "Bento Cake", tipo: "bento_cake" }));
     expect(sem.success).toBe(false);
     const ok = parseProdutoForm(form({ ...BASE, categoria: "Bento Cake", tipo: "bento_cake", preco: "60", pedido_minimo: "2" }));
     expect(ok.success && ok.data).toMatchObject({ preco: 60, pedido_minimo: 2, step_quantidade: "livre", unidade_venda: null, semCamposDePreco: false });
+    const combo = parseProdutoForm(
+      form({ ...BASE, categoria: "Bento Cake", tipo: "bento_cake", preco: "95", pedido_minimo: "1", unidade_venda: "o combo" })
+    );
+    expect(combo.success && combo.data.unidade_venda).toBe("o combo");
+  });
+
+  it("colunas que a edição não grava, por tipo: Bolo 4, Bento Cake só o step, normal e Cento nenhuma", () => {
+    const naoGrava = (campos: Record<string, string>) => {
+      const r = parseProdutoForm(form({ ...BASE, preco: "10", pedido_minimo: "1", step_quantidade: "livre", ...campos }));
+      return r.success ? r.data.naoGravarNaEdicao : null;
+    };
+    expect(naoGrava({ categoria: "Bolos", tipo: "bolo" })).toEqual(["preco", "pedido_minimo", "step_quantidade", "unidade_venda"]);
+    expect(naoGrava({ categoria: "Bento Cake", tipo: "bento_cake" })).toEqual(["step_quantidade"]);
+    expect(naoGrava({ categoria: "Kits", tipo: "normal" })).toEqual([]);
+    expect(naoGrava({ categoria: "Salgados", tipo: "cento", subitem_nome: "Coxinha" })).toEqual([]);
   });
 
   it("Smash Cake (normal em Bolos) é um avulso comum: preço, mínimo, step e unidade valem", () => {
