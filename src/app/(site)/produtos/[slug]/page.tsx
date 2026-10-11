@@ -10,6 +10,7 @@ import { metadadosIndexaveis } from "@/lib/site/seo";
 import { buscarInterna, buscarMaisPedidos } from "@/lib/vitrine/buscar";
 import { UNIDADES_POR_CENTO } from "@/lib/vitrine/cento";
 import { ehMaisPedido, selecionarRelacionados } from "@/lib/vitrine/mais-pedidos";
+import { categoriaEstaNaLista } from "@/lib/vitrine/lista";
 import { textoMinimo } from "@/lib/vitrine/minimo";
 import { variacaoDoProduto } from "@/lib/vitrine/variacao";
 import { ConfigAvulso } from "./_interna/ConfigAvulso";
@@ -96,7 +97,13 @@ export default async function ProdutoPage({ params }: Props) {
           {produto.Categoria ? (
             <li>
               <Icon name="chevron_right" size={16} color="var(--brown-300)" />
-              <Link href={ROTAS.listaPorCategoria(produto.Categoria)}>{produto.Categoria}</Link>
+              {/* Adicionais e Bebidas ficam fora da Lista: a categoria
+                  aparece como texto, sem link (o filtro não existe lá). */}
+              {categoriaEstaNaLista(produto.Categoria) ? (
+                <Link href={ROTAS.listaPorCategoria(produto.Categoria)}>{produto.Categoria}</Link>
+              ) : (
+                <span>{produto.Categoria}</span>
+              )}
             </li>
           ) : null}
           <li>

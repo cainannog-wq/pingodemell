@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { CategoriaProduto } from "@/lib/produtos/types";
-import { ROTAS } from "@/lib/site/rotas";
-import { ORDEM_CATEGORIAS } from "@/lib/vitrine/lista";
+import { urlDaLista } from "@/lib/site/rotas";
+import { CATEGORIAS_DA_LISTA, ORDEM_PADRAO, type OrdemLista } from "@/lib/vitrine/lista";
 
 // Filtro de categorias da Lista. São links comuns pra URL de cada filtro
 // (/produtos e /produtos?categoria=...), não botões com estado: funciona
@@ -9,10 +9,26 @@ import { ORDEM_CATEGORIAS } from "@/lib/vitrine/lista";
 // pode ser compartilhado. A opção atual é anunciada com aria-current.
 // Desktop: card lateral "Categorias"; mobile: linha de chips com rolagem
 // lateral (só CSS muda, o HTML é o mesmo).
-export function FiltroCategorias({ ativa }: { ativa: CategoriaProduto | null }) {
+//
+// Trocar de categoria mantém a busca e a ordem e volta para a página 1.
+// "Mais pedidos" só existe em "Todos": o link de uma categoria volta para
+// Recomendados.
+export function FiltroCategorias({
+  ativa,
+  busca = "",
+  ordem = ORDEM_PADRAO,
+}: {
+  ativa: CategoriaProduto | null;
+  busca?: string;
+  ordem?: OrdemLista;
+}) {
   const opcoes = [
-    { chave: "todos", categoria: null, href: ROTAS.lista },
-    ...ORDEM_CATEGORIAS.map((c) => ({ chave: c, categoria: c, href: ROTAS.listaPorCategoria(c) })),
+    { chave: "todos", categoria: null, href: urlDaLista({ busca, ordem }) },
+    ...CATEGORIAS_DA_LISTA.map((c) => ({
+      chave: c,
+      categoria: c,
+      href: urlDaLista({ categoria: c, busca, ordem: ordem === "mais-pedidos" ? ORDEM_PADRAO : ordem }),
+    })),
   ];
 
   return (

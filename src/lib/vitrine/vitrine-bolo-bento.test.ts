@@ -47,32 +47,34 @@ function montar(recheios: Record<string, unknown>[], papel: "anon" | "admin" = "
   banco = novoBanco({ produtos: [BOLO, SMASH, BENTO, DOCE], recheios, produto_cento_itens: [] }, papel);
 }
 
-const nomes = (itens: { produto: { nome: string } }[] | null) => (itens ?? []).map((i) => i.produto.nome);
+const nomes = (r: { itens: { produto: { nome: string } }[] } | null) => (r?.itens ?? []).map((i) => i.produto.nome);
+const TODOS = { categoria: null, busca: "", ordem: "recomendados", pagina: 1 } as const;
+const em = (categoria: "Bolos" | "Bento Cake") => ({ ...TODOS, categoria });
 
 beforeEach(() => montar([REC_BOLO, REC_BOLO_2, REC_BENTO]));
 
 describe("Lista — Bolo, Bento Cake e Smash Cake", () => {
   it("com os dois catálogos, tudo aparece; o Bolo ganha 'a partir de' o menor R$/kg", async () => {
-    const itens = await buscarLista(null);
+    const itens = await buscarLista(TODOS);
     expect(nomes(itens)).toHaveLength(4);
     expect(nomes(itens)).toEqual(expect.arrayContaining(["Bolo", "Bento Flork", "Smash Cake", "Brigadeiro"]));
-    expect(itens?.find((i) => i.produto.nome === "Bolo")?.produto.preco_a_partir_de).toBe(65);
+    expect(itens?.itens.find((i) => i.produto.nome === "Bolo")?.produto.preco_a_partir_de).toBe(65);
   });
 
   it("filtro Bento Cake mostra só os Bento Cake; filtro Bolos mostra Bolo e Smash", async () => {
-    expect(nomes(await buscarLista("Bento Cake"))).toEqual(["Bento Flork"]);
-    expect(nomes(await buscarLista("Bolos")).sort()).toEqual(["Bolo", "Smash Cake"]);
+    expect(nomes(await buscarLista(em("Bento Cake")))).toEqual(["Bento Flork"]);
+    expect(nomes(await buscarLista(em("Bolos"))).sort()).toEqual(["Bolo", "Smash Cake"]);
   });
 
   it("sem recheio de Bento: some só o Bento", async () => {
     montar([REC_BOLO, REC_BOLO_2]);
-    expect(nomes(await buscarLista(null))).not.toContain("Bento Flork");
-    expect(nomes(await buscarLista(null))).toContain("Bolo");
+    expect(nomes(await buscarLista(TODOS))).not.toContain("Bento Flork");
+    expect(nomes(await buscarLista(TODOS))).toContain("Bolo");
   });
 
   it("sem recheio de Bolo: some só o Bolo, o Smash Cake fica", async () => {
     montar([REC_BENTO]);
-    const todos = nomes(await buscarLista(null));
+    const todos = nomes(await buscarLista(TODOS));
     expect(todos).not.toContain("Bolo");
     expect(todos).toEqual(expect.arrayContaining(["Smash Cake", "Bento Flork"]));
   });
@@ -84,13 +86,13 @@ describe("Lista — Bolo, Bento Cake e Smash Cake", () => {
     banco = novoBanco({ produtos: [DOCE, SMASH], recheios: [REC_BOLO], produto_cento_itens: [] });
     banco.falhas.add("recheios");
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
-    expect((await buscarLista(null))!.map((i) => i.produto.nome)).toEqual(expect.arrayContaining([DOCE.nome, SMASH.nome]));
+    expect(nomes(await buscarLista(TODOS))).toEqual(expect.arrayContaining([DOCE.nome, SMASH.nome]));
     erro.mockRestore();
   });
 
   it("falha na consulta dos recheios: a Lista devolve null (aviso de falha, não 'vazia')", async () => {
     banco.falhas.add("recheios");
-    expect(await buscarLista(null)).toBeNull();
+    expect(await buscarLista(TODOS)).toBeNull();
   });
 });
 

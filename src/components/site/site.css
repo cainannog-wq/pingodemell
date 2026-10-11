@@ -1313,6 +1313,191 @@ body:has(.pdm-site) {
   gap: 24px;
 }
 
+/* Coluna da direita: busca e ordem, resumo, grade, paginação. */
+.lista-conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* Busca pelo nome e ordem, discretos: campo de borda fina com a lupa à
+   direita (sem botão "Buscar") e ordem como texto, sem caixa. */
+.lista-busca {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+.lista-busca-campo {
+  position: relative;
+  flex: 0 1 420px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+.pdm-site .lista-busca-campo input {
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: 0 48px 0 14px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--text-body);
+  background: var(--surface-raised);
+  border: 1px solid var(--ink-500);
+  border-radius: 8px;
+  outline: none;
+  transition: var(--transition-base);
+}
+.pdm-site .lista-busca-campo input::placeholder {
+  color: var(--ink-500);
+  opacity: 1;
+}
+.pdm-site .lista-busca-campo input:focus-visible {
+  border-color: var(--pdm-brown);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+/* Com texto, o "x" fica antes da lupa. */
+.pdm-site .lista-busca-campo:has(.lista-busca-icone + .lista-busca-icone) input {
+  padding-right: 84px;
+}
+/* O "x" do próprio navegador duplicaria o nosso. */
+.lista-busca input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.lista-busca-icone {
+  position: absolute;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-700);
+  cursor: pointer;
+}
+.lista-busca-icone:first-of-type:not(:last-of-type) {
+  right: 40px;
+  color: var(--ink-500);
+}
+.lista-busca-icone:hover {
+  background: var(--brown-050);
+}
+.lista-busca-icone:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.lista-ordem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-700);
+  font-size: var(--fs-small);
+}
+.lista-ordem label {
+  white-space: nowrap;
+}
+.lista-ordem-escolha {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.pdm-site .lista-ordem-escolha select {
+  min-height: var(--tap-min);
+  padding: 0 26px 0 2px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: var(--fw-bold);
+  color: var(--text-strong);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  /* Largura do texto escolhido, com a seta logo depois (onde o navegador
+     não conhece, fica na largura da opção mais longa). */
+  field-sizing: content;
+}
+.pdm-site .lista-ordem-escolha select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.lista-ordem-escolha .material-symbols-rounded {
+  position: absolute;
+  right: 0;
+  pointer-events: none;
+}
+
+/* Total encontrado e "Limpar busca". */
+.lista-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+}
+.lista-resumo p {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+/* Paginação: setas e números com área de toque de 44px de altura. */
+.lista-paginacao {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.lista-paginacao ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pdm-site .lista-paginacao-seta,
+.pdm-site .lista-paginacao-numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: var(--tap-min);
+  min-width: var(--tap-min);
+  padding: 0 10px;
+  border-radius: var(--radius);
+  font-weight: var(--fw-semibold);
+  color: var(--brown-700);
+  transition: var(--transition-base);
+}
+.pdm-site a.lista-paginacao-seta:hover,
+.pdm-site .lista-paginacao-numero:hover {
+  background: var(--brown-050);
+}
+.pdm-site .lista-paginacao-numero[aria-current="page"] {
+  background: var(--gold-500);
+  font-weight: var(--fw-bold);
+  color: var(--ink-900);
+}
+.lista-paginacao-seta[data-desligada] {
+  opacity: 0.35;
+}
+.lista-paginacao-reticencias {
+  min-width: 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
 /* Categoria vazia ou falha ao carregar. */
 .lista-aviso {
   background: var(--gold-100);
@@ -1412,6 +1597,25 @@ body:has(.pdm-site) {
   .lista-grade {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+  }
+  .lista-conteudo {
+    gap: 16px;
+  }
+  .lista-busca-campo {
+    flex: 1 1 100%;
+  }
+  .lista-resumo {
+    margin-bottom: 12px;
+  }
+  /* 2 setas e até 7 posições em 343px (375 menos as margens). */
+  .lista-paginacao,
+  .lista-paginacao ul {
+    gap: 2px;
+  }
+  .pdm-site .lista-paginacao-seta,
+  .pdm-site .lista-paginacao-numero {
+    min-width: 36px;
+    padding: 0 4px;
   }
 }
 

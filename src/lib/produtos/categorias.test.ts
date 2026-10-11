@@ -38,8 +38,11 @@ describe("lista única de categorias", () => {
     expect(categoriaParaParametro("Adicionais")).toBe("adicionais");
   });
 
-  it("ida e volta: cada valor na URL leva de volta à categoria", () => {
-    for (const c of CATEGORIAS) expect(categoriaDoParametro(c.parametro)).toBe(c.valor);
+  it("ida e volta: cada valor na URL leva de volta à categoria; Adicionais e Bebidas, fora da Lista, valem 'Todos'", () => {
+    for (const c of CATEGORIAS) {
+      const naLista = c.valor !== "Adicionais" && c.valor !== "Bebidas";
+      expect(categoriaDoParametro(c.parametro), c.valor).toBe(naLista ? c.valor : null);
+    }
   });
 
   it("só Bebidas e Adicionais ficam fora de 'Os mais pedidos'", () => {

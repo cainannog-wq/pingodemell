@@ -91,9 +91,12 @@ const CATALOGO = [
   produto({ nome: "Torta Inativa", Categoria: "Doces", ativo: false }),
 ];
 
-async function renderLista(categoria?: string) {
+// Abre a página com a query como viria da URL: renderLista("doces") ou
+// renderLista({ categoria: "doces", busca: "pao", pagina: "2" }).
+async function renderLista(query?: string | Record<string, string | string[]>) {
   const { default: ListaPage } = await import("./page");
-  const ui = await ListaPage({ searchParams: Promise.resolve(categoria === undefined ? {} : { categoria }) });
+  const params = query === undefined ? {} : typeof query === "string" ? { categoria: query } : query;
+  const ui = await ListaPage({ searchParams: Promise.resolve(params) });
   return render(ui);
 }
 
@@ -121,7 +124,9 @@ describe("Página Lista — estrutura", () => {
     expect(h2s).toHaveLength(1);
     expect(h2s[0]).toHaveTextContent("Todos os produtos");
     expect(h2s[0]).toHaveClass("site-visually-hidden");
-    expect(cardsNaOrdem()).toEqual(["Beijinho", "Bolo de Chocolate", "Coca-cola 2L", "Empada", "Kit Aniversário", "Kit Festa", "Morango Banhado"]);
+    // Recomendados: Bolos, Doces, Salgados, Kits, Bento Cake; dentro de
+    // cada uma, destaques e depois A a Z. Bebida e sem categoria ficam fora.
+    expect(cardsNaOrdem()).toEqual(["Bolo de Chocolate", "Beijinho", "Morango Banhado", "Empada", "Kit Aniversário"]);
     expect(filtroAtual()).toHaveAttribute("href", "/produtos");
     expect(screen.queryByText("Torta Inativa")).not.toBeInTheDocument();
   });
@@ -144,21 +149,19 @@ describe("Página Lista — estrutura", () => {
   it("categoria inválida na URL mostra 'Todos', sem erro", async () => {
     await renderLista("kits-festa");
     expect(filtroAtual()).toHaveAttribute("href", "/produtos");
-    expect(cardsNaOrdem()).toHaveLength(7);
+    expect(cardsNaOrdem()).toHaveLength(5);
   });
 
-  it("filtro tem as 7 categorias do CMS (com Kits, Bento Cake e Adicionais) mais 'Todos', como links da URL", async () => {
+  it("filtro: 'Todos' e as 5 categorias da Lista, nesta ordem, sem Adicionais nem Bebidas, como links da URL", async () => {
     await renderLista();
     const links = within(screen.getByRole("navigation", { name: "Categorias" })).getAllByRole("link");
     expect(links.map((a) => a.getAttribute("href"))).toEqual([
       "/produtos",
       "/produtos?categoria=bolos",
-      "/produtos?categoria=bento-cake",
       "/produtos?categoria=doces",
       "/produtos?categoria=salgados",
-      "/produtos?categoria=bebidas",
       "/produtos?categoria=kits",
-      "/produtos?categoria=adicionais",
+      "/produtos?categoria=bento-cake",
     ]);
     expect(links.filter((a) => a.getAttribute("aria-current") === "page")).toHaveLength(1);
   });
@@ -166,8 +169,7 @@ describe("Página Lista — estrutura", () => {
 
 describe("Página Lista — categoria vazia", () => {
   it("mostra a mensagem com caminho para 'Todos'", async () => {
-    doBanco = CATALOGO.filter((p) => p.Categoria !== "Bebidas");
-    await renderLista("bebidas");
+    await renderLista("bento-cake");
     expect(screen.getByText("Ainda não temos produtos nesta categoria.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Ver todos os produtos/ })).toHaveAttribute("href", "/produtos");
     expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0);
@@ -185,9 +187,10 @@ describe("Página Lista — selo 'Mais pedido'", () => {
     expect(linkDoCard).toHaveAccessibleName(expect.stringContaining("Mais pedido"));
   });
 
-  it("bebida em destaque não tem selo", async () => {
+  it("bebida em destaque não aparece (nem com ?categoria=bebidas, que mostra 'Todos')", async () => {
     await renderLista("bebidas");
-    expect(within(cardDe("Coca-cola 2L")).queryByText("Mais pedido")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 3, name: "Coca-cola 2L" })).not.toBeInTheDocument();
+    expect(filtroAtual()).toHaveAttribute("href", "/produtos");
   });
 });
 
@@ -239,7 +242,7 @@ describe("Página Lista — card", () => {
 
   it("card sem foto usa o fundo da marca, com texto alternativo; com foto, a foto com texto alternativo", async () => {
     await renderLista();
-    const fallback = screen.getByRole("img", { name: "Kit Festa: foto ainda não disponível" });
+    const fallback = screen.getByRole("img", { name: "Kit Aniversário: foto ainda não disponível" });
     expect(fallback).toHaveClass("home-product-fallback");
     expect(screen.getByRole("img", { name: "Foto de Bolo de Chocolate" })).toHaveAttribute("src", COM_FOTO);
   });
@@ -329,8 +332,8 @@ describe("Página Lista — metadados (PR fase4/seo-metadados)", () => {
   });
 
   it("produto inativo não conta como produto da categoria", async () => {
-    doBanco = [produto({ nome: "Inativo", Categoria: "Bebidas", ativo: false })];
-    expect((await metadadosDa("bebidas")).alternates?.canonical).toBe(`${BASE}/produtos`);
+    doBanco = [produto({ nome: "Inativo", Categoria: "Kits", ativo: false })];
+    expect((await metadadosDa("kits")).alternates?.canonical).toBe(`${BASE}/produtos`);
   });
 
   it("valor inválido ou ausente: os da Lista, canonical /produtos", async () => {
@@ -343,7 +346,7 @@ describe("Página Lista — metadados (PR fase4/seo-metadados)", () => {
   });
 });
 
-describe("Página Lista — categoria Adicionais (PR fase4/categorias-novas, dados simulados)", () => {
+describe("Página Lista — Adicionais e Bebidas fora (fase 14b, dados simulados)", () => {
   const BASE = SITE_URL;
   const VELA = produto({ nome: "Vela Número 5", Categoria: "Adicionais", preco: 8, destaque: true });
 
@@ -352,46 +355,230 @@ describe("Página Lista — categoria Adicionais (PR fase4/categorias-novas, dad
     return generateMetadata({ searchParams: Promise.resolve({ categoria }) });
   }
 
-  it("vazia: mensagem com caminho para 'Todos', filtro Adicionais marcado", async () => {
-    await renderLista("adicionais");
-    expect(screen.getByText("Ainda não temos produtos nesta categoria.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Ver todos os produtos/ })).toHaveAttribute("href", "/produtos");
-    expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0);
-    expect(filtroAtual()).toHaveAttribute("href", "/produtos?categoria=adicionais");
+  it("nenhum Adicional nem Bebida em 'Todos', mesmo em destaque", async () => {
+    doBanco = [...CATALOGO, VELA];
+    await renderLista();
+    expect(cardsNaOrdem()).not.toContain("Vela Número 5");
+    expect(cardsNaOrdem()).not.toContain("Coca-cola 2L");
   });
 
-  it("vazia: título e descrição da Lista, canonical /produtos", async () => {
+  it("?categoria=adicionais e ?categoria=bebidas mostram 'Todos', sem Adicional nem Bebida", async () => {
+    doBanco = [...CATALOGO, VELA];
+    for (const valor of ["adicionais", "bebidas", "Adicionais "]) {
+      cleanup();
+      await renderLista(valor);
+      expect(filtroAtual(), valor).toHaveAttribute("href", "/produtos");
+      expect(cardsNaOrdem()).toEqual(["Bolo de Chocolate", "Beijinho", "Morango Banhado", "Empada", "Kit Aniversário"]);
+    }
+  });
+
+  it("?categoria=adicionais: título, descrição e canonical da Lista", async () => {
+    doBanco = [...CATALOGO, VELA];
     const m = await metadadosDa("adicionais");
     expect(m.title).toBe("Produtos · Pingo de Mell");
     expect(m.alternates?.canonical).toBe(`${BASE}/produtos`);
   });
 
-  it("com produto: só ele, sem selo 'Mais pedido' mesmo em destaque, e com título e canonical da categoria", async () => {
+  it("a busca não acha Adicional nem Bebida", async () => {
     doBanco = [...CATALOGO, VELA];
-    await renderLista("adicionais");
-    expect(cardsNaOrdem()).toEqual(["Vela Número 5"]);
-    expect(within(cardDe("Vela Número 5")).queryByText("Mais pedido")).not.toBeInTheDocument();
-    const m = await metadadosDa("adicionais");
-    expect(m.title).toBe("Adicionais para festas em Fazenda Rio Grande e Curitiba | Pingo de Mell");
-    expect(m.description).toBe(
-      "Velas, balões e adicionais para completar o seu pedido na Pingo de Mell, em Fazenda Rio Grande e Curitiba. Monte seu pedido no site e finalize pelo WhatsApp."
-    );
-    expect(m.alternates?.canonical).toBe(`${BASE}/produtos?categoria=adicionais`);
+    await renderLista({ busca: "vela" });
+    expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0);
+    cleanup();
+    await renderLista({ busca: "coca" });
+    expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0);
   });
+});
 
-  it("em 'Todos', o produto de Adicionais em destaque fica entre os demais, não no bloco do topo", async () => {
-    doBanco = [...CATALOGO, VELA];
+// Doces numerados, para paginar ("Doce 001" ... ).
+const doces = (n: number) =>
+  Array.from({ length: n }, (_, i) => produto({ nome: `Doce ${String(i + 1).padStart(3, "0")}`, Categoria: "Doces" }));
+const seletorOrdem = () => screen.getByRole("combobox", { name: "Ordenar por" }) as HTMLSelectElement;
+const opcoesOrdem = () => Array.from(seletorOrdem().options).map((o) => o.textContent);
+const paginacao = () => screen.queryByRole("navigation", { name: "Páginas da lista" });
+const hrefsDoFiltro = () =>
+  within(screen.getByRole("navigation", { name: "Categorias" }))
+    .getAllByRole("link")
+    .map((a) => a.getAttribute("href"));
+
+describe("Página Lista — busca", () => {
+  it("campo de busca rotulado, dentro de um formulário de busca GET para /produtos", async () => {
     await renderLista();
-    expect(cardsNaOrdem()[0]).toBe("Beijinho");
-    expect(cardsNaOrdem()).toContain("Vela Número 5");
-    expect(screen.getAllByText("Mais pedido")).toHaveLength(1);
+    const campo = screen.getByRole("searchbox", { name: "Buscar produto pelo nome" });
+    const form = campo.closest("form")!;
+    expect(form).toHaveAttribute("role", "search");
+    expect(form).toHaveAttribute("method", "get");
+    expect(form).toHaveAttribute("action", "/produtos");
+    // A página nunca vai no formulário: buscar ou trocar a ordem volta à 1.
+    expect(form.querySelector('[name="pagina"]')).toBeNull();
   });
 
-  it("valores parecidos que não são o da URL valem como 'Todos'", async () => {
-    for (const valor of ["adicional", "Adicionais ", "adicionais-"]) {
+  it("campo discreto: sem botão com o texto 'Buscar'; a lupa é o botão de enviar, com nome para leitor de tela", async () => {
+    await renderLista();
+    const form = screen.getByRole("search");
+    const enviar = within(form).getByRole("button", { name: "Buscar" });
+    expect(enviar).toHaveAttribute("type", "submit");
+    expect(enviar.textContent).not.toMatch(/Buscar/);
+    // Sem texto digitado, não há "x" de limpar.
+    expect(within(form).queryByRole("button", { name: "Limpar busca" })).not.toBeInTheDocument();
+  });
+
+  it("com busca na URL, o campo mostra o 'x' de limpar antes da lupa", async () => {
+    await renderLista({ busca: "bolo" });
+    const botoes = within(screen.getByRole("search")).getAllByRole("button");
+    expect(botoes.map((b) => b.getAttribute("aria-label"))).toEqual(["Limpar busca", "Buscar"]);
+  });
+
+  it("com resultado: só os produtos com o nome buscado, total e 'Limpar busca'", async () => {
+    doBanco = [...CATALOGO, produto({ nome: "Pão de Mel", Categoria: "Doces" })];
+    await renderLista({ busca: "pao de mel" });
+    expect(cardsNaOrdem()).toEqual(["Pão de Mel"]);
+    expect(screen.getByText("1 produto com “pao de mel”")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Limpar busca/ })).toHaveAttribute("href", "/produtos");
+    expect(screen.getByRole("searchbox")).toHaveValue("pao de mel");
+  });
+
+  it("sem resultado: mensagem com o texto buscado e caminho para limpar a busca (mantendo categoria e ordem)", async () => {
+    await renderLista({ categoria: "doces", busca: "pizza", ordem: "z-a" });
+    expect(screen.getByText(/Nenhum produto em Doces com “pizza” no nome/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Limpar busca/ })).toHaveAttribute("href", "/produtos?categoria=doces&ordem=z-a");
+    expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0);
+    expect(screen.queryByText("Ainda não temos produtos nesta categoria.")).not.toBeInTheDocument();
+    expect(paginacao()).toBeNull();
+  });
+
+  it("busca só com espaços é tratada como vazia", async () => {
+    await renderLista({ busca: "     " });
+    expect(cardsNaOrdem()).toHaveLength(5);
+    expect(screen.queryByRole("link", { name: /Limpar busca/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("searchbox")).toHaveValue("");
+  });
+
+  it("categoria escolhida vai junto como campo escondido; em 'Todos', não", async () => {
+    await renderLista("doces");
+    expect(document.querySelector('form input[type="hidden"][name="categoria"]')).toHaveAttribute("value", "doces");
+    cleanup();
+    await renderLista();
+    expect(document.querySelector('form input[name="categoria"]')).toBeNull();
+  });
+});
+
+describe("Página Lista — ordem", () => {
+  it("'Todos' com destaque: as 4 opções, Recomendados marcada por padrão, nenhuma por preço", async () => {
+    await renderLista();
+    expect(opcoesOrdem()).toEqual(["Recomendados", "Mais pedidos", "Nome A a Z", "Nome Z a A"]);
+    expect(seletorOrdem()).toHaveValue("recomendados");
+    expect(opcoesOrdem().join(" ")).not.toMatch(/pre[çc]o/i);
+  });
+
+  it("Mais pedidos some numa categoria específica", async () => {
+    for (const categoria of ["bolos", "doces", "salgados", "kits"]) {
       cleanup();
-      await renderLista(valor);
-      expect(filtroAtual(), valor).toHaveAttribute("href", valor.trim().toLowerCase() === "adicionais" ? "/produtos?categoria=adicionais" : "/produtos");
+      await renderLista(categoria);
+      expect(opcoesOrdem(), categoria).toEqual(["Recomendados", "Nome A a Z", "Nome Z a A"]);
     }
+  });
+
+  it("Mais pedidos some em 'Todos' sem nenhum destaque", async () => {
+    doBanco = CATALOGO.map((p) => ({ ...p, destaque: false }));
+    await renderLista();
+    expect(opcoesOrdem()).toEqual(["Recomendados", "Nome A a Z", "Nome Z a A"]);
+  });
+
+  it("?ordem=mais-pedidos: destaques primeiro em 'Todos'; numa categoria, volta para Recomendados", async () => {
+    await renderLista({ ordem: "mais-pedidos" });
+    expect(seletorOrdem()).toHaveValue("mais-pedidos");
+    expect(cardsNaOrdem()[0]).toBe("Beijinho");
+    cleanup();
+    await renderLista({ categoria: "doces", ordem: "mais-pedidos" });
+    expect(seletorOrdem()).toHaveValue("recomendados");
+  });
+
+  it("?ordem= inexistente é Recomendados", async () => {
+    await renderLista({ ordem: "menor-preco" });
+    expect(seletorOrdem()).toHaveValue("recomendados");
+    expect(cardsNaOrdem()).toEqual(["Bolo de Chocolate", "Beijinho", "Morango Banhado", "Empada", "Kit Aniversário"]);
+  });
+
+  it("A a Z e Z a A pela URL", async () => {
+    await renderLista({ ordem: "a-z" });
+    expect(cardsNaOrdem()).toEqual(["Beijinho", "Bolo de Chocolate", "Empada", "Kit Aniversário", "Morango Banhado"]);
+    cleanup();
+    await renderLista({ ordem: "z-a" });
+    expect(cardsNaOrdem()).toEqual(["Morango Banhado", "Kit Aniversário", "Empada", "Bolo de Chocolate", "Beijinho"]);
+  });
+});
+
+describe("Página Lista — trocar categoria mantém busca e ordem e volta à página 1", () => {
+  it("links do filtro levam a busca e a ordem, nunca a página", async () => {
+    doBanco = doces(30);
+    await renderLista({ busca: "doce", ordem: "z-a", pagina: "2" });
+    expect(hrefsDoFiltro()).toEqual([
+      "/produtos?busca=doce&ordem=z-a",
+      "/produtos?categoria=bolos&busca=doce&ordem=z-a",
+      "/produtos?categoria=doces&busca=doce&ordem=z-a",
+      "/produtos?categoria=salgados&busca=doce&ordem=z-a",
+      "/produtos?categoria=kits&busca=doce&ordem=z-a",
+      "/produtos?categoria=bento-cake&busca=doce&ordem=z-a",
+    ]);
+  });
+
+  it("estando em Mais pedidos, os links das categorias vão em Recomendados; o de 'Todos' mantém", async () => {
+    await renderLista({ ordem: "mais-pedidos" });
+    const hrefs = hrefsDoFiltro();
+    expect(hrefs[0]).toBe("/produtos?ordem=mais-pedidos");
+    expect(hrefs.slice(1).every((h) => !h!.includes("ordem="))).toBe(true);
+  });
+});
+
+describe("Página Lista — paginação", () => {
+  it("24 por página: 50 produtos, página 1 com 24 e links para as 3 páginas", async () => {
+    doBanco = doces(50);
+    await renderLista();
+    expect(cardsNaOrdem()).toHaveLength(24);
+    expect(cardsNaOrdem()[0]).toBe("Doce 001");
+    expect(screen.getByText("50 produtos, mostrando 1 a 24")).toBeInTheDocument();
+    const nav = paginacao()!;
+    expect(within(nav).getByRole("link", { name: "Página 1" })).toHaveAttribute("aria-current", "page");
+    expect(within(nav).getByRole("link", { name: "Página 2" })).toHaveAttribute("href", "/produtos?pagina=2");
+    expect(within(nav).getByRole("link", { name: "Próxima página" })).toHaveAttribute("href", "/produtos?pagina=2");
+    expect(within(nav).queryByRole("link", { name: "Página anterior" })).not.toBeInTheDocument();
+  });
+
+  it("página 2 pela URL, com os links mantendo categoria, busca e ordem", async () => {
+    doBanco = doces(50);
+    await renderLista({ categoria: "doces", busca: "doce", ordem: "a-z", pagina: "2" });
+    expect(cardsNaOrdem()[0]).toBe("Doce 025");
+    expect(cardsNaOrdem()).toHaveLength(24);
+    const nav = paginacao()!;
+    expect(within(nav).getByRole("link", { name: "Página 2" })).toHaveAttribute("aria-current", "page");
+    expect(within(nav).getByRole("link", { name: "Página anterior" })).toHaveAttribute(
+      "href",
+      "/produtos?categoria=doces&busca=doce&ordem=a-z"
+    );
+    expect(within(nav).getByRole("link", { name: "Página 3" })).toHaveAttribute(
+      "href",
+      "/produtos?categoria=doces&busca=doce&ordem=a-z&pagina=3"
+    );
+  });
+
+  it("?pagina= maior que o total abre a última página", async () => {
+    doBanco = doces(50);
+    await renderLista({ pagina: "99" });
+    expect(cardsNaOrdem()).toEqual(["Doce 049", "Doce 050"]);
+    expect(within(paginacao()!).getByRole("link", { name: "Página 3" })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("?pagina= inválido abre a página 1", async () => {
+    doBanco = doces(50);
+    for (const pagina of ["abc", "0", "-2", "1,5"]) {
+      cleanup();
+      await renderLista({ pagina });
+      expect(cardsNaOrdem()[0], pagina).toBe("Doce 001");
+    }
+  });
+
+  it("uma página só: sem paginação", async () => {
+    await renderLista();
+    expect(paginacao()).toBeNull();
   });
 });

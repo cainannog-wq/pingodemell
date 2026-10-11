@@ -5,7 +5,7 @@ import { emCacheDaVitrine } from "./cache";
 import { CAMPOS_SABOR, centosComSabor, saboresAtivos, type LinhaSabor } from "./cento";
 import { CAMPOS_RECHEIO_VITRINE, comPrecoAPartirDe, semIndisponiveis, type RecheioVitrine } from "./disponibilidade";
 import { lerFotosExtras, montarFotos, type FotoProduto } from "./fotos";
-import { montarLista, type ItemLista } from "./lista";
+import { montarLista, type ParametrosLista, type ResultadoLista } from "./lista";
 import {
   CAMPOS_VITRINE,
   selecionarMaisPedidos,
@@ -215,13 +215,22 @@ export async function buscarMaisPedidos(): Promise<ProdutoVitrine[]> {
 }
 
 // Busca os produtos da Lista (/produtos) e aplica a regra em montarLista
-// (inativo fora, destaques primeiro, ordem alfabética). O filtro de ativo
-// fica na consulta E na regra. Cento sem sabor ativo também fica fora.
-// Retorna null em caso de erro (a página mostra aviso de falha, não
-// "categoria vazia").
-export async function buscarLista(categoria: CategoriaProduto | null): Promise<ItemLista[] | null> {
-  const produtos = await lerVitrine({ categoria }, "Falha ao buscar a Lista de produtos:");
-  return produtos ? montarLista(produtos, categoria) : null;
+// (categoria, busca, ordem e página). Lê SEMPRE a lista inteira (a mesma
+// entrada do cache para qualquer filtro, busca, ordem ou página: são cerca
+// de 220 produtos); filtro, busca e corte de página são feitos no código.
+// O filtro de ativo fica na consulta E na regra. Cento sem sabor ativo
+// também fica fora. Retorna null em caso de erro (a página mostra aviso de
+// falha, não "categoria vazia").
+export async function buscarLista(parametros: ParametrosLista): Promise<ResultadoLista | null> {
+  const produtos = await buscarProdutosDaLista();
+  return produtos ? montarLista(produtos, parametros) : null;
+}
+
+// A leitura de buscarLista, sem a regra: a página divide uma leitura só por
+// requisição entre generateMetadata e o conteúdo (cache do React, que
+// compara argumentos por identidade: por isso sem argumento).
+export async function buscarProdutosDaLista(): Promise<ProdutoVitrine[] | null> {
+  return lerVitrine({}, "Falha ao buscar a Lista de produtos:");
 }
 
 // Formato do slug, igual à restrição produtos_slug_formato do banco.

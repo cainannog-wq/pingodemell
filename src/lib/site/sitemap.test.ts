@@ -11,7 +11,7 @@ function p(slug: string | null, Categoria: ProdutoSitemap["Categoria"], atualiza
 const locs = (xml: string) => [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]);
 
 describe("sitemap (PR fase4/seo-metadados)", () => {
-  it("Home, Lista, Quem Somos, categorias com produto e produtos por slug, todos absolutos", () => {
+  it("Home, Lista, Quem Somos, categorias da Lista com produto e produtos por slug, todos absolutos", () => {
     const xml = montarSitemap([p("coca-cola-2l", "Bebidas"), p("beijinho", "Doces"), p("bento-flork", "Bento Cake")]);
     expect(locs(xml)).toEqual([
       `${BASE}/`,
@@ -19,7 +19,6 @@ describe("sitemap (PR fase4/seo-metadados)", () => {
       `${BASE}/quem-somos`,
       `${BASE}/produtos?categoria=bento-cake`,
       `${BASE}/produtos?categoria=doces`,
-      `${BASE}/produtos?categoria=bebidas`,
       `${BASE}/produtos/beijinho`,
       `${BASE}/produtos/bento-flork`,
       `${BASE}/produtos/coca-cola-2l`,
@@ -33,14 +32,13 @@ describe("sitemap (PR fase4/seo-metadados)", () => {
     expect(locs(xml).filter((l) => l.includes("categoria="))).toEqual([`${BASE}/produtos?categoria=doces`]);
   });
 
-  it("Adicionais: fora enquanto vazia; com produto, entra no fim das categorias, com o valor da URL sem acento", () => {
-    expect(montarSitemap([p("beijinho", "Doces")])).not.toContain("categoria=adicionais");
-    const xml = montarSitemap([p("vela-5", "Adicionais"), p("beijinho", "Doces"), p("kit", "Kits")]);
+  it("Adicionais e Bebidas: a categoria fica fora mesmo com produto (não têm filtro na Lista); o produto entra pelo slug", () => {
+    const xml = montarSitemap([p("vela-5", "Adicionais"), p("coca", "Bebidas"), p("beijinho", "Doces"), p("kit", "Kits")]);
     expect(locs(xml).filter((l) => l.includes("categoria="))).toEqual([
       `${BASE}/produtos?categoria=doces`,
       `${BASE}/produtos?categoria=kits`,
-      `${BASE}/produtos?categoria=adicionais`,
     ]);
+    expect(locs(xml)).toContain(`${BASE}/produtos/coca`);
     expect(locs(xml)).toContain(`${BASE}/produtos/vela-5`);
   });
 

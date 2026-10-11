@@ -94,7 +94,7 @@ for (const comCookie of [true, false]) {
     it("Home, Lista e interna leem só pelo cliente sem sessão, e nada de inativo é guardado", async () => {
       const { buscarInterna, buscarLista, buscarMaisPedidos } = await import("./buscar");
       const home = await buscarMaisPedidos();
-      const lista = await buscarLista(null);
+      const lista = await buscarLista({ categoria: null, busca: "", ordem: "recomendados", pagina: 1 });
       const interna = await buscarInterna("torta-so-do-admin");
       const cento = await buscarInterna("cento-misto");
 
@@ -102,7 +102,7 @@ for (const comCookie of [true, false]) {
       expect(clienteComSessao).not.toHaveBeenCalled();
 
       expect(home.map((p) => p.nome)).not.toContain(INATIVO.nome);
-      expect(lista!.map((i) => i.produto.nome)).not.toContain(INATIVO.nome);
+      expect(lista!.itens.map((i) => i.produto.nome)).not.toContain(INATIVO.nome);
       expect(interna).toEqual({ estado: "nao-encontrado" });
       expect(cento.estado === "ok" && cento.sabores).toEqual(["Brigadeiro"]);
 

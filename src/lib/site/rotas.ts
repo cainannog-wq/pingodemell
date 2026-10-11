@@ -13,6 +13,31 @@ export function categoriaParaParametro(categoria: CategoriaProduto): string {
   return categoriaDoValor(categoria)?.parametro ?? String(categoria).toLowerCase().replace(/\s+/g, "-");
 }
 
+// Endereço da Lista com filtro, busca, ordem e página (PR
+// lista/busca-ordem-paginacao). Valor padrão não entra na URL ("Todos",
+// busca vazia, Recomendados, página 1), então /produtos continua sendo a
+// Lista sem nada escolhido. Ordem fixa dos parâmetros: categoria, busca,
+// ordem, pagina.
+export function urlDaLista({
+  categoria = null,
+  busca = "",
+  ordem = "recomendados",
+  pagina = 1,
+}: {
+  categoria?: CategoriaProduto | null;
+  busca?: string;
+  ordem?: string;
+  pagina?: number;
+}): string {
+  const p = new URLSearchParams();
+  if (categoria) p.set("categoria", categoriaParaParametro(categoria));
+  if (busca.trim()) p.set("busca", busca.trim());
+  if (ordem !== "recomendados") p.set("ordem", ordem);
+  if (pagina > 1) p.set("pagina", String(pagina));
+  const query = p.toString();
+  return query ? `/produtos?${query}` : "/produtos";
+}
+
 export const ROTAS = {
   home: "/",
   lista: "/produtos",

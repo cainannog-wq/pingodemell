@@ -1,8 +1,7 @@
 import { Icon, TextLink } from "@/components/ds";
 import { CardProduto } from "@/components/site/CardProduto";
-import type { CategoriaProduto } from "@/lib/produtos/types";
-import { ROTAS } from "@/lib/site/rotas";
-import type { ItemLista } from "@/lib/vitrine/lista";
+import { ROTAS, urlDaLista } from "@/lib/site/rotas";
+import { POR_PAGINA, type ParametrosLista, type ResultadoLista } from "@/lib/vitrine/lista";
 
 // Largura de cada foto na grade: 2 colunas no celular, 3 no resto.
 const TAMANHOS_FOTO = "(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 275px";
@@ -13,19 +12,24 @@ const TAMANHOS_FOTO = "(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 275px"
 // uma delas costuma ser o maior elemento da tela (LCP).
 const CARDS_NA_PRIMEIRA_TELA = 4;
 
-// Grade única da Lista, já na ordem de montarLista (destaques com selo
-// primeiro, depois os outros). Sem subtítulo visível: o H2 existe só pra
-// leitor de tela, pra hierarquia seguir H1 → H2 → H3 (nome do produto).
-// - nenhum item: mensagem de categoria vazia com caminho para "Todos";
-// - itens null: falha ao buscar no banco.
+const plural = (n: number) => (n === 1 ? "1 produto" : `${n} produtos`);
+
+// Grade da página atual, já na ordem de montarLista. Sem subtítulo visível:
+// o H2 existe só pra leitor de tela, pra hierarquia seguir H1 → H2 → H3
+// (nome do produto).
+// - resultado null: falha ao buscar no banco;
+// - busca sem resultado: mensagem com o texto buscado e "Limpar busca";
+// - categoria sem produto: mensagem com caminho para "Todos".
 export function ListaProdutos({
-  categoria,
-  itens,
+  parametros,
+  resultado,
 }: {
-  categoria: CategoriaProduto | null;
-  itens: ItemLista[] | null;
+  parametros: ParametrosLista;
+  resultado: ResultadoLista | null;
 }) {
-  if (itens === null) {
+  const { categoria, busca } = parametros;
+
+  if (resultado === null) {
     return (
       <div className="lista-aviso">
         <Icon name="error" size={28} tone="accent" />
@@ -34,7 +38,23 @@ export function ListaProdutos({
     );
   }
 
-  if (itens.length === 0) {
+  const limparBusca = urlDaLista({ categoria, ordem: resultado.ordem });
+
+  if (resultado.total === 0) {
+    if (busca && resultado.temProdutosSemBusca) {
+      return (
+        <div className="lista-aviso" role="status">
+          <Icon name="search_off" size={28} tone="accent" />
+          <p>
+            Nenhum produto {categoria ? `em ${categoria} ` : ""}com “{busca}” no nome. Confira a escrita ou tente outra
+            palavra.
+          </p>
+          <TextLink href={limparBusca} icon="close">
+            Limpar busca
+          </TextLink>
+        </div>
+      );
+    }
     return (
       <div className="lista-aviso">
         <Icon name="search_off" size={28} tone="accent" />
@@ -52,13 +72,27 @@ export function ListaProdutos({
     );
   }
 
+  const inicio = (resultado.pagina - 1) * POR_PAGINA + 1;
+  const fim = inicio + resultado.itens.length - 1;
+
   return (
     <section aria-labelledby="lista-titulo-grade">
       <h2 id="lista-titulo-grade" className="site-visually-hidden">
         {categoria ?? "Todos os produtos"}
       </h2>
+      <div className="lista-resumo" role="status">
+        <p>
+          {busca ? `${plural(resultado.total)} com “${busca}”` : plural(resultado.total)}
+          {resultado.totalPaginas > 1 ? `, mostrando ${inicio} a ${fim}` : ""}
+        </p>
+        {busca ? (
+          <TextLink href={limparBusca} icon="close">
+            Limpar busca
+          </TextLink>
+        ) : null}
+      </div>
       <ul className="lista-grade" role="list">
-        {itens.map(({ produto, maisPedido }, i) => (
+        {resultado.itens.map(({ produto, maisPedido }, i) => (
           <li key={produto.id}>
             <CardProduto
               produto={produto}
