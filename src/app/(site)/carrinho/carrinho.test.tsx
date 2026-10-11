@@ -339,6 +339,20 @@ describe("Carrinho — quantidade por tipo", () => {
     expect(linha.queryByText(/múltiplos/)).not.toBeInTheDocument();
   });
 
+  it("unidade de venda com artigo (Kit Escolar Individual): preço sem 'por' e mínimo no plural", () => {
+    abrir([
+      { ...brigadeiro, id: "l-kit", nome: "Kit Escolar Individual", preco: 26, unidade_venda: "o kit", quantidade: 10, observacao: null },
+      { ...brigadeiro, id: "l-caixa", nome: "Festa na Caixa", preco: 160, unidade_venda: "caixa", quantidade: 1, pedidoMinimo: 1, step: "livre", observacao: null },
+    ]);
+    const kit = itemOuFalha("l-kit");
+    expect(paragrafo(kit, "R$ 26,00 o kit")).toBeInTheDocument();
+    expect(within(kit).getByText("kits · mín. 10 kits")).toBeInTheDocument();
+    expect(kit.textContent).not.toMatch(/por o|10 o kit/);
+    const caixa = itemOuFalha("l-caixa");
+    expect(paragrafo(caixa, "R$ 160,00 a caixa")).toBeInTheDocument();
+    expect(within(caixa).getByText("caixa")).toBeInTheDocument();
+  });
+
   it("Smash Cake anda de 1 em 1 e Bento Cake trava no mínimo do produto (2), sem step", async () => {
     const user = userEvent.setup();
     abrir();
@@ -355,7 +369,7 @@ describe("Carrinho — quantidade por tipo", () => {
     expect(b.getByRole("textbox")).toHaveValue("2");
     expect(b.getByRole("button", { name: /^Diminuir / })).toBeDisabled();
     expect(b.getByText("R$ 90,00")).toBeInTheDocument();
-    expect(b.getByText(/mín\. 2/)).toBeInTheDocument();
+    expect(b.getByText("unidades · mín. 2 unidades")).toBeInTheDocument();
   });
 
   it("Cento e Bolo continuam como foram gravados depois de mexer nas outras linhas", async () => {

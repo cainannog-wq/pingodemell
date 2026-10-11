@@ -286,7 +286,7 @@ describe("Página Lista — mínimo no card", () => {
     ];
     saboresDoBanco = [sabor("Beijinho", "Brigadeiro")];
     await renderLista("doces");
-    expect(within(cardDe("Morango Banhado")).getByText("mín. 10 un")).toHaveClass("site-preco-minimo");
+    expect(within(cardDe("Morango Banhado")).getByText("mín. 10 unidades")).toHaveClass("site-preco-minimo");
     expect(within(cardDe("Brigadeiro")).getByText("mín. 10")).toBeInTheDocument();
     expect(cardDe("Pudim").querySelector(".site-preco-minimo")).toBeNull();
     // Cento ignora pedido_minimo.

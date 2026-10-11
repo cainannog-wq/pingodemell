@@ -12,8 +12,8 @@ describe("pedido mínimo na interna e no card", () => {
     expect(textoMinimo(p(10, "unidade"))).toBe("Pedido mínimo: 10 unidades");
     expect(textoMinimo(p(2, "kg"))).toBe("Pedido mínimo: 2 kg");
     expect(textoMinimo(p(3, "litro"))).toBe("Pedido mínimo: 3 litros");
-    expect(textoMinimo(p(3, "caixa com 6"))).toBe("Pedido mínimo: 3 caixa com 6");
-    expect(textoMinimoCurto(p(10, "unidade"))).toBe("mín. 10 un");
+    expect(textoMinimo(p(3, "caixa com 6"))).toBe("Pedido mínimo: 3");
+    expect(textoMinimoCurto(p(10, "unidade"))).toBe("mín. 10 unidades");
     expect(textoMinimoCurto(p(2, "kg"))).toBe("mín. 2 kg");
   });
 

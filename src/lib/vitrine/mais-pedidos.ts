@@ -1,6 +1,7 @@
 import { formatMoeda } from "@/lib/pedidos/format";
 import { categoriaDoValor } from "@/lib/produtos/categorias";
 import type { CategoriaProduto, StepQuantidade, TipoProduto } from "@/lib/produtos/types";
+import { unidadeDeVenda } from "./unidade";
 
 // Produto como a vitrine pública enxerga: só os campos que o site mostra
 // ou usa pra filtrar/ordenar. Referência interna sempre pelo `id` (uuid);
@@ -70,24 +71,18 @@ export function selecionarRelacionados(maisPedidos: ProdutoVitrine[], produtoAtu
   return maisPedidos.filter((p) => p.id !== produtoAtualId && ehMaisPedido(p)).slice(0, LIMITE_RELACIONADOS);
 }
 
-// Unidade do preço no card, com o artigo certo pras unidades sugeridas no
-// cadastro ("o kg", "a unidade"); qualquer outro texto vira "por {texto}"
-// ("por caixa"). Produto tipo cento é sempre "o cento", com ou sem unidade.
-const ARTIGO_UNIDADE: Record<string, string> = {
-  kg: "o kg",
-  unidade: "a unidade",
-  cento: "o cento",
-  litro: "o litro",
-};
-
+// Unidade do preço ("a unidade", "a caixa", "o kit", "o kg"), da lista única
+// (src/lib/vitrine/unidade.ts), nunca com "por". Vazio ou fora da lista: só
+// o valor. Produto tipo cento é sempre "o cento" e Bolo "o kg", com ou sem
+// unidade.
 export function textoUnidadeVenda(produto: Pick<ProdutoVitrine, "tipo" | "unidade_venda">): string | null {
   if (produto.tipo === "cento") return "o cento";
   if (produto.tipo === "bolo") return "o kg";
-  // Bento Cake tem peso fechado: o preço é do bolinho inteiro.
-  if (produto.tipo === "bento_cake") return null;
-  const unidade = produto.unidade_venda?.trim();
-  if (!unidade) return null;
-  return ARTIGO_UNIDADE[unidade.toLowerCase()] ?? `por ${unidade}`;
+  const unidade = unidadeDeVenda(produto.unidade_venda);
+  // Bento Cake tem peso fechado: o preço é do bolinho inteiro. Só o combo
+  // (bolinho com doces) mostra a unidade; o simples, nenhuma.
+  if (produto.tipo === "bento_cake") return unidade?.chave === "combo" ? unidade.preco : null;
+  return unidade?.preco ?? null;
 }
 
 // Preço como aparece no card: valor mais a unidade de venda (sem unidade,
