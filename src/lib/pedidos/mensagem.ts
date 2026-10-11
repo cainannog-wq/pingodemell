@@ -3,6 +3,7 @@ import { FORMAS_PAGAMENTO, type FormaPagamento, type ModoEntrega } from "@/lib/c
 import { formatMoeda } from "@/lib/pedidos/format";
 import { linkWhatsApp } from "@/lib/site/whatsapp";
 import { textoQuantidadeNaUnidade } from "@/lib/vitrine/minimo";
+import { unidadeDoBento } from "@/lib/vitrine/unidade";
 import type { ItemEnvio } from "./envio";
 
 // Mensagem do pedido para o WhatsApp da loja (PR confirmacao-e-gravacao).
@@ -67,7 +68,8 @@ function quantidadeAvulso(quantidade: number, unidade: string | null): string {
 export function quantidadeDaLinha(l: ItemEnvio): string {
   if (l.tipo === "cento") return `${l.quantidade} ${l.quantidade === 1 ? "cento" : "centos"}`;
   if (l.tipo === "bolo") return `${l.quantidade} kg`;
-  if (l.tipo === "bento") return textoQuantidadeNaUnidade(l.quantidade, "unidade");
+  // Bento Cake: "2 combos" no combo, "2 unidades" no simples.
+  if (l.tipo === "bento") return textoQuantidadeNaUnidade(l.quantidade, unidadeDoBento(l.unidade_venda).chave);
   return quantidadeAvulso(l.quantidade, l.unidade_venda);
 }
 

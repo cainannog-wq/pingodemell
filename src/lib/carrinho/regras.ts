@@ -86,6 +86,9 @@ export type LinhaBento = LinhaBase & {
   recheio: RecheioEscolhido;
   // Pedido mínimo do produto no momento da adição (o Bento não tem step).
   pedidoMinimo?: number;
+  // Unidade de venda do produto no momento da adição ("o combo" no combo),
+  // só para exibir. Linha de antes do campo conta como unidade.
+  unidade_venda?: string | null;
 };
 
 export type LinhaCarrinho = LinhaAvulso | LinhaCento | LinhaBolo | LinhaBento;
@@ -332,6 +335,7 @@ export function linhaValida(v: unknown): v is LinhaCarrinho {
   }
   if (l.tipo === "bento") {
     if (l.pedidoMinimo !== undefined && !inteiro(l.pedidoMinimo, 1, MAX_QUANTIDADE)) return false;
+    if (l.unidade_venda !== undefined && l.unidade_venda !== null && !texto(l.unidade_venda, 20)) return false;
     return inteiro(l.quantidade, 1, MAX_QUANTIDADE) && recheioValido(l.recheio);
   }
   if (l.tipo === "cento") {

@@ -7,6 +7,7 @@ import { formatMoeda } from "@/lib/pedidos/format";
 import { recheiosDoBento } from "@/lib/recheios/regras";
 import type { RecheioVitrine } from "@/lib/vitrine/disponibilidade";
 import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
+import { unidadeDoBento } from "@/lib/vitrine/unidade";
 import { erroQuantidade, normalizarQuantidade, passoQuantidade, quantidadeInicial, quantidadeMaxima } from "@/lib/vitrine/quantidade";
 import { EscolhaRecheio } from "./EscolhaRecheio";
 import { Observacao } from "./Observacao";
@@ -33,6 +34,7 @@ export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; re
   const valida = erroDaQuantidade === null && recheio !== null;
   const erro = erroDaQuantidade ?? (recheio ? null : "Escolha o recheio para adicionar.");
   const preco = Number(produto.preco);
+  const unidade = unidadeDoBento(produto.unidade_venda);
 
   function alterar<T>(definir: (v: T) => void) {
     return (v: T) => {
@@ -53,6 +55,7 @@ export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; re
       recheio: { id: recheio.id, nome: recheio.nome },
       // Cópia do momento (ver ConfigAvulso).
       pedidoMinimo: produto.pedido_minimo,
+      unidade_venda: produto.unidade_venda,
       foto: produto.image_url,
       observacao: normalizarObservacao(observacao),
     });
@@ -89,7 +92,7 @@ export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; re
             aoDigitar={alterar(setTexto)}
             aoSairDoCampo={() => setTexto(String(normalizarQuantidade(quantidade, produto.pedido_minimo, "livre")))}
           />
-          <span className="interna-quantidade-unidade">{quantidade === 1 ? "unidade" : "unidades"}</span>
+          <span className="interna-quantidade-unidade">{quantidade === 1 ? unidade.singular : unidade.plural}</span>
         </div>
         <p className="interna-campo-erro" aria-live="polite">
           {erroDaQuantidade ?? ""}

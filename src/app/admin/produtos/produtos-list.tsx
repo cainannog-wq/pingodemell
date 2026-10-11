@@ -10,6 +10,8 @@ import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 import { ProductActionMenu } from "./product-action-menu";
 import { deleteProduto, updateProdutoAtivo, updateProdutoDestaque } from "./actions";
 import { concluirSalvarPendente } from "@/lib/admin/tempos";
+import { textoQuantidadeNaUnidade } from "@/lib/vitrine/minimo";
+import { unidadeDoBento } from "@/lib/vitrine/unidade";
 
 // Ícone de destaque, sem texto ao lado (só title/aria-label), reaproveitado
 // na tabela desktop. tone="default" (não "accent"): a auditoria de
@@ -77,8 +79,13 @@ function AtivoToggleCell({
 function textoPreco(produto: Produto) {
   return produto.tipo === "bolo" ? "Por recheio" : formatPreco(produto.preco);
 }
+// Pedido mínimo na unidade de venda, pela lista única do site ("10 kits",
+// "30 unidades", "1 combo", "1 cento"); fora da lista ou vazio, só o
+// número. Bento Cake: combo ou unidade.
 function textoMinimo(produto: Produto) {
-  return produto.tipo === "bolo" ? "—" : `${produto.pedido_minimo} un.`;
+  if (produto.tipo === "bolo") return "—";
+  const unidade = produto.tipo === "bento_cake" ? unidadeDoBento(produto.unidade_venda).chave : produto.unidade_venda;
+  return textoQuantidadeNaUnidade(produto.pedido_minimo, unidade);
 }
 
 function formatPreco(preco: number) {
@@ -429,7 +436,7 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
                         <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{textoPreco(produto)}</span>
                         {produto.tipo === "bolo" ? null : (
-                          <span style={{ fontSize: 13, color: "var(--pdm-muted)" }}>{produto.pedido_minimo} un. mín.</span>
+                          <span style={{ fontSize: 13, color: "var(--pdm-muted)" }}>mín. {textoMinimo(produto)}</span>
                         )}
                       </div>
 

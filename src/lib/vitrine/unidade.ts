@@ -43,3 +43,15 @@ export function unidadeDeVenda(valor: string | null | undefined): UnidadeVenda |
 }
 
 export const UNIDADE: UnidadeVenda = POR_CHAVE.get("unidade")!;
+
+// Bento Cake conta em combos quando o cadastro diz "o combo" e, no resto
+// (simples, vazio, linha do carrinho ou pedido de antes do campo), em
+// unidades.
+export function unidadeDoBento(valor: string | null | undefined): UnidadeVenda {
+  const unidade = unidadeDeVenda(valor);
+  return unidade?.chave === "combo" ? unidade : UNIDADE;
+}
+
+export function bentoCombo(valor: string | null | undefined): boolean {
+  return unidadeDoBento(valor).chave === "combo";
+}

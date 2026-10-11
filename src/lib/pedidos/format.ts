@@ -10,6 +10,7 @@
 
 import { anoMesBrasilia, diferencaEmDias, hojeBrasilia, partesBrasilia } from "@/lib/tempo/brasilia";
 import { textoQuantidadeNaUnidade } from "@/lib/vitrine/minimo";
+import { unidadeDoBento } from "@/lib/vitrine/unidade";
 
 const MESES = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -95,12 +96,14 @@ export function textoValorEntrega(pedido: { modo_entrega: "entrega" | "retirada"
 
 // Quantidade do item no detalhe do pedido: kg no Bolo, centos no Cento e,
 // no resto, a unidade de venda pela lista única ("10 kits", "2 caixas",
-// "50 unidades"). Sem unidade (inclusive Bento Cake e pedidos antigos, sem
-// tipo) conta como unidade; fora da lista, só o número. Montado na hora de
-// exibir: o pedido gravado não muda.
+// "50 unidades"). Bento Cake em combos (combo) ou unidades (simples e
+// pedidos de antes do campo). Sem unidade (pedidos antigos, sem tipo) conta
+// como unidade; fora da lista, só o número. Montado na hora de exibir: o
+// pedido gravado não muda.
 export function textoQuantidadeItem(item: { quantidade: number; tipo?: string; unidade_venda?: string | null }): string {
   if (item.tipo === "bolo") return `${item.quantidade} kg`;
   if (item.tipo === "cento") return `${item.quantidade} ${item.quantidade === 1 ? "cento" : "centos"}`;
+  if (item.tipo === "bento") return textoQuantidadeNaUnidade(item.quantidade, unidadeDoBento(item.unidade_venda).chave);
   const unidade = item.tipo === "normal" ? item.unidade_venda?.trim() : null;
   return textoQuantidadeNaUnidade(item.quantidade, unidade || "unidade");
 }

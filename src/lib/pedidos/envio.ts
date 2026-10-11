@@ -26,7 +26,9 @@ export type ItemEnvio =
   | (ItemBase & { tipo: "normal"; unidade_venda: string | null })
   | (ItemBase & { tipo: "cento"; sabores: { nome: string; quantidade: number }[] })
   | (ItemBase & { tipo: "bolo"; recheio: { id: string; nome: string }; formato: "redondo" | "quadrado" })
-  | (ItemBase & { tipo: "bento"; recheio: { id: string; nome: string } });
+  // unidade_venda do Bento: "o combo" no combo; null no simples e em linha
+  // de antes do campo. Só para exibir (mensagem, confirmação e painel).
+  | (ItemBase & { tipo: "bento"; recheio: { id: string; nome: string }; unidade_venda?: string | null });
 
 export type CorpoPedido = {
   chave_idempotencia: string;
@@ -74,7 +76,9 @@ export function itemDaLinha(linha: LinhaCarrinho): ItemEnvio {
   };
   if (linha.tipo === "cento") return { ...base, tipo: "cento", sabores: linha.sabores.map((s) => ({ nome: s.nome, quantidade: s.quantidade })) };
   if (linha.tipo === "bolo") return { ...base, tipo: "bolo", recheio: { id: linha.recheio.id, nome: linha.recheio.nome }, formato: linha.formato };
-  if (linha.tipo === "bento") return { ...base, tipo: "bento", recheio: { id: linha.recheio.id, nome: linha.recheio.nome } };
+  if (linha.tipo === "bento") {
+    return { ...base, tipo: "bento", recheio: { id: linha.recheio.id, nome: linha.recheio.nome }, unidade_venda: linha.unidade_venda ?? null };
+  }
   return { ...base, tipo: "normal", unidade_venda: linha.unidade_venda };
 }
 
