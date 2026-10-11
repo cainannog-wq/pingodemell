@@ -70,6 +70,7 @@ export const ICONES = [
   "shopping_bag",
   "star",
   "storefront",
+  "swap_vert",
   "toggle_off",
   "toggle_on",
   "upload",

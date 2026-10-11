@@ -412,6 +412,22 @@ describe("Página Lista — busca", () => {
     expect(form.querySelector('[name="pagina"]')).toBeNull();
   });
 
+  it("campo discreto: sem botão com o texto 'Buscar'; a lupa é o botão de enviar, com nome para leitor de tela", async () => {
+    await renderLista();
+    const form = screen.getByRole("search");
+    const enviar = within(form).getByRole("button", { name: "Buscar" });
+    expect(enviar).toHaveAttribute("type", "submit");
+    expect(enviar.textContent).not.toMatch(/Buscar/);
+    // Sem texto digitado, não há "x" de limpar.
+    expect(within(form).queryByRole("button", { name: "Limpar busca" })).not.toBeInTheDocument();
+  });
+
+  it("com busca na URL, o campo mostra o 'x' de limpar antes da lupa", async () => {
+    await renderLista({ busca: "bolo" });
+    const botoes = within(screen.getByRole("search")).getAllByRole("button");
+    expect(botoes.map((b) => b.getAttribute("aria-label"))).toEqual(["Limpar busca", "Buscar"]);
+  });
+
   it("com resultado: só os produtos com o nome buscado, total e 'Limpar busca'", async () => {
     doBanco = [...CATALOGO, produto({ nome: "Pão de Mel", Categoria: "Doces" })];
     await renderLista({ busca: "pao de mel" });
