@@ -2,6 +2,7 @@ import { rotuloHorario, dataCompleta } from "@/lib/checkout/datas";
 import { FORMAS_PAGAMENTO, type FormaPagamento, type ModoEntrega } from "@/lib/checkout/formulario";
 import { formatMoeda } from "@/lib/pedidos/format";
 import { linkWhatsApp } from "@/lib/site/whatsapp";
+import { textoQuantidadeNaUnidade } from "@/lib/vitrine/minimo";
 import type { ItemEnvio } from "./envio";
 
 // Mensagem do pedido para o WhatsApp da loja (PR confirmacao-e-gravacao).
@@ -56,18 +57,17 @@ export type Mensagem = { texto: string; url: string; formato: Formato; cabe: boo
 
 const reais = (centavos: number) => formatMoeda(centavos / 100);
 
-// "50 un", "2 kg", "3 caixas": avulso na unidade de venda; sem unidade (ou
-// "unidade") vira "un".
+// "50 unidades", "2 kg", "10 kits", "3 caixas": avulso na unidade de
+// venda, pela lista única (src/lib/vitrine/unidade.ts). Sem unidade conta
+// como unidade; fora da lista, só o número.
 function quantidadeAvulso(quantidade: number, unidade: string | null): string {
-  const u = unidade?.trim().toLowerCase();
-  if (!u || u === "unidade" || u === "unidades" || u === "un") return `${quantidade} un`;
-  return `${quantidade} ${unidade!.trim()}`;
+  return textoQuantidadeNaUnidade(quantidade, unidade?.trim() ? unidade : "unidade");
 }
 
 export function quantidadeDaLinha(l: ItemEnvio): string {
   if (l.tipo === "cento") return `${l.quantidade} ${l.quantidade === 1 ? "cento" : "centos"}`;
   if (l.tipo === "bolo") return `${l.quantidade} kg`;
-  if (l.tipo === "bento") return `${l.quantidade} un`;
+  if (l.tipo === "bento") return textoQuantidadeNaUnidade(l.quantidade, "unidade");
   return quantidadeAvulso(l.quantidade, l.unidade_venda);
 }
 

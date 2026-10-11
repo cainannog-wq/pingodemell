@@ -15,7 +15,7 @@ import {
 } from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
 import { ROTAS } from "@/lib/site/rotas";
-import { nomeDaUnidade } from "@/lib/vitrine/minimo";
+import { nomeDaUnidade, textoMinimoDaQuantidade } from "@/lib/vitrine/minimo";
 import { erroQuantidade } from "@/lib/vitrine/quantidade";
 
 // Uma linha do carrinho. Tudo que aparece aqui é o que foi gravado no
@@ -87,7 +87,8 @@ function ControleDaQuantidade({
 }
 
 // Nome da unidade que acompanha o seletor e, quando o mínimo passa de 1,
-// "mín. N".
+// "mín. N" com a unidade no plural ("kits · mín. 10 kits"). O Bento Cake
+// conta em unidades.
 function textoDaUnidade(linha: Extract<LinhaCarrinho, { tipo: "normal" | "bento" }>): string {
   const unidade =
     linha.tipo === "normal"
@@ -95,7 +96,10 @@ function textoDaUnidade(linha: Extract<LinhaCarrinho, { tipo: "normal" | "bento"
       : linha.quantidade === 1
         ? "unidade"
         : "unidades";
-  const minimo = linha.pedidoMinimo !== undefined && linha.pedidoMinimo > 1 ? `mín. ${linha.pedidoMinimo}` : "";
+  const minimo =
+    linha.pedidoMinimo !== undefined && linha.pedidoMinimo > 1
+      ? textoMinimoDaQuantidade(linha.pedidoMinimo, linha.tipo === "normal" ? linha.unidade_venda : "unidade")
+      : "";
   return [unidade, minimo].filter(Boolean).join(" · ");
 }
 

@@ -61,14 +61,14 @@ describe("mensagem completa", () => {
         "E-mail: juliana.teste@exemplo.com",
         "",
         "Itens",
-        "1. Brigadeiro gourmet, 50 un, R$ 117,50",
+        "1. Brigadeiro gourmet, 50 unidades, R$ 117,50",
         "   Obs.: Forminha rosa",
         "2. Cento de salgados sortidos, 3 centos, R$ 287,97",
         "   Sabores: Coxinha 150, Risoles 100, Empada 50",
         "3. Bolo recheado, recheio Chocolate com morango, 3 kg, redondo, R$ 269,70 (valor base, sem decoração)",
         '   Obs.: Escrever "Feliz 5 anos, Manu"',
-        "4. Smash Cake Safári, 1 un, R$ 149,99",
-        "5. Bento Cake Unicórnio, recheio Ninho, 2 un, R$ 88,90",
+        "4. Smash Cake Safári, 1 unidade, R$ 149,99",
+        "5. Bento Cake Unicórnio, recheio Ninho, 2 unidades, R$ 88,90",
         "",
         "Entrega em: Rua das Cerejeiras, 88, Casa dos fundos, Nações, Fazenda Rio Grande",
         "Data: sábado, 17 de outubro de 2026, às 14h",
@@ -105,7 +105,7 @@ describe("mensagem completa", () => {
       resposta: { numero: 7, itens: [{ valor_centavos: 999 }], subtotal_centavos: 999, total_centavos: 999 },
       prazo: null,
     });
-    expect(r.mensagem).toContain("1. Brigadeiro gourmet, 50 un, R$ 9,99");
+    expect(r.mensagem).toContain("1. Brigadeiro gourmet, 50 unidades, R$ 9,99");
     expect(r.mensagem).toContain("Total dos itens: R$ 9,99");
     expect(r.totalCentavos).toBe(999);
   });
@@ -164,11 +164,11 @@ describe("orçamento na URL codificada e cascata completo → curto → mínimo"
         "Entrega em: Nações, Fazenda Rio Grande",
         "",
         "Itens",
-        "Brigadeiro gourmet, 50 un",
+        "Brigadeiro gourmet, 50 unidades",
         "Cento de salgados sortidos, 3 centos",
         "Bolo recheado, 3 kg",
-        "Smash Cake Safári, 1 un",
-        "Bento Cake Unicórnio, 2 un",
+        "Smash Cake Safári, 1 unidade",
+        "Bento Cake Unicórnio, 2 unidades",
         "Cento de salgados sortidos, 4 centos",
         "Cento de docinho, 3 centos",
         "",
@@ -222,5 +222,45 @@ describe("caminho sem registro", () => {
     expect(m.formato).toBe("completo");
     expect(m.cabe).toBe(false);
     expect(m.texto).toContain("Sabores: Coxinha 20, Risoles de carne 30");
+  });
+});
+
+describe("unidade de venda na mensagem (PR unidade/texto-venda)", () => {
+  // Kit Escolar Individual como está no banco: "o kit", mínimo 10.
+  const KIT: LinhaCarrinho = {
+    ...CINCO[0],
+    id: "kit",
+    nome: "Kit Escolar Individual",
+    preco: 26,
+    unidade_venda: "o kit",
+    quantidade: 10,
+    pedidoMinimo: 10,
+    step: "multiplos_5",
+    observacao: null,
+  } as LinhaCarrinho;
+  const CAIXA = { ...KIT, id: "caixa", nome: "Festa na Caixa", preco: 160, unidade_venda: "caixa", quantidade: 2 } as LinhaCarrinho;
+
+  function curtoCom(linhas: LinhaCarrinho[]): DadosMensagem {
+    const d = dadosGrandes();
+    const extras = linhas.map((l) => ({ ...itemDaLinha(l), valor_centavos: Math.round(l.preco * 100) * l.quantidade }));
+    const todas = [...extras, ...d.linhas];
+    return { ...d, linhas: todas, totalCentavos: todas.reduce((a, b) => a + b.valor_centavos, 0) };
+  }
+
+  it("completa: '10 kits' e '2 caixas', sem artigo e sem 'por'", () => {
+    const r = montarRetrato({ dados: DADOS_TESTE, linhas: [KIT, CAIXA], resposta: resposta([KIT, CAIXA]), prazo: null });
+    expect(r.formato).toBe("completo");
+    expect(r.mensagem).toContain("1. Kit Escolar Individual, 10 kits, R$ 260,00");
+    expect(r.mensagem).toContain("2. Festa na Caixa, 2 caixas, R$ 320,00");
+    expect(r.mensagem).not.toMatch(/o kit|por /);
+    expect(r.linhas[0].quantidade).toBe("10 kits");
+  });
+
+  it("curta: '10 kits' e '2 caixas'", () => {
+    const m = montarMensagem(curtoCom([KIT, CAIXA]));
+    expect(m.formato).toBe("curto");
+    expect(m.texto).toContain("\nKit Escolar Individual, 10 kits\n");
+    expect(m.texto).toContain("\nFesta na Caixa, 2 caixas\n");
+    expect(m.texto).not.toMatch(/o kit/);
   });
 });

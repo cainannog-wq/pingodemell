@@ -141,8 +141,9 @@ describe("Preço do card", () => {
     expect(formatarPrecoVitrine({ preco: 95, tipo: "normal", unidade_venda: "cento" })).toBe("R$ 95,00 o cento");
   });
 
-  it("unidade fora da lista sugerida vira 'por {texto}'", () => {
-    expect(formatarPrecoVitrine({ preco: 40, tipo: "normal", unidade_venda: "caixa com 6" })).toBe("R$ 40,00 por caixa com 6");
+  it("unidade fora da lista: só o preço, nunca 'por {texto}'", () => {
+    expect(formatarPrecoVitrine({ preco: 40, tipo: "normal", unidade_venda: "caixa com 6" })).toBe("R$ 40,00");
+    expect(formatarPrecoVitrine({ preco: 40, tipo: "normal", unidade_venda: "o pote" })).toBe("R$ 40,00");
   });
 
   it("tipo cento continua 'o cento' mesmo com outra unidade preenchida", () => {
