@@ -717,11 +717,12 @@
 /* Primeira tela: relatório de visitas (quadro-relatorio.tsx). Responsivo,
    sem largura mínima: ocupa a largura da área de conteúdo. A altura desconta
    o cabeçalho (72px no desktop, 56px no celular), o espaçamento da área de
-   conteúdo e a linha de nota. */
+   conteúdo (64px no desktop, 52px no celular), o espaço entre o quadro e a
+   nota (32px) e a linha de nota (24px), para a página não rolar. */
 .admin-relatorio-frame {
   display: block;
   width: 100%;
-  height: calc(100dvh - 72px - 64px - 28px);
+  height: calc(100dvh - 72px - 64px - 32px - 24px);
   min-height: 420px;
   border: 0;
   border-radius: var(--radius);
@@ -748,6 +749,6 @@
 
 @media (max-width: 860px) {
   .admin-relatorio-frame {
-    height: calc(100dvh - 56px - 52px - 28px);
+    height: calc(100dvh - 56px - 52px - 32px - 24px);
   }
 }
