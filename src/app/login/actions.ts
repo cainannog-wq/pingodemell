@@ -41,5 +41,5 @@ export async function login(
     return { error: "E-mail ou senha inválidos." };
   }
 
-  redirect("/admin/produtos");
+  redirect("/admin");
 }

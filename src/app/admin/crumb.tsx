@@ -10,7 +10,9 @@ function labelFor(pathname: string): string {
   if (pathname.startsWith("/admin/produtos/")) return "Cardápio · Editar produto";
   if (pathname.startsWith("/admin/pedidos/")) return "Pedidos · Detalhe do pedido";
   if (pathname === "/admin/pedidos") return "Pedidos · Histórico";
-  return "Cardápio · Produtos";
+  if (pathname === "/admin/produtos") return "Cardápio · Produtos";
+  if (pathname === "/admin/dias-off") return "Calendário · Dias sem produção";
+  return "Início · Visitas do site";
 }
 
 export function Crumb() {

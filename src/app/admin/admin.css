@@ -713,3 +713,41 @@
   height: 20px;
   margin: 0;
 }
+
+/* Primeira tela: relatório de visitas (quadro-relatorio.tsx). Responsivo,
+   sem largura mínima: ocupa a largura da área de conteúdo. A altura desconta
+   o cabeçalho (72px no desktop, 56px no celular), o espaçamento da área de
+   conteúdo e a linha de nota. */
+.admin-relatorio-frame {
+  display: block;
+  width: 100%;
+  height: calc(100dvh - 72px - 64px - 28px);
+  min-height: 420px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--pdm-white);
+}
+
+.admin-relatorio-nota {
+  margin: 0;
+  font-size: 13px;
+  color: var(--pdm-muted);
+}
+
+.admin-relatorio-vazio {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  padding: 24px;
+  text-align: center;
+  color: var(--pdm-muted);
+  background: var(--pdm-white);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius);
+}
+
+@media (max-width: 860px) {
+  .admin-relatorio-frame {
+    height: calc(100dvh - 56px - 52px - 28px);
+  }
+}

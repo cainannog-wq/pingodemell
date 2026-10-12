@@ -40,7 +40,9 @@ export function MobileHeaderNav() {
       <label htmlFor={ADMIN_NAV_TOGGLE_ID} className="admin-nav-toggle-btn" aria-label="Abrir menu">
         <Icon name="menu" size={26} tone="inherit" />
       </label>
-      <Image src="/logo-mono-cream.png" alt="Pingo de Mell" width={92} height={47} className="admin-mobile-logo" />
+      <Link href="/admin" className="admin-mobile-logo" aria-label="Início">
+        <Image src="/logo-mono-cream.png" alt="Pingo de Mell" width={92} height={47} style={{ width: 92, height: "auto", display: "block" }} />
+      </Link>
     </>
   );
 }

@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default async function LoginPage() {
   const user = await getAuthenticatedUser();
   if (user) {
-    redirect("/admin/produtos");
+    redirect("/admin");
   }
 
   const siteKey = process.env.TURNSTILE_SITE_KEY;

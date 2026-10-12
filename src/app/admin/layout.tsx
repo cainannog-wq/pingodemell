@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { requireAuth } from "@/lib/supabase/dal";
 import { Button, Icon } from "@/components/ds";
@@ -47,16 +48,22 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             borderBottom: "1px solid rgba(255,255,255,.22)",
           }}
         >
-          <Image
-            src="/logo-mono-cream.png"
-            alt="Pingo de Mell"
-            width={116}
-            height={59}
-            style={{ width: 116, height: "auto", display: "block" }}
-          />
+          <Link href="/admin" style={{ display: "block", width: "fit-content" }}>
+            <Image
+              src="/logo-mono-cream.png"
+              alt="Pingo de Mell"
+              width={116}
+              height={59}
+              style={{ width: 116, height: "auto", display: "block" }}
+            />
+          </Link>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,.92)" }}>Painel da equipe</div>
         </div>
         <nav style={{ padding: "24px 16px", display: "grid", gap: 8 }}>
+          <NavLink href="/admin" icon="pie_chart" exact>
+            Visitas do site
+          </NavLink>
+
           <div
             style={{
               fontSize: 13,
@@ -64,7 +71,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               letterSpacing: ".05em",
               fontWeight: 700,
               color: "rgba(255,255,255,.8)",
-              padding: "0 12px 4px",
+              padding: "16px 12px 4px",
             }}
           >
             Cardápio
