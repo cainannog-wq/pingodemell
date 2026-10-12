@@ -14,15 +14,17 @@ export function QuadroRelatorio({ url }: { url: string | null }) {
   }
   return (
     <>
-      <iframe
-        className="admin-relatorio-frame"
-        src={url}
-        title="Relatório de visitas do site"
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        sandbox={SANDBOX_RELATORIO}
-        allowFullScreen
-      />
+      <div className="admin-relatorio-moldura">
+        <iframe
+          className="admin-relatorio-frame"
+          src={url}
+          title="Relatório de visitas do site"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          sandbox={SANDBOX_RELATORIO}
+          allowFullScreen
+        />
+      </div>
       <p className="admin-relatorio-nota">Se o relatório não aparecer, recarregue a página.</p>
     </>
   );

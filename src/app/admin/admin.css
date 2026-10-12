@@ -722,9 +722,18 @@
    o quadro usa a mesma proporção e mostra tudo, sem rolagem interna; quem
    rola é a página. Se o canvas do relatório mudar de tamanho no Looker, a
    proporção abaixo precisa mudar junto. */
+/* A moldura corta a barra de rolagem vazia do Looker (o conteúdo cabe inteiro
+   no quadro; a barra que sobra é só do Looker): o iframe fica 20px mais
+   largo e a moldura esconde esse excesso. Só no desktop. */
+.admin-relatorio-moldura {
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--pdm-white);
+}
+
 .admin-relatorio-frame {
   display: block;
-  width: 100%;
+  width: calc(100% + 20px);
   aspect-ratio: 100 / 80;
   border: 0;
   border-radius: var(--radius);
@@ -754,6 +763,7 @@
    de conteúdo 52px, 32px até a nota e 24px da nota). */
 @media (max-width: 860px) {
   .admin-relatorio-frame {
+    width: 100%;
     aspect-ratio: auto;
     height: calc(100dvh - 56px - 52px - 32px - 24px);
     min-height: 420px;

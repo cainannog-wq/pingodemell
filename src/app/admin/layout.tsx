@@ -48,7 +48,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             borderBottom: "1px solid rgba(255,255,255,.22)",
           }}
         >
-          <Link href="/admin" style={{ display: "block", width: "fit-content" }}>
+          <Link href="/admin/produtos" style={{ display: "block", width: "fit-content" }}>
             <Image
               src="/logo-mono-cream.png"
               alt="Pingo de Mell"
@@ -60,10 +60,6 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <div style={{ fontSize: 13, color: "rgba(255,255,255,.92)" }}>Painel da equipe</div>
         </div>
         <nav style={{ padding: "24px 16px", display: "grid", gap: 8 }}>
-          <NavLink href="/admin" icon="pie_chart" exact>
-            Visitas do site
-          </NavLink>
-
           <div
             style={{
               fontSize: 13,
@@ -71,7 +67,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               letterSpacing: ".05em",
               fontWeight: 700,
               color: "rgba(255,255,255,.8)",
-              padding: "16px 12px 4px",
+              padding: "0 12px 4px",
             }}
           >
             Cardápio
@@ -116,6 +112,22 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           </div>
           <NavLink href="/admin/dias-off" icon="event_busy">
             Dias sem produção
+          </NavLink>
+
+          <div
+            style={{
+              fontSize: 13,
+              textTransform: "uppercase",
+              letterSpacing: ".05em",
+              fontWeight: 700,
+              color: "rgba(255,255,255,.8)",
+              padding: "16px 12px 4px",
+            }}
+          >
+            Site
+          </div>
+          <NavLink href="/admin/visitas" icon="pie_chart">
+            Visitas do site
           </NavLink>
         </nav>
 

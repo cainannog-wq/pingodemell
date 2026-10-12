@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Depois do login, e com sessão já aberta, a primeira tela é /admin (o
-// relatório de visitas), não mais /admin/produtos.
+// Depois do login, e com sessão já aberta, a primeira tela é Produtos.
 
 const redirect = vi.fn((destino: string) => {
   throw new Error(`REDIRECT:${destino}`);
@@ -32,11 +31,11 @@ function formulario() {
 }
 
 describe("destino do login", () => {
-  it("login bem-sucedido vai para /admin", async () => {
+  it("login bem-sucedido vai para /admin/produtos", async () => {
     signIn.mockResolvedValue({ error: null });
     const { login } = await import("./actions");
-    await expect(login({}, formulario())).rejects.toThrow("REDIRECT:/admin");
-    expect(redirect).toHaveBeenCalledWith("/admin");
+    await expect(login({}, formulario())).rejects.toThrow("REDIRECT:/admin/produtos");
+    expect(redirect).toHaveBeenCalledWith("/admin/produtos");
   });
 
   it("login recusado não redireciona", async () => {
@@ -46,9 +45,9 @@ describe("destino do login", () => {
     expect(redirect).not.toHaveBeenCalled();
   });
 
-  it("/login com sessão já aberta vai para /admin", async () => {
+  it("/login com sessão já aberta vai para /admin/produtos", async () => {
     getAuthenticatedUser.mockResolvedValue({ id: "u" });
     const { default: Pagina } = await import("./page");
-    await expect(Pagina()).rejects.toThrow("REDIRECT:/admin");
+    await expect(Pagina()).rejects.toThrow("REDIRECT:/admin/produtos");
   });
 });

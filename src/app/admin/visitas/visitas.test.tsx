@@ -26,7 +26,7 @@ async function renderizar() {
   return render(await Pagina());
 }
 
-describe("/admin: relatório de visitas", () => {
+describe("/admin/visitas: relatório de visitas", () => {
   it("sem sessão: o redirecionamento acontece antes e a variável nem é lida", async () => {
     vi.stubEnv("LOOKER_REPORT_URL", URL_FALSA);
     requireAuth.mockRejectedValue(new Error("NEXT_REDIRECT"));
@@ -65,6 +65,8 @@ describe("/admin: relatório de visitas", () => {
     expect(screen.getByText("Se o relatório não aparecer, recarregue a página.")).toBeTruthy();
     // Sem botão nem link para abrir o relatório fora do quadro.
     expect(container.querySelectorAll("a")).toHaveLength(0);
+    // O iframe fica dentro da moldura que esconde a barra vazia do Looker.
+    expect(frame.parentElement?.className).toBe("admin-relatorio-moldura");
   });
 
   it.each([

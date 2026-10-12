@@ -86,7 +86,7 @@ async function modoSite(base) {
   const origem = base.replace(/\/$/, "");
   let falhou = false;
   const linhas = [];
-  for (const caminho of ["/admin", "/admin/pedidos", "/login", "/"]) {
+  for (const caminho of ["/admin", "/admin/visitas", "/admin/pedidos", "/login", "/"]) {
     for (const rsc of [false, true]) {
       // Com RSC: 1 o Next primeiro redireciona para o mesmo endereço com
       // ?_rsc=...; segue só esse salto (e o próximo) para chegar à resposta

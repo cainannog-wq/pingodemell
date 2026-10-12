@@ -23,7 +23,7 @@ describe("segredo da URL do relatório", () => {
   it("a variável só é citada em src/lib/admin/relatorio.ts e nos testes", () => {
     const citam = codigo.filter((f) => ler(f).includes("LOOKER_REPORT_URL")).map(rel).sort();
     const permitidos = [
-      "src/app/admin/inicio.test.tsx",
+      "src/app/admin/visitas/visitas.test.tsx",
       "src/app/admin/relatorio-segredo.test.ts",
       "src/lib/admin/relatorio.test.ts",
       "src/lib/admin/relatorio.ts",
@@ -52,12 +52,12 @@ describe("segredo da URL do relatório", () => {
   });
 
   it("o quadro e a página do relatório são Server Components", () => {
-    expect(ehDeCliente(join(RAIZ, "src/app/admin/quadro-relatorio.tsx"))).toBe(false);
-    expect(ehDeCliente(join(RAIZ, "src/app/admin/page.tsx"))).toBe(false);
+    expect(ehDeCliente(join(RAIZ, "src/app/admin/visitas/quadro-relatorio.tsx"))).toBe(false);
+    expect(ehDeCliente(join(RAIZ, "src/app/admin/visitas/page.tsx"))).toBe(false);
   });
 
   it("a página checa a sessão e chama connection() antes de ler a URL", () => {
-    const p = ler(join(RAIZ, "src/app/admin/page.tsx"));
+    const p = ler(join(RAIZ, "src/app/admin/visitas/page.tsx"));
     const auth = p.indexOf("await requireAuth()");
     const conn = p.indexOf("await connection()");
     const leitura = p.indexOf("lerUrlRelatorio()");
