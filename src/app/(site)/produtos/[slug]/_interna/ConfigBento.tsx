@@ -13,6 +13,7 @@ import { EscolhaRecheio } from "./EscolhaRecheio";
 import { Observacao } from "./Observacao";
 import { useAdicionarEIrAoCarrinho } from "./edicao";
 import { PainelAdicionar } from "./PainelAdicionar";
+import { useCelular } from "./useCelular";
 
 // Configuração do produto tipo Bento Cake: cada tema é um produto com preço
 // fixo e peso fechado. O cliente escolhe UM recheio (lista simples, sem
@@ -21,6 +22,7 @@ import { PainelAdicionar } from "./PainelAdicionar";
 // não usa step). Recheios diferentes são linhas diferentes do carrinho.
 export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; recheios: RecheioVitrine[] }) {
   const { adicionarEIr, indo } = useAdicionarEIrAoCarrinho();
+  const celular = useCelular();
   const opcoes = recheiosDoBento(recheios);
   const minimo = quantidadeInicial(produto.pedido_minimo, "livre");
   const [texto, setTexto] = useState(String(minimo));
@@ -62,6 +64,22 @@ export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; re
     if (foi) setAdicionado(true);
   }
 
+  const seletor = (
+    <Seletor
+      rotulo="Quantidade"
+      idCampo="interna-quantidade"
+      valor={texto}
+      invalido={erroDaQuantidade !== null}
+      podeMenos={erroDaQuantidade === null ? quantidade > minimo : true}
+      podeMais={erroDaQuantidade === null ? quantidade < quantidadeMaxima("livre") : true}
+      aoMenos={() => alterar(setTexto)(String(passoQuantidade(quantidade, -1, produto.pedido_minimo, "livre")))}
+      aoMais={() => alterar(setTexto)(String(passoQuantidade(quantidade, 1, produto.pedido_minimo, "livre")))}
+      aoDigitar={celular ? undefined : alterar(setTexto)}
+      aoSairDoCampo={() => setTexto(String(normalizarQuantidade(quantidade, produto.pedido_minimo, "livre")))}
+    />
+  );
+  const textoUnidade = quantidade === 1 ? unidade.singular : unidade.plural;
+
   return (
     <>
       <EscolhaRecheio
@@ -73,6 +91,7 @@ export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; re
         grupos={[{ chave: "bento", rotulo: null, opcoes: opcoes.map((r) => ({ id: r.id, nome: r.nome })) }]}
       />
 
+      {celular ? null : (
       <div className="interna-bloco">
         <div className="interna-bloco-topo">
           <label className="interna-bloco-titulo" htmlFor="interna-quantidade">
@@ -80,24 +99,14 @@ export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; re
           </label>
         </div>
         <div className="interna-quantidade">
-          <Seletor
-            rotulo="Quantidade"
-            idCampo="interna-quantidade"
-            valor={texto}
-            invalido={erroDaQuantidade !== null}
-            podeMenos={erroDaQuantidade === null ? quantidade > minimo : true}
-            podeMais={erroDaQuantidade === null ? quantidade < quantidadeMaxima("livre") : true}
-            aoMenos={() => alterar(setTexto)(String(passoQuantidade(quantidade, -1, produto.pedido_minimo, "livre")))}
-            aoMais={() => alterar(setTexto)(String(passoQuantidade(quantidade, 1, produto.pedido_minimo, "livre")))}
-            aoDigitar={alterar(setTexto)}
-            aoSairDoCampo={() => setTexto(String(normalizarQuantidade(quantidade, produto.pedido_minimo, "livre")))}
-          />
-          <span className="interna-quantidade-unidade">{quantidade === 1 ? unidade.singular : unidade.plural}</span>
+          {seletor}
+          <span className="interna-quantidade-unidade">{textoUnidade}</span>
         </div>
         <p className="interna-campo-erro" aria-live="polite">
           {erroDaQuantidade ?? ""}
         </p>
       </div>
+      )}
 
       <Observacao
         id="interna-observacao"
@@ -114,6 +123,21 @@ export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; re
         adicionado={adicionado}
         aoAdicionar={aoAdicionar}
         indo={indo}
+        barra={
+          celular
+            ? {
+                seletor: (
+                  <>
+                    {seletor}
+                    <span className="interna-barra-unidade">{textoUnidade}</span>
+                  </>
+                ),
+                // Sem recheio o subtotal da caixa fica zerado; na barra mostra
+                // quantidade × preço, e o recheio faltando vem no aviso.
+                valor: erroDaQuantidade === null ? formatMoeda(quantidade * preco) : undefined,
+              }
+            : undefined
+        }
       />
     </>
   );

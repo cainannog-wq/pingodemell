@@ -32,8 +32,22 @@ const INATIVO = r({ nome: "Inativo", vale_bolo: true, vale_bento: true, preco_kg
 const TODOS = [BRIGADEIRO, MORANGO, ABACAXI, NINHO, INATIVO];
 
 describe("recheios — dois catálogos sobre a mesma tabela", () => {
-  it("Bolo: só ativo com vale_bolo, com preço e grupo; ordem alfabética", () => {
+  it("Bolo: só ativo com vale_bolo, com preço e grupo; preço por kg crescente", () => {
     expect(recheiosDoBolo(TODOS).map((x) => x.nome)).toEqual(["Abacaxi", "Brigadeiro", "Morango"]);
+  });
+
+  it("Bolo: empate de preço desfeito pelo nome; dentro de cada grupo o preço manda", () => {
+    const a = r({ nome: "Zebra", vale_bolo: true, preco_kg: 60, grupo: "frutas" });
+    const b = r({ nome: "Ágata", vale_bolo: true, preco_kg: 60, grupo: "frutas" });
+    const c = r({ nome: "Amora", vale_bolo: true, preco_kg: 50, grupo: "frutas" });
+    const d = r({ nome: "Beijinho", vale_bolo: true, preco_kg: 40, grupo: "chocolate_outros" });
+    expect(agruparRecheiosDoBolo([a, d, b, c]).map((g) => g.recheios.map((x) => x.nome))).toEqual([["Amora", "Ágata", "Zebra"], ["Beijinho"]]);
+  });
+
+  it("Bento: ordem alfabética", () => {
+    const z = r({ nome: "Zimbro", vale_bento: true });
+    const e = r({ nome: "Éclair", vale_bento: true });
+    expect(recheiosDoBento([z, e, NINHO]).map((x) => x.nome)).toEqual(["Éclair", "Ninho", "Zimbro"]);
   });
 
   it("Bento: só ativo com vale_bento (o preço e o grupo não contam)", () => {

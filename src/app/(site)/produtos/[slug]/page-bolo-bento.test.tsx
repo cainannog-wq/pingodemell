@@ -141,7 +141,7 @@ describe("Interna — Bolo", () => {
     expect(within(grupo).getByText("Recheio com Frutas")).toBeInTheDocument();
     expect(within(grupo).getByText("Recheio com chocolate e outros")).toBeInTheDocument();
     const nomes = within(grupo).getAllByRole("radio").map((r) => r.closest("label")?.textContent?.replace(/\s+/g, " "));
-    expect(nomes).toEqual(["Morango R$ 95,00 o kg", "Brigadeiro R$ 80,00 o kg", "Doce de leite R$ 75,00 o kg"]);
+    expect(nomes).toEqual(["Morango R$ 95,00 o kg", "Doce de leite R$ 75,00 o kg", "Brigadeiro R$ 80,00 o kg"]);
     expect(within(grupo).queryByText("Ninho")).toBeNull();
     expect(within(grupo).queryByText("Antigo")).toBeNull();
   });
