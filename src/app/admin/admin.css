@@ -716,15 +716,16 @@
 
 /* Primeira tela: relatório de visitas (quadro-relatorio.tsx). Responsivo,
    sem largura mínima: ocupa a largura da área de conteúdo. No desktop o
-   relatório escala com a largura (fit to width, medido na homologação em
-   13/10/2026: altura do conteúdo = 1,05 x largura, em 952 e em 1577 px), então
+   relatório escala com a largura (fit to width, medido na homologação depois
+   de tirarem um bloco do relatório: o conteúdo cabe em 0,79 x a largura, em
+   952 e em 1577 px, com uma folga pequena embaixo), então
    o quadro usa a mesma proporção e mostra tudo, sem rolagem interna; quem
    rola é a página. Se o canvas do relatório mudar de tamanho no Looker, a
    proporção abaixo precisa mudar junto. */
 .admin-relatorio-frame {
   display: block;
   width: 100%;
-  aspect-ratio: 100 / 105;
+  aspect-ratio: 100 / 80;
   border: 0;
   border-radius: var(--radius);
   background: var(--pdm-white);
