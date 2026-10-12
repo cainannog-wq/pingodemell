@@ -37,6 +37,7 @@ export const ORIGENS_WHATSAPP = [
   "confirmacao",
   "confirmacao_sem_retrato",
   "saida_sem_registro",
+  "barra_bolo",
 ] as const;
 
 export type OrigemWhatsApp = (typeof ORIGENS_WHATSAPP)[number];

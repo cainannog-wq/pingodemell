@@ -514,8 +514,11 @@
   .interna-resumo {
     display: none;
   }
-  .interna {
-    padding-bottom: 92px;
+  /* A altura da barra é medida em execução (PainelAdicionar). O espaço vai no
+     fim da página inteira, depois do rodapé: no fim da rolagem o rodapé fica
+     visível acima da barra. */
+  .pdm-site:has(.interna-barra) {
+    padding-bottom: var(--interna-barra-altura, 76px);
   }
   .interna-barra {
     position: fixed;
@@ -534,10 +537,56 @@
   .interna-barra-linha {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
   }
-  .interna-barra-linha .interna-resumo-textos {
-    flex: none;
+  /* Com seletor: o subtotal ocupa a primeira linha (rótulo à esquerda, valor
+     à direita) e, embaixo, o seletor com a unidade e o botão. */
+  .interna-barra-linha--seletor {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "total total"
+      "seletor botao";
+    gap: 8px 12px;
+  }
+  .interna-barra-linha--seletor > .interna-resumo-textos {
+    grid-area: total;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .interna-barra-linha--seletor > button {
+    grid-area: botao;
+  }
+  .interna-barra-seletor {
+    grid-area: seletor;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .interna-barra-unidade {
+    font-size: 14px;
+    line-height: 1;
+    color: var(--ink-700);
+  }
+  .interna-barra-valor[data-texto] {
+    font-size: 15px;
+    font-weight: var(--fw-semibold);
+    color: var(--ink-700);
+  }
+  .interna-barra-whatsapp,
+  .interna-barra-dica {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.3;
+    color: var(--ink-700);
+    text-align: center;
+  }
+  .interna-barra-whatsapp a {
+    font-weight: var(--fw-bold);
+    color: var(--brown-700);
+    text-decoration: underline;
   }
   .interna-barra-linha .interna-resumo-rotulo {
     font-weight: var(--fw-regular);
@@ -557,7 +606,7 @@
   /* O botão do WhatsApp sobe para não cobrir o "Adicionar". */
   .pdm-site:has(.interna-barra) .site-fab {
     /* Barra com a linha de aviso: ~110px. */
-    bottom: calc(128px + env(safe-area-inset-bottom)) !important;
+    bottom: calc(var(--interna-barra-altura, 110px) + 18px + env(safe-area-inset-bottom)) !important;
   }
 
   .interna-relacionados {

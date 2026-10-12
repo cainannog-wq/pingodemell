@@ -59,6 +59,6 @@ export const TILES_CATEGORIA: TileCategoria[] = [
   { categoria: "Bolos", rotulo: "Bolos", imagem: "/fotos/cat-bolos.jpeg", alt: "Bolo de três andares com rosas vermelhas" },
   { categoria: "Doces", rotulo: "Doces", imagem: "/fotos/cat-doces-tradicionais.jpeg", alt: "Caixa de brigadeiros, beijinhos e casadinhos" },
   { categoria: "Salgados", rotulo: "Salgados", imagem: "/fotos/cat-salgados.jpeg", alt: "Bandeja de empadas e mini pizzas" },
-  { categoria: "Bento Cake", rotulo: "Bento Cake", imagem: null, alt: "" },
-  { categoria: "Kits", rotulo: "Kits", imagem: null, alt: "" },
+  { categoria: "Bento Cake", rotulo: "Bento Cake", imagem: "/fotos/cat-bento-cake.webp", alt: "Bento Cake" },
+  { categoria: "Kits", rotulo: "Kits", imagem: "/fotos/cat-kits.webp", alt: "Kits" },
 ];

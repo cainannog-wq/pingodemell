@@ -147,6 +147,7 @@ describe("varredura do código: links wa.me só pelo auxiliar", () => {
         "app/(site)/confirmacao/_confirmacao/Confirmacao.tsx confirmacao",
         "app/(site)/confirmacao/_confirmacao/Confirmacao.tsx confirmacao_sem_retrato",
         "app/(site)/checkout/_checkout/PainelEnvio.tsx saida_sem_registro",
+        "app/(site)/produtos/[slug]/_interna/ConfigBolo.tsx barra_bolo",
       ].sort()
     );
     for (const u of usos) expect(ORIGENS_WHATSAPP).toContain(u.split(" ").pop());

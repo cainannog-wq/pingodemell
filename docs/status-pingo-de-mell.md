@@ -199,6 +199,17 @@ Sem migração e sem mudar dado. Catálogo no banco em 11/10/2026 (só leitura):
 - Fora: os "Adicionar" dos cards (levam à interna) e as ofertas do checkout (continuam adicionando sem sair da página). O aviso "Adicionado ao pedido" ficou (decisão do Cainan).
 - Testes: `produtos/[slug]/page-redirect.test.tsx`.
 
+## Barra fixa com seletor no celular, recheios e quadrados da Home (PR `ajustes/categorias-recheios-barra`, 12/10/2026)
+
+Sem migração e sem mudar dado.
+
+- **Seletor na barra (≤767 px, mesmo corte do CSS):** no avulso (inclui Smash Cake), no Bolo e no Bento Cake, o seletor sai do corpo e vive na barra fixa do rodapé, só com − e + (sem campo digitável), ao lado do subtotal e do botão; um só seletor no DOM (`useCelular`, `matchMedia`; no servidor e antes de hidratar vale desktop). Cento não muda (tem 2 níveis de seletor). Desktop não muda. A linha do carrinho (`pdm-carrinho-v1`) não muda.
+- **Bolo no celular:** de 1 a 10 kg (+ desligado no 10; no desktop continua até 50). Com 10 kg a barra mostra "Mais de 10 kg? Combine pelo WhatsApp" (origem `barra_bolo`, link de contato do site). Sem recheio, o subtotal da barra diz "Escolha o recheio". Bento: subtotal da barra é quantidade × preço mesmo sem recheio (a caixa do desktop continua zerada até escolher o recheio).
+- **Espaço no fim da página:** a altura da barra é medida (`--interna-barra-altura`, `PainelAdicionar`) e vira `padding-bottom` de `.pdm-site`, depois do rodapé.
+- **Ordem dos recheios (interna pública):** Bolo, dentro de cada grupo, preço por kg crescente e nome como desempate (`recheiosDoBolo`); Bento, A a Z. O admin não mudou.
+- **Quadrados da Home:** Bento Cake e Kits ganharam foto (`public/fotos/cat-bento-cake.webp` 720×1280 e `cat-kits.webp` 900×1600, WebP de 9:16 sem EXIF/XMP, copiados dos originais das capas no Supabase). Adicionais e Bebidas continuam fora da Home.
+- Testes: `page-barra-celular.test.tsx`, `regras.test.ts`, `Categorias.test.tsx`.
+
 ## Página do carrinho (PR `carrinho-de-verdade`, item 5)
 
 - **Sem banco, por decisão do Cainan (risco aceito):** `/carrinho` não consulta nada na abertura (nem disponibilidade de produto ou recheio, nem preço). Nome, preço, recheio, formato, sabores, foto, mínimo e step são a cópia gravada no momento em que o item foi adicionado; o total é a soma direta disso (`totalDoCarrinho`, em centavos inteiros). Produto ou recheio desativado, ou preço mudado depois, **não aparece** na tela do carrinho; quem confere é o checkout (item 6, ainda não feito) e a Taami revisa a mensagem do WhatsApp antes de produzir. Teste: `src/app/(site)/carrinho/carrinho.test.tsx` arma o banco e o `fetch` para falhar se a página chamar qualquer um.

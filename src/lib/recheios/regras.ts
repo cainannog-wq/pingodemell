@@ -22,12 +22,18 @@ function porNome(a: Pick<Recheio, "nome">, b: Pick<Recheio, "nome">): number {
   return a.nome < b.nome ? -1 : a.nome > b.nome ? 1 : 0;
 }
 
+// Preço crescente por kg; empate desfeito pelo nome.
+function porPrecoENome(a: Pick<Recheio, "nome" | "preco_kg">, b: Pick<Recheio, "nome" | "preco_kg">): number {
+  return Number(a.preco_kg) - Number(b.preco_kg) || porNome(a, b);
+}
+
 // Recheio que o Bolo grande pode oferecer: ativo, vale_bolo, com preço e
-// grupo (o banco já exige, a checagem aqui segura dado inconsistente).
+// grupo (o banco já exige, a checagem aqui segura dado inconsistente). Sai
+// em ordem crescente de preço por kg (dentro de cada grupo, ao agrupar).
 export function recheiosDoBolo<T extends Vitrine>(recheios: T[]): T[] {
   return recheios
     .filter((r) => r.ativo === true && r.vale_bolo === true && Number(r.preco_kg) > 0 && r.grupo !== null)
-    .sort(porNome);
+    .sort(porPrecoENome);
 }
 
 export function recheiosDoBento<T extends Vitrine>(recheios: T[]): T[] {

@@ -43,13 +43,13 @@ describe("Home — bloco de categorias", () => {
     ]);
   });
 
-  it("Bento Cake e Kits ficam sem foto, com o fundo da marca", () => {
+  it("Bento Cake e Kits têm foto, com o nome da categoria como texto alternativo", () => {
     render(<Categorias />);
     const [, , , bento, kits] = quadrados();
-    expect(within(bento).queryByRole("img")).toBeNull();
-    expect(bento.querySelector(".site-hive")).not.toBeNull();
-    expect(within(kits).queryByRole("img")).toBeNull();
-    expect(kits.querySelector(".site-hive")).not.toBeNull();
+    expect(within(bento).getByRole("img")).toHaveAttribute("src", "/fotos/cat-bento-cake.webp");
+    expect(within(bento).getByRole("img")).toHaveAttribute("alt", "Bento Cake");
+    expect(within(kits).getByRole("img")).toHaveAttribute("src", "/fotos/cat-kits.webp");
+    expect(within(kits).getByRole("img")).toHaveAttribute("alt", "Kits");
   });
 
   // Layout em si depende de medida, que o jsdom não calcula: garante o CSS.
