@@ -267,6 +267,7 @@ await emTransacaoDesfeita("Slug do produto — regra, gatilhos e permissões", a
     `select tgname from pg_trigger
      where tgrelid = 'public.produtos'::regclass and not tgisinternal
        and (tgtype & 2) = 2 and (tgtype & 16) = 16 and (tgtype & 1) = 1
+       and tgname <> 'produtos_limpa_subcategoria' -- supabase/subcategorias.sql: só mexe em subcategoria_id, não depende do atualizado_em
      order by tgname collate "C"`
   );
   const ordem = gatilhos.map((g) => g.tgname).join(" -> ");

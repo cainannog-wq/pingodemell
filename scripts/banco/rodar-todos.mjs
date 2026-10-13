@@ -29,6 +29,7 @@ const TESTES_DE_BANCO = [
   "unidade-venda-kits.mjs",
   "kit-festa-migracao.mjs",
   "categoria.mjs",
+  "subcategorias.mjs",
   "exclusao-dados.mjs",
 ];
 // Aplica a própria migração quando ela falta; não recebe --com-migracao.
