@@ -47,7 +47,7 @@ describe("lista de subcategorias", () => {
     const nomes = [...container.querySelectorAll("tbody tr .admin-table-title > div:first-child")].map((e) => e.textContent);
     expect(nomes).toEqual(["Tradicional", "Gourmet", "Finos"]);
     expect(screen.getByText("Endereço: gourmet (fixo)")).toBeInTheDocument();
-    const linha = screen.getByText("Gourmet").closest("tr") as HTMLElement;
+    const linha = screen.getAllByText("Gourmet")[0].closest("tr") as HTMLElement;
     expect(within(linha).getByText("3")).toBeInTheDocument();
   });
 
@@ -83,39 +83,55 @@ describe("lista de subcategorias", () => {
     const campo = screen.getByLabelText("Nome da nova subcategoria de Doces") as HTMLInputElement;
     fireEvent.change(campo, { target: { value: "Gourmet" } });
     fireEvent.click(screen.getByRole("button", { name: "Adicionar em Doces" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Já existe uma subcategoria com esse nome nesta categoria.");
+    expect((await screen.findAllByRole("alert"))[0]).toHaveTextContent("Já existe uma subcategoria com esse nome nesta categoria.");
     expect(campo.value).toBe("Gourmet");
   });
 
   it("renomear: abre o campo com o nome atual e chama a ação", async () => {
     render(<SubcategoriasLista subcategorias={SUBS} produtosPorSubcategoria={{}} />);
-    const linha = screen.getByText("Finos").closest("tr") as HTMLElement;
-    fireEvent.click(within(linha).getByRole("button", { name: "Renomear" }));
-    const campo = screen.getByLabelText("Novo nome da subcategoria Finos") as HTMLInputElement;
+    const linha = screen.getAllByText("Finos")[0].closest("tr") as HTMLElement;
+    fireEvent.click(within(linha).getByRole("button", { name: "Renomear Finos" }));
+    const campo = screen.getAllByLabelText("Novo nome da subcategoria Finos")[0] as HTMLInputElement;
     expect(campo.value).toBe("Finos");
     fireEvent.change(campo, { target: { value: "Finíssimos" } });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar nome" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Salvar nome" })[0]);
     await waitFor(() => expect(acoes.renomearSubcategoria).toHaveBeenCalledWith("d2", "Finíssimos"));
   });
 
   it("apagar pede confirmação; só 'Sim, apagar' chama a ação; recusa do servidor aparece na tela", async () => {
     acoes.apagarSubcategoria.mockResolvedValueOnce({ error: "3 produtos usam esta subcategoria; desative em vez de apagar." });
     render(<SubcategoriasLista subcategorias={SUBS} produtosPorSubcategoria={{ d1: 3 }} />);
-    const linha = screen.getByText("Gourmet").closest("tr") as HTMLElement;
-    fireEvent.click(within(linha).getByRole("button", { name: "Apagar" }));
+    const linha = screen.getAllByText("Gourmet")[0].closest("tr") as HTMLElement;
+    fireEvent.click(within(linha).getByRole("button", { name: "Apagar Gourmet" }));
     expect(acoes.apagarSubcategoria).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Sim, apagar" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Sim, apagar" })[0]);
     await waitFor(() => expect(acoes.apagarSubcategoria).toHaveBeenCalledWith("d1"));
-    expect(await screen.findByRole("alert")).toHaveTextContent("3 produtos usam esta subcategoria; desative em vez de apagar.");
+    // A recusa aparece na própria linha (junto da confirmação), não num aviso no topo.
+    await waitFor(() => expect(within(linha).getByRole("alert")).toHaveTextContent("3 produtos usam esta subcategoria; desative em vez de apagar."));
+    expect(within(linha).getByRole("button", { name: "Sim, apagar" })).toBeInTheDocument();
   });
 
   it("o interruptor de status chama a ação e volta ao valor anterior se falhar", async () => {
     acoes.atualizarAtivoSubcategoria.mockResolvedValueOnce({ error: "Não foi possível salvar agora. Tente de novo em instantes." });
     render(<SubcategoriasLista subcategorias={SUBS} produtosPorSubcategoria={{}} />);
-    const interruptor = screen.getByRole("checkbox", { name: "Subcategoria Gourmet ativa" });
+    const interruptor = screen.getAllByRole("checkbox", { name: "Subcategoria Gourmet ativa" })[0];
     expect(interruptor).toBeChecked();
     fireEvent.click(interruptor);
     await waitFor(() => expect(acoes.atualizarAtivoSubcategoria).toHaveBeenCalledWith("d1", false));
-    await waitFor(() => expect(screen.getByRole("checkbox", { name: "Subcategoria Gourmet ativa" })).toBeChecked());
+    await waitFor(() => expect(screen.getAllByRole("checkbox", { name: "Subcategoria Gourmet ativa" })[0]).toBeChecked());
+  });
+
+  it("os botões da tabela são só ícone (com nome acessível) e o celular tem o menu de 3 pontinhos", async () => {
+    render(<SubcategoriasLista subcategorias={SUBS} produtosPorSubcategoria={{}} />);
+    const renomear = screen.getByRole("button", { name: "Renomear Finos" });
+    expect(renomear.textContent?.trim()).toBe("edit");
+    const menu = screen.getByRole("button", { name: "Ações de Finos" });
+    expect(screen.queryByRole("menuitem")).toBeNull();
+    fireEvent.click(menu);
+    expect(screen.getAllByRole("menuitem").map((e) => e.textContent?.replace(/^[a-z_]+/, ""))).toEqual(["Subir", "Descer", "Renomear", "Apagar"]);
+    fireEvent.click(screen.getByRole("menuitem", { name: /Descer/ }));
+    expect(acoes.moverSubcategoria).not.toHaveBeenCalled(); // Finos é a última: Descer desabilitado
+    fireEvent.click(screen.getByRole("menuitem", { name: /Subir/ }));
+    await waitFor(() => expect(acoes.moverSubcategoria).toHaveBeenCalledWith("d2", "subir"));
   });
 });
