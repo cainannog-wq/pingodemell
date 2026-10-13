@@ -73,7 +73,8 @@ const FUNCOES = {
 // Tabelas de migração ainda não aplicada em produção: sem ela no banco (e sem
 // --com-migracao), a verificação sai como pulada em vez de falhar. Tirar da
 // lista quando a migração for aplicada.
-const TABELAS_AGUARDANDO_MIGRACAO = ["subcategorias"];
+// (Vazia desde 13/10/2026: supabase/subcategorias.sql foi aplicada.)
+const TABELAS_AGUARDANDO_MIGRACAO = [];
 
 // Sem política de propósito: só a chave de serviço acessa.
 const RLS_SEM_POLITICA_ESPERADO = ["heartbeat", "pedidos_rate_limit", "pedidos_gravacao"];
