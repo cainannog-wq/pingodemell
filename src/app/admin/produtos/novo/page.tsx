@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createProduto } from "../actions";
 import { ProdutoForm } from "../produto-form";
+import { lerSubcategoriasParaOFormulario } from "../subcategoria-servidor";
 
 export default async function NovoProdutoPage() {
   const supabase = await createClient();
@@ -8,6 +9,7 @@ export default async function NovoProdutoPage() {
     .from("produtos")
     .select("nome, ativo")
     .order("nome", { ascending: true });
+  const subcategorias = await lerSubcategoriasParaOFormulario(supabase);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -26,6 +28,7 @@ export default async function NovoProdutoPage() {
         produtoId={crypto.randomUUID()}
         submitLabel="Cadastrar produto"
         produtosDisponiveis={produtos ?? []}
+        subcategorias={subcategorias}
       />
     </div>
   );

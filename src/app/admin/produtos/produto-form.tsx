@@ -18,6 +18,8 @@ import {
 import { campoVisivel } from "@/lib/produtos/campos";
 import type { RecheioDoProduto } from "@/lib/produtos/recheios-produto";
 import { categoriaCanonica } from "@/lib/produtos/categorias";
+import { opcoesDoSeletor, temSubcategoriaParaEscolher } from "@/lib/subcategorias/regras";
+import type { SubcategoriaOpcao } from "@/lib/subcategorias/types";
 import { descartarEnviosFotos, prepararEnvioFotos, type ProdutoFormState } from "./actions";
 import { Badge, Card, Field, Input, PriceInput, Textarea, Select, Toggle, Button, Icon } from "@/components/ds";
 import { SubitensPicker, type SubitemCandidato } from "./subitens-picker";
@@ -68,6 +70,7 @@ export function ProdutoForm({
   initialSubitens = [],
   fotosIniciais = [],
   recheiosIniciais = [],
+  subcategorias = [],
 }: {
   action: ProdutoFormAction;
   produto?: Produto;
@@ -79,6 +82,9 @@ export function ProdutoForm({
   fotosIniciais?: FotoExtraSalva[];
   // Recheios personalizados já salvos (produto_recheios), na ordem do admin.
   recheiosIniciais?: RecheioDoProduto[];
+  // Todas as subcategorias (o servidor lê uma vez); o formulário filtra pela
+  // categoria escolhida. Vazio: o seletor não aparece.
+  subcategorias?: SubcategoriaOpcao[];
   // Candidatos a subitem do tipo "Cento" — todo o catálogo, exceto o
   // próprio produto em edição. Vem vazio na tela de cadastro de um produto
   // "normal" comum sem custo de consulta extra desnecessária.
@@ -93,6 +99,9 @@ export function ProdutoForm({
   const [tipo, setTipo] = useState<TipoProduto>(produto?.tipo ?? "normal");
   const [categoria, setCategoria] = useState<string>(categoriaCanonica(produto?.Categoria) ?? "");
   const [nome, setNome] = useState(produto?.nome ?? "");
+  const categoriaSalva = categoriaCanonica(produto?.Categoria);
+  const subcategoriaSalva = produto?.subcategoria_id ?? "";
+  const [subcategoriaId, setSubcategoriaId] = useState<string>(subcategoriaSalva);
   const [fotos, setFotos] = useState<FotoNaTela[]>(() =>
     fotosIniciais.map((foto) => ({ chave: foto.id, tipo: "existente", id: foto.id, url: foto.url }))
   );
@@ -108,7 +117,16 @@ export function ProdutoForm({
   // tem os subitens; só Bolos de tipo normal e Bento Cake têm recheios
   // personalizados. Campo escondido é desmontado, nunca escondido por CSS.
   const categoriaTravada = CATEGORIA_DO_TIPO[tipo] ?? null;
-  const contexto = { categoria: categoriaTravada ?? categoria, tipo };
+  const categoriaAtual = categoriaTravada ?? categoria;
+  // O vínculo que o produto já tem só vale para a categoria salva dele.
+  const vinculo = produto ? { subcategoriaId: subcategoriaSalva || null, categoriaSalva } : null;
+  const contexto = {
+    categoria: categoriaAtual,
+    tipo,
+    temSubcategoriaParaEscolher: temSubcategoriaParaEscolher(subcategorias, categoriaAtual, vinculo),
+  };
+  const comSubcategoria = campoVisivel("subcategoria", contexto);
+  const opcoesSubcategoria = opcoesDoSeletor(subcategorias, categoriaAtual, vinculo);
   const comPreco = campoVisivel("preco", contexto);
   const comPedidoMinimo = campoVisivel("pedido_minimo", contexto);
   const comStep = campoVisivel("step_quantidade", contexto);
@@ -121,14 +139,23 @@ export function ProdutoForm({
 
   // Bolo e Bento Cake só existem em Bolos e Bento Cake (a categoria acompanha
   // o tipo); e a categoria Bento Cake só aceita o tipo Bento Cake.
+  // A subcategoria acompanha a categoria: ao trocar de categoria o seletor
+  // zera, e voltar à categoria salva do produto restaura a subcategoria salva.
+  // Escolha manual vale até a próxima troca. Se a categoria não mudou, nada
+  // muda no seletor.
+  function trocarCategoria(nova: string) {
+    if (nova === categoriaAtual) return;
+    setCategoria(nova);
+    setSubcategoriaId(nova !== "" && nova === categoriaSalva ? subcategoriaSalva : "");
+  }
   function aoMudarTipo(novo: TipoProduto) {
     setTipo(novo);
     const exigida = CATEGORIA_DO_TIPO[novo];
-    if (exigida) setCategoria(exigida);
-    else if (categoria === "Bento Cake") setCategoria("");
+    if (exigida) trocarCategoria(exigida);
+    else if (categoria === "Bento Cake") trocarCategoria("");
   }
   function aoMudarCategoria(nova: string) {
-    setCategoria(nova);
+    trocarCategoria(nova);
     if (nova === "Bento Cake") setTipo("bento_cake");
   }
   const erro = erroEnvio ?? state?.error;
@@ -306,6 +333,29 @@ export function ProdutoForm({
                 </Select>
               </Field>
             </div>
+            {comSubcategoria && (
+              <div className="produto-form-grid" style={{ gridTemplateColumns: "1fr 1fr", marginTop: 24 }}>
+                <Field
+                  label="Subcategoria"
+                  htmlFor="f-subcategoria"
+                  hint="Opcional. Agrupa o produto dentro da categoria; deixe em “Sem subcategoria” se não se aplica."
+                >
+                  <Select
+                    id="f-subcategoria"
+                    name="subcategoria_id"
+                    value={subcategoriaId}
+                    onChange={(e) => setSubcategoriaId(e.target.value)}
+                  >
+                    <option value="">Sem subcategoria</option>
+                    {opcoesSubcategoria.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.rotulo}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              </div>
+            )}
           </FormSection>
 
           <FormSection title={bolo ? "Prazo de produção" : "Preço e pedido mínimo"}>

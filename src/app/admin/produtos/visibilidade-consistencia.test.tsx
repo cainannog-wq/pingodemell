@@ -13,6 +13,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 // enum nem NOT NULL, e o jsdom não é um navegador real.
 
 const ID = "c7b3f34c-6f8f-4b39-a8fb-31369f1c4aee";
+const SUB_ID = "5d0c1b7e-2a4f-4c66-9a53-0f1d6e8b7a21";
 
 const chamadas = { insert: [] as Record<string, unknown>[], update: [] as Record<string, unknown>[] };
 
@@ -62,6 +63,17 @@ vi.mock("@/lib/supabase/server", () => ({
       if (tabela === "produto_cento_itens") {
         return { delete: () => ({ eq: async () => ({ error: null }) }), insert: async () => ({ error: null }) };
       }
+      if (tabela === "subcategorias") {
+        // Uma subcategoria ativa na categoria pedida.
+        return {
+          select: () => ({
+            eq: async (_coluna: string, categoria: string) => ({
+              data: [{ id: SUB_ID, categoria, nome: "Sub", ativo: true, ordem: 10 }],
+              error: null,
+            }),
+          }),
+        };
+      }
       throw new Error(`tabela inesperada no mock: ${tabela}`);
     },
     rpc: async () => ({ error: null }),
@@ -110,7 +122,9 @@ function produtoDe(c: { categoria: string; tipo: string }) {
   } as never;
 }
 
-function renderEdicao(c: { categoria: string; tipo: string }) {
+type Caso = { categoria: string; tipo: string; fato?: boolean };
+
+function renderEdicao(c: Caso) {
   return render(
     <ProdutoForm
       action={async () => ({})}
@@ -120,12 +134,13 @@ function renderEdicao(c: { categoria: string; tipo: string }) {
       produtosDisponiveis={[{ nome: "Sabor A", ativo: true }]}
       initialSubitens={c.tipo === "cento" ? ["Sabor A"] : []}
       recheiosIniciais={[{ id: "300b5263-1a9a-4057-86ac-b5ca0f7c3dfa", nome: "Doce de leite" }]}
+      subcategorias={c.fato ? [{ id: SUB_ID, categoria: c.categoria as never, nome: "Sub", ativo: true, ordem: 10 }] : []}
     />
   );
 }
 
 // Todos os campos preenchidos à força, inclusive os que a tela esconde.
-function tudoAForca(c: { categoria: string; tipo: string }): FormData {
+function tudoAForca(c: Caso): FormData {
   const f = new FormData();
   for (const [k, v] of Object.entries({
     id: ID,
@@ -142,6 +157,9 @@ function tudoAForca(c: { categoria: string; tipo: string }): FormData {
     ativo: "on",
     subitem_nome: "Sabor A",
     galeria: "[]",
+    // Só vai no envio quando há subcategoria para escolher (a tela esconde o
+    // campo no outro caso; o servidor nem consulta sem ele).
+    ...(c.fato ? { subcategoria_id: SUB_ID } : {}),
   })) {
     f.set(k, v);
   }
@@ -158,8 +176,12 @@ describe("a matriz sai da tabela", () => {
   });
 });
 
-describe.each(COMBINACOES)("combinação $categoria / $tipo", (c) => {
-  const contexto = { categoria: c.categoria, tipo: c.tipo };
+// A tabela de campos depende também do fato "há subcategoria para escolher":
+// a matriz cruza as 14 combinações com os dois valores dele.
+const MATRIZ = COMBINACOES.flatMap((c) => [true, false].map((fato) => ({ ...c, fato })));
+
+describe.each(MATRIZ)("combinação $categoria / $tipo / há subcategoria para escolher: $fato", (c) => {
+  const contexto = { categoria: c.categoria, tipo: c.tipo, temSubcategoriaParaEscolher: c.fato };
 
   it("formulário: cada campo aparece se e só se a tabela diz que é visível", () => {
     renderEdicao(c);
@@ -183,9 +205,12 @@ describe.each(COMBINACOES)("combinação $categoria / $tipo", (c) => {
   });
 
   it("parser: o que está escondido sai neutro, o que está visível sai com o valor enviado", () => {
-    const r = parseProdutoForm(tudoAForca(c));
+    const r = parseProdutoForm(tudoAForca(c), { temSubcategoriaParaEscolher: c.fato });
     expect(r.success).toBe(true);
     if (!r.success) return;
+    // Subcategoria: com o fato, sai o valor enviado; sem ele, a chave nem existe.
+    expect("subcategoria_id" in r.data).toBe(c.fato);
+    if (c.fato) expect(r.data.subcategoria_id).toBe(SUB_ID);
     const neutros = neutrosDoCadastro(contexto) as Record<string, unknown>;
     for (const coluna of ["preco", "pedido_minimo", "step_quantidade", "unidade_venda"] as const) {
       const campo = coluna as CampoProduto;
@@ -212,11 +237,16 @@ describe.each(COMBINACOES)("combinação $categoria / $tipo", (c) => {
     const { id, image_url, ...colunas } = chamadas.insert[0];
     expect(id).toBe(ID);
     expect(image_url).toBeNull();
-    expect(Object.keys(colunas).sort()).toEqual([...colunasDoProduto()].sort());
     const visiveis = new Set<string>(colunasDaEdicao(contexto));
     const neutros = neutrosDoCadastro(contexto) as Record<string, unknown>;
+    // Coluna escondida sem valor neutro (a subcategoria) é omitida: vale o
+    // padrão do banco (nulo).
+    const esperadas = colunasDoProduto().filter((coluna) => visiveis.has(coluna) || coluna in neutros);
+    expect(Object.keys(colunas).sort()).toEqual([...esperadas].sort());
     for (const coluna of colunasDoProduto()) {
-      if (!visiveis.has(coluna)) expect(colunas[coluna], coluna).toEqual(neutros[coluna]);
+      if (!visiveis.has(coluna) && coluna in neutros) expect(colunas[coluna], coluna).toEqual(neutros[coluna]);
     }
+    if (c.fato) expect(colunas.subcategoria_id).toBe(SUB_ID);
+    else expect("subcategoria_id" in colunas).toBe(false);
   });
 });

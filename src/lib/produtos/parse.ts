@@ -1,3 +1,4 @@
+import { ehUuid } from "@/lib/galeria/regras";
 import { campoVisivel, colunasEscondidas, neutrosDoCadastro, type ColunaProduto } from "./campos";
 import {
   CATEGORIA_DO_TIPO,
@@ -38,9 +39,16 @@ export type ParsedProduto = {
   // formulário. Só tem efeito quando tipo === "cento"; para tipo
   // "normal" vem sempre vazio, mesmo que o campo chegue preenchido.
   subitens: string[];
+  // Só existe quando o campo de subcategoria era visível (o servidor decide
+  // e passa o fato ao parser). null = "Sem subcategoria". Ausente: a edição
+  // não grava a coluna e o cadastro a omite.
+  subcategoria_id?: string | null;
 };
 
 export type ColunaEscondida = Extract<ColunaProduto, "preco" | "pedido_minimo" | "step_quantidade" | "unidade_venda">;
+// naoGravarNaEdicao lista só as colunas de preço e quantidade; a subcategoria
+// escondida é sinalizada pela ausência de subcategoria_id no resultado.
+const COLUNAS_ESCONDIDAS: readonly ColunaEscondida[] = ["preco", "pedido_minimo", "step_quantidade", "unidade_venda"];
 
 export type ParseProdutoResult =
   | { success: true; data: ParsedProduto }
@@ -60,7 +68,14 @@ function normalizePreco(raw: string): number {
 }
 
 // Função pura (sem I/O), testável sem precisar de credencial do Supabase.
-export function parseProdutoForm(formData: FormData): ParseProdutoResult {
+export type OpcoesParse = {
+  // Fato calculado pelo servidor (ver temSubcategoriaParaEscolher em
+  // lib/subcategorias/regras.ts). Sem ele, o campo de subcategoria é
+  // escondido: o parser não lê o valor enviado.
+  temSubcategoriaParaEscolher?: boolean;
+};
+
+export function parseProdutoForm(formData: FormData, opcoes: OpcoesParse = {}): ParseProdutoResult {
   const nome = String(formData.get("nome") ?? "").trim();
   const descricao = String(formData.get("descricao") ?? "").trim();
   const precoRaw = String(formData.get("preco") ?? "");
@@ -77,7 +92,11 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
   // Quais campos valem sai da tabela de campos (campos.ts), pelo tipo e pela
   // categoria. Tipo inválido é recusado mais abaixo; até lá conta como normal.
   const tipoConhecido = TIPO_PRODUTO_VALUES.includes(tipoRaw as TipoProduto);
-  const contexto = { categoria: categoriaRaw, tipo: tipoConhecido ? (tipoRaw as TipoProduto) : ("normal" as TipoProduto) };
+  const contexto = {
+    categoria: categoriaRaw,
+    tipo: tipoConhecido ? (tipoRaw as TipoProduto) : ("normal" as TipoProduto),
+    temSubcategoriaParaEscolher: opcoes.temSubcategoriaParaEscolher,
+  };
   const comPreco = campoVisivel("preco", contexto);
   const comPedidoMinimo = campoVisivel("pedido_minimo", contexto);
   const comStep = campoVisivel("step_quantidade", contexto);
@@ -161,9 +180,19 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
     return { success: false, error: "Um produto Cento não pode ter a si mesmo como subitem." };
   }
 
+  // Subcategoria: "" é "Sem subcategoria" (null). A conferência contra o banco
+  // (da categoria e ativa) é do servidor, que tem as linhas.
+  let subcategoria: { subcategoria_id?: string | null } = {};
+  if (campoVisivel("subcategoria", contexto)) {
+    const bruta = String(formData.get("subcategoria_id") ?? "").trim();
+    if (bruta !== "" && !ehUuid(bruta)) return { success: false, error: "Escolha uma subcategoria válida." };
+    subcategoria = { subcategoria_id: bruta === "" ? null : bruta };
+  }
+
   return {
     success: true,
     data: {
+      ...subcategoria,
       nome,
       preco,
       descricao,
@@ -176,7 +205,7 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
       ativo,
       tipo,
       semCamposDePreco: !comPreco,
-      naoGravarNaEdicao: colunasEscondidas(contexto) as ColunaEscondida[],
+      naoGravarNaEdicao: colunasEscondidas(contexto).filter((c): c is ColunaEscondida => COLUNAS_ESCONDIDAS.includes(c as ColunaEscondida)),
       subitens,
     },
   };

@@ -66,7 +66,7 @@ const SQL_MD5_PRODUTOS = `select count(*)::int n, md5(string_agg(id::text || nom
 // Assinatura do banco: o que a migração cria e o desfazer tem que remover.
 const SQL_ASSINATURA = `
   select
-    (select md5(string_agg(p.proname || pg_get_functiondef(p.oid), '|' order by p.proname)) from pg_proc p where p.pronamespace = 'public'::regnamespace) funcoes,
+    (select md5(string_agg(p.proname || replace(pg_get_functiondef(p.oid), chr(13), ''), '|' order by p.proname)) from pg_proc p where p.pronamespace = 'public'::regnamespace) funcoes,
     (select string_agg(tgname || '=' || tgenabled::text, ',' order by tgname) from pg_trigger where tgrelid = 'public.produtos'::regclass and not tgisinternal) gatilhos,
     (select string_agg(column_name, ',' order by ordinal_position) from information_schema.columns where table_schema = 'public' and table_name = 'produtos') colunas,
     (select string_agg(indexname, ',' order by indexname) from pg_indexes where schemaname = 'public' and tablename = 'produtos') indices,
@@ -382,6 +382,81 @@ await emTransacaoDesfeita("Subcategorias — banco (tabela, slug, ordem, chave c
       fn.map((f) => `${f.proname} anon=${f.anon} auth=${f.auth} definer=${f.definer}`).join(" | ")
     );
   }
+
+  // --- PR 3 (admin): o que a tela e o servidor assumem do banco -------------
+  // Tudo como o admin faz: papel authenticated, UPDATE com a coluna da categoria.
+  await cenario(db, async (c) => {
+    const docesGourmet = await idDe(c, "Doces", "gourmet");
+    const bolosTrad = await idDe(c, "Bolos", "tradicional");
+    const p = await novoProduto(c, "zz Ensaio PR3", "Doces");
+    await c.q("update public.produtos set subcategoria_id = $1 where id = $2", [docesGourmet, p]);
+
+    // (i1) O formulário troca a categoria e envia "Sem subcategoria" como null
+    // explícito: o gatilho de limpeza não interfere (a subcategoria mudou no
+    // mesmo UPDATE) e o produto fica sem subcategoria na categoria nova.
+    await c.como("authenticated");
+    const troca = await c.tentar(`update public.produtos set "Categoria" = 'Bolos', subcategoria_id = null where id = $1`, [p]);
+    await c.dono();
+    registrar(
+      "subcategorias (i1). UPDATE com a categoria trocada e subcategoria_id null explícito, como logado, é aceito e deixa o produto sem subcategoria",
+      troca.ok && troca.rowCount === 1 && (await subDoProduto(c, p)) === null,
+      `${descrever(troca)}; subcategoria_id depois: ${await subDoProduto(c, p)}`
+    );
+
+    // (i1b) Mesmo UPDATE com a subcategoria da categoria nova: mantém a nova.
+    await c.como("authenticated");
+    const trocaCerta = await c.tentar(`update public.produtos set "Categoria" = 'Doces', subcategoria_id = $1 where id = $2`, [docesGourmet, p]);
+    const trocaOutra = await c.tentar(`update public.produtos set "Categoria" = 'Bolos', subcategoria_id = $1 where id = $2`, [bolosTrad, p]);
+    await c.dono();
+    registrar(
+      "subcategorias (i1b). trocar a categoria enviando a subcategoria da categoria nova, como logado, mantém a nova",
+      trocaCerta.ok && trocaOutra.ok && (await subDoProduto(c, p)) === bolosTrad,
+      `${descrever(trocaCerta)}; ${descrever(trocaOutra)}; subcategoria_id depois: ${await subDoProduto(c, p)}`
+    );
+  });
+
+  await cenario(db, async (c) => {
+    const docesGourmet = await idDe(c, "Doces", "gourmet");
+    await c.q("update public.subcategorias set ativo = false where id = $1", [docesGourmet]);
+    const p = await novoProduto(c, "zz Ensaio PR3 inativa", "Doces");
+
+    // (i2) A chave composta não olha "ativo": o banco ACEITA ligar um produto a
+    // uma subcategoria inativa. Quem recusa isso é a Server Action do produto
+    // (salvo a subcategoria que o produto já tem). Este caso documenta o limite.
+    await c.como("authenticated");
+    const liga = await c.tentar("update public.produtos set subcategoria_id = $1 where id = $2", [docesGourmet, p]);
+    const novo = await c.tentar(
+      `insert into public.produtos (nome, preco, "Categoria", subcategoria_id) values ('zz Ensaio PR3 novo', 10, 'Doces', $1)`,
+      [docesGourmet]
+    );
+    await c.dono();
+    registrar(
+      "subcategorias (i2). o banco aceita produto ligado a subcategoria INATIVA (a recusa é da Server Action, não do banco)",
+      liga.ok && liga.rowCount === 1 && novo.ok && (await subDoProduto(c, p)) === docesGourmet,
+      `${descrever(liga)}; ${descrever(novo)}`
+    );
+  });
+
+  await cenario(db, async (c) => {
+    const docesGourmet = await idDe(c, "Doces", "gourmet");
+    const docesFinos = await idDe(c, "Doces", "finos");
+    const a = await novoProduto(c, "zz Ensaio PR3 contagem A", "Doces");
+    const b = await novoProduto(c, "zz Ensaio PR3 contagem B", "Doces");
+    await c.q("update public.produtos set subcategoria_id = $1 where id in ($2, $3)", [docesGourmet, a, b]);
+    await c.q("update public.produtos set ativo = false where id = $1", [b]);
+
+    // (i3) A contagem que a Server Action de apagar faz, como logado: conta
+    // também o produto inativo (a RLS do logado enxerga todos).
+    await c.como("authenticated");
+    const gourmet = await c.tentar("select count(*)::int n from public.produtos where subcategoria_id = $1", [docesGourmet]);
+    const finos = await c.tentar("select count(*)::int n from public.produtos where subcategoria_id = $1", [docesFinos]);
+    await c.dono();
+    registrar(
+      "subcategorias (i3). a contagem de produtos por subcategoria, como logado, conta ativos e inativos (2 e 0)",
+      gourmet.ok && gourmet.rows[0].n === 2 && finos.ok && finos.rows[0].n === 0,
+      `${gourmet.ok ? gourmet.rows[0].n : descrever(gourmet)} e ${finos.ok ? finos.rows[0].n : descrever(finos)}`
+    );
+  });
 
   // --- produtos não mudam ---------------------------------------------------
   {

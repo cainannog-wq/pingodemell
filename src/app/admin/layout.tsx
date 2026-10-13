@@ -81,6 +81,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <NavLink href="/admin/recheios" icon="bakery_dining">
             Recheios
           </NavLink>
+          <NavLink href="/admin/subcategorias" icon="inventory_2">
+            Subcategorias
+          </NavLink>
 
           <div
             style={{
