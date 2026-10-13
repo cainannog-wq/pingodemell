@@ -69,6 +69,11 @@ const TABELAS = {
   ],
   produto_fotos: [{ produto_id: INATIVO.id, caminho: "galeria/inativo/a.webp", posicao: 1 }],
   recheios: [],
+  // Subcategoria inativa: só o admin a enxerga (a RLS do anônimo a esconde).
+  subcategorias: [
+    { id: "s-ativa", categoria: "Doces", nome: "Finos", slug: "finos", ordem: 10, ativo: true },
+    { id: "s-so-do-admin", categoria: "Doces", nome: "Só do Admin", slug: "so-do-admin", ordem: 20, ativo: false },
+  ],
 };
 
 beforeEach(() => {
@@ -114,6 +119,8 @@ for (const comCookie of [true, false]) {
       expect(guardado.size).toBeGreaterThan(0);
       expect(tudoGuardado).not.toContain(`"slug":"${INATIVO.slug}"`);
       expect(tudoGuardado).not.toContain("galeria/inativo");
+      expect(tudoGuardado).toContain('"slug":"finos"');
+      expect(tudoGuardado).not.toContain("so-do-admin");
       expect(tudoGuardado).not.toContain('"ativo":false');
     });
   });

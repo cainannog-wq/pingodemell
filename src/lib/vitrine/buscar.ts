@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { cache } from "react";
 import type { CategoriaProduto } from "@/lib/produtos/types";
 import type { RecheioDoProduto } from "@/lib/produtos/recheios-produto";
+import { CAMPOS_SUBCATEGORIA, type Subcategoria } from "@/lib/subcategorias/types";
 import { emCacheDaVitrine } from "./cache";
 import { CAMPOS_SABOR, centosComSabor, saboresAtivos, type LinhaSabor } from "./cento";
 import { CAMPOS_RECHEIO_VITRINE, comPrecoAPartirDe, semIndisponiveis, type RecheioVitrine } from "./disponibilidade";
@@ -58,8 +59,10 @@ async function tentar<T>(leitura: Promise<T>, rotulo: string): Promise<T | typeo
   }
 }
 
-// Campos da vitrine com as linhas de sabor embutidas (só o Cento tem).
-const CAMPOS_COM_SABORES = `${CAMPOS_VITRINE}, sabores:produto_cento_itens!produto_cento_itens_cento_nome_fkey(${CAMPOS_SABOR})`;
+// Campos da vitrine com as linhas de sabor embutidas (só o Cento tem), mais
+// subcategoria_id (filtro da Lista). Não entra em CAMPOS_VITRINE: o checkout,
+// o sitemap e os componentes que usam aquela lista não precisam dele.
+const CAMPOS_COM_SABORES = `${CAMPOS_VITRINE}, subcategoria_id, sabores:produto_cento_itens!produto_cento_itens_cento_nome_fkey(${CAMPOS_SABOR})`;
 
 // Só a interna lê os recheios personalizados do produto (tabela
 // produto_recheios): embutidos pela chave de produto_id, na ordem da posição.
@@ -114,6 +117,19 @@ const lerProdutosEmCache = emCacheDaVitrine(
 );
 
 const lerRecheiosEmCache = emCacheDaVitrine(async () => consultarRecheios(await clientePublico()), "vitrine-recheios");
+
+// Subcategorias ativas (filtro da Lista). Sem argumento: uma entrada só no
+// cache, com a mesma etiqueta e o mesmo prazo do resto, então as ações do
+// admin que já invalidam a vitrine (inclusive as de /admin/subcategorias)
+// valem aqui sem código extra. O filtro de ativo fica na consulta E aqui.
+const lerSubcategoriasEmCache = emCacheDaVitrine(async (): Promise<Subcategoria[]> => {
+  const { data, error } = await (await clientePublico())
+    .from("subcategorias")
+    .select(CAMPOS_SUBCATEGORIA)
+    .eq("ativo", true);
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as unknown as Subcategoria[]).filter((s) => s.ativo === true);
+}, "vitrine-subcategorias");
 
 // A leitura por slug fica AQUI, no código do site — não existe (e não deve
 // ser criada) função de banco pública para isso. Só produto ativo, com o
@@ -202,14 +218,30 @@ async function lerVitrine(
   filtro: { destaque?: true; categoria?: CategoriaProduto | null },
   rotulo: string
 ): Promise<ProdutoVitrine[] | null> {
-  const [lidos, recheiosLidos] = await Promise.all([
+  return (await lerVitrineEmUmaViagem(filtro, rotulo, false))?.produtos ?? null;
+}
+
+// A mesma leitura, com as subcategorias na mesma viagem quando a tela as
+// usa (só a Lista). A falha das subcategorias NÃO derruba a vitrine: a
+// lista volta vazia (sem chips e sem filtro), o erro é registrado como o de
+// recheios e nada aparece para a visitante.
+async function lerVitrineEmUmaViagem(
+  filtro: { destaque?: true; categoria?: CategoriaProduto | null },
+  rotulo: string,
+  comSubcategorias: boolean
+): Promise<{ produtos: ProdutoVitrine[]; subcategorias: Subcategoria[] } | null> {
+  const [lidos, recheiosLidos, subcategoriasLidas] = await Promise.all([
     tentar(lerProdutosEmCache(filtro.destaque === true, filtro.categoria ?? null), rotulo),
     recheiosDaRequisicao(),
+    comSubcategorias ? tentar(lerSubcategoriasEmCache(), "Falha ao buscar as subcategorias:") : Promise.resolve([]),
   ]);
   if (lidos === FALHA) return null;
   const recheios = recheiosParaATela(lidos.produtos, recheiosLidos);
   if (!recheios) return null;
-  return comPrecoAPartirDe(semIndisponiveis(lidos.produtos, centosComSabor(lidos.sabores), recheios), recheios);
+  return {
+    produtos: comPrecoAPartirDe(semIndisponiveis(lidos.produtos, centosComSabor(lidos.sabores), recheios), recheios),
+    subcategorias: subcategoriasLidas === FALHA ? [] : subcategoriasLidas,
+  };
 }
 
 // Busca os candidatos a "Os mais pedidos" (ativo + destaque) e aplica a
@@ -232,8 +264,16 @@ export async function buscarMaisPedidos(): Promise<ProdutoVitrine[]> {
 // também fica fora. Retorna null em caso de erro (a página mostra aviso de
 // falha, não "categoria vazia").
 export async function buscarLista(parametros: ParametrosLista): Promise<ResultadoLista | null> {
-  const produtos = await buscarProdutosDaLista();
-  return produtos ? montarLista(produtos, parametros) : null;
+  const dados = await buscarDadosDaLista();
+  return dados ? montarLista(dados.produtos, parametros, dados.subcategorias) : null;
+}
+
+// Produtos e subcategorias da Lista, a leitura que a página divide entre
+// generateMetadata e o conteúdo. Cache de uma entrada só para qualquer URL
+// (a URL nunca entra na chave): o filtro, a busca e a página são do código.
+// Falha das subcategorias = lista sem filtro (ver lerVitrineEmUmaViagem).
+export async function buscarDadosDaLista(): Promise<{ produtos: ProdutoVitrine[]; subcategorias: Subcategoria[] } | null> {
+  return lerVitrineEmUmaViagem({}, "Falha ao buscar a Lista de produtos:", true);
 }
 
 // A leitura de buscarLista, sem a regra: a página divide uma leitura só por

@@ -215,13 +215,14 @@ describe("uma viagem só ao banco", () => {
     expect(contado.saidas).toHaveLength(3);
   });
 
-  it("Lista e Home: produtos (com os sabores embutidos) e recheios saem juntos, e nada mais", async () => {
+  it("Lista e Home: produtos (com os sabores embutidos) e recheios saem juntos, e nada mais; a Lista leva também as subcategorias", async () => {
     for (const buscar of ["lista", "home"] as const) {
       const contado = await comClienteContado();
       const { buscarLista, buscarMaisPedidos } = await import("./buscar");
       await (buscar === "lista" ? buscarLista(TODOS) : buscarMaisPedidos());
-      expect([...contado.primeiras()!].sort()).toEqual(["produtos", "recheios"]);
-      expect(contado.saidas).toHaveLength(2);
+      const esperado = buscar === "lista" ? ["produtos", "recheios", "subcategorias"] : ["produtos", "recheios"];
+      expect([...contado.primeiras()!].sort()).toEqual(esperado);
+      expect(contado.saidas).toHaveLength(esperado.length);
     }
   });
 });
