@@ -1,4 +1,4 @@
-import { variacaoDoProduto } from "@/lib/vitrine/variacao";
+import { campoVisivel, colunasEscondidas, neutrosDoCadastro, type ColunaProduto } from "./campos";
 import {
   CATEGORIA_DO_TIPO,
   CATEGORIA_VALUES,
@@ -40,7 +40,7 @@ export type ParsedProduto = {
   subitens: string[];
 };
 
-export type ColunaEscondida = "preco" | "pedido_minimo" | "step_quantidade" | "unidade_venda";
+export type ColunaEscondida = Extract<ColunaProduto, "preco" | "pedido_minimo" | "step_quantidade" | "unidade_venda">;
 
 export type ParseProdutoResult =
   | { success: true; data: ParsedProduto }
@@ -74,27 +74,29 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
   const destaque = formData.get("destaque") != null;
   const ativo = formData.get("ativo") != null;
 
-  // Quais campos valem depende do tipo (variacaoDoProduto). Tipo inválido é
-  // recusado mais abaixo; até lá conta como avulso.
+  // Quais campos valem sai da tabela de campos (campos.ts), pelo tipo e pela
+  // categoria. Tipo inválido é recusado mais abaixo; até lá conta como normal.
   const tipoConhecido = TIPO_PRODUTO_VALUES.includes(tipoRaw as TipoProduto);
-  const variacao = tipoConhecido ? variacaoDoProduto({ tipo: tipoRaw as TipoProduto }) : "avulso";
-  const bolo = variacao === "bolo";
-  const bento = variacao === "bento";
+  const contexto = { categoria: categoriaRaw, tipo: tipoConhecido ? (tipoRaw as TipoProduto) : ("normal" as TipoProduto) };
+  const comPreco = campoVisivel("preco", contexto);
+  const comPedidoMinimo = campoVisivel("pedido_minimo", contexto);
+  const comStep = campoVisivel("step_quantidade", contexto);
+  const comUnidade = campoVisivel("unidade_venda", contexto);
+  const neutros = neutrosDoCadastro(contexto);
 
-  // Bolo: nada disso vale (preço do recheio × kg). Bento: peso fechado, sem
-  // step; a unidade vale ("o combo" ou "unidade"). Os campos escondidos do
-  // formulário nem chegam aqui, e qualquer valor que chegue é ignorado.
-  const preco = bolo ? 0 : normalizePreco(precoRaw);
-  const pedido_minimo = bolo ? 1 : Number(pedidoMinimoRaw);
+  // Campo que a tela não mostra para este tipo não vale: qualquer valor que
+  // chegue é ignorado e o cadastro novo grava o valor neutro da tabela.
+  const preco = comPreco ? normalizePreco(precoRaw) : (neutros.preco as number);
+  const pedido_minimo = comPedidoMinimo ? Number(pedidoMinimoRaw) : (neutros.pedido_minimo as number);
   const prazo_producao_dias = Number(prazoRaw);
 
   if (!nome) {
     return { success: false, error: "Informe o nome do produto." };
   }
-  if (!bolo && (!Number.isFinite(preco) || preco <= 0)) {
+  if (comPreco && (!Number.isFinite(preco) || preco <= 0)) {
     return { success: false, error: "Informe um preço válido." };
   }
-  if (!bolo && (!Number.isInteger(pedido_minimo) || pedido_minimo < 1)) {
+  if (comPedidoMinimo && (!Number.isInteger(pedido_minimo) || pedido_minimo < 1)) {
     return {
       success: false,
       error: "Informe um pedido mínimo válido (mínimo 1).",
@@ -106,7 +108,7 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
       error: "Informe um prazo de produção válido, em dias (0 ou mais). Use 0 para produto sempre disponível.",
     };
   }
-  if (!bolo && !bento && !STEP_QUANTIDADE_VALUES.includes(stepRaw as StepQuantidade)) {
+  if (comStep && !STEP_QUANTIDADE_VALUES.includes(stepRaw as StepQuantidade)) {
     return { success: false, error: "Selecione um step de quantidade." };
   }
   // Categoria obrigatória no formulário (e no banco, NOT NULL desde
@@ -117,7 +119,7 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
   if (!CATEGORIA_VALUES.includes(categoriaRaw as CategoriaProduto)) {
     return { success: false, error: "Selecione uma categoria válida." };
   }
-  if (!bolo && unidadeVenda.length > UNIDADE_VENDA_MAX) {
+  if (comUnidade && unidadeVenda.length > UNIDADE_VENDA_MAX) {
     return {
       success: false,
       error: `A unidade de venda tem no máximo ${UNIDADE_VENDA_MAX} caracteres (ex.: kg, unidade, litro).`,
@@ -149,12 +151,13 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
   // são bloqueadas na UI, mas a validação aqui é o que realmente impede
   // salvar um dado inconsistente.
   const subitensRaw = formData.getAll("subitem_nome").map((v) => String(v).trim()).filter(Boolean);
-  const subitens = tipo === "cento" ? Array.from(new Set(subitensRaw)) : [];
+  const comSubitens = campoVisivel("subitens", contexto);
+  const subitens = comSubitens ? Array.from(new Set(subitensRaw)) : [];
 
-  if (tipo === "cento" && subitens.length === 0) {
+  if (comSubitens && subitens.length === 0) {
     return { success: false, error: "Um produto do tipo Cento precisa de pelo menos um subitem." };
   }
-  if (tipo === "cento" && subitens.includes(nome)) {
+  if (comSubitens && subitens.includes(nome)) {
     return { success: false, error: "Um produto Cento não pode ter a si mesmo como subitem." };
   }
 
@@ -166,18 +169,14 @@ export function parseProdutoForm(formData: FormData): ParseProdutoResult {
       descricao,
       pedido_minimo,
       categoria: categoriaRaw as CategoriaProduto,
-      unidade_venda: bolo ? null : unidadeVenda || null,
+      unidade_venda: comUnidade ? unidadeVenda || null : (neutros.unidade_venda as null),
       prazo_producao_dias,
-      step_quantidade: bolo || bento ? "livre" : (stepRaw as StepQuantidade),
+      step_quantidade: comStep ? (stepRaw as StepQuantidade) : (neutros.step_quantidade as StepQuantidade),
       destaque,
       ativo,
       tipo,
-      semCamposDePreco: bolo,
-      naoGravarNaEdicao: bolo
-        ? ["preco", "pedido_minimo", "step_quantidade", "unidade_venda"]
-        : bento
-          ? ["step_quantidade"]
-          : [],
+      semCamposDePreco: !comPreco,
+      naoGravarNaEdicao: colunasEscondidas(contexto) as ColunaEscondida[],
       subitens,
     },
   };

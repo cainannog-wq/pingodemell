@@ -1,4 +1,5 @@
-import { aceitaRecheiosPersonalizados, validarRecheiosDoProduto } from "@/lib/produtos/recheios-produto";
+import { campoVisivel } from "@/lib/produtos/campos";
+import { validarRecheiosDoProduto } from "@/lib/produtos/recheios-produto";
 import type { CategoriaProduto, TipoProduto } from "@/lib/produtos/types";
 
 // Recheios personalizados no Salvar do produto (supabase/produto-recheios.sql).
@@ -41,7 +42,7 @@ export function lerRecheiosDoEnvio(
   // Interruptor desligado: apaga a lista (nada a conferir).
   if (formData.get("recheios_ligados") !== "1") return { ok: true, aplicar: true, lista: [] };
 
-  if (!aceitaRecheiosPersonalizados({ Categoria: produto.categoria, tipo: produto.tipo })) {
+  if (!campoVisivel("recheios", { categoria: produto.categoria, tipo: produto.tipo })) {
     return { ok: false, erro: "Recheios personalizados só existem para Bolos (tipo normal) e para a categoria Bento Cake." };
   }
   const conferida = validarRecheiosDoProduto(lista);
