@@ -1,0 +1,196 @@
+categoria,produto,subcategoria,categoria_no_banco,ativo
+Bolos,Bolo tradicional (recheio à escolha),Tradicional,Bolos,sim
+Bolos,Bolo de banana,Caseirinhos,Bolos,sim
+Bolos,Bolo de cenoura com cobertura de brigadeiro,Caseirinhos,Bolos,sim
+Bolos,Bolo de milho com cocada mole,Caseirinhos,Bolos,sim
+Bolos,Iogurte e morango,Caseirinhos,Bolos,sim
+Bolos,Mini bolo de ninho com nutella e 10 docinhos,Caseirinhos,Bolos,sim
+Bolos,Nega maluca com cobertura de brigadeiro,Caseirinhos,Bolos,sim
+Bolos,Nega maluca gourmet,Caseirinhos,Bolos,sim
+Bolos,Pé de moleque,Caseirinhos,Bolos,sim
+Bolos,Queijadinha,Caseirinhos,Bolos,sim
+Bolos,Romeu e Julieta (bolo de queijo com goiabada),Caseirinhos,Bolos,sim
+Bolos,Toalha felpuda,Caseirinhos,Bolos,sim
+Bolos,Bolo decorado em acetato,Decorados,Bolos,sim
+Bolos,Bolo Ganache,Decorados,Bolos,sim
+Bolos,Bolo Ganache personalizado,Decorados,Bolos,sim
+Bolos,Bolo Kit Kat,Decorados,Bolos,sim
+Bolos,Bolo Morango com suspiro,Decorados,Bolos,sim
+Bolos,Bolo Naked e Number Cakes,Decorados,Bolos,sim
+Bolos,Bolo Pasta americana,Decorados,Bolos,sim
+Bolos,Smash Cake,Smash Cake,Bolos,sim
+Doces,Beijinho (8g),Tradicionais,Doces,sim
+Doces,Beijinho (15g),Tradicionais,Doces,sim
+Doces,Brigadeiro (8g),Tradicionais,Doces,sim
+Doces,Brigadeiro (15g),Tradicionais,Doces,sim
+Doces,Brigadeiro branco (8g),Tradicionais,Doces,sim
+Doces,Brigadeiro branco (15g),Tradicionais,Doces,sim
+Doces,Brigadeiro de morango (8g),Tradicionais,Doces,sim
+Doces,Cajuzinho (8g),Tradicionais,Doces,sim
+Doces,Cento de docinhos (8g),Tradicionais,Doces,sim
+Doces,Croco amendoim (15g),Tradicionais,Doces,sim
+Doces,Doce de leite (8g),Tradicionais,Doces,sim
+Doces,Dois amores (8g),Tradicionais,Doces,sim
+Doces,Dois amores (15g),Tradicionais,Doces,sim
+Doces,Donuts coberturas variadas,Donuts,Doces,não
+Doces,Mineirinho (8g),Tradicionais,Doces,sim
+Doces,Mineirinho (15g),Tradicionais,Doces,sim
+Doces,4 leites (gourmet 15g),Gourmet,Doces,sim
+Doces,Banoffe (gourmet 15g),Gourmet,Doces,sim
+Doces,Café (gourmet 15g),Gourmet,Doces,sim
+Doces,Capuccino (gourmet 15g),Gourmet,Doces,sim
+Doces,Caramelo salgado (gourmet 15g),Gourmet,Doces,sim
+Doces,Charge (gourmet 15g),Gourmet,Doces,sim
+Doces,Chiclete (gourmet 15g),Gourmet,Doces,sim
+Doces,Churros (gourmet 15g),Gourmet,Doces,sim
+Doces,Cream cheese (gourmet 15g),Gourmet,Doces,sim
+Doces,Farinha láctea (gourmet 15g),Gourmet,Doces,sim
+Doces,Maracujá (gourmet 15g),Gourmet,Doces,sim
+Doces,Nesquick (gourmet 15g),Gourmet,Doces,sim
+Doces,Ninho com nutella (gourmet 15g),Gourmet,Doces,sim
+Doces,Nozes (gourmet 15g),Gourmet,Doces,sim
+Doces,Oreo (gourmet 15g),Gourmet,Doces,sim
+Doces,Ovomaltine (gourmet 15g),Gourmet,Doces,sim
+Doces,Prestígio (gourmet 15g),Gourmet,Doces,sim
+Doces,Surpresa de uva (gourmet 15g),Gourmet,Doces,sim
+Doces,Cajuzinho original (premium 15g),Gourmet Premium,Doces,sim
+Doces,Chocolate com pimenta (premium 15g),Gourmet Premium,Doces,sim
+Doces,Chocomenta (premium 15g),Gourmet Premium,Doces,sim
+Doces,Chokito (premium 15g),Gourmet Premium,Doces,sim
+Doces,Creme brulé (premium 15g),Gourmet Premium,Doces,sim
+Doces,Damasco (premium 15g),Gourmet Premium,Doces,sim
+Doces,Ferrero rocher (premium 15g),Gourmet Premium,Doces,sim
+Doces,Floresta negra (premium 15g),Gourmet Premium,Doces,sim
+Doces,Kinder (premium 15g),Gourmet Premium,Doces,sim
+Doces,Marshmallow (premium 15g),Gourmet Premium,Doces,sim
+Doces,Meio amargo (premium 15g),Gourmet Premium,Doces,sim
+Doces,Prestígio recheado (premium 15g),Gourmet Premium,Doces,sim
+Doces,Rafaello (premium 15g),Gourmet Premium,Doces,sim
+Doces,Red velvet (premium 15g),Gourmet Premium,Doces,sim
+Doces,Romeu e Julieta (premium 15g),Gourmet Premium,Doces,sim
+Doces,Sensação (premium 15g),Gourmet Premium,Doces,sim
+Doces,Tortinha de limão (premium 15g),Gourmet Premium,Doces,sim
+Doces,Barquinha de morango,Finos,Doces,sim
+Doces,Bem casados com tag,Finos,Doces,sim
+Doces,Bombom de morango,Finos,Doces,sim
+Doces,Bombom de trufa,Finos,Doces,sim
+Doces,Bombom de uva,Finos,Doces,sim
+Doces,Camafeus,Finos,Doces,sim
+Doces,Cheesecake,Finos,Doces,sim
+Doces,Concha,Finos,Doces,sim
+Doces,Cones com trufa,Finos,Doces,sim
+Doces,Coxinha de morango,Finos,Doces,sim
+Doces,Flor de brigadeiro,Finos,Doces,sim
+Doces,Mini bolo,Finos,Doces,sim
+Doces,Mini pérola,Finos,Doces,sim
+Doces,Morango banhado,Finos,Doces,sim
+Doces,Morango do amor,Finos,Doces,sim
+Doces,Ouriço de coco,Finos,Doces,sim
+Doces,Surpresa de uva vasinho,Finos,Doces,sim
+Doces,Tacinha chique com cereja,Finos,Doces,sim
+Doces,Tacinha com mousse,Finos,Doces,sim
+Doces,Tartelete de morango,Finos,Doces,sim
+Doces,Verrine de banoffe,Finos,Doces,sim
+Doces,Verrine de frutas vermelhas,Finos,Doces,sim
+Doces,Bombom com modelagens,Personalizados,Doces,sim
+Doces,Bombom corpinho (depende do tema),Personalizados,Doces,sim
+Doces,Bombom estilo pão de mel médio,Personalizados,Doces,sim
+Doces,Colher de chocolate,Personalizados,Doces,sim
+Doces,Cones (na cor do tema),Personalizados,Doces,sim
+Doces,Cupcake com cobertura de ninho,Personalizados,Doces,sim
+Doces,Cupcake com modelagens 2D,Personalizados,Doces,sim
+Doces,Cupcake com modelagens 3D,Personalizados,Doces,sim
+Doces,Donuts personalizados,Donuts,Doces,sim
+Doces,Maçã com modelagem,Personalizados,Doces,sim
+Doces,Maçã de chocolate com inicial,Personalizados,Doces,sim
+Doces,Maçã personalizada,Personalizados,Doces,sim
+Doces,Pirulito de chocolate com modelagens,Personalizados,Doces,sim
+Doces,Porta retrato com apliques,Personalizados,Doces,sim
+Doces,Porta retrato com modelagem,Personalizados,Doces,sim
+Doces,Porta retrato de chocolate com inicial,Personalizados,Doces,sim
+Doces,Quadradinho personalizado,Personalizados,Doces,sim
+Doces,Tartelete com modelagens,Personalizados,Doces,sim
+Doces,Tartelete com modelagens corpinho,Personalizados,Doces,sim
+Doces,Vasinhos com a idade,Personalizados,Doces,sim
+Doces,Combo 30 doces personalizados,Personalizados Combo,Kit Festa,sim
+Doces,Combo 50 doces personalizados,Personalizados Combo,Kit Festa,sim
+Doces,Combo 80 doces personalizados,Personalizados Combo,Kit Festa,sim
+Doces,Combo 100 doces personalizados,Personalizados Combo,Kit Festa,sim
+Salgados,Bolinha de queijo,Fritos,Salgados,sim
+Salgados,Cento de salgados fritos,Fritos,Salgados,sim
+Salgados,Coxinha,Fritos,Salgados,sim
+Salgados,Croquete de queijo e presunto,Fritos,Salgados,sim
+Salgados,Enroladinho de vina,Fritos,Salgados,sim
+Salgados,Kibe,Fritos,Salgados,sim
+Salgados,Kibe com recheio,Fritos,Salgados,sim
+Salgados,Mini churros,Fritos,Salgados,sim
+Salgados,Mini pastelzinho de carne,Fritos,Salgados,sim
+Salgados,Mini pastelzinho de queijo com requeijão,Fritos,Salgados,sim
+Salgados,Mini pastelzinho de queijo e presunto,Fritos,Salgados,sim
+Salgados,Risoles de carne,Fritos,Salgados,sim
+Salgados,Cento de salgados assados,Assados,Salgados,sim
+Salgados,Empadinha de frango,Assados,Salgados,sim
+Salgados,Empadinha de frango com requeijão,Assados,Salgados,sim
+Salgados,Empadinha de palmito,Assados,Salgados,sim
+Salgados,Mini pizza de calabresa,Assados,Salgados,sim
+Salgados,Mini pizza de frango,Assados,Salgados,sim
+Salgados,Mini pizza de queijo e presunto,Assados,Salgados,sim
+Salgados,Canudinho de maionese,Finos e Assados,Salgados,sim
+Salgados,Doguinho assado,Finos e Assados,Salgados,sim
+Salgados,Esfiha de carne,Finos e Assados,Salgados,sim
+Salgados,Esfiha de frango,Finos e Assados,Salgados,sim
+Salgados,Mini dog,Finos e Assados,Salgados,sim
+Salgados,Mini X salada,Finos e Assados,Salgados,sim
+Salgados,Mini X salame,Finos e Assados,Salgados,sim
+Salgados,Pãozinho com patê de frango,Finos e Assados,Salgados,sim
+Salgados,Pãozinho de salpicão,Finos e Assados,Salgados,sim
+Salgados,Sanduíche natural,Finos e Assados,Salgados,sim
+Salgados,Bolinha de queijo (congelada),Congelados,Salgados,sim
+Salgados,Coxinha de frango (congelada),Congelados,Salgados,sim
+Salgados,Croquete de presunto e queijo (congelado),Congelados,Salgados,sim
+Salgados,Enroladinho de vina (congelado),Congelados,Salgados,sim
+Salgados,Kibe (congelado),Congelados,Salgados,sim
+Salgados,Massa de mini pizza sem recheio (congelada),Congelados,Salgados,sim
+Salgados,Risoles de carne (congelado),Congelados,Salgados,sim
+Kit Festa,Kit Festa Básico 10 pessoas,Básico,Kit Festa,sim
+Kit Festa,Kit Festa Básico 15 pessoas,Básico,Kit Festa,sim
+Kit Festa,Kit Festa Básico 20 pessoas,Básico,Kit Festa,sim
+Kit Festa,Kit Festa Básico 30 pessoas,Básico,Kit Festa,sim
+Kit Festa,Kit Festa Básico 40 pessoas,Básico,Kit Festa,sim
+Kit Festa,Kit Festa Básico 50 pessoas,Básico,Kit Festa,sim
+Kit Festa,Kit Festa Básico 60 pessoas,Básico,Kit Festa,sim
+Kit Festa,Kit Festa Básico 70 pessoas,Básico,Kit Festa,sim
+Kit Festa,Kit Festa Básico 80 pessoas,Básico,Kit Festa,sim
+Kit Festa,Kit Festa Básico 90 pessoas,Básico,Kit Festa,sim
+Kit Festa,Kit Festa Básico 100 pessoas,Básico,Kit Festa,sim
+Kit Festa,Kit Festa Básico 120 pessoas,Básico,Kit Festa,não
+Kit Festa,Kit Festa Básico 130 pessoas,Básico,Kit Festa,não
+Kit Festa,Kit Festa Clássico 10 pessoas,Clássico,Kit Festa,sim
+Kit Festa,Kit Festa Clássico 15 pessoas,Clássico,Kit Festa,sim
+Kit Festa,Kit Festa Clássico 20 pessoas,Clássico,Kit Festa,sim
+Kit Festa,Kit Festa Clássico 30 pessoas,Clássico,Kit Festa,sim
+Kit Festa,Kit Festa Clássico 40 pessoas,Clássico,Kit Festa,sim
+Kit Festa,Kit Festa Clássico 50 pessoas,Clássico,Kit Festa,sim
+Kit Festa,Kit Festa Clássico 60 pessoas,Clássico,Kit Festa,sim
+Kit Festa,Kit Festa Clássico 70 pessoas,Clássico,Kit Festa,sim
+Kit Festa,Kit Festa Clássico 80 pessoas,Clássico,Kit Festa,sim
+Kit Festa,Kit Festa Clássico 100 pessoas,Clássico,Kit Festa,sim
+Kit Festa,Kit Festa Premium 10 pessoas,Premium,Kit Festa,sim
+Kit Festa,Kit Festa Premium 15 pessoas,Premium,Kit Festa,sim
+Kit Festa,Kit Festa Premium 20 pessoas,Premium,Kit Festa,sim
+Kit Festa,Kit Festa Premium 30 pessoas,Premium,Kit Festa,sim
+Kit Festa,Kit Festa Premium 40 pessoas,Premium,Kit Festa,sim
+Kit Festa,Kit Festa Premium 50 pessoas,Premium,Kit Festa,sim
+Kit Festa,Kit Festa Premium 60 pessoas,Premium,Kit Festa,sim
+Kit Festa,Kit Festa Premium 70 pessoas,Premium,Kit Festa,sim
+Kit Festa,Kit Festa Premium 80 pessoas,Premium,Kit Festa,sim
+Kit Festa,Kit Festa Premium 100 pessoas,Premium,Kit Festa,sim
+Kit Festa,Kit Escolar 1,Escolar,Kit Festa,sim
+Kit Festa,Kit Escolar 2,Escolar,Kit Festa,sim
+Kit Festa,Kit Escolar Individual,Escolar,Kit Festa,sim
+Kit Festa,Mini Wedding para 20 pessoas,Mini Wedding,Kit Festa,sim
+Kit Festa,Mini Wedding para 40 pessoas,Mini Wedding,Kit Festa,sim
+Kit Festa,Mini Wedding para 70 pessoas,Mini Wedding,Kit Festa,sim
+Kit Festa,Mini Wedding para 100 pessoas,Mini Wedding,Kit Festa,sim
+Kit Festa,Combo Mêsversário,Outros,Kit Festa,sim
+Kit Festa,Festa na Caixa,Outros,Kit Festa,sim
