@@ -31,7 +31,8 @@ await emTransacaoDesfeita("Unidade de venda e categoria Kits", async (db) => {
     const { rows: gatilhos } = await c.q(
       "select tgname from pg_trigger where tgrelid = 'public.produtos'::regclass and not tgisinternal order by tgname"
     );
-    const nomes = gatilhos.map((g) => g.tgname).join(",");
+    // produtos_limpa_subcategoria é de supabase/subcategorias.sql (outra migração).
+    const nomes = gatilhos.map((g) => g.tgname).filter((n) => n !== "produtos_limpa_subcategoria").join(",");
     registrar("unidade 2. nenhum gatilho novo em produtos", nomes === GATILHOS, nomes);
   });
 

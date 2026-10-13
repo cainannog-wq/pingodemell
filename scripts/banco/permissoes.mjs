@@ -26,6 +26,8 @@ const TABELAS = {
   // Recheios personalizados por produto (supabase/produto-recheios.sql).
   produto_recheios: ["S", SIUD],
   recheios: ["S", SIUD],
+  // Subcategorias (supabase/subcategorias.sql): modelo de recheios.
+  subcategorias: ["S", SIUD],
   dias_off: ["S", SIUD],
   segunda_reaberturas: ["S", SIUD],
   // Logado: lê e muda só o status (supabase/pedidos-permissoes.sql). Antes
@@ -60,7 +62,18 @@ const FUNCOES = {
   produto_slug_livre: { anon: false, authenticated: false },
   produtos_slug_no_cadastro: { anon: false, authenticated: false },
   produtos_slug_imutavel: { anon: false, authenticated: false },
+  // Subcategorias (supabase/subcategorias.sql): slug, ordem e limpeza; só
+  // gatilhos e apoio, ninguém da API executa.
+  subcategoria_slug_livre: { anon: false, authenticated: false },
+  subcategorias_slug_no_cadastro: { anon: false, authenticated: false },
+  subcategorias_slug_imutavel: { anon: false, authenticated: false },
+  produtos_limpa_subcategoria: { anon: false, authenticated: false },
 };
+
+// Tabelas de migração ainda não aplicada em produção: sem ela no banco (e sem
+// --com-migracao), a verificação sai como pulada em vez de falhar. Tirar da
+// lista quando a migração for aplicada.
+const TABELAS_AGUARDANDO_MIGRACAO = ["subcategorias"];
 
 // Sem política de propósito: só a chave de serviço acessa.
 const RLS_SEM_POLITICA_ESPERADO = ["heartbeat", "pedidos_rate_limit", "pedidos_gravacao"];
@@ -106,6 +119,10 @@ await emTransacaoDesfeita("Permissões por papel e alertas do verificador", asyn
   for (const [tabela, [esperadoAnon, esperadoLogado]] of Object.entries(TABELAS)) {
     for (const [papel, esperado] of [["anon", esperadoAnon], ["authenticated", esperadoLogado]]) {
       const t = tabelas.find((x) => x.relname === tabela && x.papel === papel);
+      if (!t && TABELAS_AGUARDANDO_MIGRACAO.includes(tabela)) {
+        pular(`permissões [${tabela}] ${papel}`, "migração ainda não aplicada; rode com --com-migracao=supabase/subcategorias.sql");
+        continue;
+      }
       if (!t) {
         registrar(`permissões [${tabela}] ${papel}`, false, "tabela não encontrada");
         continue;
