@@ -66,6 +66,9 @@ const DESFAZER = typeof opcao("desfazer") === "string" ? opcao("desfazer") : nul
 const CSV = typeof opcao("csv") === "string" ? opcao("csv") : CSV_PADRAO;
 const PASTA = typeof opcao("backup") === "string" ? opcao("backup") : PASTA_BACKUP;
 if (APLICAR && IDA_E_VOLTA) throw new Error("--ida-e-volta é só ensaio: não combina com --aplicar.");
+const PLANO_SHA = typeof opcao("plano-sha") === "string" ? opcao("plano-sha").toLowerCase() : null;
+const MD5_INFORMADO = typeof opcao("md5") === "string" ? opcao("md5").toLowerCase() : null;
+if (APLICAR && !DESFAZER && !IDA_E_VOLTA && (!PLANO_SHA || !MD5_INFORMADO)) throw new Error("--aplicar exige --plano-sha=<hex> e --md5=<hex> (os do ensaio).");
 if (opcao("desfazer") === true) throw new Error("Use --desfazer=<arquivo de backup>.");
 
 const sha256 = (x) => createHash("sha256").update(x).digest("hex");
@@ -185,7 +188,7 @@ async function aplicarPlano(db, csv, { gravarArquivo, modo }) {
   console.log(`subcategorias: ${subs.length} (esperado ${TOTAL_SUBCATEGORIAS}), todas ativas: ${subs.every((s) => s.ativo)}; por categoria: ${contagem(subs, (s) => s.categoria).map(([c, k]) => `${c} ${k}`).join(", ")}`);
   console.log(`md5 do início: ${md5Inicio} — ${md5Inicio === MD5_ESPERADO ? "BATE com" : "NÃO BATE com"} ${MD5_ESPERADO}`);
   conferirGatilhos(gat0, "no início (o de data desligado por esta transação)", "produtos_set_atualizado_em");
-  const estadoOk = n === TOTAL_PRODUTOS && subs.length === TOTAL_SUBCATEGORIAS && subs.every((s) => s.ativo) && md5Inicio === MD5_ESPERADO;
+  const estadoOk = n === TOTAL_PRODUTOS && subs.length === TOTAL_SUBCATEGORIAS && subs.every((s) => s.ativo);
   if (!estadoOk && modo !== "ensaio" && modo !== "ida-e-volta") throw new Error("Estado do banco diferente do esperado: nada foi gravado.");
 
   titulo("Tabela de conversão (21 linhas)");
@@ -205,6 +208,10 @@ async function aplicarPlano(db, csv, { gravarArquivo, modo }) {
   for (const d of plano.divergenciasAtivo) console.log(`  ${d.produto}: CSV ${d.csv ? "sim" : "não"}, banco ${d.banco ? "sim" : "não"}`);
   const shaPlano = sha256([...plano.gravar].map((x) => `${x.nome}\t${x.slug}`).sort().join("\n"));
   console.log(`sha256 do plano (nome e slug, ordenado): ${shaPlano}`);
+  // Guarda: vale no ensaio quando os flags são passados e é obrigatório no --aplicar.
+  if (PLANO_SHA && shaPlano !== PLANO_SHA) throw new Error(`sha256 do plano (${shaPlano}) difere do informado (${PLANO_SHA}): nada foi gravado.`);
+  if (MD5_INFORMADO && md5Inicio !== MD5_INFORMADO) throw new Error(`md5 do início (${md5Inicio}) difere do informado (${MD5_INFORMADO}): nada foi gravado.`);
+  if (PLANO_SHA || MD5_INFORMADO) console.log("guarda: plano e md5 conferem com os informados");
 
   titulo("Os 23 fora do CSV");
   const nomesCsv = new Set(csv.map((l) => l.produto));
