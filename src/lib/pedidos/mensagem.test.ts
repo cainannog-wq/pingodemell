@@ -264,3 +264,35 @@ describe("unidade de venda na mensagem (PR unidade/texto-venda)", () => {
     expect(m.texto).not.toMatch(/o kit/);
   });
 });
+
+describe("avulso com recheio personalizado", () => {
+  const ganache: LinhaCarrinho = {
+    id: "gan",
+    tipo: "normal",
+    produtoId: "44444444-4444-4444-8444-444444444444",
+    slug: "bolo-ganache",
+    nome: "Bolo Ganache",
+    preco: 108,
+    unidade_venda: "o kg",
+    quantidade: 2,
+    observacao: null,
+    recheio: { id: "33333333-3333-4333-8333-333333333333", nome: "Dois amores" },
+  };
+
+  it("o item do pedido leva o recheio e a mensagem o escreve como o Bento", () => {
+    expect(itemDaLinha(ganache)).toMatchObject({ tipo: "normal", recheio: { nome: "Dois amores" } });
+    const linhas = [ganache];
+    const retrato = montarRetrato({ dados: DADOS_TESTE, linhas, resposta: resposta(linhas), prazo: null });
+    expect(retrato.mensagem).toContain("1. Bolo Ganache, recheio Dois amores, 2 kg, R$ 216,00");
+    expect(retrato.linhas[0].detalhe).toBe("Recheio Dois amores");
+  });
+
+  it("sem recheio a linha é a de sempre", () => {
+    const { recheio, ...sem } = ganache;
+    void recheio;
+    const linhas = [sem as LinhaCarrinho];
+    const retrato = montarRetrato({ dados: DADOS_TESTE, linhas, resposta: resposta(linhas), prazo: null });
+    expect(retrato.mensagem).toContain("1. Bolo Ganache, 2 kg, R$ 216,00");
+    expect(retrato.linhas[0].detalhe).toBeNull();
+  });
+});

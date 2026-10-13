@@ -84,6 +84,8 @@ function linhaCompleta(l: LinhaMensagem, i: number): string[] {
     saida.push(`${i}. ${l.nome}, recheio ${l.recheio.nome}, ${l.quantidade} kg, ${l.formato}, ${valor} (valor base, sem decoração)`);
   } else if (l.tipo === "bento") {
     saida.push(`${i}. ${l.nome}, recheio ${l.recheio.nome}, ${quantidadeDaLinha(l)}, ${valor}`);
+  } else if (l.recheio) {
+    saida.push(`${i}. ${l.nome}, recheio ${l.recheio.nome}, ${quantidadeDaLinha(l)}, ${valor}`);
   } else {
     saida.push(`${i}. ${l.nome}, ${quantidadeDaLinha(l)}, ${valor}`);
   }

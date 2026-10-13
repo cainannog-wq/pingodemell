@@ -100,7 +100,15 @@ beforeAll(() => {
   HTMLDialogElement.prototype.showModal ??= function () {};
 });
 beforeEach(() => {
-  banco = novoBanco({ produtos: [BOLO, BOMBOM, BENTO], recheios: [MORANGO], produto_fotos: [] }, 'anon');
+  banco = novoBanco(
+    {
+      produtos: [BOLO, BOMBOM, BENTO],
+      recheios: [MORANGO],
+      produto_fotos: [],
+      produto_recheios: [{ produto_id: BENTO.id, id: MORANGO.id, nome: 'Morango', posicao: 1 }],
+    },
+    'anon'
+  );
   window.localStorage.clear();
   reiniciarParaTeste();
   celular(true);

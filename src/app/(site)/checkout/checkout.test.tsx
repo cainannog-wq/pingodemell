@@ -320,7 +320,7 @@ describe("Checkout — resumo do pedido sem reconferir o banco", () => {
     const produtos = consultas.find((c) => c.tabela === "produtos")!;
     expect(produtos.filtros).toEqual([["eq", "ativo", true]]);
     // Nenhuma consulta por id de produto ou de recheio das linhas.
-    const idsDoCarrinho = CARRINHO.flatMap((l) => [l.produtoId, "recheio" in l ? l.recheio.id : ""]).filter(Boolean);
+    const idsDoCarrinho = CARRINHO.flatMap((l) => [l.produtoId, "recheio" in l && l.recheio ? l.recheio.id : ""]).filter(Boolean);
     for (const c of consultas) {
       for (const [, coluna, valor] of c.filtros) {
         expect(coluna).not.toBe("id");

@@ -75,7 +75,7 @@ export function RecheiosLista({ recheios }: { recheios: Recheio[] }) {
                   <td data-label="Onde vale" style={{ padding: "16px 24px" }}>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {r.vale_bolo ? <Badge variant="soft">Bolo grande</Badge> : null}
-                      {r.vale_bento ? <Badge variant="soft">Bento Cake</Badge> : null}
+                      {!r.vale_bolo ? <Badge variant="soft">Sem uso</Badge> : null}
                     </div>
                   </td>
                   <td data-label="Preço por kg" style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>

@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   agruparRecheiosDoBolo,
-  bentoDisponivel,
   boloDisponivel,
   menorPrecoKg,
   precoDoBolo,
-  recheiosDoBento,
   recheiosDoBolo,
 } from "./regras";
 
@@ -31,7 +29,7 @@ const NINHO = r({ nome: "Ninho", vale_bento: true });
 const INATIVO = r({ nome: "Inativo", vale_bolo: true, vale_bento: true, preco_kg: 10, grupo: "frutas", ativo: false });
 const TODOS = [BRIGADEIRO, MORANGO, ABACAXI, NINHO, INATIVO];
 
-describe("recheios — dois catálogos sobre a mesma tabela", () => {
+describe("recheios — catálogo do Bolo tradicional", () => {
   it("Bolo: só ativo com vale_bolo, com preço e grupo; preço por kg crescente", () => {
     expect(recheiosDoBolo(TODOS).map((x) => x.nome)).toEqual(["Abacaxi", "Brigadeiro", "Morango"]);
   });
@@ -42,16 +40,6 @@ describe("recheios — dois catálogos sobre a mesma tabela", () => {
     const c = r({ nome: "Amora", vale_bolo: true, preco_kg: 50, grupo: "frutas" });
     const d = r({ nome: "Beijinho", vale_bolo: true, preco_kg: 40, grupo: "chocolate_outros" });
     expect(agruparRecheiosDoBolo([a, d, b, c]).map((g) => g.recheios.map((x) => x.nome))).toEqual([["Amora", "Ágata", "Zebra"], ["Beijinho"]]);
-  });
-
-  it("Bento: ordem alfabética", () => {
-    const z = r({ nome: "Zimbro", vale_bento: true });
-    const e = r({ nome: "Éclair", vale_bento: true });
-    expect(recheiosDoBento([z, e, NINHO]).map((x) => x.nome)).toEqual(["Éclair", "Ninho", "Zimbro"]);
-  });
-
-  it("Bento: só ativo com vale_bento (o preço e o grupo não contam)", () => {
-    expect(recheiosDoBento(TODOS).map((x) => x.nome)).toEqual(["Brigadeiro", "Ninho"]);
   });
 
   it("recheio de Bolo sem preço ou sem grupo (dado inconsistente) não aparece no Bolo", () => {
@@ -68,20 +56,16 @@ describe("recheios — dois catálogos sobre a mesma tabela", () => {
     expect(agruparRecheiosDoBolo([BRIGADEIRO]).map((g) => g.rotulo)).toEqual(["Recheio com chocolate e outros"]);
   });
 
-  it("menor R$/kg é o 'a partir de' do card (ignora inativo e recheio só de Bento)", () => {
+  it("menor R$/kg é o 'a partir de' do card (ignora inativo e recheio sem preço)", () => {
     expect(menorPrecoKg(TODOS)).toBe(70);
     expect(menorPrecoKg([NINHO])).toBeNull();
   });
 
-  it("os dois lados esvaziam de forma independente", () => {
-    const semBento = TODOS.map((x) => ({ ...x, vale_bento: false }));
-    expect(boloDisponivel(semBento)).toBe(true);
-    expect(bentoDisponivel(semBento)).toBe(false);
+  it("o Bolo fica indisponível sem recheio ativo com vale_bolo (vale_bento não conta mais)", () => {
+    expect(boloDisponivel(TODOS)).toBe(true);
     const semBolo = TODOS.map((x) => ({ ...x, vale_bolo: false, preco_kg: null, grupo: null }));
     expect(boloDisponivel(semBolo)).toBe(false);
-    expect(bentoDisponivel(semBolo)).toBe(true);
     expect(boloDisponivel([])).toBe(false);
-    expect(bentoDisponivel([])).toBe(false);
   });
 
   it("preço do Bolo = R$/kg × kg, ao centavo", () => {

@@ -8,7 +8,7 @@ import { prontoEm } from "./datas";
 // Regra (decisão do Cainan, PR checkout-de-verdade):
 // - só produto ativo e em destaque, de qualquer categoria: bebida entra
 //   aqui (na Home não entra), e o Cento também;
-// - Cento sem sabor ativo e Bolo/Bento sem recheio ativo já chegam fora
+// - Cento sem sabor ativo e Bolo tradicional sem recheio ativo já chegam fora
 //   (semIndisponiveis, na busca);
 // - some o produto que já está no carrinho (qualquer linha dele);
 // - com data escolhida, some o produto que não fica pronto a tempo
@@ -18,7 +18,9 @@ import { prontoEm } from "./datas";
 
 export const LIMITE_OFERTAS = 5;
 
-export type Oferta = ProdutoVitrine & { prazo_producao_dias: number };
+// com_recheios: o produto tem recheios personalizados (lista própria), então a
+// escolha do recheio é obrigatória e a oferta leva à interna.
+export type Oferta = ProdutoVitrine & { prazo_producao_dias: number; com_recheios?: boolean };
 
 export function ordenarOfertas<T extends Pick<ProdutoVitrine, "atualizado_em" | "nome">>(produtos: T[]): T[] {
   return [...produtos].sort((a, b) => {
@@ -46,12 +48,15 @@ export function selecionarOfertas(
 }
 
 // O que o clique na oferta faz: o avulso (inclui bebida e Smash Cake) entra
-// direto no carrinho; Cento, Bolo e Bento Cake precisam de escolha (sabores,
-// recheio, tamanho) e levam para a interna.
+// direto no carrinho; Cento, Bolo e Bento Cake com recheios, e qualquer
+// produto com recheios personalizados, precisam de escolha (sabores, recheio,
+// tamanho) e levam para a interna. Bento Cake sem lista de recheios é avulso.
 export type AcaoDaOferta = "adicionar" | "interna";
 
-export function acaoDaOferta(produto: Pick<ProdutoVitrine, "tipo">): AcaoDaOferta {
-  return variacaoDoProduto(produto) === "avulso" ? "adicionar" : "interna";
+export function acaoDaOferta(produto: Pick<ProdutoVitrine, "tipo"> & { com_recheios?: boolean }): AcaoDaOferta {
+  if (produto.com_recheios) return "interna";
+  const variacao = variacaoDoProduto(produto);
+  return variacao === "avulso" || variacao === "bento" ? "adicionar" : "interna";
 }
 
 // Quantidade com que o avulso entra: o pedido mínimo, subindo até o

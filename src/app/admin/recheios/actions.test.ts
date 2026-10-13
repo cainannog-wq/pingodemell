@@ -47,31 +47,24 @@ beforeEach(() => {
 });
 
 describe("createRecheio", () => {
-  it("grava recheio de Bolo com preço e grupo", async () => {
+  it("grava recheio do Bolo com preço e grupo, sem enviar vale_bento", async () => {
     const { createRecheio } = await import("./actions");
-    await createRecheio({}, form({ nome: "Brigadeiro", vale_bolo: "on", preco_kg: "80.00", grupo: "chocolate_outros", ativo: "on" }));
-    expect(insertCalls).toEqual([
-      { nome: "Brigadeiro", vale_bolo: true, vale_bento: false, preco_kg: 80, grupo: "chocolate_outros", ativo: true },
-    ]);
-  });
-
-  it("recheio só de Bento grava sem preço e sem grupo, mesmo que cheguem", async () => {
-    const { createRecheio } = await import("./actions");
-    await createRecheio({}, form({ nome: "Ninho", vale_bento: "on", preco_kg: "50", grupo: "frutas", ativo: "on" }));
-    expect(insertCalls).toEqual([{ nome: "Ninho", vale_bolo: false, vale_bento: true, preco_kg: null, grupo: null, ativo: true }]);
+    await createRecheio({}, form({ nome: "Brigadeiro", preco_kg: "80.00", grupo: "chocolate_outros", ativo: "on" }));
+    expect(insertCalls).toEqual([{ nome: "Brigadeiro", vale_bolo: true, preco_kg: 80, grupo: "chocolate_outros", ativo: true }]);
+    expect("vale_bento" in (insertCalls[0] as object)).toBe(false);
   });
 
   it("dado inválido volta com o erro e não grava", async () => {
     const { createRecheio } = await import("./actions");
-    const r = await createRecheio({}, form({ nome: "Sem lugar" }));
-    expect(r.error).toMatch(/onde o recheio vale/i);
+    const r = await createRecheio({}, form({ nome: "Sem preço" }));
+    expect(r.error).toMatch(/preço por kg/i);
     expect(insertCalls).toHaveLength(0);
   });
 
   it("nome repetido (índice único do banco) vira mensagem clara", async () => {
     const { createRecheio } = await import("./actions");
     erroDoBanco = { code: "23505", message: "duplicate key" };
-    const r = await createRecheio({}, form({ nome: "Ninho", vale_bento: "on" }));
+    const r = await createRecheio({}, form({ nome: "Ninho", preco_kg: "50", grupo: "frutas" }));
     expect(r.error).toBe("Já existe um recheio com esse nome.");
   });
 });
@@ -79,10 +72,11 @@ describe("createRecheio", () => {
 describe("updateRecheio e updateRecheioAtivo", () => {
   it("edita pelo id; id que não é uuid é recusado antes de ir ao banco", async () => {
     const { updateRecheio } = await import("./actions");
-    await updateRecheio(ID, {}, form({ nome: "Ninho", vale_bento: "on", ativo: "on" }));
-    expect(updateCalls).toEqual([{ id: ID, payload: { nome: "Ninho", vale_bolo: false, vale_bento: true, preco_kg: null, grupo: null, ativo: true } }]);
+    await updateRecheio(ID, {}, form({ nome: "Ninho", preco_kg: "50", grupo: "frutas", ativo: "on" }));
+    // vale_bento nunca vai: a coluna e o que está nela ficam como estão.
+    expect(updateCalls).toEqual([{ id: ID, payload: { nome: "Ninho", vale_bolo: true, preco_kg: 50, grupo: "frutas", ativo: true } }]);
     updateCalls.length = 0;
-    const r = await updateRecheio("nao-e-uuid", {}, form({ nome: "Ninho", vale_bento: "on" }));
+    const r = await updateRecheio("nao-e-uuid", {}, form({ nome: "Ninho", preco_kg: "50", grupo: "frutas" }));
     expect(r.error).toMatch(/não encontrado/);
     expect(updateCalls).toHaveLength(0);
   });
@@ -90,7 +84,7 @@ describe("updateRecheio e updateRecheioAtivo", () => {
   it("id inexistente (nenhuma linha atualizada) avisa", async () => {
     const { updateRecheio } = await import("./actions");
     linhasAtualizadas = [];
-    const r = await updateRecheio(ID, {}, form({ nome: "Ninho", vale_bento: "on" }));
+    const r = await updateRecheio(ID, {}, form({ nome: "Ninho", preco_kg: "50", grupo: "frutas" }));
     expect(r.error).toMatch(/não encontrado/);
   });
 

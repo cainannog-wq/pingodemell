@@ -52,6 +52,10 @@ export type LinhaAvulso = LinhaBase & {
   // eles não tem controle de quantidade, só remover.
   pedidoMinimo?: number;
   step?: StepQuantidade;
+  // Recheio escolhido entre os recheios personalizados do produto (Bolos de
+  // tipo normal e Bento Cake sem lista é avulso comum). Só informativo, sem
+  // efeito no preço. Ausente nos produtos sem recheios personalizados.
+  recheio?: RecheioEscolhido;
 };
 
 export type LinhaCento = LinhaBase & {
@@ -62,9 +66,10 @@ export type LinhaCento = LinhaBase & {
   sabores: { nome: string; quantidade: number }[];
 };
 
-// Recheio escolhido (Bolo e Bento Cake). O id aponta para public.recheios e
-// vai com o pedido; o servidor confere só o formato dele, não se o recheio
-// continua ativo nem o preço atual.
+// Recheio escolhido (Bolo, Bento Cake e avulso com recheios personalizados).
+// O id aponta para public.recheios (Bolo) ou para a lista do produto
+// (public.produto_recheios) e vai com o pedido; o servidor confere só o
+// formato dele, não se o recheio continua existindo nem o preço atual.
 export type RecheioEscolhido = { id: string; nome: string };
 
 // Bolo: quantidade em kg (inteiro) e preco = R$/kg do recheio escolhido,
@@ -112,7 +117,7 @@ function mesmaCombinacao(a: LinhaCento, b: Omit<LinhaCento, "id">): boolean {
 }
 
 // Junta com uma linha existente quando é o mesmo item:
-// - avulso: mesmo produto e mesma observação (soma a quantidade; somar dois
+// - avulso: mesmo produto, mesmo recheio (se tiver) e mesma observação (soma a quantidade; somar dois
 //   múltiplos do step continua múltiplo, e continua acima do mínimo);
 // - Cento: mesmo produto, mesma observação e a mesma combinação por cento
 //   (soma centos e sabores);
@@ -131,7 +136,11 @@ export function adicionarLinha(linhas: LinhaCarrinho[], nova: NovaLinha, novoId:
       ? -1
       : linhas.findIndex((l) => {
           if (l.produtoId !== alvo.produtoId || l.tipo !== alvo.tipo || l.observacao !== observacao) return false;
-          if (l.tipo === "normal") return l.quantidade + alvo.quantidade <= MAX_QUANTIDADE;
+          if (l.tipo === "normal") {
+            // Recheios diferentes são linhas diferentes.
+            const avulso = alvo as Omit<LinhaAvulso, "id">;
+            return l.recheio?.id === avulso.recheio?.id && l.quantidade + avulso.quantidade <= MAX_QUANTIDADE;
+          }
           if (l.tipo === "bento") {
             const bento = alvo as Omit<LinhaBento, "id">;
             return l.recheio.id === bento.recheio.id && l.quantidade + bento.quantidade <= MAX_QUANTIDADE;
@@ -328,6 +337,7 @@ export function linhaValida(v: unknown): v is LinhaCarrinho {
     if (l.unidade_venda !== null && !texto(l.unidade_venda, 20)) return false;
     if (l.pedidoMinimo !== undefined && !inteiro(l.pedidoMinimo, 1, MAX_QUANTIDADE)) return false;
     if (l.step !== undefined && !(STEP_QUANTIDADE_VALUES as readonly unknown[]).includes(l.step)) return false;
+    if (l.recheio !== undefined && !recheioValido(l.recheio)) return false;
     return inteiro(l.quantidade, 1, MAX_QUANTIDADE);
   }
   if (l.tipo === "bolo") {

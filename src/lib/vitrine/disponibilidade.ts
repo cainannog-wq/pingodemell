@@ -1,4 +1,4 @@
-import { bentoDisponivel, boloDisponivel, menorPrecoKg } from "@/lib/recheios/regras";
+import { boloDisponivel, menorPrecoKg } from "@/lib/recheios/regras";
 import type { Recheio } from "@/lib/recheios/types";
 import { semCentoIndisponivel } from "./cento";
 import type { ProdutoVitrine } from "./mais-pedidos";
@@ -13,21 +13,19 @@ export type RecheioVitrine = Pick<Recheio, "id" | "nome" | "vale_bolo" | "vale_b
 // Disponibilidade dos produtos que dependem de outra tabela:
 // - Cento sem sabor ativo: indisponível (regra em cento.ts);
 // - Bolo sem nenhum recheio ativo com vale_bolo: indisponível;
-// - Bento Cake sem nenhum recheio ativo com vale_bento: indisponível.
 // Indisponível é como inativo: some da Home e da Lista, e a interna cai na
-// 404. Os dois lados do catálogo esvaziam de forma independente, e o Smash
-// Cake (avulso) nunca é afetado.
+// 404. O Bento Cake não depende mais do catálogo (a lista é do próprio
+// produto; sem lista, ele é vendido sem escolha de recheio), e o Smash Cake
+// (avulso) nunca é afetado.
 export function semIndisponiveis<T extends ProdutoVitrine>(
   produtos: T[],
   comSabor: Set<string>,
   recheios: RecheioVitrine[]
 ): T[] {
   const temBolo = boloDisponivel(recheios);
-  const temBento = bentoDisponivel(recheios);
   return semCentoIndisponivel(produtos, comSabor).filter((p) => {
     const variacao = variacaoDoProduto(p);
     if (variacao === "bolo") return temBolo;
-    if (variacao === "bento") return temBento;
     return true;
   });
 }

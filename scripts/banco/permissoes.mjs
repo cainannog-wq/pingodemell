@@ -23,6 +23,8 @@ const TABELAS = {
   produtos: ["S", SIUD],
   produto_fotos: ["S", SIUD],
   produto_cento_itens: ["S", SIUD],
+  // Recheios personalizados por produto (supabase/produto-recheios.sql).
+  produto_recheios: ["S", SIUD],
   recheios: ["S", SIUD],
   dias_off: ["S", SIUD],
   segunda_reaberturas: ["S", SIUD],
@@ -38,6 +40,7 @@ const TABELAS = {
 // Funções em public: quem, além do dono e da service_role, executa.
 const FUNCOES = {
   salvar_produto_fotos: { anon: false, authenticated: true },
+  salvar_produto_recheios: { anon: false, authenticated: true },
   // Removida por supabase/pedidos-permissoes.sql; fica aqui enquanto a
   // migração não for aplicada (permissões 3 confere a remoção).
   registrar_tentativa_pedido: { anon: false, authenticated: false },

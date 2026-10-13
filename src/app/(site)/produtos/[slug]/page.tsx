@@ -63,11 +63,12 @@ function descricaoDoProduto(descricao: string | null): string {
 }
 
 // Interna do produto (página 3 do site), pelo slug. Produto inexistente,
-// inativo, Cento sem sabor ativo, Bolo sem recheio de Bolo ativo ou Bento
-// Cake sem recheio de Bento ativo → 404. Quem decide a tela é o tipo do
-// produto (variacaoDoProduto): o Cento monta a combinação de sabores; o
-// Bolo escolhe tamanho, formato e recheio; o Bento Cake escolhe o recheio e
-// a quantidade; o avulso (inclusive o Smash Cake) escolhe a quantidade.
+// inativo, Cento sem sabor ativo ou Bolo sem recheio de Bolo ativo → 404.
+// Quem decide a tela é o tipo do produto (variacaoDoProduto): o Cento monta a
+// combinação de sabores; o Bolo escolhe tamanho, formato e recheio; o Bento
+// Cake com recheios próprios escolhe o recheio e a quantidade (sem recheios
+// próprios, vira avulso); o avulso (inclusive o Smash Cake) escolhe a
+// quantidade e, se o produto tem recheios personalizados, um recheio.
 // Todos gravam no carrinho do navegador ("Adicionar ao pedido") e atualizam
 // o contador do cabeçalho. Cento e Bolo também abrem em modo edição, pelo ícone
 // de editar do carrinho (?editar={id da linha}, ver ConfigEditavel).
@@ -82,7 +83,7 @@ export default async function ProdutoPage({ params }: Props) {
   // não houver nenhuma, mostra o aviso de falha de error.tsx.
   if (interna.estado === "erro") throw new Error("Falha ao carregar o produto.");
 
-  const { produto, sabores, recheios, fotos } = interna;
+  const { produto, sabores, recheios, recheiosProduto, fotos } = interna;
   const relacionados = selecionarRelacionados(maisPedidos, produto.id);
   const variacao = variacaoDoProduto(produto);
   const cento = variacao === "cento";
@@ -162,10 +163,12 @@ export default async function ProdutoPage({ params }: Props) {
             <Suspense fallback={<ConfigEditavel tipo="bolo" produto={produto} recheios={recheios} editarId={null} />}>
               <ConfigEditavelDaUrl tipo="bolo" produto={produto} recheios={recheios} />
             </Suspense>
-          ) : variacao === "bento" ? (
-            <ConfigBento produto={produto} recheios={recheios} />
+          ) : variacao === "bento" && recheiosProduto.length > 0 ? (
+            <ConfigBento produto={produto} recheios={recheiosProduto} />
           ) : (
-            <ConfigAvulso produto={produto} />
+            // Avulso, Smash Cake, Bolo de tipo normal e Bento Cake sem lista de
+            // recheios; com lista (Ganache, Kit Kat...), a escolha é obrigatória.
+            <ConfigAvulso produto={produto} recheios={recheiosProduto} />
           )}
 
           <div className="interna-prazo">

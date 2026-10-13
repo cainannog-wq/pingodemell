@@ -11,8 +11,9 @@ import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
 import { clienteSimulado, novoBanco, type BancoSimulado } from "@/test/banco-simulado";
 
 // Interna do Bolo, do Bento Cake e do Smash Cake com o banco simulado (nada
-// real): recheios do catálogo, preço, avisos, carrinho e disponibilidade
-// independente dos dois lados do catálogo.
+// real): recheios do catálogo (Bolo tradicional), recheios personalizados do
+// próprio produto (Bento Cake e Bolos de tipo normal), preço, avisos, carrinho
+// e disponibilidade.
 
 vi.mock("next/image", () => ({
   default: (props: Record<string, unknown>) => {
@@ -84,6 +85,9 @@ function recheio(parcial: Record<string, unknown>) {
 const BOLO = produto({ nome: "Bolo de Chocolate", slug: "bolo-de-chocolate", Categoria: "Bolos", tipo: "bolo", preco: 45, unidade_venda: "kg", pedido_minimo: 5, destaque: true });
 const SMASH = produto({ nome: "Smash Cake", slug: "smash-cake", Categoria: "Bolos", preco: 70 });
 const BENTO = produto({ nome: "Bento Cake Flork", slug: "bento-flork", Categoria: "Bento Cake", tipo: "bento_cake", preco: 60, pedido_minimo: 2 });
+// Bolo de tipo normal (Ganache, Kit Kat...) com recheios personalizados, e outro sem.
+const GANACHE = produto({ nome: "Bolo Ganache", slug: "bolo-ganache", Categoria: "Bolos", preco: 108, unidade_venda: "o kg" });
+const BANANA = produto({ nome: "Bolo de banana", slug: "bolo-de-banana", Categoria: "Bolos", preco: 35 });
 
 const BRIGADEIRO = recheio({ nome: "Brigadeiro", vale_bolo: true, vale_bento: true, preco_kg: 80, grupo: "chocolate_outros" });
 const MORANGO = recheio({ nome: "Morango", vale_bolo: true, preco_kg: 95, grupo: "frutas" });
@@ -96,8 +100,26 @@ beforeAll(() => {
   HTMLDialogElement.prototype.showModal ??= function () {};
 });
 
-function montar(recheios: Record<string, unknown>[], papel: "anon" | "admin" = "anon") {
-  banco = novoBanco({ produtos: [BOLO, SMASH, BENTO], recheios, produto_fotos: [] }, papel);
+// Lista própria do Bento Cake Flork (ids do catálogo de antes: a cópia da
+// migração reaproveita o id) e do Ganache.
+const RECHEIOS_DO_BENTO = [
+  { produto_id: BENTO.id, id: BRIGADEIRO.id, nome: "Brigadeiro", posicao: 1 },
+  { produto_id: BENTO.id, id: NINHO.id, nome: "Ninho", posicao: 2 },
+];
+const RECHEIOS_DO_GANACHE = [
+  { produto_id: GANACHE.id, id: "gggggggg-0000-4000-8000-000000000002", nome: "Sonho de valsa", posicao: 2 },
+  { produto_id: GANACHE.id, id: "gggggggg-0000-4000-8000-000000000001", nome: "Dois amores", posicao: 1 },
+];
+
+function montar(
+  recheios: Record<string, unknown>[],
+  papel: "anon" | "admin" = "anon",
+  produtoRecheios: Record<string, unknown>[] = [...RECHEIOS_DO_BENTO, ...RECHEIOS_DO_GANACHE]
+) {
+  banco = novoBanco(
+    { produtos: [BOLO, SMASH, BENTO, GANACHE, BANANA], recheios, produto_fotos: [], produto_recheios: produtoRecheios },
+    papel
+  );
 }
 
 beforeEach(() => {
@@ -220,7 +242,7 @@ describe("Interna — Bolo", () => {
 });
 
 describe("Interna — Bento Cake", () => {
-  it("lista simples de recheios (só os de Bento, sem grupo e sem preço) e preço fixo do tema", async () => {
+  it("lista simples de recheios (a lista do próprio produto, sem grupo e sem preço) e preço fixo do tema", async () => {
     await renderInterna("bento-flork");
     expect(precoDoCabecalho()).toBe("R$ 60,00");
     const grupo = document.querySelector(".interna-recheio") as HTMLElement;
@@ -262,6 +284,67 @@ describe("Interna — Bento Cake", () => {
   });
 });
 
+describe("Interna — Bolo de tipo normal com recheios personalizados", () => {
+  it("seletor na ordem do admin, preço fixo do produto e sem preço por recheio", async () => {
+    await renderInterna("bolo-ganache");
+    expect(precoDoCabecalho()).toBe("R$ 108,00 o kg");
+    const grupo = document.querySelector(".interna-recheio") as HTMLElement;
+    const nomes = within(grupo).getAllByRole("radio").map((r) => r.closest("label")?.textContent?.replace(/\s+/g, " "));
+    expect(nomes).toEqual(["Dois amores", "Sonho de valsa"]);
+    expect(grupo.textContent).not.toMatch(/R\$/);
+  });
+
+  it("adicionar fica bloqueado, com aviso, até escolher o recheio; o preço não muda", async () => {
+    await renderInterna("bolo-ganache");
+    expect(botaoAdicionar()).toBeDisabled();
+    expect(within(resumo()).getByText("Escolha o recheio para adicionar.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "Sonho de valsa" }));
+    expect(botaoAdicionar()).toBeEnabled();
+    expect(within(resumo()).getByText("R$ 108,00")).toBeInTheDocument();
+  });
+
+  it("a linha do carrinho guarda o recheio; recheios diferentes são linhas diferentes e o mesmo soma", async () => {
+    await renderInterna("bolo-ganache");
+    fireEvent.click(screen.getByRole("radio", { name: "Dois amores" }));
+    fireEvent.click(botaoAdicionar());
+    expect(salvo()).toMatchObject([{ tipo: "normal", produtoId: GANACHE.id, quantidade: 1, preco: 108, recheio: { id: "gggggggg-0000-4000-8000-000000000001", nome: "Dois amores" } }]);
+    cleanup();
+    await renderInterna("bolo-ganache");
+    fireEvent.click(screen.getByRole("radio", { name: "Dois amores" }));
+    fireEvent.click(botaoAdicionar());
+    expect(salvo()).toHaveLength(1);
+    expect(salvo()[0].quantidade).toBe(2);
+    cleanup();
+    await renderInterna("bolo-ganache");
+    fireEvent.click(screen.getByRole("radio", { name: "Sonho de valsa" }));
+    fireEvent.click(botaoAdicionar());
+    expect(salvo()).toHaveLength(2);
+  });
+
+  it("bolo de tipo normal sem lista de recheios funciona como hoje (avulso, sem seletor)", async () => {
+    await renderInterna("bolo-de-banana");
+    expect(screen.queryByRole("radio")).toBeNull();
+    expect(botaoAdicionar()).toBeEnabled();
+    fireEvent.click(botaoAdicionar());
+    expect(salvo()[0]).toMatchObject({ tipo: "normal", produtoId: BANANA.id });
+    expect(salvo()[0]).not.toHaveProperty("recheio");
+  });
+
+  it("a leitura pública só traz recheios de produto ativo (produto inativo cai na 404)", async () => {
+    banco = novoBanco(
+      { produtos: [{ ...GANACHE, ativo: false }], recheios: [], produto_fotos: [], produto_recheios: RECHEIOS_DO_GANACHE },
+      "anon"
+    );
+    await expect(renderInterna("bolo-ganache")).rejects.toBeInstanceOf(NaoEncontrado);
+  });
+
+  it("falha ao ler os recheios do produto não derruba em silêncio: a página lança erro", async () => {
+    montar([BRIGADEIRO]);
+    banco.falhas.add("produto_recheios");
+    await expect(renderInterna("bolo-ganache")).rejects.toThrow();
+  });
+});
+
 describe("Interna — Smash Cake", () => {
   it("é um produto normal em Bolos: tela do avulso, sem recheio nem tamanho, preço fixo do cadastro", async () => {
     await renderInterna("smash-cake");
@@ -275,11 +358,23 @@ describe("Interna — Smash Cake", () => {
 });
 
 describe("Interna — recheios vazios, um lado de cada vez", () => {
-  it("sem recheio ativo de Bento: o Bento cai na 404 e o Bolo continua", async () => {
+  it("catálogo sem recheio de Bento: não muda nada (o Bento usa a lista do produto)", async () => {
     montar([{ ...BRIGADEIRO, vale_bento: false }, MORANGO, DOCE_DE_LEITE]);
-    await expect(renderInterna("bento-flork")).rejects.toBeInstanceOf(NaoEncontrado);
+    await renderInterna("bento-flork");
+    expect(screen.getAllByRole("radio").map((r) => r.closest("label")?.textContent)).toEqual(["Brigadeiro", "Ninho"]);
+    cleanup();
     await renderInterna("bolo-de-chocolate");
     expect(screen.getByRole("heading", { level: 1, name: "Bolo de Chocolate" })).toBeInTheDocument();
+  });
+
+  it("Bento Cake sem lista de recheios vira avulso: sem seletor de recheio, adiciona como avulso", async () => {
+    montar([BRIGADEIRO, MORANGO, DOCE_DE_LEITE], "anon", []);
+    await renderInterna("bento-flork");
+    expect(screen.queryByRole("radio")).toBeNull();
+    expect(botaoAdicionar()).toBeEnabled();
+    fireEvent.click(botaoAdicionar());
+    expect(salvo()).toMatchObject([{ tipo: "normal", produtoId: BENTO.id, quantidade: 2, preco: 60 }]);
+    expect(salvo()[0]).not.toHaveProperty("recheio");
   });
 
   it("sem recheio ativo de Bolo: o Bolo cai na 404, o Bento continua e o Smash Cake nunca é afetado", async () => {
@@ -292,10 +387,12 @@ describe("Interna — recheios vazios, um lado de cada vez", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Smash Cake" })).toBeInTheDocument();
   });
 
-  it("catálogo todo vazio: Bolo e Bento caem na 404, o Smash abre", async () => {
+  it("catálogo todo vazio: só o Bolo tradicional cai na 404; Bento (lista própria) e Smash abrem", async () => {
     montar([]);
     await expect(renderInterna("bolo-de-chocolate")).rejects.toBeInstanceOf(NaoEncontrado);
-    await expect(renderInterna("bento-flork")).rejects.toBeInstanceOf(NaoEncontrado);
+    await renderInterna("bento-flork");
+    expect(screen.getByRole("heading", { level: 1, name: "Bento Cake Flork" })).toBeInTheDocument();
+    cleanup();
     await renderInterna("smash-cake");
     expect(screen.getByRole("heading", { level: 1, name: "Smash Cake" })).toBeInTheDocument();
   });
@@ -303,6 +400,5 @@ describe("Interna — recheios vazios, um lado de cada vez", () => {
   it("admin logado (que lê recheio inativo): o inativo continua fora das opções e conta como vazio", async () => {
     montar([ANTIGO], "admin");
     await expect(renderInterna("bolo-de-chocolate")).rejects.toBeInstanceOf(NaoEncontrado);
-    await expect(renderInterna("bento-flork")).rejects.toBeInstanceOf(NaoEncontrado);
   });
 });
