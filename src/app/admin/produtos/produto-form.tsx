@@ -15,8 +15,8 @@ import {
   type Produto,
   type TipoProduto,
 } from "@/lib/produtos/types";
-import { variacaoDoProduto } from "@/lib/vitrine/variacao";
-import { aceitaRecheiosPersonalizados, type RecheioDoProduto } from "@/lib/produtos/recheios-produto";
+import { campoVisivel } from "@/lib/produtos/campos";
+import type { RecheioDoProduto } from "@/lib/produtos/recheios-produto";
 import { categoriaCanonica } from "@/lib/produtos/categorias";
 import { descartarEnviosFotos, prepararEnvioFotos, type ProdutoFormState } from "./actions";
 import { Badge, Card, Field, Input, PriceInput, Textarea, Select, Toggle, Button, Icon } from "@/components/ds";
@@ -101,20 +101,23 @@ export function ProdutoForm({
   const [enviandoFotos, setEnviandoFotos] = useState(false);
   const [erroEnvio, setErroEnvio] = useState<string | null>(null);
   const salvando = pending || enviandoFotos;
-  // Quais campos valem depende do tipo (a mesma regra da vitrine e do
-  // servidor): o Bolo não usa preço, quantidade mínima, step nem unidade
+  // Quais campos aparecem sai da tabela de campos (campos.ts), a mesma que o
+  // servidor usa: o Bolo não usa preço, quantidade mínima, step nem unidade
   // (o preço vem do recheio × kg); o Bento Cake tem peso fechado, sem step
-  // (a unidade aparece: "o combo" no combo, "unidade" no simples).
-  const variacao = variacaoDoProduto({ tipo });
-  const bolo = variacao === "bolo";
-  const bento = variacao === "bento";
+  // (a unidade aparece: "o combo" no combo, "unidade" no simples); o Cento
+  // tem os subitens; só Bolos de tipo normal e Bento Cake têm recheios
+  // personalizados. Campo escondido é desmontado, nunca escondido por CSS.
   const categoriaTravada = CATEGORIA_DO_TIPO[tipo] ?? null;
-  // Interruptor de recheios personalizados: só Bolos de tipo normal e Bento
-  // Cake (nunca o Bolo tradicional nem outra categoria).
-  const aceitaRecheios = aceitaRecheiosPersonalizados({
-    Categoria: (categoriaTravada ?? categoria) as Produto["Categoria"],
-    tipo,
-  });
+  const contexto = { categoria: categoriaTravada ?? categoria, tipo };
+  const comPreco = campoVisivel("preco", contexto);
+  const comPedidoMinimo = campoVisivel("pedido_minimo", contexto);
+  const comStep = campoVisivel("step_quantidade", contexto);
+  const comUnidade = campoVisivel("unidade_venda", contexto);
+  const comSubitens = campoVisivel("subitens", contexto);
+  const aceitaRecheios = campoVisivel("recheios", contexto);
+  // Textos que mudam com o tipo (não são campos).
+  const bolo = tipo === "bolo";
+  const bento = tipo === "bento_cake";
 
   // Bolo e Bento Cake só existem em Bolos e Bento Cake (a categoria acompanha
   // o tipo); e a categoria Bento Cake só aceita o tipo Bento Cake.
@@ -313,13 +316,13 @@ export function ProdutoForm({
               </p>
             ) : null}
             <div className="produto-form-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
-              {!bolo && (
+              {comPreco && (
               <Field label="Preço" htmlFor="f-preco" required hint="Digite só números — a formatação em reais é automática.">
                 <PriceInput id="f-preco" name="preco" defaultValue={produto?.preco} required />
               </Field>
               )}
 
-              {!bolo && (
+              {comPedidoMinimo && (
               <Field label="Quantidade mínima" htmlFor="f-min" required hint="Menor quantidade aceita por encomenda, sempre número inteiro, na unidade de venda (em kg: 1 = 1 kg).">
                 <Input
                   id="f-min"
@@ -334,7 +337,7 @@ export function ProdutoForm({
               </Field>
               )}
 
-              {!bolo && !bento && (
+              {comStep && (
               <Field label="Step de quantidade" htmlFor="f-step" required hint="Incremento aceito ao ajustar a quantidade no pedido.">
                 <Select id="f-step" name="step_quantidade" defaultValue={produto?.step_quantidade ?? "livre"} required>
                   {STEP_QUANTIDADE_VALUES.map((step) => (
@@ -364,7 +367,7 @@ export function ProdutoForm({
                 />
               </Field>
             </div>
-            {!bolo && (
+            {comUnidade && (
             <div className="produto-form-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginTop: 24 }}>
               <Field
                 label="Unidade de venda"
@@ -394,7 +397,7 @@ export function ProdutoForm({
             )}
           </FormSection>
 
-          {tipo === "cento" && (
+          {comSubitens && (
             <FormSection title="Subitens (sabores)">
               <Field
                 required

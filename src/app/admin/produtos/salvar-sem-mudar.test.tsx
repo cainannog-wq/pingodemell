@@ -225,8 +225,8 @@ const CASOS: Caso[] = [
     produto: linha({ nome: "Kit Escolar 1", preco: 400, descricao: "Contém 100 brigadeiros de chocolate (8g), 2 kg de bolo com recheio de chocolate (cerca de 20 fatias, papel arroz incluso), 100 salgados fritos, 50 gelatinas (copinho 50ml), 3 sucos de uva 1L, velinha simples", pedido_minimo: 1, Categoria: "Kit Festa", prazo_producao_dias: 4, step_quantidade: "livre", tipo: "normal", unidade_venda: "o kit" }),
   },
   {
-    rotulo: "Kit Festa, o combo (Combo 100 doces personalizados)",
-    produto: linha({ nome: "Combo 100 doces personalizados", preco: 530, descricao: "10 cupcakes com modelagem 2D, 10 pirulitos com modelagem, 20 bombons com modelagem, 20 tarteletes com modelagem, 15 vasinhos com idade, 15 colheres de chocolate, 10 cones recheados com trufa. Combos prontos: não fazemos alterações nos combos personalizados. Você pode mandar sua foto de inspiração, na Pingo de Mell trabalhamos com todos os temas!", pedido_minimo: 1, Categoria: "Kit Festa", prazo_producao_dias: 7, step_quantidade: "livre", tipo: "normal", unidade_venda: "o combo" }),
+    rotulo: "Doces, o combo (Combo 100 doces personalizados)",
+    produto: linha({ nome: "Combo 100 doces personalizados", preco: 530, descricao: "10 cupcakes com modelagem 2D, 10 pirulitos com modelagem, 20 bombons com modelagem, 20 tarteletes com modelagem, 15 vasinhos com idade, 15 colheres de chocolate, 10 cones recheados com trufa. Combos prontos: não fazemos alterações nos combos personalizados. Você pode mandar sua foto de inspiração, na Pingo de Mell trabalhamos com todos os temas!", pedido_minimo: 1, Categoria: "Doces", prazo_producao_dias: 7, step_quantidade: "livre", tipo: "normal", unidade_venda: "o combo" }),
   },
   {
     rotulo: "Kit Festa, caixa (Festa na Caixa)",
@@ -239,6 +239,33 @@ const CASOS: Caso[] = [
   {
     rotulo: "Adicionais, unidade (Adicional 1 kg de bolo com topper)",
     produto: linha({ nome: "Adicional 1 kg de bolo com topper (Kit Escolar Individual)", preco: 93, descricao: "1 kg de bolo com topper para somar ao Kit Escolar Individual. Você pode mandar sua foto de inspiração, na Pingo de Mell trabalhamos com todos os temas!", pedido_minimo: 1, Categoria: "Adicionais", prazo_producao_dias: 1, step_quantidade: "livre", tipo: "normal", unidade_venda: "unidade" }),
+  },
+  // Combinações aceitas pelo sistema que ainda não têm produto real: linhas
+  // de teste, com valores diferentes dos neutros nos campos que a tela mostra
+  // ou esconde.
+  {
+    rotulo: "Bebidas, normal, unidade (sem produto real)",
+    produto: linha({ nome: "Bebida de teste", preco: 8, descricao: "Bebida de teste", pedido_minimo: 6, Categoria: "Bebidas", prazo_producao_dias: 0, step_quantidade: "multiplos_5", tipo: "normal", unidade_venda: "unidade" }),
+  },
+  {
+    rotulo: "Bebidas, Cento, com sabores (sem produto real)",
+    produto: linha({ nome: "Cento de bebidas de teste", preco: 300, descricao: "Cento de teste", pedido_minimo: 2, Categoria: "Bebidas", prazo_producao_dias: 2, step_quantidade: "multiplos_10", tipo: "cento", unidade_venda: "o cento" }),
+    sabores: ["Sabor A", "Sabor B"],
+  },
+  {
+    rotulo: "Kit Festa, Cento, com sabores (sem produto real)",
+    produto: linha({ nome: "Cento de kit de teste", preco: 250, descricao: "Cento de teste", pedido_minimo: 1, Categoria: "Kit Festa", prazo_producao_dias: 3, step_quantidade: "livre", tipo: "cento", unidade_venda: "o cento" }),
+    sabores: ["Sabor A", "Sabor B"],
+  },
+  {
+    rotulo: "Adicionais, Cento, com sabores (sem produto real)",
+    produto: linha({ nome: "Cento de adicional de teste", preco: 120, descricao: "Cento de teste", pedido_minimo: 1, Categoria: "Adicionais", prazo_producao_dias: 1, step_quantidade: "multiplos_5", tipo: "cento", unidade_venda: "o cento" }),
+    sabores: ["Sabor A"],
+  },
+  {
+    rotulo: "Bolos, Cento, com sabores (sem produto real)",
+    produto: linha({ nome: "Cento em Bolos de teste", preco: 200, descricao: "Cento de teste", pedido_minimo: 3, Categoria: "Bolos", prazo_producao_dias: 2, step_quantidade: "multiplos_10", tipo: "cento", unidade_venda: "o cento" }),
+    sabores: ["Sabor A", "Sabor B"],
   },
 ];
 
@@ -294,6 +321,11 @@ describe("Salvar sem mudar nada não altera o produto", () => {
       "Salgados|cento|o cento",
       "Kit Festa|normal|o kit",
       "Adicionais|normal|unidade",
+      "Bebidas|normal|unidade",
+      "Bebidas|cento|o cento",
+      "Kit Festa|cento|o cento",
+      "Adicionais|cento|o cento",
+      "Bolos|cento|o cento",
     ]) {
       expect(combinacoes, esperada).toContain(esperada);
     }

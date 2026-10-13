@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/supabase/dal";
 import { parseProdutoForm } from "@/lib/produtos/parse";
+import { montarInsert, montarUpdate } from "@/lib/produtos/montar";
 import {
   MENSAGEM_LIMITE_SERVIDOR,
   ehExtensaoFoto,
@@ -159,20 +160,7 @@ export async function createProduto(
     await descartar();
     return { error: parsed.error };
   }
-  const {
-    nome,
-    preco,
-    descricao,
-    pedido_minimo,
-    categoria,
-    unidade_venda,
-    prazo_producao_dias,
-    step_quantidade,
-    destaque,
-    ativo,
-    tipo,
-    subitens,
-  } = parsed.data;
+  const { nome, categoria, tipo, subitens } = parsed.data;
 
   const recheios = lerRecheiosDoEnvio(formData, { categoria, tipo });
   if (!recheios.ok) {
@@ -211,19 +199,11 @@ export async function createProduto(
     return { error: erroArquivos };
   }
 
+  // Campo que a tela não mostra para este tipo entra com o valor neutro da
+  // tabela de campos (src/lib/produtos/campos.ts).
   const { error } = await supabase.from("produtos").insert({
     id: produtoId,
-    nome,
-    preco,
-    descricao,
-    pedido_minimo,
-    Categoria: categoria,
-    unidade_venda,
-    prazo_producao_dias,
-    step_quantidade,
-    destaque,
-    ativo,
-    tipo,
+    ...montarInsert(parsed.data),
     image_url: capa ? urlDaCapa(produtoId, capa) : null,
   });
 
@@ -302,21 +282,7 @@ export async function updateProduto(
     await descartar();
     return { error: parsed.error };
   }
-  const {
-    nome,
-    preco,
-    descricao,
-    pedido_minimo,
-    categoria,
-    unidade_venda,
-    prazo_producao_dias,
-    step_quantidade,
-    destaque,
-    ativo,
-    tipo,
-    naoGravarNaEdicao,
-    subitens,
-  } = parsed.data;
+  const { nome, categoria, tipo, subitens } = parsed.data;
 
   const recheios = lerRecheiosDoEnvio(formData, { categoria, tipo });
   if (!recheios.ok) {
@@ -365,24 +331,12 @@ export async function updateProduto(
     return { error: erroArquivos };
   }
 
-  const update: Record<string, unknown> = {
-    nome,
-    preco,
-    descricao,
-    pedido_minimo,
-    Categoria: categoria,
-    unidade_venda,
-    prazo_producao_dias,
-    step_quantidade,
-    destaque,
-    ativo,
-    tipo,
-  };
   // Campo que o formulário não mostra para este tipo não é gravado: o que
   // já estava no banco fica como está (Bolo: preço, pedido mínimo, step e
   // unidade; Bento Cake: step). Antes, salvar um Bento Cake apagava a
-  // unidade e voltava o step para livre.
-  for (const coluna of naoGravarNaEdicao) delete update[coluna];
+  // unidade e voltava o step para livre. Quem decide é a tabela de campos
+  // (src/lib/produtos/campos.ts).
+  const update = montarUpdate(parsed.data);
   if (capa) update.image_url = urlDaCapa(produtoId, capa);
 
   const { error } = await supabase
