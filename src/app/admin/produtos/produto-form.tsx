@@ -16,6 +16,7 @@ import {
   type TipoProduto,
 } from "@/lib/produtos/types";
 import { variacaoDoProduto } from "@/lib/vitrine/variacao";
+import { categoriaCanonica } from "@/lib/produtos/categorias";
 import { descartarEnviosFotos, prepararEnvioFotos, type ProdutoFormState } from "./actions";
 import { Badge, Card, Field, Input, PriceInput, Textarea, Select, Toggle, Button, Icon } from "@/components/ds";
 import { SubitensPicker, type SubitemCandidato } from "./subitens-picker";
@@ -79,7 +80,7 @@ export function ProdutoForm({
   const [preparandoCapa, setPreparandoCapa] = useState(false);
   const [erroCapa, setErroCapa] = useState<string | null>(null);
   const [tipo, setTipo] = useState<TipoProduto>(produto?.tipo ?? "normal");
-  const [categoria, setCategoria] = useState<string>(produto?.Categoria ?? "");
+  const [categoria, setCategoria] = useState<string>(categoriaCanonica(produto?.Categoria) ?? "");
   const [nome, setNome] = useState(produto?.nome ?? "");
   const [fotos, setFotos] = useState<FotoNaTela[]>(() =>
     fotosIniciais.map((foto) => ({ chave: foto.id, tipo: "existente", id: foto.id, url: foto.url }))

@@ -151,7 +151,7 @@ await emTransacaoDesfeita("Recheios — RLS, restrições e enums novos", async 
     }
     registrar(
       "enums 1. categoria_produto ganhou Bento Cake (6 valores; 7 depois de Adicionais, categoria-adicionais.sql) e produto_tipo ganhou bolo e bento_cake (4 valores)",
-      (categorias.length === 6 || (categorias.length === 7 && categorias[6] === "Adicionais")) && tipos.length === 4 && ["Bolos", "Doces", "Salgados", "Bebidas", "Kits"].every((v) => categorias.includes(v)) && ["normal", "cento"].every((v) => tipos.includes(v)),
+      (categorias.length === 6 || (categorias.length === 7 && categorias[6] === "Adicionais")) && tipos.length === 4 && ["Bolos", "Doces", "Salgados", "Bebidas"].every((v) => categorias.includes(v)) && (categorias.includes("Kits") || categorias.includes("Kit Festa")) && ["normal", "cento"].every((v) => tipos.includes(v)),
       `categoria: ${categorias.join(", ")}; tipo: ${tipos.join(", ")}`
     );
     const nova = await c.tentar(

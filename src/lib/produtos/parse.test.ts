@@ -81,7 +81,7 @@ describe("parseProdutoForm", () => {
   });
 
   it("aceita as categorias de produto normal, incluindo Kits e Adicionais", () => {
-    for (const categoria of ["Bolos", "Doces", "Salgados", "Bebidas", "Kits", "Adicionais"]) {
+    for (const categoria of ["Bolos", "Doces", "Salgados", "Bebidas", "Kit Festa", "Adicionais"]) {
       const result = parseProdutoForm(buildFormData({ ...CAMPOS_VALIDOS, categoria }));
       expect(result.success).toBe(true);
       if (result.success) {

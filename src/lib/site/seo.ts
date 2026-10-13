@@ -41,10 +41,10 @@ export const SEO_CATEGORIAS: Record<CategoriaProduto, TextoSeo> = {
     descricao:
       "Bebidas para acompanhar o seu pedido na Pingo de Mell, em Fazenda Rio Grande e Curitiba. Finalize pelo WhatsApp.",
   },
-  Kits: {
-    titulo: "Kits de festa em Fazenda Rio Grande e Curitiba | Pingo de Mell",
+  "Kit Festa": {
+    titulo: "Kit Festa em Fazenda Rio Grande e Curitiba | Pingo de Mell",
     descricao:
-      "Kits de festa com doces e salgados artesanais em Fazenda Rio Grande e Curitiba. Monte seu pedido no site e finalize pelo WhatsApp.",
+      "Kit Festa para aniversário, escola e casamento, com doces e salgados artesanais em Fazenda Rio Grande e Curitiba. Peça pelo WhatsApp.",
   },
   "Bento Cake": {
     titulo: "Bento Cake em Fazenda Rio Grande e Curitiba | Pingo de Mell",

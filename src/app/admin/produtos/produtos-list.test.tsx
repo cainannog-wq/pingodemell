@@ -144,7 +144,7 @@ describe("Lista do admin: mínimo na unidade de venda, sem \"un.\"", () => {
     render(
       <ProdutosList
         produtos={[
-          { ...PRODUTO, id: "a1", nome: "Kit Escolar Individual", Categoria: "Kits", unidade_venda: "o kit", pedido_minimo: 10 },
+          { ...PRODUTO, id: "a1", nome: "Kit Escolar Individual", Categoria: "Kit Festa", unidade_venda: "o kit", pedido_minimo: 10 },
           { ...PRODUTO, id: "a2", nome: "Bento Cake com 6 doces", Categoria: "Bento Cake", tipo: "bento_cake", unidade_venda: "o combo" },
           { ...PRODUTO, id: "a3", nome: "Bento Cake Flork", Categoria: "Bento Cake", tipo: "bento_cake", unidade_venda: null },
           { ...PRODUTO, id: "a4", nome: "Sem unidade", unidade_venda: null, pedido_minimo: 3 },

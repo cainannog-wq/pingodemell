@@ -92,7 +92,7 @@ describe("Formulário de produto — categoria obrigatória", () => {
     const opcoes = Array.from(categoria().options)
       .filter((o) => !o.disabled)
       .map((o) => o.value);
-    expect(opcoes).toEqual(["Bolos", "Bento Cake", "Doces", "Salgados", "Bebidas", "Kits", "Adicionais"]);
+    expect(opcoes).toEqual(["Bolos", "Bento Cake", "Doces", "Salgados", "Bebidas", "Kit Festa", "Adicionais"]);
   });
 
   it("escolhendo Adicionais o campo fica válido e vai no envio", () => {
@@ -112,14 +112,35 @@ describe("Formulário de produto — categoria obrigatória", () => {
 
   it("escolhendo Kits o campo fica válido", () => {
     render(<ProdutoForm action={acao} produtoId={PRODUTO} submitLabel="Salvar produto" />);
-    fireEvent.change(categoria(), { target: { value: "Kits" } });
-    expect(categoria().value).toBe("Kits");
+    fireEvent.change(categoria(), { target: { value: "Kit Festa" } });
+    expect(categoria().value).toBe("Kit Festa");
     expect(categoria().validity.valid).toBe(true);
   });
 
   it("edição: abre com a categoria salva", () => {
     render(<ProdutoForm action={acao} produto={PRODUTO_SALVO} produtoId={PRODUTO} submitLabel="Salvar alterações" />);
     expect(categoria().value).toBe("Doces");
+  });
+
+  // Kits virou Kit Festa. Antes do RENAME do enum o banco ainda devolve
+  // "Kits"; o formulário mostra "Kit Festa" (Salvar, nesse intervalo, é
+  // recusado pelo banco como valor inválido do enum, sem gravar nada).
+  it("edição de um kit que o banco ainda chama de Kits: abre em Kit Festa", () => {
+    const { container } = render(
+      <ProdutoForm action={acao} produto={{ ...(PRODUTO_SALVO as object), Categoria: "Kits" } as never} produtoId={PRODUTO} submitLabel="Salvar alterações" />
+    );
+    expect(categoria().value).toBe("Kit Festa");
+    expect(new FormData(container.querySelector("form")!).get("categoria")).toBe("Kit Festa");
+  });
+
+  it("edição com categoria que a lista não conhece: o select fica vazio e trava o Salvar, nunca troca sozinho", () => {
+    const { container } = render(
+      <ProdutoForm action={acao} produto={{ ...(PRODUTO_SALVO as object), Categoria: "Categoria Nova" } as never} produtoId={PRODUTO} submitLabel="Salvar alterações" />
+    );
+    expect(categoria().value).toBe("");
+    expect(categoria().validity.valueMissing).toBe(true);
+    expect(categoria().form!.checkValidity()).toBe(false);
+    expect(new FormData(container.querySelector("form")!).get("categoria")).toBe("");
   });
 });
 

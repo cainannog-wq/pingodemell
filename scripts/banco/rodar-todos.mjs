@@ -26,6 +26,7 @@ const TESTES_DE_BANCO = [
   "gravacao-pedidos.mjs",
   "slug.mjs",
   "unidade-venda-kits.mjs",
+  "kit-festa-migracao.mjs",
   "categoria.mjs",
   "exclusao-dados.mjs",
 ];

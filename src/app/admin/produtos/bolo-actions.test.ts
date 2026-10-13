@@ -157,7 +157,7 @@ describe("updateProduto — Bolo preserva o que já está no banco", () => {
   // escondidos.
   const COMUNS = ["nome", "descricao", "Categoria", "prazo_producao_dias", "destaque", "ativo", "tipo"];
   const casos: { nome: string; campos: Record<string, string>; grava: string[] }[] = [
-    ...["Bolos", "Doces", "Salgados", "Bebidas", "Kits", "Adicionais"].map((categoria) => ({
+    ...["Bolos", "Doces", "Salgados", "Bebidas", "Kit Festa", "Adicionais"].map((categoria) => ({
       nome: `normal em ${categoria}`,
       campos: { preco: "10,00", pedido_minimo: "10", step_quantidade: "multiplos_5", unidade_venda: "o kit", categoria, tipo: "normal" },
       grava: [...COMUNS, "preco", "pedido_minimo", "step_quantidade", "unidade_venda"],

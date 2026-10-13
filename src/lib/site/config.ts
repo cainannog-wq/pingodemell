@@ -46,7 +46,7 @@ export const WHATSAPP = {
 } as const;
 
 // Tiles de "O que você vai encontrar". A ordem aqui é a ordem na tela.
-// `imagem: null` mostra o fundo da marca, sem foto (caso de Bento Cake e Kits até
+// `imagem: null` mostra o fundo da marca, sem foto (caso de Bento Cake e Kit Festa até
 // existir foto própria — basta preencher `imagem` e `alt` aqui).
 export type TileCategoria = {
   categoria: CategoriaProduto;
@@ -60,5 +60,5 @@ export const TILES_CATEGORIA: TileCategoria[] = [
   { categoria: "Doces", rotulo: "Doces", imagem: "/fotos/cat-doces-tradicionais.jpeg", alt: "Caixa de brigadeiros, beijinhos e casadinhos" },
   { categoria: "Salgados", rotulo: "Salgados", imagem: "/fotos/cat-salgados.jpeg", alt: "Bandeja de empadas e mini pizzas" },
   { categoria: "Bento Cake", rotulo: "Bento Cake", imagem: "/fotos/cat-bento-cake.webp", alt: "Bento Cake" },
-  { categoria: "Kits", rotulo: "Kits", imagem: "/fotos/cat-kits.webp", alt: "Kits" },
+  { categoria: "Kit Festa", rotulo: "Kit Festa", imagem: "/fotos/cat-kits.webp", alt: "Kit Festa" },
 ];

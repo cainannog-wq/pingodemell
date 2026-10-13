@@ -235,6 +235,18 @@ export async function cenario(db, corpo) {
   }
 }
 
+// Nome da categoria dos kits no enum agora: 'Kits' (antes do RENAME de
+// supabase/categoria-kit-festa.sql) ou 'Kit Festa' (depois). Lê o catálogo
+// (pg_enum), que não sofre o 55P04 de valor de enum criado na transação.
+export async function nomeDaCategoriaKit(db) {
+  const { rows } = await db.query(
+    `select e.enumlabel from pg_enum e join pg_type t on t.oid = e.enumtypid
+     where t.typname = 'categoria_produto' and e.enumlabel in ('Kits', 'Kit Festa')`
+  );
+  if (rows.length !== 1) throw new Error(`categoria_produto deve ter 'Kits' ou 'Kit Festa', e só um: ${rows.map((r) => r.enumlabel).join(", ") || "nenhum"}`);
+  return rows[0].enumlabel;
+}
+
 // Formata o resultado de tentar() para o log.
 export function descrever(r) {
   if (r.ok) return `aceito (${r.rowCount} linha(s))`;

@@ -22,7 +22,9 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-vi.mock("next/navigation", () => ({
+// permanentRedirect é o de verdade (lança o erro de 308 que o Next entende).
+vi.mock("next/navigation", async (importarOriginal) => ({
+  ...(await importarOriginal<typeof import("next/navigation")>()),
   useRouter: () => ({ push: vi.fn() }),
 }));
 
@@ -86,7 +88,7 @@ const CATALOGO = [
   produto({ nome: "Coca-cola 2L", Categoria: "Bebidas", preco: 11, destaque: true }),
   produto({ nome: "Morango Banhado", Categoria: "Doces", preco: 2.5 }),
   produto({ nome: "Empada", Categoria: "Salgados", preco: 4.5 }),
-  produto({ nome: "Kit Aniversário", Categoria: "Kits", preco: 180 }),
+  produto({ nome: "Kit Aniversário", Categoria: "Kit Festa", preco: 180 }),
   produto({ nome: "Kit Festa", Categoria: null, preco: 150 }),
   produto({ nome: "Torta Inativa", Categoria: "Doces", ativo: false }),
 ];
@@ -139,10 +141,10 @@ describe("Página Lista — estrutura", () => {
     expect(cardsNaOrdem()).toEqual(["Beijinho", "Morango Banhado"]);
   });
 
-  it("?categoria=kits: só os produtos da categoria Kits, filtro Kits marcado", async () => {
-    await renderLista("kits");
-    expect(screen.getByRole("heading", { level: 2, name: "Kits" })).toHaveClass("site-visually-hidden");
-    expect(filtroAtual()).toHaveAttribute("href", "/produtos?categoria=kits");
+  it("?categoria=kit-festa: só os produtos da categoria Kits, filtro Kits marcado", async () => {
+    await renderLista("kit-festa");
+    expect(screen.getByRole("heading", { level: 2, name: "Kit Festa" })).toHaveClass("site-visually-hidden");
+    expect(filtroAtual()).toHaveAttribute("href", "/produtos?categoria=kit-festa");
     expect(cardsNaOrdem()).toEqual(["Kit Aniversário"]);
   });
 
@@ -160,7 +162,7 @@ describe("Página Lista — estrutura", () => {
       "/produtos?categoria=bolos",
       "/produtos?categoria=doces",
       "/produtos?categoria=salgados",
-      "/produtos?categoria=kits",
+      "/produtos?categoria=kit-festa",
       "/produtos?categoria=bento-cake",
     ]);
     expect(links.filter((a) => a.getAttribute("aria-current") === "page")).toHaveLength(1);
@@ -319,8 +321,8 @@ describe("Página Lista — metadados (PR fase4/seo-metadados)", () => {
   });
 
   it("categoria válida sem produto ativo e disponível: os da Lista, canonical /produtos", async () => {
-    doBanco = CATALOGO.filter((p) => p.Categoria !== "Kits");
-    const m = await metadadosDa("kits");
+    doBanco = CATALOGO.filter((p) => p.Categoria !== "Kit Festa");
+    const m = await metadadosDa("kit-festa");
     expect(m.title).toBe("Produtos · Pingo de Mell");
     expect(m.alternates?.canonical).toBe(`${BASE}/produtos`);
   });
@@ -332,8 +334,8 @@ describe("Página Lista — metadados (PR fase4/seo-metadados)", () => {
   });
 
   it("produto inativo não conta como produto da categoria", async () => {
-    doBanco = [produto({ nome: "Inativo", Categoria: "Kits", ativo: false })];
-    expect((await metadadosDa("kits")).alternates?.canonical).toBe(`${BASE}/produtos`);
+    doBanco = [produto({ nome: "Inativo", Categoria: "Kit Festa", ativo: false })];
+    expect((await metadadosDa("kit-festa")).alternates?.canonical).toBe(`${BASE}/produtos`);
   });
 
   it("valor inválido ou ausente: os da Lista, canonical /produtos", async () => {
@@ -471,7 +473,7 @@ describe("Página Lista — ordem", () => {
   });
 
   it("Mais pedidos some numa categoria específica", async () => {
-    for (const categoria of ["bolos", "doces", "salgados", "kits"]) {
+    for (const categoria of ["bolos", "doces", "salgados", "kit-festa"]) {
       cleanup();
       await renderLista(categoria);
       expect(opcoesOrdem(), categoria).toEqual(["Recomendados", "Nome A a Z", "Nome Z a A"]);
@@ -517,7 +519,7 @@ describe("Página Lista — trocar categoria mantém busca e ordem e volta à p�
       "/produtos?categoria=bolos&busca=doce&ordem=z-a",
       "/produtos?categoria=doces&busca=doce&ordem=z-a",
       "/produtos?categoria=salgados&busca=doce&ordem=z-a",
-      "/produtos?categoria=kits&busca=doce&ordem=z-a",
+      "/produtos?categoria=kit-festa&busca=doce&ordem=z-a",
       "/produtos?categoria=bento-cake&busca=doce&ordem=z-a",
     ]);
   });
@@ -580,5 +582,61 @@ describe("Página Lista — paginação", () => {
   it("uma página só: sem paginação", async () => {
     await renderLista();
     expect(paginacao()).toBeNull();
+  });
+});
+
+describe("Página Lista — Kit Festa", () => {
+  const QUARENTA_E_QUATRO = (categoria: ProdutoVitrine["Categoria"]) => [
+    ...Array.from({ length: 44 }, (_, i) => produto({ nome: `Kit ${String(i + 1).padStart(2, "0")}`, Categoria: categoria })),
+    ...Array.from({ length: 2 }, (_, i) => produto({ nome: `Kit inativo ${i}`, Categoria: categoria, ativo: false })),
+  ];
+
+  it.each([
+    ["Kit Festa", "Kit Festa" as ProdutoVitrine["Categoria"]],
+    ["Kits (antes do RENAME)", "Kits" as unknown as ProdutoVitrine["Categoria"]],
+  ])("com os produtos em %s: filtro e Todos mostram os 44 ativos, sem os inativos", async (_nome, categoria) => {
+    doBanco = QUARENTA_E_QUATRO(categoria);
+    for (const query of [{ categoria: "kit-festa" }, {}] as Record<string, string>[]) {
+      cleanup();
+      await renderLista(query);
+      expect(cardsNaOrdem()).toHaveLength(24);
+      cleanup();
+      await renderLista({ ...query, pagina: "2" });
+      expect(cardsNaOrdem()).toHaveLength(20);
+      expect(screen.queryByText("Kit inativo 0")).not.toBeInTheDocument();
+    }
+  });
+
+  it("o filtro Kit Festa fica marcado com ?categoria=kit-festa", async () => {
+    doBanco = QUARENTA_E_QUATRO("Kit Festa" as ProdutoVitrine["Categoria"]);
+    await renderLista("kit-festa");
+    expect(filtroAtual()).toHaveAttribute("href", "/produtos?categoria=kit-festa");
+    expect(filtroAtual()).toHaveTextContent("Kit Festa");
+  });
+
+  // O Next entende este erro como redirecionamento 308 (permanentRedirect).
+  async function redirecionaPara(query: Record<string, string>) {
+    try {
+      await renderLista(query);
+    } catch (erro) {
+      return String((erro as { digest?: string }).digest);
+    }
+    return null;
+  }
+
+  it("?categoria=kits redireciona 308 para ?categoria=kit-festa", async () => {
+    expect(await redirecionaPara({ categoria: "kits" })).toBe("NEXT_REDIRECT;replace;/produtos?categoria=kit-festa;308;");
+  });
+
+  it("o redirecionamento preserva busca, ordem e página", async () => {
+    expect(await redirecionaPara({ categoria: "KITS", busca: "festa", ordem: "z-a", pagina: "2" })).toBe(
+      "NEXT_REDIRECT;replace;/produtos?categoria=kit-festa&busca=festa&ordem=z-a&pagina=2;308;"
+    );
+  });
+
+  it("?categoria=kit-festa e valores inválidos não redirecionam", async () => {
+    expect(await redirecionaPara({ categoria: "kit-festa" })).toBeNull();
+    cleanup();
+    expect(await redirecionaPara({ categoria: "kits-festa" })).toBeNull();
   });
 });

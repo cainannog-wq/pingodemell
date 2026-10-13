@@ -33,13 +33,13 @@ describe("Home — bloco de categorias", () => {
     render(<Categorias />);
     const links = quadrados();
     expect(links).toHaveLength(5);
-    expect(links.map((a) => a.querySelector(".home-cat-label")?.textContent)).toEqual(["Bolos", "Doces", "Salgados", "Bento Cake", "Kits"]);
+    expect(links.map((a) => a.querySelector(".home-cat-label")?.textContent)).toEqual(["Bolos", "Doces", "Salgados", "Bento Cake", "Kit Festa"]);
     expect(links.map((a) => a.getAttribute("href"))).toEqual([
       "/produtos?categoria=bolos",
       "/produtos?categoria=doces",
       "/produtos?categoria=salgados",
       "/produtos?categoria=bento-cake",
-      "/produtos?categoria=kits",
+      "/produtos?categoria=kit-festa",
     ]);
   });
 
@@ -49,7 +49,7 @@ describe("Home — bloco de categorias", () => {
     expect(within(bento).getByRole("img")).toHaveAttribute("src", "/fotos/cat-bento-cake.webp");
     expect(within(bento).getByRole("img")).toHaveAttribute("alt", "Bento Cake");
     expect(within(kits).getByRole("img")).toHaveAttribute("src", "/fotos/cat-kits.webp");
-    expect(within(kits).getByRole("img")).toHaveAttribute("alt", "Kits");
+    expect(within(kits).getByRole("img")).toHaveAttribute("alt", "Kit Festa");
   });
 
   // Layout em si depende de medida, que o jsdom não calcula: garante o CSS.

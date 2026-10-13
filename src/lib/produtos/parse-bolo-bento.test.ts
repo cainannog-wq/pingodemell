@@ -47,7 +47,7 @@ describe("parseProdutoForm — Bolo e Bento Cake", () => {
     };
     expect(naoGrava({ categoria: "Bolos", tipo: "bolo" })).toEqual(["preco", "pedido_minimo", "step_quantidade", "unidade_venda"]);
     expect(naoGrava({ categoria: "Bento Cake", tipo: "bento_cake" })).toEqual(["step_quantidade"]);
-    expect(naoGrava({ categoria: "Kits", tipo: "normal" })).toEqual([]);
+    expect(naoGrava({ categoria: "Kit Festa", tipo: "normal" })).toEqual([]);
     expect(naoGrava({ categoria: "Salgados", tipo: "cento", subitem_nome: "Coxinha" })).toEqual([]);
   });
 

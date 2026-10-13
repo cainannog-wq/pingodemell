@@ -28,15 +28,15 @@ describe("sitemap (PR fase4/seo-metadados)", () => {
 
   it("categoria sem produto (Kits) fica fora", () => {
     const xml = montarSitemap([p("beijinho", "Doces")]);
-    expect(xml).not.toContain("categoria=kits");
+    expect(xml).not.toContain("categoria=kit-festa");
     expect(locs(xml).filter((l) => l.includes("categoria="))).toEqual([`${BASE}/produtos?categoria=doces`]);
   });
 
   it("Adicionais e Bebidas: a categoria fica fora mesmo com produto (não têm filtro na Lista); o produto entra pelo slug", () => {
-    const xml = montarSitemap([p("vela-5", "Adicionais"), p("coca", "Bebidas"), p("beijinho", "Doces"), p("kit", "Kits")]);
+    const xml = montarSitemap([p("vela-5", "Adicionais"), p("coca", "Bebidas"), p("beijinho", "Doces"), p("kit", "Kit Festa")]);
     expect(locs(xml).filter((l) => l.includes("categoria="))).toEqual([
       `${BASE}/produtos?categoria=doces`,
-      `${BASE}/produtos?categoria=kits`,
+      `${BASE}/produtos?categoria=kit-festa`,
     ]);
     expect(locs(xml)).toContain(`${BASE}/produtos/coca`);
     expect(locs(xml)).toContain(`${BASE}/produtos/vela-5`);

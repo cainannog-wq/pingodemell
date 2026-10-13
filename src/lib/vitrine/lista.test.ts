@@ -51,8 +51,8 @@ const CATALOGO: ProdutoVitrine[] = [
   produto({ nome: "Kit Sem Categoria", Categoria: null }),
   produto({ nome: "Bento Flork", Categoria: "Bento Cake", tipo: "bento_cake", destaque: true }),
   produto({ nome: "Bento Amor", Categoria: "Bento Cake", tipo: "bento_cake" }),
-  produto({ nome: "Kit Festa", Categoria: "Kits" }),
-  produto({ nome: "Kit Básico", Categoria: "Kits", destaque: true }),
+  produto({ nome: "Kit Festa", Categoria: "Kit Festa" }),
+  produto({ nome: "Kit Básico", Categoria: "Kit Festa", destaque: true }),
   produto({ nome: "Risole de carne", Categoria: "Salgados" }),
   produto({ nome: "Morango Banhado", Categoria: "Doces" }),
   produto({ nome: "Pão de Mel", Categoria: "Doces" }),
@@ -353,9 +353,9 @@ describe("Lista — parâmetros da URL", () => {
     expect(categoriaDoParametro("bolos")).toBe("Bolos");
     expect(categoriaDoParametro("doces")).toBe("Doces");
     expect(categoriaDoParametro("salgados")).toBe("Salgados");
-    expect(categoriaDoParametro("kits")).toBe("Kits");
+    expect(categoriaDoParametro("kit-festa")).toBe("Kit Festa");
     expect(categoriaDoParametro("bento-cake")).toBe("Bento Cake");
-    expect(categoriaDoParametro("KITS")).toBe("Kits");
+    expect(categoriaDoParametro("KIT-FESTA")).toBe("Kit Festa");
   });
 
   it("categoria inexistente, vazia, ausente, adicionais ou bebidas: 'Todos' (null), sem erro", () => {
@@ -387,7 +387,7 @@ describe("Lista — parâmetros da URL", () => {
   });
 
   it("o endereço montado volta ao mesmo estado quando lido", () => {
-    const estado = { categoria: "Kits", busca: "festa básica", ordem: "a-z", pagina: 2 } as const;
+    const estado = { categoria: "Kit Festa", busca: "festa básica", ordem: "a-z", pagina: 2 } as const;
     const query = Object.fromEntries(new URLSearchParams(urlDaLista(estado).split("?")[1]));
     expect(lerParametrosDaLista(query)).toEqual(estado);
   });

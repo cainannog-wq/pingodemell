@@ -90,7 +90,7 @@ describe("/sitemap.xml", () => {
     expect(xml).not.toContain("cento-vazio");
     expect(xml).not.toContain("categoria=salgados");
     expect(xml).not.toContain("categoria=bebidas");
-    expect(xml).not.toContain("categoria=kits");
+    expect(xml).not.toContain("categoria=kit-festa");
     // O filtro de ativo vai na consulta.
     expect(banco.consultas).toContain("produtos.ativo=true");
   });

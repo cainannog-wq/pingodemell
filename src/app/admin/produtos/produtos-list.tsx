@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import type { CategoriaProduto, Produto } from "@/lib/produtos/types";
+import { categoriaCanonica } from "@/lib/produtos/categorias";
 import { CATEGORIA_VALUES } from "@/lib/produtos/types";
 import { Card, Icon, Input, Button, Badge, Toggle } from "@/components/ds";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
@@ -115,6 +116,11 @@ const thStyle: React.CSSProperties = {
 type ChipValue = "Todos" | CategoriaProduto | "Sem categoria" | "Inativos";
 const CHIPS: ChipValue[] = ["Todos", ...CATEGORIA_VALUES, "Sem categoria", "Inativos"];
 
+// "Kits" (nome antigo) aparece como "Kit Festa"; valor desconhecido aparece como veio.
+function nomeDaCategoria(categoria: string | null): string | null {
+  return categoriaCanonica(categoria) ?? categoria;
+}
+
 export function ProdutosList({ produtos }: { produtos: Produto[] }) {
   const [search, setSearch] = useState("");
   const [chip, setChip] = useState<ChipValue>("Todos");
@@ -195,7 +201,7 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
       let matchChip = true;
       if (chip === "Inativos") matchChip = !ativoAtual;
       else if (chip === "Sem categoria") matchChip = !produto.Categoria;
-      else if (chip !== "Todos") matchChip = produto.Categoria === chip;
+      else if (chip !== "Todos") matchChip = categoriaCanonica(produto.Categoria) === chip;
       if (!matchChip) return false;
 
       if (!term) return true;
@@ -340,7 +346,7 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
                     </td>
                     <td className="admin-table-title" style={{ padding: "16px 24px", fontWeight: 600 }}>{produto.nome}</td>
                     <td data-label="Categoria" style={{ padding: "16px 24px", color: "var(--pdm-muted)" }}>
-                      {produto.Categoria ?? "—"}
+                      {nomeDaCategoria(produto.Categoria) ?? "—"}
                     </td>
                     <td data-label="Preço" style={{ padding: "16px 24px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                       {textoPreco(produto)}
@@ -442,7 +448,7 @@ export function ProdutosList({ produtos }: { produtos: Produto[] }) {
 
                       <div style={{ marginTop: 4, fontSize: 13 }}>
                         {produto.Categoria ? (
-                          <span style={{ color: "var(--pdm-muted)" }}>{produto.Categoria}</span>
+                          <span style={{ color: "var(--pdm-muted)" }}>{nomeDaCategoria(produto.Categoria)}</span>
                         ) : (
                           <span style={{ color: "var(--pdm-brown-deep)" }}>Sem categoria</span>
                         )}
