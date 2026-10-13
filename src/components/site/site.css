@@ -1296,6 +1296,45 @@ body:has(.pdm-site) {
   color: var(--ink-900);
 }
 
+/* Filtro por subcategoria: chips acima da grade (mesmo desenho dos chips de
+   categoria do celular). No celular a linha rola na horizontal e o chip não
+   quebra (o nome pode ter até 80 caracteres); o chip atual leva sublinhado e
+   peso, não só a cor. Alvo de toque de pelo menos 44px. */
+.lista-subfiltro-opcoes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pdm-site .lista-subfiltro-link {
+  display: flex;
+  align-items: center;
+  min-height: max(44px, var(--tap-min));
+  padding: 0 18px;
+  border: 2px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-small);
+  color: var(--text-strong);
+  white-space: nowrap;
+  transition: var(--transition-base);
+}
+.pdm-site .lista-subfiltro-link:hover {
+  background: var(--brown-050);
+}
+.pdm-site .lista-subfiltro-link[aria-current="page"] {
+  background: var(--gold-500);
+  border-color: var(--gold-500);
+  font-weight: var(--fw-bold);
+  color: var(--text-on-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
 /* Selo "Mais pedido" sobre a foto do card (canto superior esquerdo, como
    no layout). */
 .site-selo-foto {
@@ -1570,6 +1609,20 @@ body:has(.pdm-site) {
 }
 
 @media (max-width: 767px) {
+  .lista-subfiltro-opcoes {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: calc(-1 * var(--container-pad));
+    padding: 4px var(--container-pad);
+    scroll-padding-inline: var(--container-pad);
+  }
+  .lista-subfiltro-opcoes::-webkit-scrollbar {
+    display: none;
+  }
+  .lista-subfiltro-opcoes li {
+    flex: none;
+  }
   .lista-topo {
     background: none;
     border-bottom: 0;

@@ -5,9 +5,10 @@ import { FiltroCategorias } from "@/components/site/FiltroCategorias";
 import { Hive } from "@/components/site/Hive";
 import { ROTAS, urlDaLista } from "@/lib/site/rotas";
 import { SEO_CATEGORIAS, metadadosIndexaveis } from "@/lib/site/seo";
-import { buscarProdutosDaLista } from "@/lib/vitrine/buscar";
+import { buscarDadosDaLista } from "@/lib/vitrine/buscar";
 import { categoriaDoParametroAntigo, lerParametrosDaLista, montarLista } from "@/lib/vitrine/lista";
 import { BuscaEOrdem } from "./_lista/BuscaEOrdem";
+import { FiltroSubcategorias } from "./_lista/FiltroSubcategorias";
 import { ListaProdutos } from "./_lista/ListaProdutos";
 import { Paginacao } from "./_lista/Paginacao";
 
@@ -17,18 +18,19 @@ const DESCRICAO =
   "Bolos, doces, salgados e kits feitos sob encomenda pela Pingo de Mell. Escolha, monte o pedido e a gente combina o resto no WhatsApp.";
 
 // Uma leitura só por requisição, dividida entre generateMetadata e a página.
-const carregar = cache(buscarProdutosDaLista);
+const carregar = cache(buscarDadosDaLista);
 
 // Categoria da Lista com pelo menos 1 produto ativo e disponível: título,
 // descrição e canonical da categoria. Categoria sem produto, valor inválido
 // (inclusive adicionais e bebidas, fora da Lista), ausente ou falha do
-// banco: os da Lista, com canonical /produtos. Busca, ordem e página nunca
-// mudam o canonical.
+// banco: os da Lista, com canonical /produtos. Busca, ordem, página e
+// subcategoria nunca mudam título, descrição, canonical nem robots (a
+// URL filtrada aponta para a da categoria).
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const { categoria } = lerParametrosDaLista(await searchParams);
   if (categoria) {
-    const produtos = await carregar();
-    if (produtos && montarLista(produtos, { categoria, busca: "", ordem: "recomendados", pagina: 1 }).total > 0) {
+    const dados = await carregar();
+    if (dados && montarLista(dados.produtos, { categoria, busca: "", ordem: "recomendados", pagina: 1 }).total > 0) {
       return metadadosIndexaveis({ ...SEO_CATEGORIAS[categoria], caminho: ROTAS.listaPorCategoria(categoria) });
     }
   }
@@ -37,17 +39,19 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
 // Lista de produtos (página 2 do site). Tudo pela URL, para abrir igual a
 // partir de um link colado: ?categoria= (bolos, doces, salgados, kit-festa ou
-// bento-cake; qualquer outro valor mostra "Todos"), ?busca=, ?ordem=
-// (recomendados, mais-pedidos, a-z, z-a) e ?pagina= (24 por página).
+// bento-cake; qualquer outro valor mostra "Todos"), ?subcategoria= (slug de
+// uma subcategoria da categoria escolhida; qualquer outro valor mostra
+// todas), ?busca=, ?ordem= (recomendados, mais-pedidos, a-z, z-a) e ?pagina=
+// (24 por página).
 export default async function ListaPage({ searchParams }: Props) {
   const busca = await searchParams;
   const parametros = lerParametrosDaLista(busca);
   // Link de fora com o endereço antigo da categoria (?categoria=kits): 308
-  // para o atual, mantendo busca, ordem e página.
+  // para o atual, mantendo subcategoria, busca, ordem e página.
   const antiga = categoriaDoParametroAntigo(busca.categoria);
   if (antiga) permanentRedirect(urlDaLista({ ...parametros, categoria: antiga }));
-  const produtos = await carregar();
-  const resultado = produtos ? montarLista(produtos, parametros) : null;
+  const dados = await carregar();
+  const resultado = dados ? montarLista(dados.produtos, parametros, dados.subcategorias) : null;
 
   return (
     <>
@@ -67,13 +71,28 @@ export default async function ListaPage({ searchParams }: Props) {
           {resultado ? (
             <BuscaEOrdem
               categoria={parametros.categoria}
+              subcategoria={resultado.subcategoriaAtiva}
               busca={parametros.busca}
               ordem={resultado.ordem}
               maisPedidosDisponivel={resultado.maisPedidosDisponivel}
             />
           ) : null}
+          {resultado ? (
+            <FiltroSubcategorias
+              categoria={parametros.categoria}
+              chips={resultado.chips}
+              ativa={resultado.subcategoriaAtiva}
+              busca={parametros.busca}
+              ordem={resultado.ordem}
+            />
+          ) : null}
           <ListaProdutos parametros={parametros} resultado={resultado} />
-          {resultado ? <Paginacao parametros={{ ...parametros, ordem: resultado.ordem }} resultado={resultado} /> : null}
+          {resultado ? (
+            <Paginacao
+              parametros={{ ...parametros, subcategoria: resultado.subcategoriaAtiva, ordem: resultado.ordem }}
+              resultado={resultado}
+            />
+          ) : null}
         </div>
       </div>
     </>
