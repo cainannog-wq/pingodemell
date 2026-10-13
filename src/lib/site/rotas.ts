@@ -16,21 +16,25 @@ export function categoriaParaParametro(categoria: CategoriaProduto): string {
 // Endereço da Lista com filtro, busca, ordem e página (PR
 // lista/busca-ordem-paginacao). Valor padrão não entra na URL ("Todos",
 // busca vazia, Recomendados, página 1), então /produtos continua sendo a
-// Lista sem nada escolhido. Ordem fixa dos parâmetros: categoria, busca,
-// ordem, pagina.
+// Lista sem nada escolhido. Ordem fixa dos parâmetros: categoria,
+// subcategoria, busca, ordem, pagina. A subcategoria só vai com categoria
+// (sem ela o parâmetro não vale).
 export function urlDaLista({
   categoria = null,
+  subcategoria = null,
   busca = "",
   ordem = "recomendados",
   pagina = 1,
 }: {
   categoria?: CategoriaProduto | null;
+  subcategoria?: string | null;
   busca?: string;
   ordem?: string;
   pagina?: number;
 }): string {
   const p = new URLSearchParams();
   if (categoria) p.set("categoria", categoriaParaParametro(categoria));
+  if (categoria && subcategoria?.trim()) p.set("subcategoria", subcategoria.trim());
   if (busca.trim()) p.set("busca", busca.trim());
   if (ordem !== "recomendados") p.set("ordem", ordem);
   if (pagina > 1) p.set("pagina", String(pagina));

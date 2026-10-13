@@ -80,6 +80,8 @@ describe("Primeira tela — Lista", () => {
           totalPaginas: 1,
           ordem: "recomendados",
           maisPedidosDisponivel: false,
+          chips: [],
+          subcategoriaAtiva: null,
           temProdutosSemBusca: true,
         }}
       />
