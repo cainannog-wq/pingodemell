@@ -22,6 +22,7 @@ import {
   verificarCapaNova,
   type EnvioAssinado,
 } from "@/lib/galeria/storage-servidor";
+import { lerRecheiosDoEnvio, type RecheiosDoEnvio } from "./recheios-servidor";
 import { galeriaMudou, gravarGaleria, lerFotosAtuais, limparSobras } from "./galeria-servidor";
 import { apagarArquivosDoProduto, concluirTrocaDeCapa, limparSobrasCapa } from "./capa-servidor";
 import { invalidarVitrine } from "@/lib/vitrine/cache";
@@ -104,6 +105,23 @@ function arquivosDoEnvio(
   return { galeria, capaValida: capaLida.ok, capa, descartar };
 }
 
+// Recheios personalizados do produto (salvar_produto_recheios: troca a lista
+// inteira numa transação). Chamada só depois de o produto estar gravado; a
+// conferência da lista (vazia, repetida, em branco) já aconteceu antes de
+// qualquer gravação. Sem o campo no envio, não faz nada.
+async function gravarRecheiosDoProduto(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  produtoId: string,
+  recheios: RecheiosDoEnvio
+): Promise<string | null> {
+  if (!recheios.ok || !recheios.aplicar) return null;
+  const { error } = await supabase.rpc("salvar_produto_recheios", {
+    p_produto_id: produtoId,
+    p_recheios: recheios.lista,
+  });
+  return error ? `Produto salvo, mas os recheios não foram salvos: ${error.message} Clique em Salvar de novo.` : null;
+}
+
 // Salvar (cadastro), na ordem:
 // 1. o navegador já subiu a capa nova (capa/{id}/) e as fotos extras novas
 //    (galeria/{id}/), nos caminhos autorizados por prepararEnvioFotos —
@@ -155,6 +173,12 @@ export async function createProduto(
     tipo,
     subitens,
   } = parsed.data;
+
+  const recheios = lerRecheiosDoEnvio(formData, { categoria, tipo });
+  if (!recheios.ok) {
+    await descartar();
+    return { error: recheios.erro };
+  }
 
   if (!galeria.ok) {
     await descartar();
@@ -218,6 +242,13 @@ export async function createProduto(
       invalidarVitrine();
       return { error: subitensError };
     }
+  }
+
+  const erroRecheios = await gravarRecheiosDoProduto(supabase, produtoId, recheios);
+  if (erroRecheios) {
+    if (novas.length > 0) await limparSobras(supabase, produtoId);
+    invalidarVitrine();
+    return { error: erroRecheios };
   }
 
   if (novas.length > 0) {
@@ -286,6 +317,12 @@ export async function updateProduto(
     naoGravarNaEdicao,
     subitens,
   } = parsed.data;
+
+  const recheios = lerRecheiosDoEnvio(formData, { categoria, tipo });
+  if (!recheios.ok) {
+    await descartar();
+    return { error: recheios.erro };
+  }
 
   if (!capaValida) {
     await descartar();
@@ -372,6 +409,13 @@ export async function updateProduto(
     if (novas.length > 0) await limparSobras(supabase, produtoId);
     invalidarVitrine();
     return { error: subitensError };
+  }
+
+  const erroRecheios = await gravarRecheiosDoProduto(supabase, produtoId, recheios);
+  if (erroRecheios) {
+    if (novas.length > 0) await limparSobras(supabase, produtoId);
+    invalidarVitrine();
+    return { error: erroRecheios };
   }
 
   // Galeria por último entre as gravações: se ela falhar, nada depois

@@ -64,6 +64,7 @@ function detalheDaLinha(l: LinhaCarrinho): string | null {
   }
   if (l.tipo === "bolo") return `Recheio ${l.recheio.nome}, ${l.formato}`;
   if (l.tipo === "bento") return `Recheio ${l.recheio.nome}`;
+  if (l.tipo === "normal" && l.recheio) return `Recheio ${l.recheio.nome}`;
   return null;
 }
 

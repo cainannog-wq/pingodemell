@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cache } from "react";
 import type { CategoriaProduto } from "@/lib/produtos/types";
+import type { RecheioDoProduto } from "@/lib/produtos/recheios-produto";
 import { emCacheDaVitrine } from "./cache";
 import { CAMPOS_SABOR, centosComSabor, saboresAtivos, type LinhaSabor } from "./cento";
 import { CAMPOS_RECHEIO_VITRINE, comPrecoAPartirDe, semIndisponiveis, type RecheioVitrine } from "./disponibilidade";
@@ -60,6 +61,15 @@ async function tentar<T>(leitura: Promise<T>, rotulo: string): Promise<T | typeo
 // Campos da vitrine com as linhas de sabor embutidas (só o Cento tem).
 const CAMPOS_COM_SABORES = `${CAMPOS_VITRINE}, sabores:produto_cento_itens!produto_cento_itens_cento_nome_fkey(${CAMPOS_SABOR})`;
 
+// Só a interna lê os recheios personalizados do produto (tabela
+// produto_recheios): embutidos pela chave de produto_id, na ordem da posição.
+const CAMPOS_INTERNA = `${CAMPOS_COM_SABORES}, recheios_produto:produto_recheios(id, nome, posicao)`;
+type LinhaRecheioProduto = RecheioDoProduto & { posicao: number };
+
+function recheiosDoProduto(linhas: LinhaRecheioProduto[] | null | undefined): RecheioDoProduto[] {
+  return [...(linhas ?? [])].sort((a, b) => a.posicao - b.posicao).map(({ id, nome }) => ({ id, nome }));
+}
+
 type ProdutoComSabores = ProdutoVitrine & { sabores?: LinhaSabor[] | null };
 type ProdutosESabores = { produtos: ProdutoVitrine[]; sabores: LinhaSabor[] };
 
@@ -75,14 +85,13 @@ function separarSabores(linhas: ProdutoComSabores[]): ProdutosESabores {
   return { produtos, sabores };
 }
 
+// Só o Bolo tradicional depende do catálogo de recheios. O Bento Cake e os
+// Bolos com recheios personalizados têm a lista dentro do próprio produto.
 function precisaDeRecheios(produtos: ProdutoVitrine[]): boolean {
-  return produtos.some((p) => {
-    const v = variacaoDoProduto(p);
-    return v === "bolo" || v === "bento";
-  });
+  return produtos.some((p) => variacaoDoProduto(p) === "bolo");
 }
 
-// Recheios ativos do catálogo (Bolo grande e Bento Cake). O inativo que um
+// Recheios ativos do catálogo (Bolo tradicional). O inativo que um
 // cliente com sessão enxergaria é filtrado pelas regras (recheios/regras.ts).
 async function consultarRecheios(supabase: Supabase): Promise<RecheioVitrine[]> {
   const { data, error } = await supabase.from("recheios").select(CAMPOS_RECHEIO_VITRINE).eq("ativo", true);
@@ -111,18 +120,19 @@ const lerRecheiosEmCache = emCacheDaVitrine(async () => consultarRecheios(await 
 // filtro na própria consulta E aqui. Vem com as linhas de sabor embutidas
 // (só o Cento tem). null = inexistente ou inativo.
 const lerProdutoPorSlugEmCache = emCacheDaVitrine(
-  async (slug: string): Promise<{ produto: ProdutoVitrine; sabores: LinhaSabor[] } | null> => {
+  async (slug: string): Promise<{ produto: ProdutoVitrine; sabores: LinhaSabor[]; recheiosProduto: RecheioDoProduto[] } | null> => {
     const { data, error } = await (await clientePublico())
       .from("produtos")
-      .select(CAMPOS_COM_SABORES)
+      .select(CAMPOS_INTERNA)
       .eq("slug", slug)
       .eq("ativo", true)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    const linha = data as unknown as ProdutoComSabores | null;
-    if (linha?.ativo !== true) return null;
+    const completa = data as unknown as (ProdutoComSabores & { recheios_produto?: LinhaRecheioProduto[] | null }) | null;
+    if (completa?.ativo !== true) return null;
+    const { recheios_produto, ...linha } = completa;
     const { produtos, sabores } = separarSabores([linha]);
-    return { produto: produtos[0], sabores };
+    return { produto: produtos[0], sabores, recheiosProduto: recheiosDoProduto(recheios_produto) };
   },
   "vitrine-produto-slug"
 );
@@ -245,7 +255,16 @@ export async function buscarProdutoPorSlug(slug: string): Promise<ProdutoVitrine
 }
 
 export type Interna =
-  | { estado: "ok"; produto: ProdutoVitrine; sabores: string[]; recheios: RecheioVitrine[]; fotos: FotoProduto[] }
+  | {
+      estado: "ok";
+      produto: ProdutoVitrine;
+      sabores: string[];
+      recheios: RecheioVitrine[];
+      // Recheios personalizados do produto (Bolos de tipo normal e Bento Cake),
+      // na ordem do admin; vazio = o produto não tem recheio a escolher.
+      recheiosProduto: RecheioDoProduto[];
+      fotos: FotoProduto[];
+    }
   | { estado: "nao-encontrado" }
   | { estado: "erro" };
 
@@ -255,11 +274,13 @@ export type Interna =
 //   → "nao-encontrado" (a página cai na 404);
 // - Cento: os sabores ativos, na ordem do cadastro; sem nenhum sabor ativo,
 //   o Cento é indisponível → "nao-encontrado", como produto inativo;
-// - Bolo e Bento Cake: os recheios do catálogo (o Bolo, agrupados; o Bento,
-//   em lista simples); sem nenhum recheio ativo do lado dele, o produto é
-//   indisponível → "nao-encontrado", como o Cento sem sabor;
+// - Bolo tradicional: os recheios do catálogo, agrupados; sem nenhum recheio
+//   ativo, o produto é indisponível → "nao-encontrado", como o Cento sem
+//   sabor;
+// - Bolos de tipo normal e Bento Cake: a lista de recheios do próprio
+//   produto (vazia = sem escolha de recheio, vendido como avulso);
 // - fotos: capa e extras na ordem (se as extras falharem, só a capa);
-// - falha do banco no produto, nos sabores ou (só para Bolo e Bento Cake)
+// - falha do banco no produto, nos sabores ou (só para o Bolo tradicional)
 //   nos recheios → "erro" (a página lança erro: o Next mantém a versão
 //   anterior, e na primeira geração mostra o error.tsx da interna).
 export async function buscarInterna(slug: string): Promise<Interna> {
@@ -286,7 +307,7 @@ export async function buscarInterna(slug: string): Promise<Interna> {
   if (semIndisponiveis([produto], new Set([produto.nome]), recheios).length === 0) return { estado: "nao-encontrado" };
 
   const fotos = montarFotos(produto, extras === FALHA ? [] : extras, (url) => url);
-  return { estado: "ok", produto: comPrecoAPartirDe([produto], recheios)[0], sabores, recheios, fotos };
+  return { estado: "ok", produto: comPrecoAPartirDe([produto], recheios)[0], sabores, recheios, recheiosProduto: lido.recheiosProduto, fotos };
 }
 
 // "Combina com o seu pedido" da interna: os mesmos produtos de "Os mais

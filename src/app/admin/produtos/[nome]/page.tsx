@@ -42,6 +42,15 @@ export default async function EditarProdutoPage({
         .order("posicao", { ascending: true })
     : { data: [] };
 
+  const { data: linhasRecheios } = produto
+    ? await supabase
+        .from("produto_recheios")
+        .select("id, nome")
+        .eq("produto_id", produto.id)
+        .order("posicao", { ascending: true })
+    : { data: [] };
+  const recheiosIniciais = (linhasRecheios ?? []).map((r) => ({ id: r.id as string, nome: r.nome as string }));
+
   const fotosIniciais = (linhasFotos ?? []).map((linha) => ({
     id: linha.id as string,
     url: supabase.storage.from(BUCKET_FOTOS).getPublicUrl(linha.caminho as string).data.publicUrl,
@@ -77,6 +86,7 @@ export default async function EditarProdutoPage({
         produto={produto}
         produtoId={produto.id}
         fotosIniciais={fotosIniciais}
+        recheiosIniciais={recheiosIniciais}
         submitLabel="Salvar alterações"
         produtosDisponiveis={produtos ?? []}
         initialSubitens={initialSubitens}

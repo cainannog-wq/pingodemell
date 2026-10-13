@@ -6,9 +6,9 @@ import { GRUPO_RECHEIO_LABELS, GRUPO_RECHEIO_VALUES, type GrupoRecheio, type Rec
 // Quem filtra o inativo é o código, não a RLS: o admin logado navegando no
 // site lê também os recheios inativos.
 //
-// Bolo grande e Bento Cake enxergam o mesmo catálogo por filtros
-// independentes: esvaziar um lado (nenhum ativo com vale_bolo, ou nenhum
-// ativo com vale_bento) não mexe no outro.
+// O catálogo é só do Bolo tradicional (vale_bolo). A lista de recheios do
+// Bento Cake é do próprio produto (src/lib/produtos/recheios-produto.ts); a
+// coluna vale_bento continua no banco, sem uso no código, até uma PR futura.
 
 type Vitrine = Pick<Recheio, "id" | "nome" | "vale_bolo" | "vale_bento" | "preco_kg" | "grupo" | "ativo">;
 
@@ -36,16 +36,8 @@ export function recheiosDoBolo<T extends Vitrine>(recheios: T[]): T[] {
     .sort(porPrecoENome);
 }
 
-export function recheiosDoBento<T extends Vitrine>(recheios: T[]): T[] {
-  return recheios.filter((r) => r.ativo === true && r.vale_bento === true).sort(porNome);
-}
-
 export function boloDisponivel(recheios: Vitrine[]): boolean {
   return recheiosDoBolo(recheios).length > 0;
-}
-
-export function bentoDisponivel(recheios: Vitrine[]): boolean {
-  return recheiosDoBento(recheios).length > 0;
 }
 
 // Menor R$/kg entre os recheios do Bolo: o "a partir de" dos cards. null

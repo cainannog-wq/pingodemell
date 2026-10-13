@@ -49,7 +49,7 @@ const CAMPOS_PEDIDO = [
 ] as const;
 const CAMPOS_ITEM_BASE = ["tipo", "produto_id", "nome", "quantidade", "preco", "observacao"];
 const CAMPOS_ITEM: Record<ItemEnvio["tipo"], string[]> = {
-  normal: [...CAMPOS_ITEM_BASE, "unidade_venda"],
+  normal: [...CAMPOS_ITEM_BASE, "unidade_venda", "recheio"],
   cento: [...CAMPOS_ITEM_BASE, "sabores"],
   bolo: [...CAMPOS_ITEM_BASE, "recheio", "formato"],
   bento: [...CAMPOS_ITEM_BASE, "recheio", "unidade_venda"],
@@ -207,6 +207,11 @@ function item(v: unknown): { gravado: ItemGravado; centavos: number } {
       };
     });
     gravado.variacao = gravado.sabores.filter((s) => s.quantidade > 0).map((s) => `${s.nome} ${s.quantidade}`).join(" · ") || null;
+  }
+  // Avulso com recheios personalizados: recheio opcional, só informativo.
+  if (tipo === "normal" && o.recheio !== undefined && o.recheio !== null) {
+    gravado.recheio = recheio(o.recheio);
+    gravado.variacao = `Recheio ${gravado.recheio.nome}`;
   }
   if (tipo === "bolo" || tipo === "bento") {
     gravado.recheio = recheio(o.recheio);

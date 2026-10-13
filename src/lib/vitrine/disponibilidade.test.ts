@@ -35,13 +35,13 @@ const REC_BENTO: RecheioVitrine = { id: "2", nome: "B", vale_bolo: false, vale_b
 const nomes = (l: ProdutoVitrine[]) => l.map((x) => x.nome);
 const COM_SABOR = new Set(["Cento"]);
 
-describe("disponibilidade — Bolo e Bento Cake esvaziam separados", () => {
+describe("disponibilidade — só o Bolo tradicional depende do catálogo de recheios", () => {
   it("com os dois catálogos: tudo aparece", () => {
     expect(nomes(semIndisponiveis(TODOS, COM_SABOR, [REC_BOLO, REC_BENTO]))).toEqual(["Bolo", "Smash", "Bento", "Cento", "Doce"]);
   });
 
-  it("sem recheio de Bento: some só o Bento", () => {
-    expect(nomes(semIndisponiveis(TODOS, COM_SABOR, [REC_BOLO]))).toEqual(["Bolo", "Smash", "Cento", "Doce"]);
+  it("sem recheio de Bento no catálogo: o Bento continua (a lista é do produto)", () => {
+    expect(nomes(semIndisponiveis(TODOS, COM_SABOR, [REC_BOLO]))).toEqual(["Bolo", "Smash", "Bento", "Cento", "Doce"]);
   });
 
   it("sem recheio de Bolo: some só o Bolo (o Smash Cake continua)", () => {
@@ -51,6 +51,7 @@ describe("disponibilidade — Bolo e Bento Cake esvaziam separados", () => {
   it("recheio inativo (visto pelo admin logado) não conta", () => {
     expect(nomes(semIndisponiveis(TODOS, COM_SABOR, [{ ...REC_BOLO, ativo: false }, { ...REC_BENTO, ativo: false }]))).toEqual([
       "Smash",
+      "Bento",
       "Cento",
       "Doce",
     ]);

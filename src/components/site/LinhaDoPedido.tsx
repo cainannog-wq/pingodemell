@@ -76,10 +76,13 @@ export function DetalhesDaLinha({ linha }: { linha: LinhaCarrinho }) {
   }
   const unidade = textoUnidadeVenda({ tipo: "normal", unidade_venda: linha.unidade_venda });
   return (
-    <p>
-      <Dinheiro valor={linha.preco} />
-      {unidade ? ` ${unidade}` : null}
-    </p>
+    <>
+      {linha.recheio ? <p>Recheio: {linha.recheio.nome}</p> : null}
+      <p>
+        <Dinheiro valor={linha.preco} />
+        {unidade ? ` ${unidade}` : null}
+      </p>
+    </>
   );
 }
 

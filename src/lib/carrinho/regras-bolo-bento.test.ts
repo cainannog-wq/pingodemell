@@ -112,3 +112,43 @@ describe("carrinho — leitura do que está salvo (Bolo e Bento)", () => {
     expect(lidas.map((l) => l.id)).toEqual(["a"]);
   });
 });
+
+// Avulso com recheios personalizados (Ganache, Kit Kat...): o recheio escolhido
+// vai na linha, é só informativo e separa as linhas.
+describe("avulso com recheio personalizado", () => {
+  const ganache = (quantidade: number, recheioId?: string): NovaLinha => ({
+    tipo: "normal",
+    produtoId: "p-ganache",
+    slug: "bolo-ganache",
+    nome: "Bolo Ganache",
+    preco: 108,
+    unidade_venda: "o kg",
+    quantidade,
+    observacao: null,
+    ...(recheioId ? { recheio: { id: recheioId, nome: `Recheio ${recheioId}` } } : {}),
+  });
+
+  it("mesmo recheio soma; recheio diferente é outra linha; sem recheio não junta com recheio", () => {
+    let linhas: LinhaCarrinho[] = [];
+    linhas = adicionarLinha(linhas, ganache(1, "a"), novoId);
+    linhas = adicionarLinha(linhas, ganache(2, "a"), novoId);
+    expect(linhas).toHaveLength(1);
+    expect(linhas[0].quantidade).toBe(3);
+    linhas = adicionarLinha(linhas, ganache(1, "b"), novoId);
+    expect(linhas).toHaveLength(2);
+    linhas = adicionarLinha(linhas, ganache(1), novoId);
+    expect(linhas).toHaveLength(3);
+  });
+
+  it("o subtotal é preço fixo × quantidade; o recheio não muda o valor", () => {
+    const [linha] = adicionarLinha([], ganache(2, "a"), novoId);
+    expect(linha.preco * linha.quantidade).toBe(216);
+  });
+
+  it("sobrevive ao salvar e ler do navegador; recheio inválido descarta a linha", () => {
+    const linhas = adicionarLinha([], ganache(1, "a"), novoId);
+    expect(lerCarrinho(escreverCarrinho(linhas))).toEqual(linhas);
+    const quebrada = JSON.stringify({ versao: 1, linhas: [{ ...linhas[0], recheio: { id: "a" } }] });
+    expect(lerCarrinho(quebrada)).toEqual([]);
+  });
+});

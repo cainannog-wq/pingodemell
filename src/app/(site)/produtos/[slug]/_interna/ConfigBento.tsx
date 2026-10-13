@@ -4,8 +4,7 @@ import { useState } from "react";
 import { Seletor } from "@/components/site/Seletor";
 import { normalizarObservacao } from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
-import { recheiosDoBento } from "@/lib/recheios/regras";
-import type { RecheioVitrine } from "@/lib/vitrine/disponibilidade";
+import type { RecheioDoProduto } from "@/lib/produtos/recheios-produto";
 import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
 import { unidadeDoBento } from "@/lib/vitrine/unidade";
 import { erroQuantidade, normalizarQuantidade, passoQuantidade, quantidadeInicial, quantidadeMaxima } from "@/lib/vitrine/quantidade";
@@ -17,13 +16,15 @@ import { useCelular } from "./useCelular";
 
 // Configuração do produto tipo Bento Cake: cada tema é um produto com preço
 // fixo e peso fechado. O cliente escolhe UM recheio (lista simples, sem
-// grupo e sem preço: informativo) que vale para todas as unidades do
+// grupo e sem preço: informativo; vem da lista do produto) que vale para todas as unidades do
 // pedido, e a quantidade (respeitando o pedido mínimo do cadastro; o Bento
 // não usa step). Recheios diferentes são linhas diferentes do carrinho.
-export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; recheios: RecheioVitrine[] }) {
+export function ConfigBento({ produto, recheios }: { produto: ProdutoVitrine; recheios: RecheioDoProduto[] }) {
   const { adicionarEIr, indo } = useAdicionarEIrAoCarrinho();
   const celular = useCelular();
-  const opcoes = recheiosDoBento(recheios);
+  // Lista do próprio produto, na ordem do admin. Bento Cake sem lista nem
+  // chega aqui: a página o mostra como avulso, sem escolha de recheio.
+  const opcoes = recheios;
   const minimo = quantidadeInicial(produto.pedido_minimo, "livre");
   const [texto, setTexto] = useState(String(minimo));
   const [recheioId, setRecheioId] = useState<string | null>(null);

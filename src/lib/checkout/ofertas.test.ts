@@ -69,11 +69,15 @@ describe("ofertas do rodapé do checkout", () => {
     expect(escolhidas.map((o) => o.nome)).toEqual(["O7", "O6", "O5", "O4", "O3"]);
   });
 
-  it("avulso entra direto; Cento, Bolo e Bento Cake levam para a interna", () => {
+  it("avulso entra direto; Cento e Bolo levam para a interna; Bento Cake sem lista é avulso", () => {
     expect(acaoDaOferta({ tipo: "normal" })).toBe("adicionar");
     expect(acaoDaOferta({ tipo: "cento" })).toBe("interna");
     expect(acaoDaOferta({ tipo: "bolo" })).toBe("interna");
-    expect(acaoDaOferta({ tipo: "bento_cake" })).toBe("interna");
+    expect(acaoDaOferta({ tipo: "bento_cake" })).toBe("adicionar");
+    expect(acaoDaOferta({ tipo: "bento_cake", com_recheios: true })).toBe("interna");
+    // Produto com recheios personalizados (Ganache, Kit Kat...): escolha obrigatória.
+    expect(acaoDaOferta({ tipo: "normal", com_recheios: true })).toBe("interna");
+    expect(acaoDaOferta({ tipo: "normal", com_recheios: false })).toBe("adicionar");
   });
 
   it("o avulso entra com o pedido mínimo, subindo até o múltiplo do step", () => {

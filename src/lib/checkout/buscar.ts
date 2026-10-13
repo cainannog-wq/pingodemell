@@ -38,7 +38,7 @@ export async function buscarDadosDoCheckout(): Promise<DadosDoCheckout | null> {
 
   const [diasOff, produtos] = await Promise.all([
     supabase.from("dias_off").select("data").gte("data", hoje),
-    supabase.from("produtos").select(`${CAMPOS_VITRINE}, prazo_producao_dias`).eq("ativo", true),
+    supabase.from("produtos").select(`${CAMPOS_VITRINE}, prazo_producao_dias, recheios_produto:produto_recheios(id)`).eq("ativo", true),
   ]);
 
   if (diasOff.error) {
@@ -50,7 +50,11 @@ export async function buscarDadosDoCheckout(): Promise<DadosDoCheckout | null> {
     return null;
   }
 
-  const ativos = ((produtos.data ?? []) as Oferta[]).filter((p) => p.ativo === true);
+  // Recheios personalizados: só interessa se o produto tem lista (a oferta
+  // então leva à interna); a lista em si não vai para a tela.
+  const ativos = ((produtos.data ?? []) as unknown as (Oferta & { recheios_produto?: { id: string }[] | null })[])
+    .filter((p) => p.ativo === true)
+    .map(({ recheios_produto, ...p }) => ({ ...p, com_recheios: (recheios_produto?.length ?? 0) > 0 }));
   const prazos: Record<string, number> = {};
   for (const p of ativos) prazos[p.id] = Number(p.prazo_producao_dias) || 0;
 

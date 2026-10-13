@@ -23,7 +23,9 @@ type ItemBase = {
 };
 
 export type ItemEnvio =
-  | (ItemBase & { tipo: "normal"; unidade_venda: string | null })
+  // recheio: escolhido entre os recheios personalizados do produto (só nos
+  // que têm lista); informativo, sem efeito no preço.
+  | (ItemBase & { tipo: "normal"; unidade_venda: string | null; recheio?: { id: string; nome: string } })
   | (ItemBase & { tipo: "cento"; sabores: { nome: string; quantidade: number }[] })
   | (ItemBase & { tipo: "bolo"; recheio: { id: string; nome: string }; formato: "redondo" | "quadrado" })
   // unidade_venda do Bento: "o combo" no combo; null no simples e em linha
@@ -79,7 +81,12 @@ export function itemDaLinha(linha: LinhaCarrinho): ItemEnvio {
   if (linha.tipo === "bento") {
     return { ...base, tipo: "bento", recheio: { id: linha.recheio.id, nome: linha.recheio.nome }, unidade_venda: linha.unidade_venda ?? null };
   }
-  return { ...base, tipo: "normal", unidade_venda: linha.unidade_venda };
+  return {
+    ...base,
+    tipo: "normal",
+    unidade_venda: linha.unidade_venda,
+    ...(linha.recheio ? { recheio: { id: linha.recheio.id, nome: linha.recheio.nome } } : {}),
+  };
 }
 
 export function montarCorpo(dados: DadosCheckout, linhas: LinhaCarrinho[], chave: string): CorpoPedido {

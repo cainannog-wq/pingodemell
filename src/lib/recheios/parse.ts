@@ -5,13 +5,16 @@ import {
   type GrupoRecheio,
 } from "./types";
 
+// O catálogo é só do Bolo tradicional. vale_bento NÃO é enviado nunca: a
+// coluna e os dados dela ficam como estão (a produção ainda a lê enquanto o
+// PR dos recheios por produto está em homologação), e a lista de recheios do
+// Bento Cake agora é do próprio produto (supabase/produto-recheios.sql).
 export type ParsedRecheio = {
   nome: string;
-  vale_bolo: boolean;
-  vale_bento: boolean;
-  // Só com vale_bolo; senão null (o banco exige nulo, igual a esta regra).
-  preco_kg: number | null;
-  grupo: GrupoRecheio | null;
+  // Sempre verdadeiro: todo recheio salvo por este formulário vale no Bolo.
+  vale_bolo: true;
+  preco_kg: number;
+  grupo: GrupoRecheio;
   ativo: boolean;
 };
 
@@ -25,40 +28,27 @@ function normalizarPreco(raw: string): number {
   return Number(t);
 }
 
-// Função pura (sem I/O). Preço e grupo só valem — e só são lidos — quando o
-// recheio vale para o Bolo grande; num recheio só de Bento eles são
-// ignorados e gravados como nulo, mesmo que o formulário mande algo.
+// Função pura (sem I/O). Preço por kg e grupo são sempre obrigatórios.
 export function parseRecheioForm(formData: FormData): ParseRecheioResult {
   const nome = String(formData.get("nome") ?? "").trim().replace(/\s+/g, " ");
-  const vale_bolo = formData.get("vale_bolo") != null;
-  const vale_bento = formData.get("vale_bento") != null;
   const ativo = formData.get("ativo") != null;
 
   if (!nome) return { success: false, error: "Informe o nome do recheio." };
   if (nome.length > NOME_RECHEIO_MAX) {
     return { success: false, error: `O nome do recheio tem no máximo ${NOME_RECHEIO_MAX} caracteres.` };
   }
-  if (!vale_bolo && !vale_bento) {
-    return { success: false, error: "Marque onde o recheio vale: Bolo grande, Bento Cake ou os dois." };
+
+  const preco = normalizarPreco(String(formData.get("preco_kg") ?? ""));
+  if (!Number.isFinite(preco) || preco <= 0) {
+    return { success: false, error: "Informe o preço por kg do recheio (maior que zero)." };
+  }
+  const grupoRaw = String(formData.get("grupo") ?? "");
+  if (!GRUPO_RECHEIO_VALUES.includes(grupoRaw as GrupoRecheio)) {
+    return {
+      success: false,
+      error: `Escolha o grupo do recheio: ${GRUPO_RECHEIO_VALUES.map((g) => GRUPO_RECHEIO_LABELS[g]).join(" ou ")}.`,
+    };
   }
 
-  let preco_kg: number | null = null;
-  let grupo: GrupoRecheio | null = null;
-  if (vale_bolo) {
-    const preco = normalizarPreco(String(formData.get("preco_kg") ?? ""));
-    if (!Number.isFinite(preco) || preco <= 0) {
-      return { success: false, error: "Informe o preço por kg do recheio (maior que zero)." };
-    }
-    preco_kg = Math.round(preco * 100) / 100;
-    const grupoRaw = String(formData.get("grupo") ?? "");
-    if (!GRUPO_RECHEIO_VALUES.includes(grupoRaw as GrupoRecheio)) {
-      return {
-        success: false,
-        error: `Escolha o grupo do recheio: ${GRUPO_RECHEIO_VALUES.map((g) => GRUPO_RECHEIO_LABELS[g]).join(" ou ")}.`,
-      };
-    }
-    grupo = grupoRaw as GrupoRecheio;
-  }
-
-  return { success: true, data: { nome, vale_bolo, vale_bento, preco_kg, grupo, ativo } };
+  return { success: true, data: { nome, vale_bolo: true, preco_kg: Math.round(preco * 100) / 100, grupo: grupoRaw as GrupoRecheio, ativo } };
 }

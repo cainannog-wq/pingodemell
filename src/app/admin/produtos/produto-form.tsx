@@ -16,6 +16,7 @@ import {
   type TipoProduto,
 } from "@/lib/produtos/types";
 import { variacaoDoProduto } from "@/lib/vitrine/variacao";
+import { aceitaRecheiosPersonalizados, type RecheioDoProduto } from "@/lib/produtos/recheios-produto";
 import { categoriaCanonica } from "@/lib/produtos/categorias";
 import { descartarEnviosFotos, prepararEnvioFotos, type ProdutoFormState } from "./actions";
 import { Badge, Card, Field, Input, PriceInput, Textarea, Select, Toggle, Button, Icon } from "@/components/ds";
@@ -25,6 +26,13 @@ import { BUCKET_FOTOS } from "@/lib/galeria/regras";
 import { reduzirFoto, type FotoReduzida } from "@/lib/galeria/reduzir";
 import { concluirSalvarPendente, guardarSalvarPendente, type TempoReducao } from "@/lib/admin/tempos";
 import { GaleriaFotosExtras } from "./galeria-fotos";
+import {
+  CamposEscondidosDosRecheios,
+  erroDosRecheios,
+  estadoInicialDosRecheios,
+  RecheiosDoProdutoCampo,
+  type EstadoRecheios,
+} from "./recheios-produto-campo";
 import { enviarFotosNovas, type DependenciasEnvio, type FotoNaTela } from "./galeria-envio";
 
 type ProdutoFormAction = (prevState: ProdutoFormState, formData: FormData) => Promise<ProdutoFormState>;
@@ -59,6 +67,7 @@ export function ProdutoForm({
   produtosDisponiveis = [],
   initialSubitens = [],
   fotosIniciais = [],
+  recheiosIniciais = [],
 }: {
   action: ProdutoFormAction;
   produto?: Produto;
@@ -68,6 +77,8 @@ export function ProdutoForm({
   produtoId: string;
   submitLabel: string;
   fotosIniciais?: FotoExtraSalva[];
+  // Recheios personalizados já salvos (produto_recheios), na ordem do admin.
+  recheiosIniciais?: RecheioDoProduto[];
   // Candidatos a subitem do tipo "Cento" — todo o catálogo, exceto o
   // próprio produto em edição. Vem vazio na tela de cadastro de um produto
   // "normal" comum sem custo de consulta extra desnecessária.
@@ -85,6 +96,8 @@ export function ProdutoForm({
   const [fotos, setFotos] = useState<FotoNaTela[]>(() =>
     fotosIniciais.map((foto) => ({ chave: foto.id, tipo: "existente", id: foto.id, url: foto.url }))
   );
+  const [recheios, setRecheios] = useState<EstadoRecheios>(() => estadoInicialDosRecheios(recheiosIniciais));
+  const [tentouSalvar, setTentouSalvar] = useState(false);
   const [enviandoFotos, setEnviandoFotos] = useState(false);
   const [erroEnvio, setErroEnvio] = useState<string | null>(null);
   const salvando = pending || enviandoFotos;
@@ -96,6 +109,12 @@ export function ProdutoForm({
   const bolo = variacao === "bolo";
   const bento = variacao === "bento";
   const categoriaTravada = CATEGORIA_DO_TIPO[tipo] ?? null;
+  // Interruptor de recheios personalizados: só Bolos de tipo normal e Bento
+  // Cake (nunca o Bolo tradicional nem outra categoria).
+  const aceitaRecheios = aceitaRecheiosPersonalizados({
+    Categoria: (categoriaTravada ?? categoria) as Produto["Categoria"],
+    tipo,
+  });
 
   // Bolo e Bento Cake só existem em Bolos e Bento Cake (a categoria acompanha
   // o tipo); e a categoria Bento Cake só aceita o tipo Bento Cake.
@@ -158,6 +177,9 @@ export function ProdutoForm({
   // final da galeria.
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // Interruptor ligado com lista vazia, em branco ou repetida: não salva.
+    setTentouSalvar(true);
+    if (aceitaRecheios && erroDosRecheios(recheios)) return;
     const inicio = Date.now();
     const formData = new FormData(event.currentTarget);
     setErroEnvio(null);
@@ -204,6 +226,7 @@ export function ProdutoForm({
 
       <form onSubmit={handleSubmit}>
         {!produto && <input type="hidden" name="id" value={produtoId} />}
+        <CamposEscondidosDosRecheios visivel={aceitaRecheios} salvos={recheiosIniciais.length} estado={recheios} />
         <Card tone="white" padding="0">
           <FormSection title="Identificação">
             <div className="produto-form-grid" style={{ gridTemplateColumns: "1fr" }}>
@@ -259,9 +282,9 @@ export function ProdutoForm({
                   tipo === "cento"
                     ? "Cento: quantidade sempre fixa em 100 unidades, o preço é o preço normal deste cadastro (não soma o dos subitens)."
                     : tipo === "bolo"
-                      ? "Bolo: o cliente escolhe tamanho (kg), formato e um recheio do catálogo de recheios. O preço é o R$/kg do recheio × o tamanho."
+                      ? "Bolo tradicional: o cliente escolhe tamanho (kg), formato e um recheio do catálogo de recheios. O preço é o R$/kg do recheio × o tamanho."
                       : tipo === "bento_cake"
-                        ? "Bento Cake: cada tema é um produto, com preço fixo. O cliente escolhe um recheio do catálogo de recheios (sem efeito no preço)."
+                        ? "Bento Cake: cada tema é um produto, com preço fixo. Se você ligar os recheios personalizados, o cliente escolhe um da lista do produto (sem efeito no preço)."
                         : "Produto normal (inclui o Smash Cake, na categoria Bolos), Cento com lista de subitens (sabores), Bolo ou Bento Cake."
                 }
               >
@@ -383,6 +406,17 @@ export function ProdutoForm({
                   nomeAtual={produto?.nome}
                 />
               </Field>
+            </FormSection>
+          )}
+
+          {aceitaRecheios && (
+            <FormSection title="Recheios">
+              <RecheiosDoProdutoCampo
+                estado={recheios}
+                aoMudar={setRecheios}
+                mostrarErro={tentouSalvar}
+                desabilitado={salvando}
+              />
             </FormSection>
           )}
 

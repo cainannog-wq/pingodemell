@@ -44,6 +44,14 @@ function comSabores(banco: BancoSimulado, produto: Linha): Linha {
   return { ...produto, sabores };
 }
 
+// Recheios personalizados embutidos na consulta da interna e do checkout
+// (select com "recheios_produto:produto_recheios"): as linhas do produto.
+// Quem ordena é o código (campo posicao).
+function comRecheiosDoProduto(banco: BancoSimulado, produto: Linha): Linha {
+  const recheios_produto = (banco.tabelas.produto_recheios ?? []).filter((l) => l.produto_id === produto.id);
+  return { ...produto, recheios_produto };
+}
+
 // Produto ligado à foto, para o filtro pela junção (produto.slug). O
 // anônimo não enxerga produto inativo (RLS de produtos), então a junção
 // interna derruba a foto dele; o admin enxerga tudo.
@@ -60,11 +68,15 @@ export function clienteSimulado(banco: BancoSimulado) {
       let ordem: string | null = null;
       let campos = "";
       const embuteSabores = () => tabela === "produtos" && campos.includes("sabores:produto_cento_itens");
+      const embuteRecheios = () => tabela === "produtos" && campos.includes("recheios_produto:produto_recheios");
       const resultado = () => {
         if (banco.falhas.has(tabela)) return { data: null, error: { message: `falha simulada em ${tabela}` } };
         // Embutido que falha derruba a consulta inteira, como no PostgREST.
         if (embuteSabores() && banco.falhas.has("produto_cento_itens")) {
           return { data: null, error: { message: "falha simulada em produto_cento_itens" } };
+        }
+        if (embuteRecheios() && banco.falhas.has("produto_recheios")) {
+          return { data: null, error: { message: "falha simulada em produto_recheios" } };
         }
         let linhas = (banco.tabelas[tabela] ?? []).filter((l) => filtros.every((f) => f(l)));
         if (ordem) {
@@ -72,7 +84,11 @@ export function clienteSimulado(banco: BancoSimulado) {
           linhas = [...linhas].sort((a, b) => Number(a[col]) - Number(b[col]));
         }
         const comRls = linhas.map((l) => aplicarRls(banco, tabela, l));
-        return { data: embuteSabores() ? comRls.map((l) => comSabores(banco, l)) : comRls, error: null };
+        const comEmbutidos = comRls.map((l) => {
+          const s = embuteSabores() ? comSabores(banco, l) : l;
+          return embuteRecheios() ? comRecheiosDoProduto(banco, s) : s;
+        });
+        return { data: comEmbutidos, error: null };
       };
       const b = {
         select: (c?: string) => {

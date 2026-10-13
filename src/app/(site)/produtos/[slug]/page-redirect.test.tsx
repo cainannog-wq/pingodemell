@@ -93,6 +93,8 @@ beforeAll(() => {
 beforeEach(() => {
   banco = novoBanco({
     produtos: [AVULSO, EMPADA, RISOLE, CENTO, BOLO, SMASH, BENTO],
+    // Lista própria do Bento Cake (recheios personalizados do produto).
+    produto_recheios: [{ produto_id: BENTO.id, id: BRIGADEIRO.id, nome: "Brigadeiro", posicao: 1 }],
     produto_cento_itens: [
       { cento_nome: CENTO.nome, subitem_nome: RISOLE.nome, ordem: 0 },
       { cento_nome: CENTO.nome, subitem_nome: EMPADA.nome, ordem: 1 },

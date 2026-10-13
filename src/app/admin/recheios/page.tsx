@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button, Icon } from "@/components/ds";
-import { bentoDisponivel, boloDisponivel } from "@/lib/recheios/regras";
+import { boloDisponivel } from "@/lib/recheios/regras";
 import { CAMPOS_RECHEIO, type Recheio } from "@/lib/recheios/types";
 import { createClient } from "@/lib/supabase/server";
 import { RecheiosLista } from "./recheios-lista";
@@ -35,10 +35,9 @@ export default async function RecheiosPage() {
   }
 
   const recheios = (data ?? []) as unknown as Recheio[];
-  // Sem nenhum recheio ativo de um lado, os produtos daquele tipo somem do
-  // site (como o Cento sem sabor ativo).
+  // Sem nenhum recheio ativo do Bolo, os produtos do tipo Bolo somem do site
+  // (como o Cento sem sabor ativo).
   const semBolo = !boloDisponivel(recheios);
-  const semBento = !bentoDisponivel(recheios);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -48,7 +47,7 @@ export default async function RecheiosPage() {
             Recheios
           </h1>
           <p style={{ margin: "4px 0 0", color: "var(--pdm-muted)" }}>
-            Uma lista só, usada no Bolo grande (com preço por kg) e no Bento Cake (só informativo).
+            Recheios do Bolo tradicional, com preço por kg. Bolos e Bento Cake com recheios próprios cadastram a lista dentro do produto.
           </p>
         </div>
         <Link href="/admin/recheios/novo" className="admin-page-header-cta">
@@ -57,7 +56,6 @@ export default async function RecheiosPage() {
       </div>
 
       {semBolo ? <Aviso>Nenhum recheio ativo para o Bolo grande: os produtos do tipo Bolo não aparecem no site.</Aviso> : null}
-      {semBento ? <Aviso>Nenhum recheio ativo para o Bento Cake: os produtos do tipo Bento Cake não aparecem no site.</Aviso> : null}
 
       <RecheiosLista recheios={recheios} />
     </div>

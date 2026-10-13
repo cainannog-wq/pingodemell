@@ -20,34 +20,22 @@ const grupo = () => screen.queryByLabelText(/^Grupo/);
 const enviado = () => new FormData(document.querySelector("form") as HTMLFormElement);
 
 describe("Formulário de recheio", () => {
-  it("preço e grupo só aparecem com 'Bolo grande' marcado", () => {
+  it("sem marcação de onde vale: preço e grupo sempre aparecem e são obrigatórios; vale_bento nunca vai no envio", () => {
     render(<RecheioForm action={acao} rotuloEnviar="Cadastrar recheio" />);
-    expect(preco()).toBeNull();
-    expect(grupo()).toBeNull();
-    fireEvent.click(screen.getByLabelText(/Bolo grande/));
+    expect(screen.queryByLabelText(/Bento Cake/)).toBeNull();
+    expect(screen.queryByLabelText(/Bolo grande/)).toBeNull();
     expect(preco()).toBeRequired();
     expect(grupo()).toBeRequired();
-    fireEvent.click(screen.getByLabelText(/Bolo grande/));
-    expect(preco()).toBeNull();
+    expect(enviado().has("vale_bento")).toBe(false);
   });
 
-  it("só Bento Cake: nenhum preço nem grupo no envio", () => {
-    render(<RecheioForm action={acao} rotuloEnviar="Cadastrar recheio" />);
-    fireEvent.click(screen.getByLabelText(/Bento Cake/));
-    const dados = enviado();
-    expect(dados.get("vale_bento")).toBe("on");
-    expect(dados.has("preco_kg")).toBe(false);
-    expect(dados.has("grupo")).toBe(false);
-  });
-
-  it("edição de recheio que vale nos dois: abre com preço, grupo e os dois marcados; novo recheio nasce ativo", () => {
+  it("edição de recheio que valia nos dois: abre com preço e grupo, sem a marcação de Bento; novo recheio nasce ativo", () => {
     const r: Recheio = {
       id: "1", nome: "Chocolate", vale_bolo: true, vale_bento: true, preco_kg: 60, grupo: "chocolate_outros",
       ativo: true, criado_em: "", atualizado_em: "",
     };
     render(<RecheioForm action={acao} recheio={r} rotuloEnviar="Salvar alterações" />);
-    expect(screen.getByLabelText(/Bolo grande/)).toBeChecked();
-    expect(screen.getByLabelText(/Bento Cake/)).toBeChecked();
+    expect(screen.queryByLabelText(/Bento Cake/)).toBeNull();
     expect((grupo() as HTMLSelectElement).value).toBe("chocolate_outros");
     cleanup();
     render(<RecheioForm action={acao} rotuloEnviar="Cadastrar recheio" />);
@@ -60,12 +48,10 @@ describe("Formulário de recheio — erro do servidor", () => {
     const recusa = vi.fn(async () => ({ error: "Já existe um recheio com esse nome." }));
     render(<RecheioForm action={recusa} rotuloEnviar="Cadastrar recheio" />);
     fireEvent.change(screen.getByLabelText(/Nome do recheio/), { target: { value: "Ninho" } });
-    fireEvent.click(screen.getByLabelText(/Bento Cake/));
     fireEvent.submit(document.querySelector("form") as HTMLFormElement);
     expect(await screen.findByText("Já existe um recheio com esse nome.")).toBeInTheDocument();
     expect(recusa).toHaveBeenCalledTimes(1);
     expect((screen.getByLabelText(/Nome do recheio/) as HTMLInputElement).value).toBe("Ninho");
-    expect(screen.getByLabelText(/Bento Cake/)).toBeChecked();
   });
 });
 
@@ -76,12 +62,13 @@ describe("Lista de recheios", () => {
     { ...base, id: "2", nome: "Ninho", vale_bolo: false, vale_bento: true, preco_kg: null, grupo: null, ativo: false },
   ];
 
-  it("mostra onde vale, preço e grupo (só do Bolo) e o status; sem botão de excluir", () => {
+  it("mostra preço e grupo (só do Bolo), marca o que não tem uso e o status; sem botão de excluir", () => {
     render(<RecheiosLista recheios={recheios} />);
     expect(screen.getByText("R$ 80,00")).toBeInTheDocument();
     expect(screen.getByText("Recheio com chocolate e outros")).toBeInTheDocument();
-    expect(screen.getAllByText("Bento Cake")).toHaveLength(2);
+    expect(screen.queryByText("Bento Cake")).toBeNull();
     expect(screen.getAllByText("Bolo grande")).toHaveLength(1);
+    expect(screen.getAllByText("Sem uso")).toHaveLength(1);
     expect(screen.getByLabelText("Recheio Brigadeiro ativo")).toBeChecked();
     expect(screen.getByLabelText("Recheio Ninho ativo")).not.toBeChecked();
     expect(screen.queryByRole("button", { name: /excluir|apagar|remover/i })).toBeNull();

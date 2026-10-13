@@ -177,3 +177,28 @@ describe("conferência de valores (item 7g): navegador = rota = banco", () => {
     expect(r.valor.totalNavegadorCentavos).toBe(fixtura.totalCentavos);
   });
 });
+
+describe("avulso com recheio personalizado (Ganache, Kit Kat...)", () => {
+  const RECHEIO = { id: "33333333-3333-4333-8333-333333333333", nome: "Dois amores" };
+  const itens = (extra: Record<string, unknown>) =>
+    corpo().itens.map((i, n) => (n === 0 ? ({ ...i, ...extra } as typeof i) : i));
+
+  it("aceita o recheio, grava no item e na variação, sem mexer no valor", () => {
+    const r = validarPedido(corpo({ itens: itens({ recheio: RECHEIO }) }), HOJE);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.valor.pedido.itens[0]).toMatchObject({ tipo: "normal", recheio: RECHEIO, variacao: "Recheio Dois amores", preco_unitario: 2.35, quantidade: 50 });
+    expect(r.valor.valoresCentavos[0]).toBe(235 * 50);
+  });
+
+  it("sem recheio continua como antes (sem recheio nem variação)", () => {
+    const r = validarPedido(corpo(), HOJE);
+    expect(r.ok && r.valor.pedido.itens[0]).toMatchObject({ variacao: null });
+    expect(r.ok && "recheio" in r.valor.pedido.itens[0]).toBe(false);
+  });
+
+  it("recusa recheio com id que não é uuid ou campo a mais", () => {
+    expect(recusa(corpo({ itens: itens({ recheio: { id: "x", nome: "A" } }) }))).toMatch(/recheio/);
+    expect(recusa(corpo({ itens: itens({ recheio: { ...RECHEIO, preco: 1 } }) }))).toBeTruthy();
+  });
+});

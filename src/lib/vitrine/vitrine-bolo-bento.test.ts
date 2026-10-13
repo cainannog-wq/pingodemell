@@ -66,9 +66,9 @@ describe("Lista — Bolo, Bento Cake e Smash Cake", () => {
     expect(nomes(await buscarLista(em("Bolos"))).sort()).toEqual(["Bolo", "Smash Cake"]);
   });
 
-  it("sem recheio de Bento: some só o Bento", async () => {
+  it("catálogo sem recheio de Bento: o Bento continua (a lista é do produto)", async () => {
     montar([REC_BOLO, REC_BOLO_2]);
-    expect(nomes(await buscarLista(TODOS))).not.toContain("Bento Flork");
+    expect(nomes(await buscarLista(TODOS))).toContain("Bento Flork");
     expect(nomes(await buscarLista(TODOS))).toContain("Bolo");
   });
 
@@ -115,10 +115,10 @@ describe("buscarInterna — Bolo e Bento Cake", () => {
     expect(bento.estado).toBe("ok");
   });
 
-  it("indisponível de um lado só: 404 (nao-encontrado) só daquele lado", async () => {
-    montar([REC_BOLO]);
-    expect((await buscarInterna("bento")).estado).toBe("nao-encontrado");
-    expect((await buscarInterna("bolo")).estado).toBe("ok");
+  it("só o Bolo tradicional depende do catálogo: sem recheio de Bolo, 404 só nele", async () => {
+    montar([REC_BENTO]);
+    expect((await buscarInterna("bolo")).estado).toBe("nao-encontrado");
+    expect((await buscarInterna("bento")).estado).toBe("ok");
     expect((await buscarInterna("smash")).estado).toBe("ok");
   });
 
