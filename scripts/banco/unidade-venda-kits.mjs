@@ -84,22 +84,24 @@ await emTransacaoDesfeita("Unidade de venda e categoria Kits", async (db) => {
       return;
     }
     const valores = lido.rows[0].valores;
-    if (!valores.includes("Kits")) {
+    // Kits antes do RENAME de supabase/categoria-kit-festa.sql, Kit Festa depois.
+    const KIT = valores.includes("Kits") ? "Kits" : valores.includes("Kit Festa") ? "Kit Festa" : null;
+    if (!KIT) {
       console.log(`\n[AVISO] Kits ainda não está no enum (${valores.join(", ")}): parte de Kits não testada.`);
       return;
     }
     registrar(
       "kits 1. enum categoria_produto mantém os 5 valores de antes (Bento Cake veio depois, ver recheios.mjs)",
-      ["Bolos", "Doces", "Salgados", "Bebidas", "Kits"].every((v) => valores.includes(v)),
+      ["Bolos", "Doces", "Salgados", "Bebidas", KIT].every((v) => valores.includes(v)),
       valores.join(", ")
     );
     await c.como("authenticated");
     const ins = await c.tentar(
-      `insert into public.produtos (nome, preco, pedido_minimo, tipo, ativo, "Categoria") values ($1, 1, 1, 'normal', true, 'Kits')`,
-      [`${PROVA}_KITS`]
+      `insert into public.produtos (nome, preco, pedido_minimo, tipo, ativo, "Categoria") values ($1, 1, 1, 'normal', true, $2)`,
+      [`${PROVA}_KITS`, KIT]
     );
     await c.como("anon");
-    const filtro = await c.tentar(`select nome from public.produtos where "Categoria" = 'Kits' and nome = $1`, [`${PROVA}_KITS`]);
+    const filtro = await c.tentar(`select nome from public.produtos where "Categoria" = $2 and nome = $1`, [`${PROVA}_KITS`, KIT]);
     registrar(
       "kits 2. logado cadastra produto em Kits; anônimo encontra pelo filtro de categoria",
       ins.ok && ins.rowCount === 1 && filtro.ok && filtro.rowCount === 1,

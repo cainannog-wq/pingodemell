@@ -1,5 +1,6 @@
 // Lista única das categorias de produto. Espelha o enum categoria_produto
-// do banco (Kits entrou em supabase/categoria-kits.sql, Bento Cake em
+// do banco (Kits entrou em supabase/categoria-kits.sql e foi renomeada para
+// Kit Festa em supabase/categoria-kit-festa.sql, Bento Cake em
 // supabase/categoria-bento-cake.sql, Adicionais em
 // supabase/categoria-adicionais.sql); scripts/banco/categoria.mjs falha se
 // o enum e esta lista divergirem.
@@ -19,7 +20,7 @@ export const CATEGORIAS = [
   { valor: "Doces", rotulo: "Doces", parametro: "doces", entraEmMaisPedidos: true },
   { valor: "Salgados", rotulo: "Salgados", parametro: "salgados", entraEmMaisPedidos: true },
   { valor: "Bebidas", rotulo: "Bebidas", parametro: "bebidas", entraEmMaisPedidos: false },
-  { valor: "Kits", rotulo: "Kits", parametro: "kits", entraEmMaisPedidos: true },
+  { valor: "Kit Festa", rotulo: "Kit Festa", parametro: "kit-festa", entraEmMaisPedidos: true },
   { valor: "Adicionais", rotulo: "Adicionais", parametro: "adicionais", entraEmMaisPedidos: false },
 ] as const;
 
@@ -28,9 +29,24 @@ export type CategoriaProduto = Categoria["valor"];
 
 export const CATEGORIA_VALUES: readonly CategoriaProduto[] = CATEGORIAS.map((c) => c.valor);
 
+// Nomes antigos que o banco ainda pode devolver. O código aceita "Kits" e
+// "Kit Festa" como a mesma categoria enquanto o RENAME do enum não é
+// aplicado (e, se ele for desfeito, depois). Retirar "Kits" daqui é um PR
+// futuro, só depois de o RENAME estar aplicado e estável.
+const NOMES_ANTIGOS: Readonly<Record<string, CategoriaProduto>> = { Kits: "Kit Festa" };
+
+// Nome atual de um valor vindo do banco: o próprio valor, ou o nome novo de
+// um nome antigo. Valor desconhecido ou vazio devolve null.
+export function categoriaCanonica(valor: string | null | undefined): CategoriaProduto | null {
+  if (!valor) return null;
+  if ((CATEGORIA_VALUES as readonly string[]).includes(valor)) return valor as CategoriaProduto;
+  return NOMES_ANTIGOS[valor] ?? null;
+}
+
 // Registro de um valor vindo do banco. Valor desconhecido (por exemplo, um
 // valor novo do enum que o código ainda não conhece) devolve undefined:
 // quem chama decide o padrão, nunca lança erro.
 export function categoriaDoValor(valor: string | null | undefined): Categoria | undefined {
-  return CATEGORIAS.find((c) => c.valor === valor);
+  const canonica = categoriaCanonica(valor);
+  return canonica ? CATEGORIAS.find((c) => c.valor === canonica) : undefined;
 }

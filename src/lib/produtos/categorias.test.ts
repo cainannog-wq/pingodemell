@@ -9,7 +9,7 @@ import { CATEGORIA_VALUES, CATEGORIAS, categoriaDoValor, type CategoriaProduto }
 
 describe("lista única de categorias", () => {
   it("7 categorias, na ordem de exibição, com Adicionais no fim", () => {
-    expect(CATEGORIA_VALUES).toEqual(["Bolos", "Bento Cake", "Doces", "Salgados", "Bebidas", "Kits", "Adicionais"]);
+    expect(CATEGORIA_VALUES).toEqual(["Bolos", "Bento Cake", "Doces", "Salgados", "Bebidas", "Kit Festa", "Adicionais"]);
   });
 
   it("valores, rótulos e valores na URL sem repetição", () => {
@@ -30,7 +30,7 @@ describe("lista única de categorias", () => {
       Doces: "doces",
       Salgados: "salgados",
       Bebidas: "bebidas",
-      Kits: "kits",
+      "Kit Festa": "kit-festa",
     };
     for (const [valor, parametro] of Object.entries(antes)) {
       expect(categoriaParaParametro(valor as CategoriaProduto)).toBe(parametro);

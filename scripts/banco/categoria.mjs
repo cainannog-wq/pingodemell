@@ -16,13 +16,15 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { cenario, comMigracao, descrever, emTransacaoDesfeita, pular, raiz, registrar, rodarMigracao } from "./lib.mjs";
+import { cenario, comMigracao, descrever, emTransacaoDesfeita, nomeDaCategoriaKit, pular, raiz, registrar, rodarMigracao } from "./lib.mjs";
 
 const MIGRACAO = path.join(raiz, "supabase", "produtos-categoria-obrigatoria.sql");
 const DESFAZER = path.join(raiz, "supabase", "produtos-categoria-desfazer.sql");
 const VIOLOU_NOT_NULL = "23502";
-// Os 6 valores de antes; Adicionais (sétimo) entra em categoria-adicionais.sql.
-const VALORES = ["Bolos", "Bento Cake", "Doces", "Salgados", "Bebidas", "Kits"];
+// Os 5 valores fixos; o dos kits muda de nome ('Kits' -> 'Kit Festa', ver
+// supabase/categoria-kit-festa.sql) e vem do banco (nomeDaCategoriaKit);
+// Adicionais (sétimo) entra em categoria-adicionais.sql.
+const VALORES_FIXOS = ["Bolos", "Bento Cake", "Doces", "Salgados", "Bebidas"];
 const ADICIONAIS = "Adicionais";
 // Valor de enum criado na mesma transação (unsafe use of new value).
 const ENUM_NOVO_NA_TRANSACAO = "55P04";
@@ -76,6 +78,8 @@ async function estrutura(db) {
 
 // As provas da categoria obrigatória. Roda com a coluna já NOT NULL.
 async function provar(db, c, antes) {
+  const KIT = await nomeDaCategoriaKit(db);
+  const VALORES = [...VALORES_FIXOS, KIT];
   // 1. cadastro sem categoria recusado
   await c.como("authenticated");
   const semAdmin = await c.tentar("insert into public.produtos (nome, preco, pedido_minimo) values ('PROVA Cat Sem', 1, 1)");
@@ -174,7 +178,8 @@ await emTransacaoDesfeita("Categoria obrigatória do produto", async (db) => {
     if (!lido.ok) throw new Error(`leitura do enum: ${descrever(lido)}`);
     const fonte = fs.readFileSync(LISTA_DO_CODIGO, "utf8");
     const doCodigo = [...fonte.matchAll(/\{\s*valor:\s*"([^"]+)"/g)].map((m) => m[1]);
-    const doBanco = lido.rows[0].v;
+    // 'Kits' (antes do RENAME) é a mesma categoria que 'Kit Festa' no código.
+    const doBanco = lido.rows[0].v.map((v) => (v === "Kits" ? "Kit Festa" : v));
     registrar(
       "categoria 8. lista única do código e enum do banco têm os mesmos valores",
       doCodigo.length > 0 && doCodigo.length === doBanco.length && doCodigo.every((v) => doBanco.includes(v)),

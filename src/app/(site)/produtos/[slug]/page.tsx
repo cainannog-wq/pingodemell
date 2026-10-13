@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense, cache } from "react";
 import { Badge, Icon } from "@/components/ds";
 import { CardProduto, PrecoProduto } from "@/components/site/CardProduto";
+import { categoriaCanonica } from "@/lib/produtos/categorias";
 import { LOJA } from "@/lib/site/config";
 import { ROTAS } from "@/lib/site/rotas";
 import { metadadosIndexaveis } from "@/lib/site/seo";
@@ -86,6 +87,8 @@ export default async function ProdutoPage({ params }: Props) {
   const variacao = variacaoDoProduto(produto);
   const cento = variacao === "cento";
   const minimo = textoMinimo(produto);
+  // "Kits" e "Kit Festa" são a mesma categoria (ver categoriaCanonica).
+  const categoria = categoriaCanonica(produto.Categoria);
 
   return (
     <div className="interna">
@@ -94,15 +97,15 @@ export default async function ProdutoPage({ params }: Props) {
           <li>
             <Link href={ROTAS.lista}>Produtos</Link>
           </li>
-          {produto.Categoria ? (
+          {categoria ? (
             <li>
               <Icon name="chevron_right" size={16} color="var(--brown-300)" />
               {/* Adicionais e Bebidas ficam fora da Lista: a categoria
                   aparece como texto, sem link (o filtro não existe lá). */}
-              {categoriaEstaNaLista(produto.Categoria) ? (
-                <Link href={ROTAS.listaPorCategoria(produto.Categoria)}>{produto.Categoria}</Link>
+              {categoriaEstaNaLista(categoria) ? (
+                <Link href={ROTAS.listaPorCategoria(categoria)}>{categoria}</Link>
               ) : (
-                <span>{produto.Categoria}</span>
+                <span>{categoria}</span>
               )}
             </li>
           ) : null}
@@ -118,9 +121,9 @@ export default async function ProdutoPage({ params }: Props) {
 
         <div className="interna-config">
           <div className="interna-cabeca">
-            {produto.Categoria || ehMaisPedido(produto) ? (
+            {categoria || ehMaisPedido(produto) ? (
               <div className="interna-selos">
-                {produto.Categoria ? <Badge variant="soft">{produto.Categoria}</Badge> : null}
+                {categoria ? <Badge variant="soft">{categoria}</Badge> : null}
                 {ehMaisPedido(produto) ? (
                   <Badge variant="gold" style={{ textTransform: "none", letterSpacing: "normal" }}>
                     Mais pedido

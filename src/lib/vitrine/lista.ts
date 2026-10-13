@@ -1,3 +1,4 @@
+import { categoriaCanonica } from "@/lib/produtos/categorias";
 import type { CategoriaProduto } from "@/lib/produtos/types";
 import { categoriaParaParametro } from "@/lib/site/rotas";
 import { lerBusca, nomeCasaComBusca, palavrasDaBusca } from "./busca";
@@ -13,10 +14,12 @@ import { ehMaisPedido, type ProdutoVitrine } from "./mais-pedidos";
 // inteira, inclusive de "Todos" (decisão do Cainan, fase 14b): o produto
 // continua abrindo pela interna, mas não aparece aqui. A ordem do admin
 // e do sitemap continua a da lista única (produtos/categorias.ts).
-export const CATEGORIAS_DA_LISTA = ["Bolos", "Doces", "Salgados", "Kits", "Bento Cake"] as const satisfies readonly CategoriaProduto[];
+export const CATEGORIAS_DA_LISTA = ["Bolos", "Doces", "Salgados", "Kit Festa", "Bento Cake"] as const satisfies readonly CategoriaProduto[];
 
-export function categoriaEstaNaLista(categoria: CategoriaProduto | null | undefined): boolean {
-  return (CATEGORIAS_DA_LISTA as readonly (CategoriaProduto | null | undefined)[]).includes(categoria);
+// Aceita o nome antigo "Kits" como "Kit Festa" (ver categoriaCanonica).
+export function categoriaEstaNaLista(categoria: string | null | undefined): boolean {
+  const canonica = categoriaCanonica(categoria);
+  return canonica !== null && (CATEGORIAS_DA_LISTA as readonly CategoriaProduto[]).includes(canonica);
 }
 
 // Produto que a Lista mostra: ativo e de uma categoria da Lista. Produto
@@ -47,6 +50,17 @@ export type ItemLista = {
 // `parametro` da lista única, sem diferenciar maiúscula). Qualquer valor que
 // não seja o de uma categoria da Lista (vazio, repetido, inventado,
 // adicionais, bebidas) vale como "Todos" (null), sem erro.
+// Parâmetros antigos da URL que ainda chegam de links de fora: o endereço
+// de uma categoria renomeada. A Lista redireciona (308) para o parâmetro
+// atual; nenhum link nosso usa estes valores.
+const PARAMETROS_ANTIGOS: Readonly<Record<string, CategoriaProduto>> = { kits: "Kit Festa" };
+
+export function categoriaDoParametroAntigo(valor: string | string[] | undefined): CategoriaProduto | null {
+  const texto = Array.isArray(valor) ? valor[0] : valor;
+  if (!texto) return null;
+  return PARAMETROS_ANTIGOS[texto.trim().toLowerCase()] ?? null;
+}
+
 export function categoriaDoParametro(valor: string | string[] | undefined): CategoriaProduto | null {
   const texto = Array.isArray(valor) ? valor[0] : valor;
   if (!texto) return null;
@@ -110,7 +124,7 @@ function destaquesPrimeiro(a: ProdutoVitrine, b: ProdutoVitrine): number {
 }
 
 function posicaoDaCategoria(p: ProdutoVitrine): number {
-  return (CATEGORIAS_DA_LISTA as readonly (CategoriaProduto | null)[]).indexOf(p.Categoria);
+  return (CATEGORIAS_DA_LISTA as readonly (CategoriaProduto | null)[]).indexOf(categoriaCanonica(p.Categoria));
 }
 
 function comparador(ordem: OrdemLista, categoria: CategoriaProduto | null) {
@@ -123,7 +137,7 @@ function comparador(ordem: OrdemLista, categoria: CategoriaProduto | null) {
       return destaquesPrimeiro;
     case "recomendados":
       // Numa categoria: destaques primeiro, depois A a Z. Em "Todos": por
-      // categoria (Bolos, Doces, Salgados, Kits, Bento Cake) e, dentro de
+      // categoria (Bolos, Doces, Salgados, Kit Festa, Bento Cake) e, dentro de
       // cada uma, destaques primeiro e depois A a Z.
       if (categoria) return destaquesPrimeiro;
       return (a: ProdutoVitrine, b: ProdutoVitrine) => posicaoDaCategoria(a) - posicaoDaCategoria(b) || destaquesPrimeiro(a, b);
@@ -162,7 +176,7 @@ export function montarLista(produtos: ProdutoVitrine[], parametros: ParametrosLi
   const maisPedidosDisponivel = categoria === null && daLista.some(ehMaisPedido);
   const ordem = parametros.ordem === "mais-pedidos" && !maisPedidosDisponivel ? ORDEM_PADRAO : parametros.ordem;
 
-  const daCategoria = categoria === null ? daLista : daLista.filter((p) => p.Categoria === categoria);
+  const daCategoria = categoria === null ? daLista : daLista.filter((p) => categoriaCanonica(p.Categoria) === categoria);
   const palavras = palavrasDaBusca(busca);
   const encontrados = daCategoria.filter((p) => nomeCasaComBusca(p.nome, palavras)).sort(comparador(ordem, categoria));
 

@@ -46,7 +46,7 @@ describe("page_referrer limpo", () => {
   it("do próprio site: a mesma limpeza", () => {
     expect(referrerLimpo(`${ORIGEM}/produtos/brigadeiro-gourmet?editar=abc#x`, ORIGEM)).toBe(`${ORIGEM}/produtos/brigadeiro-gourmet`);
     expect(referrerLimpo(`${ORIGEM}/produtos?categoria=texto`, ORIGEM)).toBe(`${ORIGEM}/produtos`);
-    expect(referrerLimpo(`${ORIGEM}/produtos?categoria=kits`, ORIGEM)).toBe(`${ORIGEM}/produtos?categoria=kits`);
+    expect(referrerLimpo(`${ORIGEM}/produtos?categoria=kit-festa`, ORIGEM)).toBe(`${ORIGEM}/produtos?categoria=kit-festa`);
   });
   it("de fora: só a origem, sem caminho nem query", () => {
     expect(referrerLimpo("https://l.instagram.com/?u=https%3A%2F%2Fpingodemell&e=abc", ORIGEM)).toBe("https://l.instagram.com/");

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { permanentRedirect } from "next/navigation";
 import { cache } from "react";
 import { FiltroCategorias } from "@/components/site/FiltroCategorias";
 import { Hive } from "@/components/site/Hive";
-import { ROTAS } from "@/lib/site/rotas";
+import { ROTAS, urlDaLista } from "@/lib/site/rotas";
 import { SEO_CATEGORIAS, metadadosIndexaveis } from "@/lib/site/seo";
 import { buscarProdutosDaLista } from "@/lib/vitrine/buscar";
-import { lerParametrosDaLista, montarLista } from "@/lib/vitrine/lista";
+import { categoriaDoParametroAntigo, lerParametrosDaLista, montarLista } from "@/lib/vitrine/lista";
 import { BuscaEOrdem } from "./_lista/BuscaEOrdem";
 import { ListaProdutos } from "./_lista/ListaProdutos";
 import { Paginacao } from "./_lista/Paginacao";
@@ -35,11 +36,16 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 // Lista de produtos (página 2 do site). Tudo pela URL, para abrir igual a
-// partir de um link colado: ?categoria= (bolos, doces, salgados, kits ou
+// partir de um link colado: ?categoria= (bolos, doces, salgados, kit-festa ou
 // bento-cake; qualquer outro valor mostra "Todos"), ?busca=, ?ordem=
 // (recomendados, mais-pedidos, a-z, z-a) e ?pagina= (24 por página).
 export default async function ListaPage({ searchParams }: Props) {
-  const parametros = lerParametrosDaLista(await searchParams);
+  const busca = await searchParams;
+  const parametros = lerParametrosDaLista(busca);
+  // Link de fora com o endereço antigo da categoria (?categoria=kits): 308
+  // para o atual, mantendo busca, ordem e página.
+  const antiga = categoriaDoParametroAntigo(busca.categoria);
+  if (antiga) permanentRedirect(urlDaLista({ ...parametros, categoria: antiga }));
   const produtos = await carregar();
   const resultado = produtos ? montarLista(produtos, parametros) : null;
 
