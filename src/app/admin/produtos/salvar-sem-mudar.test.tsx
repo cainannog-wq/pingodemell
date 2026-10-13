@@ -2,6 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import type { SubcategoriaOpcao } from "@/lib/subcategorias/types";
 
 // Ida e volta do Salvar: abre o formulário de verdade com a linha de um
 // produto como ela está no banco, salva SEM tocar em nada e passa o
@@ -36,6 +37,7 @@ type LinhaProduto = {
   ativo: boolean;
   tipo: string;
   unidade_venda: string;
+  subcategoria_id?: string | null;
 };
 
 const chamadas = {
@@ -43,6 +45,14 @@ const chamadas = {
   rpc: [] as { nome: string; args: Record<string, unknown> }[],
   centoDelete: [] as string[],
   centoInsert: [] as { cento_nome: string; subitem_nome: string; ordem: number }[][],
+};
+
+// O que o Supabase simulado devolve para a linha do produto e para as
+// subcategorias, e quantas vezes as subcategorias foram consultadas.
+const estado = {
+  atual: { id: "c7b3f34c-6f8f-4b39-a8fb-31369f1c4aee", image_url: null } as Record<string, unknown>,
+  subcategorias: [] as SubcategoriaOpcao[],
+  consultasSubcategorias: 0,
 };
 
 vi.mock("@/lib/supabase/dal", () => ({ requireAuth: vi.fn().mockResolvedValue({ id: "user-1" }) }));
@@ -69,12 +79,22 @@ vi.mock("@/lib/supabase/server", () => ({
       if (tabela === "produtos") {
         return {
           select: () => ({
-            eq: () => ({ maybeSingle: async () => ({ data: { id: ID_DE_TESTE, image_url: null } }) }),
+            eq: () => ({ maybeSingle: async () => ({ data: estado.atual }) }),
           }),
           update: (payload: Record<string, unknown>) => ({
             eq: async () => {
               chamadas.update.push(payload);
               return { error: null };
+            },
+          }),
+        };
+      }
+      if (tabela === "subcategorias") {
+        return {
+          select: () => ({
+            eq: async (_coluna: string, categoria: string) => {
+              estado.consultasSubcategorias += 1;
+              return { data: estado.subcategorias.filter((s) => s.categoria === categoria), error: null };
             },
           }),
         };
@@ -117,6 +137,9 @@ beforeEach(() => {
   chamadas.rpc.length = 0;
   chamadas.centoDelete.length = 0;
   chamadas.centoInsert.length = 0;
+  estado.atual = { id: ID_DE_TESTE, image_url: null };
+  estado.subcategorias = [];
+  estado.consultasSubcategorias = 0;
 });
 afterEach(() => cleanup());
 
@@ -129,6 +152,7 @@ type Caso = {
   produto: LinhaProduto;
   recheios?: [string, string][];
   sabores?: string[];
+  subcategorias?: SubcategoriaOpcao[];
 };
 
 const DESC_BOLO =
@@ -283,10 +307,13 @@ const COLUNAS: [coluna: string, chave: keyof LinhaProduto][] = [
   ["destaque", "destaque"],
   ["ativo", "ativo"],
   ["tipo", "tipo"],
+  ["subcategoria_id", "subcategoria_id"],
 ];
 
 async function salvarSemMexer(caso: Caso) {
   const { produto } = caso;
+  estado.atual = { id: produto.id, image_url: null, Categoria: produto.Categoria, subcategoria_id: produto.subcategoria_id ?? null };
+  estado.subcategorias = caso.subcategorias ?? [];
   const candidatos = (caso.sabores ?? []).map((nome) => ({ nome, ativo: true }));
   const { container } = render(
     <ProdutoForm
@@ -297,6 +324,7 @@ async function salvarSemMexer(caso: Caso) {
       produtosDisponiveis={candidatos}
       initialSubitens={caso.sabores ?? []}
       recheiosIniciais={(caso.recheios ?? []).map(([id, nome]) => ({ id, nome }))}
+      subcategorias={caso.subcategorias ?? []}
     />
   );
   fireEvent.submit(container.querySelector("form") as HTMLFormElement);
@@ -369,5 +397,62 @@ describe("Salvar sem mudar nada não altera o produto", () => {
       expect(sabores.every((s) => s.cento_nome === caso.produto.nome)).toBe(true);
       expect(sabores.map((s) => s.ordem)).toEqual(sabores.map((_, i) => sabores[0].ordem + i));
     });
+  });
+});
+
+// Subcategoria (PR 3): abrir e salvar sem tocar mantém o vínculo.
+const SUB_ATIVA = "5d0c1b7e-2a4f-4c66-9a53-0f1d6e8b7a21";
+const SUB_INATIVA = "9a1e44c0-7b3d-4d2f-8e60-1c2b3a4d5e6f";
+const DOCES = linha({ nome: "Brigadeiro de teste", preco: 3, descricao: "Doce de teste", pedido_minimo: 25, Categoria: "Doces", prazo_producao_dias: 2, step_quantidade: "multiplos_5", tipo: "normal", unidade_venda: "unidade" });
+
+describe("Salvar sem mudar nada mantém a subcategoria", () => {
+  it("subcategoria ativa: o campo vai no UPDATE com o mesmo valor, depois de uma consulta só", async () => {
+    await salvarSemMexer({
+      rotulo: "ativa",
+      produto: { ...DOCES, subcategoria_id: SUB_ATIVA },
+      subcategorias: [{ id: SUB_ATIVA, categoria: "Doces", nome: "Gourmet", ativo: true, ordem: 20 }],
+    });
+    expect(chamadas.update[0].subcategoria_id).toBe(SUB_ATIVA);
+    expect(estado.consultasSubcategorias).toBe(1);
+  });
+
+  it("subcategoria inativa, a única da categoria: o campo continua visível e o vínculo é mantido", async () => {
+    await salvarSemMexer({
+      rotulo: "inativa",
+      produto: { ...DOCES, subcategoria_id: SUB_INATIVA },
+      subcategorias: [{ id: SUB_INATIVA, categoria: "Doces", nome: "Antiga", ativo: false, ordem: 10 }],
+    });
+    expect(chamadas.update[0].subcategoria_id).toBe(SUB_INATIVA);
+  });
+
+  it("subcategoria inativa com outra ativa na categoria: o vínculo é mantido", async () => {
+    await salvarSemMexer({
+      rotulo: "inativa com outra ativa",
+      produto: { ...DOCES, subcategoria_id: SUB_INATIVA },
+      subcategorias: [
+        { id: SUB_ATIVA, categoria: "Doces", nome: "Gourmet", ativo: true, ordem: 20 },
+        { id: SUB_INATIVA, categoria: "Doces", nome: "Antiga", ativo: false, ordem: 10 },
+      ],
+    });
+    expect(chamadas.update[0].subcategoria_id).toBe(SUB_INATIVA);
+  });
+
+  it("produto sem subcategoria, em categoria que tem: o campo vai vazio e grava null", async () => {
+    await salvarSemMexer({
+      rotulo: "sem vínculo",
+      produto: { ...DOCES, subcategoria_id: null },
+      subcategorias: [{ id: SUB_ATIVA, categoria: "Doces", nome: "Gourmet", ativo: true, ordem: 20 }],
+    });
+    expect(chamadas.update[0].subcategoria_id).toBeNull();
+  });
+
+  it("categoria sem subcategoria: o campo não é enviado, não há consulta e a coluna fica fora do UPDATE", async () => {
+    await salvarSemMexer({
+      rotulo: "sem subcategorias",
+      produto: { ...DOCES, subcategoria_id: null },
+      subcategorias: [{ id: SUB_ATIVA, categoria: "Bolos", nome: "Tradicional", ativo: true, ordem: 10 }],
+    });
+    expect(estado.consultasSubcategorias).toBe(0);
+    expect("subcategoria_id" in chamadas.update[0]).toBe(false);
   });
 });

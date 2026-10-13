@@ -23,23 +23,26 @@ import type { CategoriaProduto, TipoProduto } from "./types";
 // outro tipo perde os sabores, e o produto que deixa de aceitar recheios perde
 // a lista.
 //
-// Campo novo (por exemplo subcategoria_id, na PR 3): UMA entrada aqui, e um
-// caso novo em salvar-sem-mudar.test.tsx. A visibilidade recebe um contexto,
-// não só categoria e tipo, porque o seletor de subcategoria depende também de
-// a categoria ter ao menos uma subcategoria ativa.
+// Campo novo: UMA entrada aqui, e um caso novo em salvar-sem-mudar.test.tsx.
+// A visibilidade recebe um contexto, não só categoria e tipo, porque o seletor
+// de subcategoria depende também de haver subcategoria para escolher.
 
 export type ContextoCampo = {
   // Pode ser o nome antigo do banco ("Kits"): a tabela usa o nome canônico.
   categoria: string | null | undefined;
   tipo: TipoProduto;
-  // Nenhum campo lê isto ainda (entra com o seletor de subcategoria).
-  categoriaTemSubcategoriaAtiva?: boolean;
+  // Só o seletor de subcategoria lê isto: há subcategoria para escolher (a
+  // categoria tem alguma ativa, ou o produto já está ligado a uma dela, mesmo
+  // inativa; ver temSubcategoriaParaEscolher em lib/subcategorias/regras.ts).
+  // O servidor calcula o fato com o banco; o navegador nunca o envia.
+  temSubcategoriaParaEscolher?: boolean;
 };
 
 export type CampoProduto =
   | "nome"
   | "descricao"
   | "categoria"
+  | "subcategoria"
   | "tipo"
   | "preco"
   | "pedido_minimo"
@@ -58,6 +61,7 @@ export type ColunaProduto =
   | "nome"
   | "descricao"
   | "Categoria"
+  | "subcategoria_id"
   | "tipo"
   | "preco"
   | "pedido_minimo"
@@ -70,7 +74,8 @@ export type ColunaProduto =
 type DefinicaoCampo = {
   // Coluna em produtos. Ausente: o campo grava em tabela filha ou no storage.
   coluna?: ColunaProduto;
-  // Valor que o cadastro novo grava quando o campo está escondido.
+  // Valor que o cadastro novo grava quando o campo está escondido. Sem neutro
+  // (undefined), o cadastro omite a coluna e vale o padrão do banco.
   neutro?: unknown;
   // Grava em tabela filha: não segue a regra "escondido não vai ao UPDATE"
   // (ver a exceção deliberada acima).
@@ -88,6 +93,14 @@ export const CAMPOS: Record<CampoProduto, DefinicaoCampo> = {
   nome: { coluna: "nome", nomesNoFormulario: ["nome"], visivel: sempre },
   descricao: { coluna: "descricao", nomesNoFormulario: ["descricao"], visivel: sempre },
   categoria: { coluna: "Categoria", nomesNoFormulario: ["categoria"], visivel: sempre },
+  // Opcional. Escondido: nunca vai ao UPDATE (o vínculo do banco fica como
+  // está) e o cadastro novo omite a coluna, que nasce nula (sem padrão no
+  // banco; nulo é "sem subcategoria").
+  subcategoria: {
+    coluna: "subcategoria_id",
+    nomesNoFormulario: ["subcategoria_id"],
+    visivel: ({ temSubcategoriaParaEscolher }) => temSubcategoriaParaEscolher === true,
+  },
   tipo: { coluna: "tipo", nomesNoFormulario: ["tipo"], visivel: sempre },
   // O Bolo tem o preço no recheio × kg: preço, mínimo, step e unidade não valem.
   preco: { coluna: "preco", neutro: 0, nomesNoFormulario: ["preco"], visivel: ({ tipo }) => tipo !== "bolo" },

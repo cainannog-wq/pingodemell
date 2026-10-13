@@ -27,6 +27,7 @@ import { lerRecheiosDoEnvio, type RecheiosDoEnvio } from "./recheios-servidor";
 import { galeriaMudou, gravarGaleria, lerFotosAtuais, limparSobras } from "./galeria-servidor";
 import { apagarArquivosDoProduto, concluirTrocaDeCapa, limparSobrasCapa } from "./capa-servidor";
 import { invalidarVitrine } from "@/lib/vitrine/cache";
+import { lerSubcategoriasDoEnvio, recusarSubcategoria } from "./subcategoria-servidor";
 
 // Cache da vitrine (src/lib/vitrine/cache.ts): toda ação que grava algo que
 // a cliente vê chama invalidarVitrine() logo depois da gravação principal e
@@ -155,12 +156,25 @@ export async function createProduto(
     formData.get("capa")
   );
 
-  const parsed = parseProdutoForm(formData);
+  // Subcategoria: só consulta o banco se o campo veio no envio (ver
+  // subcategoria-servidor.ts).
+  const subcategorias = await lerSubcategoriasDoEnvio(supabase, formData, null);
+  if (!subcategorias.ok) {
+    await descartar();
+    return { error: subcategorias.erro };
+  }
+  const parsed = parseProdutoForm(formData, { temSubcategoriaParaEscolher: subcategorias.temSubcategoriaParaEscolher });
   if (!parsed.success) {
     await descartar();
     return { error: parsed.error };
   }
   const { nome, categoria, tipo, subitens } = parsed.data;
+
+  const recusaSubcategoria = recusarSubcategoria(parsed.data.subcategoria_id, categoria, subcategorias, null);
+  if (recusaSubcategoria) {
+    await descartar();
+    return { error: recusaSubcategoria };
+  }
 
   const recheios = lerRecheiosDoEnvio(formData, { categoria, tipo });
   if (!recheios.ok) {
@@ -263,9 +277,9 @@ export async function updateProduto(
 
   const { data: atual } = await supabase
     .from("produtos")
-    .select("id, image_url")
+    .select("id, image_url, Categoria, subcategoria_id")
     .eq("nome", nomeOriginal)
-    .maybeSingle<{ id: string; image_url: string | null }>();
+    .maybeSingle<{ id: string; image_url: string | null; Categoria?: string | null; subcategoria_id?: string | null }>();
   if (!atual || !ehUuid(atual.id)) return { error: "Produto não encontrado. Ele pode ter sido excluído ou renomeado." };
   const produtoId = atual.id;
   const capaAntiga = atual.image_url ?? null;
@@ -277,12 +291,26 @@ export async function updateProduto(
     formData.get("capa")
   );
 
-  const parsed = parseProdutoForm(formData);
+  // Subcategoria: só consulta o banco se o campo veio no envio. O vínculo
+  // que o produto já tem (lido acima, sem consulta a mais) pode ser mantido
+  // mesmo inativo.
+  const subcategorias = await lerSubcategoriasDoEnvio(supabase, formData, atual);
+  if (!subcategorias.ok) {
+    await descartar();
+    return { error: subcategorias.erro };
+  }
+  const parsed = parseProdutoForm(formData, { temSubcategoriaParaEscolher: subcategorias.temSubcategoriaParaEscolher });
   if (!parsed.success) {
     await descartar();
     return { error: parsed.error };
   }
   const { nome, categoria, tipo, subitens } = parsed.data;
+
+  const recusaSubcategoria = recusarSubcategoria(parsed.data.subcategoria_id, categoria, subcategorias, atual);
+  if (recusaSubcategoria) {
+    await descartar();
+    return { error: recusaSubcategoria };
+  }
 
   const recheios = lerRecheiosDoEnvio(formData, { categoria, tipo });
   if (!recheios.ok) {

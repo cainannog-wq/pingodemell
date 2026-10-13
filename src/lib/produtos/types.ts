@@ -61,6 +61,8 @@ export type Produto = {
   // Unidade em que o preço é dado ("kg", "unidade"...), texto livre e
   // opcional. Vazio: o card mostra só o preço, como antes.
   unidade_venda: string | null;
+  // Subcategoria opcional (supabase/subcategorias.sql); nula = sem subcategoria.
+  subcategoria_id?: string | null;
 };
 
 // Linha da tabela produto_cento_itens: um subitem (sabor) de um produto

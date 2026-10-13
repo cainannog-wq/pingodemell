@@ -14,6 +14,7 @@ const raiz = path.resolve(__dirname, "..", "..", "..");
 const ARQUIVOS = {
   produtos: "src/app/admin/produtos/actions.ts",
   recheios: "src/app/admin/recheios/actions.ts",
+  subcategorias: "src/app/admin/subcategorias/actions.ts",
 };
 
 // As ações que mudam o que a cliente vê (produto, preço, ativo, destaque,
@@ -21,12 +22,19 @@ const ARQUIVOS = {
 const LISTADAS: Record<keyof typeof ARQUIVOS, string[]> = {
   produtos: ["createProduto", "updateProduto", "updateProdutoAtivo", "updateProdutoDestaque", "deleteProduto"],
   recheios: ["createRecheio", "updateRecheio", "updateRecheioAtivo"],
+  subcategorias: [
+    "criarSubcategoria",
+    "renomearSubcategoria",
+    "atualizarAtivoSubcategoria",
+    "moverSubcategoria",
+    "apagarSubcategoria",
+  ],
 };
 
 // Gravações que mudam a vitrine: tabelas lidas pelo site e as funções que
 // gravam sabores do Cento, galeria e capa.
 const GRAVACAO =
-  /\.from\("(produtos|recheios|produto_cento_itens|produto_fotos)"\)\s*\.(insert|update|delete|upsert)\(|salvarSubitensCento\(|gravarGaleria\(|concluirTrocaDeCapa\(/;
+  /\.from\("(produtos|recheios|produto_cento_itens|produto_fotos|subcategorias)"\)\s*\.(insert|update|delete|upsert)\(|salvarSubitensCento\(|gravarGaleria\(|concluirTrocaDeCapa\(/;
 
 // A linha i grava? A consulta pode estar quebrada em linhas
 // (.from("produtos") numa, .update(...) na seguinte): olha a linha junto com

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Produto } from "@/lib/produtos/types";
 import { BUCKET_FOTOS } from "@/lib/galeria/regras";
 import { updateProduto } from "../actions";
+import { lerSubcategoriasParaOFormulario } from "../subcategoria-servidor";
 import { ProdutoForm } from "../produto-form";
 import { Icon, Button } from "@/components/ds";
 
@@ -51,6 +52,8 @@ export default async function EditarProdutoPage({
     : { data: [] };
   const recheiosIniciais = (linhasRecheios ?? []).map((r) => ({ id: r.id as string, nome: r.nome as string }));
 
+  const subcategorias = await lerSubcategoriasParaOFormulario(supabase);
+
   const fotosIniciais = (linhasFotos ?? []).map((linha) => ({
     id: linha.id as string,
     url: supabase.storage.from(BUCKET_FOTOS).getPublicUrl(linha.caminho as string).data.publicUrl,
@@ -87,6 +90,7 @@ export default async function EditarProdutoPage({
         produtoId={produto.id}
         fotosIniciais={fotosIniciais}
         recheiosIniciais={recheiosIniciais}
+        subcategorias={subcategorias}
         submitLabel="Salvar alterações"
         produtosDisponiveis={produtos ?? []}
         initialSubitens={initialSubitens}
