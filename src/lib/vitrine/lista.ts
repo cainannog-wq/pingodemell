@@ -1,6 +1,8 @@
 import { categoriaCanonica } from "@/lib/produtos/categorias";
 import type { CategoriaProduto } from "@/lib/produtos/types";
-import { categoriaParaParametro } from "@/lib/site/rotas";
+import { categoriaParaParametro, urlDaLista } from "@/lib/site/rotas";
+import { ordenarSubcategorias } from "@/lib/subcategorias/regras";
+import type { Subcategoria } from "@/lib/subcategorias/types";
 import { lerBusca, nomeCasaComBusca, palavrasDaBusca } from "./busca";
 import { ehMaisPedido, type ProdutoVitrine } from "./mais-pedidos";
 
@@ -86,8 +88,24 @@ export function paginaDoParametro(valor: string | string[] | undefined): number 
   return n >= 1 ? n : 1;
 }
 
+// `?subcategoria=`: guardado CRU (slug em minúsculas, sem espaço nas pontas,
+// ou null). Quem valida é montarLista, que conhece a categoria e as
+// subcategorias; assim o 308 de `?categoria=kits` não perde o valor (a
+// categoria ainda é null naquele momento). Passa de 80 caracteres = vazio.
+export const SUBCATEGORIA_SLUG_MAX = 80;
+
+export function subcategoriaDoParametro(valor: string | string[] | undefined): string | null {
+  const texto = (Array.isArray(valor) ? valor[0] : valor)?.trim().toLowerCase();
+  if (!texto || texto.length > SUBCATEGORIA_SLUG_MAX) return null;
+  return texto;
+}
+
 export type ParametrosLista = {
   categoria: CategoriaProduto | null;
+  // Slug cru; só vale junto de uma categoria e se for de uma subcategoria
+  // ativa dela com produto na Lista (ver montarLista).
+  // Ausente = null (chamadas que não filtram por subcategoria).
+  subcategoria?: string | null;
   busca: string;
   ordem: OrdemLista;
   pagina: number;
@@ -98,6 +116,7 @@ export function lerParametrosDaLista(
 ): ParametrosLista {
   return {
     categoria: categoriaDoParametro(searchParams.categoria),
+    subcategoria: subcategoriaDoParametro(searchParams.subcategoria),
     busca: lerBusca(searchParams.busca),
     ordem: ordemDoParametro(searchParams.ordem),
     pagina: paginaDoParametro(searchParams.pagina),
@@ -144,6 +163,55 @@ function comparador(ordem: OrdemLista, categoria: CategoriaProduto | null) {
   }
 }
 
+// Botão do filtro por subcategoria.
+export type ChipSubcategoria = { id: string; nome: string; slug: string };
+
+// Chips da categoria: subcategorias ATIVAS da categoria com pelo menos um
+// produto entre `daCategoria` (já filtrado por entraNaLista e categoria,
+// antes da busca, para os chips não sumirem enquanto a cliente busca), na
+// ordem `ordem` e depois nome. A categoria da subcategoria é comparada pela
+// forma canônica nos dois lados ("Kits" = "Kit Festa").
+export function chipsDaCategoria(
+  categoria: CategoriaProduto | null,
+  daCategoria: readonly ProdutoVitrine[],
+  subcategorias: readonly Subcategoria[]
+): ChipSubcategoria[] {
+  if (categoria === null) return [];
+  const comProduto = new Set(daCategoria.map((p) => p.subcategoria_id).filter((id): id is string => !!id));
+  return ordenarSubcategorias(
+    subcategorias.filter(
+      (s) => s.ativo === true && categoriaCanonica(s.categoria) === categoria && comProduto.has(s.id)
+    )
+  ).map(({ id, nome, slug }) => ({ id, nome, slug }));
+}
+
+// Endereço de um chip (ou de "Todas", com slug null): mantém categoria, busca
+// e ordem, troca a subcategoria e nunca leva a página (trocar volta à 1).
+export function urlDaSubcategoria(
+  parametros: Pick<ParametrosLista, "categoria" | "busca" | "ordem">,
+  slug: string | null
+): string {
+  const { categoria, busca, ordem } = parametros;
+  return urlDaLista({ categoria, subcategoria: slug, busca, ordem });
+}
+
+// Uma opção do filtro ("Todos" e uma por subcategoria), com o endereço pronto.
+// Os dois desenhos (acordeão do desktop e chips do celular) usam esta lista.
+export type OpcaoSubcategoria = { chave: string; nome: string; href: string; atual: boolean };
+
+export function opcoesDeSubcategoria(
+  parametros: Pick<ParametrosLista, "categoria" | "busca" | "ordem">,
+  chips: readonly ChipSubcategoria[],
+  ativa: string | null
+): OpcaoSubcategoria[] {
+  return [{ chave: "todos", nome: "Todos", slug: null }, ...chips.map((c) => ({ chave: c.id, nome: c.nome, slug: c.slug }))].map((o) => ({
+    chave: o.chave,
+    nome: o.nome,
+    href: urlDaSubcategoria(parametros, o.slug),
+    atual: o.slug === ativa,
+  }));
+}
+
 export type ResultadoLista = {
   // Só os itens da página atual (até POR_PAGINA).
   itens: ItemLista[];
@@ -157,6 +225,14 @@ export type ResultadoLista = {
   // houver ao menos um destaque na Lista inteira (sem olhar a busca, para a
   // opção não sumir e voltar enquanto a cliente busca).
   maisPedidosDisponivel: boolean;
+  // Chips do filtro por subcategoria (vazio = sem filtro na tela) e o slug
+  // da subcategoria efetivamente aplicada (null = "Todas": sem categoria,
+  // slug inválido ou sem chips).
+  chips: ChipSubcategoria[];
+  subcategoriaAtiva: string | null;
+  // Categorias da Lista que têm filtro (pelo menos um chip), para o acordeão
+  // do desktop mostrar a seta em cada uma, não só na escolhida.
+  categoriasComFiltro: CategoriaProduto[];
   // A categoria escolhida (ou "Todos") tem algum produto, sem a busca:
   // separa "categoria vazia" de "busca sem resultado".
   temProdutosSemBusca: boolean;
@@ -166,10 +242,16 @@ export type ResultadoLista = {
 // - só produto ativo e de categoria da Lista, em qualquer visão (mesmo que
 //   o banco devolva inativo);
 // - categoria escolhida: só ela; "Todos" (null): as 5 da Lista;
+// - subcategoria (só com categoria): vale o slug de um chip da categoria;
+//   qualquer outro vale como "Todas", sem erro;
 // - busca pelo nome (busca.ts);
 // - ordem pedida (Mais pedidos que não vale vira Recomendados);
 // - página: maior que o total vai para a última; sem nenhum item, 1.
-export function montarLista(produtos: ProdutoVitrine[], parametros: ParametrosLista): ResultadoLista {
+export function montarLista(
+  produtos: ProdutoVitrine[],
+  parametros: ParametrosLista,
+  subcategorias: readonly Subcategoria[] = []
+): ResultadoLista {
   const { categoria, busca, pagina: paginaPedida } = parametros;
   const daLista = produtos.filter(entraNaLista);
 
@@ -177,8 +259,11 @@ export function montarLista(produtos: ProdutoVitrine[], parametros: ParametrosLi
   const ordem = parametros.ordem === "mais-pedidos" && !maisPedidosDisponivel ? ORDEM_PADRAO : parametros.ordem;
 
   const daCategoria = categoria === null ? daLista : daLista.filter((p) => categoriaCanonica(p.Categoria) === categoria);
+  const chips = chipsDaCategoria(categoria, daCategoria, subcategorias);
+  const escolhida = chips.find((c) => c.slug === parametros.subcategoria) ?? null;
+  const daSubcategoria = escolhida ? daCategoria.filter((p) => p.subcategoria_id === escolhida.id) : daCategoria;
   const palavras = palavrasDaBusca(busca);
-  const encontrados = daCategoria.filter((p) => nomeCasaComBusca(p.nome, palavras)).sort(comparador(ordem, categoria));
+  const encontrados = daSubcategoria.filter((p) => nomeCasaComBusca(p.nome, palavras)).sort(comparador(ordem, categoria));
 
   const total = encontrados.length;
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
@@ -192,7 +277,12 @@ export function montarLista(produtos: ProdutoVitrine[], parametros: ParametrosLi
     totalPaginas,
     ordem,
     maisPedidosDisponivel,
-    temProdutosSemBusca: daCategoria.length > 0,
+    chips,
+    subcategoriaAtiva: escolhida?.slug ?? null,
+    categoriasComFiltro: CATEGORIAS_DA_LISTA.filter(
+      (c) => chipsDaCategoria(c, daLista.filter((p) => categoriaCanonica(p.Categoria) === c), subcategorias).length > 0
+    ),
+    temProdutosSemBusca: daSubcategoria.length > 0,
   };
 }
 

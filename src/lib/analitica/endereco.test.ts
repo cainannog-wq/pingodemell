@@ -58,3 +58,19 @@ describe("page_referrer limpo", () => {
     expect(referrerLimpo("android-app://com.whatsapp/", ORIGEM)).toBe("");
   });
 });
+
+describe("endereço limpo para o GA4 — subcategoria (PR filtro por subcategoria)", () => {
+  it("subcategoria, busca, ordem e página nunca vão ao Google: só ?categoria=", () => {
+    expect(caminhoLimpo("/produtos", "?categoria=doces&subcategoria=gourmet-premium&busca=bolo&ordem=a-z&pagina=2", false)).toBe(
+      "/produtos?categoria=doces"
+    );
+    expect(caminhoLimpo("/produtos", "?subcategoria=finos", false)).toBe("/produtos");
+    expect(enderecoLimpo(ORIGEM, "/produtos", "?categoria=kit-festa&subcategoria=premium", false)).toBe(
+      `${ORIGEM}/produtos?categoria=kit-festa`
+    );
+  });
+
+  it("o referrer do próprio site também sai sem a subcategoria", () => {
+    expect(referrerLimpo(`${ORIGEM}/produtos?categoria=doces&subcategoria=finos`, ORIGEM)).toBe(`${ORIGEM}/produtos?categoria=doces`);
+  });
+});

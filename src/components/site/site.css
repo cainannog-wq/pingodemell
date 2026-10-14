@@ -1249,6 +1249,11 @@ body:has(.pdm-site) {
   align-items: start;
 }
 
+.lista-filtro-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .lista-filtro {
   position: sticky;
   top: 24px;
@@ -1294,6 +1299,61 @@ body:has(.pdm-site) {
   background: var(--gold-500);
   font-weight: var(--fw-bold);
   color: var(--ink-900);
+}
+
+/* Subcategorias no desktop (1024px ou mais): aninhadas na categoria escolhida,
+   dentro do box "Categorias", como um acordeão (a categoria leva uma seta, e
+   a lista de subcategorias aparece logo abaixo, recuada, com uma linha na
+   esquerda que mostra a quem ela pertence). Até 1023px a lista some (display:
+   none, fora da árvore de acessibilidade) e valem os chips (.lista-subfiltro). */
+.lista-subfiltro {
+  display: none;
+}
+.pdm-site .lista-filtro-link--grupo {
+  justify-content: space-between;
+  gap: 8px;
+}
+.lista-filtro-seta {
+  flex: none;
+  transition: transform 0.15s;
+}
+.pdm-site .lista-filtro-link[aria-expanded="true"] .lista-filtro-seta {
+  transform: rotate(180deg);
+}
+.lista-subgrupo {
+  list-style: none;
+  margin: 4px 0 8px 18px;
+  padding: 0 0 0 10px;
+  border-left: 2px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lista-subgrupo[hidden] {
+  display: none;
+}
+.pdm-site .lista-subgrupo-link {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: var(--fw-regular);
+  font-size: 15px;
+  color: var(--brown-700);
+  overflow-wrap: anywhere;
+  transition: var(--transition-base);
+}
+.pdm-site .lista-subgrupo-link:hover {
+  background: var(--brown-050);
+}
+.pdm-site .lista-subgrupo-link[aria-current="page"] {
+  background: var(--brown-050);
+  font-weight: var(--fw-bold);
+  color: var(--ink-900);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
 }
 
 /* Selo "Mais pedido" sobre a foto do card (canto superior esquerdo, como
@@ -1524,6 +1584,63 @@ body:has(.pdm-site) {
     background: none;
     box-shadow: none;
     padding: 0;
+  }
+  /* Subcategorias até 1023px: a mesma linha com rolagem lateral das
+     categorias, mas de outro nível: chips sem preenchimento, borda fina e
+     peso leve, e um respiro maior sobre a linha das categorias. O alvo de
+     toque continua com 44px. O acordeão do desktop some. */
+  .lista-subgrupo {
+    display: none;
+  }
+  /* O Icon traz display inline no próprio elemento: precisa do !important. */
+  .lista-filtro-seta {
+    display: none !important;
+  }
+  .lista-subfiltro {
+    display: block;
+    margin-top: 12px;
+  }
+  .lista-subfiltro-opcoes {
+    list-style: none;
+    margin: 0;
+    margin-inline: calc(-1 * var(--container-pad));
+    padding: 4px var(--container-pad);
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-padding-inline: var(--container-pad);
+  }
+  .lista-subfiltro-opcoes::-webkit-scrollbar {
+    display: none;
+  }
+  .lista-subfiltro-opcoes li {
+    flex: none;
+  }
+  .pdm-site .lista-subfiltro-link {
+    display: flex;
+    align-items: center;
+    min-height: max(44px, var(--tap-min));
+    padding: 0 14px;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-pill);
+    background: transparent;
+    font-weight: var(--fw-regular);
+    font-size: var(--fs-small);
+    color: var(--text-strong);
+    white-space: nowrap;
+  }
+  .pdm-site .lista-subfiltro-link:hover {
+    background: var(--brown-050);
+  }
+  .pdm-site .lista-subfiltro-link[aria-current="page"] {
+    background: var(--gold-500);
+    border-color: var(--gold-500);
+    font-weight: var(--fw-bold);
+    color: var(--text-on-accent);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
   }
   .lista-filtro-titulo {
     position: absolute !important;

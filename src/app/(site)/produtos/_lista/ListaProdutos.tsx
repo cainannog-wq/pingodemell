@@ -38,7 +38,7 @@ export function ListaProdutos({
     );
   }
 
-  const limparBusca = urlDaLista({ categoria, ordem: resultado.ordem });
+  const limparBusca = urlDaLista({ categoria, subcategoria: resultado.subcategoriaAtiva, ordem: resultado.ordem });
 
   if (resultado.total === 0) {
     if (busca && resultado.temProdutosSemBusca) {

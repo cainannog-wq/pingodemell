@@ -14,14 +14,18 @@ import { ORDENS, type OrdemLista } from "@/lib/vitrine/lista";
 // ordem e categoria (campo escondido) e a página abre já filtrada. Com
 // JavaScript, o envio monta a URL limpa (sem valor padrão, urlDaLista) e
 // navega sem recarregar; trocar a ordem aplica na hora. Os dois caminhos
-// voltam para a página 1 (a página nunca vai no formulário).
+// voltam para a página 1 (a página nunca vai no formulário). A subcategoria
+// ativa (slug já validado, ou null) segue nos dois caminhos: campo escondido
+// no GET sem JavaScript e parâmetro de urlDaLista com JavaScript.
 export function BuscaEOrdem({
   categoria,
+  subcategoria = null,
   busca,
   ordem,
   maisPedidosDisponivel,
 }: {
   categoria: CategoriaProduto | null;
+  subcategoria?: string | null;
   busca: string;
   ordem: OrdemLista;
   maisPedidosDisponivel: boolean;
@@ -30,8 +34,9 @@ export function BuscaEOrdem({
   // filtro de categoria): campo e seletor sempre iguais ao que está na tela.
   return (
     <Formulario
-      key={`${categoria ?? ""}|${busca}|${ordem}`}
+      key={`${categoria ?? ""}|${subcategoria ?? ""}|${busca}|${ordem}`}
       categoria={categoria}
+      subcategoria={subcategoria}
       busca={busca}
       ordem={ordem}
       maisPedidosDisponivel={maisPedidosDisponivel}
@@ -41,11 +46,13 @@ export function BuscaEOrdem({
 
 function Formulario({
   categoria,
+  subcategoria,
   busca,
   ordem,
   maisPedidosDisponivel,
 }: {
   categoria: CategoriaProduto | null;
+  subcategoria: string | null;
   busca: string;
   ordem: OrdemLista;
   maisPedidosDisponivel: boolean;
@@ -55,7 +62,7 @@ function Formulario({
   const ordens = ORDENS.filter((o) => o.valor !== "mais-pedidos" || maisPedidosDisponivel);
 
   function ir(novaBusca: string, novaOrdem: string) {
-    router.push(urlDaLista({ categoria, busca: novaBusca, ordem: novaOrdem }));
+    router.push(urlDaLista({ categoria, subcategoria, busca: novaBusca, ordem: novaOrdem }));
   }
 
   function enviar(e: FormEvent<HTMLFormElement>) {
@@ -67,6 +74,7 @@ function Formulario({
   return (
     <form className="lista-busca" role="search" action={ROTAS.lista} method="get" onSubmit={enviar}>
       {categoria ? <input type="hidden" name="categoria" value={categoriaParaParametro(categoria)} /> : null}
+      {categoria && subcategoria ? <input type="hidden" name="subcategoria" value={subcategoria} /> : null}
       <div className="lista-busca-campo">
         <label htmlFor="lista-busca" className="site-visually-hidden">
           Buscar produto pelo nome

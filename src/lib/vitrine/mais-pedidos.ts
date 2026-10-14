@@ -29,6 +29,9 @@ export type ProdutoVitrine = {
   // Só do Bolo (tipo "bolo"), preenchido pela vitrine: menor R$/kg entre os
   // recheios ativos. O campo Preço do cadastro não vale para o Bolo.
   preco_a_partir_de?: number | null;
+  // Só a Lista usa (filtro por subcategoria); lido junto dos sabores
+  // (CAMPOS_COM_SABORES), não em CAMPOS_VITRINE.
+  subcategoria_id?: string | null;
 };
 
 export const CAMPOS_VITRINE =

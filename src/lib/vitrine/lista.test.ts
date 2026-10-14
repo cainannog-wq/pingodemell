@@ -372,6 +372,7 @@ describe("Lista — parâmetros da URL", () => {
   it("URL colada abre igual: todos os parâmetros juntos", () => {
     expect(lerParametrosDaLista({ categoria: "doces", busca: "  pão  de mel ", ordem: "z-a", pagina: "2" })).toEqual({
       categoria: "Doces",
+      subcategoria: null,
       busca: "pão de mel",
       ordem: "z-a",
       pagina: 2,
@@ -387,7 +388,7 @@ describe("Lista — parâmetros da URL", () => {
   });
 
   it("o endereço montado volta ao mesmo estado quando lido", () => {
-    const estado = { categoria: "Kit Festa", busca: "festa básica", ordem: "a-z", pagina: 2 } as const;
+    const estado = { categoria: "Kit Festa", subcategoria: "premium", busca: "festa básica", ordem: "a-z", pagina: 2 } as const;
     const query = Object.fromEntries(new URLSearchParams(urlDaLista(estado).split("?")[1]));
     expect(lerParametrosDaLista(query)).toEqual(estado);
   });
