@@ -1257,7 +1257,6 @@ body:has(.pdm-site) {
 .lista-filtro {
   position: sticky;
   top: 24px;
-  z-index: 5;
   background: var(--surface-card);
   border-radius: var(--radius);
   box-shadow: var(--shadow-rest);
@@ -1302,102 +1301,54 @@ body:has(.pdm-site) {
   color: var(--ink-900);
 }
 
-/* Filtro por subcategoria. O mesmo filtro tem duas apresentações no mesmo
-   lugar do HTML (logo depois das categorias): dropdown dentro do box
-   "Categorias" (768px ou mais) e chips com rolagem lateral (até 767px); a que
-   não vale na largura fica com display: none. */
-.lista-subfiltro--celular {
+/* Subcategorias no desktop (1024px ou mais): aninhadas na categoria escolhida,
+   dentro do box "Categorias", como um acordeão (a categoria leva uma seta, e
+   a lista de subcategorias aparece logo abaixo, recuada, com uma linha na
+   esquerda que mostra a quem ela pertence). Até 1023px a lista some (display:
+   none, fora da árvore de acessibilidade) e valem os chips (.lista-subfiltro). */
+.lista-subfiltro {
   display: none;
 }
-.lista-subfiltro--desktop {
-  margin-top: 8px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-default);
-}
-.lista-subdrop {
-  position: relative;
-}
-.lista-subdrop-botao {
-  display: flex;
-  align-items: center;
+.pdm-site .lista-filtro-link--grupo {
+  justify-content: space-between;
   gap: 8px;
-  min-height: 56px;
-  padding: 6px 12px 6px 14px;
-  border: 2px solid var(--border-default);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
-  color: var(--text-strong);
-  cursor: pointer;
-  list-style: none;
-  transition: var(--transition-base);
 }
-.lista-subdrop-botao::-webkit-details-marker {
-  display: none;
-}
-.lista-subdrop-botao:hover,
-.lista-subdrop[open] > .lista-subdrop-botao {
-  background: var(--brown-050);
-}
-.lista-subdrop-texto {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  font-size: var(--fs-small);
-}
-.lista-subdrop-rotulo {
-  color: var(--text-muted);
-}
-.lista-subdrop-valor {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: var(--fw-bold);
-  font-size: 15px;
-}
-.lista-subdrop-seta {
+.lista-filtro-seta {
   flex: none;
   transition: transform 0.15s;
 }
-.lista-subdrop[open] .lista-subdrop-seta {
+.pdm-site .lista-filtro-link[aria-expanded="true"] .lista-filtro-seta {
   transform: rotate(180deg);
 }
-.lista-subdrop-lista {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 10;
-  max-height: min(60vh, 24rem);
-  overflow-y: auto;
-  margin: 0;
-  padding: 8px;
+.lista-subgrupo {
   list-style: none;
+  margin: 4px 0 8px 18px;
+  padding: 0 0 0 10px;
+  border-left: 2px solid var(--border-default);
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  background: var(--surface-raised);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-raised);
+  gap: 2px;
 }
-.pdm-site .lista-subdrop-link {
+.lista-subgrupo[hidden] {
+  display: none;
+}
+.pdm-site .lista-subgrupo-link {
   display: flex;
   align-items: center;
   min-height: var(--tap-min);
-  padding: 8px 14px;
+  padding: 8px 12px;
   border-radius: var(--radius-sm);
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-regular);
   font-size: 15px;
   color: var(--brown-700);
   overflow-wrap: anywhere;
   transition: var(--transition-base);
 }
-.pdm-site .lista-subdrop-link:hover {
+.pdm-site .lista-subgrupo-link:hover {
   background: var(--brown-050);
 }
-.pdm-site .lista-subdrop-link[aria-current="page"] {
-  background: var(--gold-500);
+.pdm-site .lista-subgrupo-link[aria-current="page"] {
+  background: var(--brown-050);
   font-weight: var(--fw-bold);
   color: var(--ink-900);
   text-decoration: underline;
@@ -1629,21 +1580,67 @@ body:has(.pdm-site) {
     padding-top: 16px;
   }
   .lista-filtro {
-    /* relative (e não static) só para o z-index do popover valer; sem o top
-       do sticky, que deslocaria o bloco. */
-    position: relative;
-    top: auto;
+    position: static;
     background: none;
     box-shadow: none;
     padding: 0;
   }
-  /* Entre 768 e 1023px não há box: o dropdown fica logo abaixo da linha de
-     categorias, sem divisor e com largura de botão, não de página. */
-  .lista-subfiltro--desktop {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
-    max-width: 22rem;
+  /* Subcategorias até 1023px: a mesma linha com rolagem lateral das
+     categorias, mas de outro nível: chips sem preenchimento, borda fina e
+     peso leve, e um respiro maior sobre a linha das categorias. O alvo de
+     toque continua com 44px. O acordeão do desktop some. */
+  .lista-subgrupo {
+    display: none;
+  }
+  /* O Icon traz display inline no próprio elemento: precisa do !important. */
+  .lista-filtro-seta {
+    display: none !important;
+  }
+  .lista-subfiltro {
+    display: block;
+    margin-top: 12px;
+  }
+  .lista-subfiltro-opcoes {
+    list-style: none;
+    margin: 0;
+    margin-inline: calc(-1 * var(--container-pad));
+    padding: 4px var(--container-pad);
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-padding-inline: var(--container-pad);
+  }
+  .lista-subfiltro-opcoes::-webkit-scrollbar {
+    display: none;
+  }
+  .lista-subfiltro-opcoes li {
+    flex: none;
+  }
+  .pdm-site .lista-subfiltro-link {
+    display: flex;
+    align-items: center;
+    min-height: max(44px, var(--tap-min));
+    padding: 0 14px;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-pill);
+    background: transparent;
+    font-weight: var(--fw-regular);
+    font-size: var(--fs-small);
+    color: var(--text-strong);
+    white-space: nowrap;
+  }
+  .pdm-site .lista-subfiltro-link:hover {
+    background: var(--brown-050);
+  }
+  .pdm-site .lista-subfiltro-link[aria-current="page"] {
+    background: var(--gold-500);
+    border-color: var(--gold-500);
+    font-weight: var(--fw-bold);
+    color: var(--text-on-accent);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
   }
   .lista-filtro-titulo {
     position: absolute !important;
@@ -1690,65 +1687,6 @@ body:has(.pdm-site) {
 }
 
 @media (max-width: 767px) {
-  /* Subcategorias no celular: a mesma linha com rolagem lateral das
-     categorias, mas de outro nível: rótulo "Subcategorias" acima, chips sem
-     preenchimento, borda fina e peso leve, e um respiro maior sobre a linha
-     das categorias. O alvo de toque continua com 44px. */
-  .lista-subfiltro--desktop {
-    display: none;
-  }
-  .lista-subfiltro--celular {
-    display: block;
-    margin-top: 12px;
-  }
-  .lista-subfiltro-titulo {
-    margin: 0 0 2px;
-    font-weight: var(--fw-semibold);
-    font-size: var(--fs-small);
-    color: var(--text-muted);
-  }
-  .lista-subfiltro-opcoes {
-    list-style: none;
-    margin: 0;
-    margin-inline: calc(-1 * var(--container-pad));
-    padding: 4px var(--container-pad);
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    scroll-padding-inline: var(--container-pad);
-  }
-  .lista-subfiltro-opcoes::-webkit-scrollbar {
-    display: none;
-  }
-  .lista-subfiltro-opcoes li {
-    flex: none;
-  }
-  .pdm-site .lista-subfiltro-link {
-    display: flex;
-    align-items: center;
-    min-height: max(44px, var(--tap-min));
-    padding: 0 14px;
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-pill);
-    background: transparent;
-    font-weight: var(--fw-regular);
-    font-size: var(--fs-small);
-    color: var(--text-strong);
-    white-space: nowrap;
-  }
-  .pdm-site .lista-subfiltro-link:hover {
-    background: var(--brown-050);
-  }
-  .pdm-site .lista-subfiltro-link[aria-current="page"] {
-    background: var(--gold-500);
-    border-color: var(--gold-500);
-    font-weight: var(--fw-bold);
-    color: var(--text-on-accent);
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 4px;
-  }
   .lista-topo {
     background: none;
     border-bottom: 0;

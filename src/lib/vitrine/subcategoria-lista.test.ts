@@ -6,6 +6,7 @@ import {
   chipsDaCategoria,
   lerParametrosDaLista,
   montarLista,
+  opcoesDeSubcategoria,
   subcategoriaDoParametro,
   urlDaSubcategoria,
   type ParametrosLista,
@@ -245,5 +246,37 @@ describe("URLs do filtro", () => {
     const cru = lerParametrosDaLista({ categoria: "kits", subcategoria: "Premium", busca: "kit" });
     expect(cru.categoria).toBeNull();
     expect(urlDaLista({ ...cru, categoria: "Kit Festa" })).toBe("/produtos?categoria=kit-festa&subcategoria=premium&busca=kit");
+  });
+});
+
+describe("opções do filtro e categorias com filtro (acordeão do desktop)", () => {
+  it("'Todos' vem primeiro, depois os chips; só a ativa é atual; endereços mantêm busca e ordem, sem página", () => {
+    const r = lista({ categoria: "Doces", subcategoria: "finos" });
+    const opcoes = opcoesDeSubcategoria({ categoria: "Doces", busca: "e", ordem: "a-z" }, r.chips, r.subcategoriaAtiva);
+    expect(opcoes.map((o) => o.nome)).toEqual(["Todos", "Finos", "Gourmet Premium", "Premium"]);
+    expect(opcoes.map((o) => o.atual)).toEqual([false, true, false, false]);
+    expect(opcoes.map((o) => o.href)).toEqual([
+      "/produtos?categoria=doces&busca=e&ordem=a-z",
+      "/produtos?categoria=doces&subcategoria=finos&busca=e&ordem=a-z",
+      "/produtos?categoria=doces&subcategoria=gourmet-premium&busca=e&ordem=a-z",
+      "/produtos?categoria=doces&subcategoria=premium&busca=e&ordem=a-z",
+    ]);
+  });
+
+  it("sem subcategoria ativa (ou inválida), 'Todos' é o atual", () => {
+    const r = lista({ categoria: "Doces", subcategoria: "lixo" });
+    const opcoes = opcoesDeSubcategoria({ categoria: "Doces", busca: "", ordem: "recomendados" }, r.chips, r.subcategoriaAtiva);
+    expect(opcoes.find((o) => o.atual)?.nome).toBe("Todos");
+  });
+
+  it("categoriasComFiltro: as da Lista que têm chip, na ordem da Lista, em qualquer categoria escolhida", () => {
+    for (const categoria of [null, "Doces", "Salgados", "Bento Cake"] as const) {
+      expect(lista({ categoria }).categoriasComFiltro).toEqual(["Bolos", "Doces", "Kit Festa"]);
+    }
+  });
+
+  it("categoriasComFiltro não conta subcategoria inativa, vazia nem sem a lista de subcategorias", () => {
+    expect(lista({}, CATALOGO, [INATIVA, VAZIA]).categoriasComFiltro).toEqual([]);
+    expect(montarLista(CATALOGO, BASE).categoriasComFiltro).toEqual([]);
   });
 });

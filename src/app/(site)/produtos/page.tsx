@@ -6,7 +6,7 @@ import { Hive } from "@/components/site/Hive";
 import { ROTAS, urlDaLista } from "@/lib/site/rotas";
 import { SEO_CATEGORIAS, metadadosIndexaveis } from "@/lib/site/seo";
 import { buscarDadosDaLista } from "@/lib/vitrine/buscar";
-import { categoriaDoParametroAntigo, lerParametrosDaLista, montarLista } from "@/lib/vitrine/lista";
+import { categoriaDoParametroAntigo, lerParametrosDaLista, montarLista, opcoesDeSubcategoria } from "@/lib/vitrine/lista";
 import { BuscaEOrdem } from "./_lista/BuscaEOrdem";
 import { FiltroSubcategorias } from "./_lista/FiltroSubcategorias";
 import { ListaProdutos } from "./_lista/ListaProdutos";
@@ -67,9 +67,27 @@ export default async function ListaPage({ searchParams }: Props) {
 
       <div className="site-container lista-corpo">
         {/* Categorias e subcategorias no mesmo bloco, nesta ordem do HTML (a
-            ordem de leitura e do Tab é a da tela em qualquer largura). */}
+            ordem de leitura e do Tab é a da tela em qualquer largura): no
+            desktop as subcategorias moram dentro da categoria escolhida; até
+            1023 px, aqui, em chips logo depois das categorias. */}
         <div className="lista-filtro">
-          <FiltroCategorias ativa={parametros.categoria} busca={parametros.busca} ordem={resultado?.ordem ?? parametros.ordem} />
+          <FiltroCategorias
+            ativa={parametros.categoria}
+            busca={parametros.busca}
+            ordem={resultado?.ordem ?? parametros.ordem}
+            subcategorias={
+              resultado
+                ? {
+                    opcoes: opcoesDeSubcategoria(
+                      { categoria: parametros.categoria, busca: parametros.busca, ordem: resultado.ordem },
+                      resultado.chips,
+                      resultado.subcategoriaAtiva
+                    ),
+                    comFiltro: resultado.categoriasComFiltro,
+                  }
+                : undefined
+            }
+          />
           {resultado ? (
             <FiltroSubcategorias
               categoria={parametros.categoria}

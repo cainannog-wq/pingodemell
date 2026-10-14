@@ -195,6 +195,23 @@ export function urlDaSubcategoria(
   return urlDaLista({ categoria, subcategoria: slug, busca, ordem });
 }
 
+// Uma opção do filtro ("Todos" e uma por subcategoria), com o endereço pronto.
+// Os dois desenhos (acordeão do desktop e chips do celular) usam esta lista.
+export type OpcaoSubcategoria = { chave: string; nome: string; href: string; atual: boolean };
+
+export function opcoesDeSubcategoria(
+  parametros: Pick<ParametrosLista, "categoria" | "busca" | "ordem">,
+  chips: readonly ChipSubcategoria[],
+  ativa: string | null
+): OpcaoSubcategoria[] {
+  return [{ chave: "todos", nome: "Todos", slug: null }, ...chips.map((c) => ({ chave: c.id, nome: c.nome, slug: c.slug }))].map((o) => ({
+    chave: o.chave,
+    nome: o.nome,
+    href: urlDaSubcategoria(parametros, o.slug),
+    atual: o.slug === ativa,
+  }));
+}
+
 export type ResultadoLista = {
   // Só os itens da página atual (até POR_PAGINA).
   itens: ItemLista[];
@@ -213,6 +230,9 @@ export type ResultadoLista = {
   // slug inválido ou sem chips).
   chips: ChipSubcategoria[];
   subcategoriaAtiva: string | null;
+  // Categorias da Lista que têm filtro (pelo menos um chip), para o acordeão
+  // do desktop mostrar a seta em cada uma, não só na escolhida.
+  categoriasComFiltro: CategoriaProduto[];
   // A categoria escolhida (ou "Todos") tem algum produto, sem a busca:
   // separa "categoria vazia" de "busca sem resultado".
   temProdutosSemBusca: boolean;
@@ -259,6 +279,9 @@ export function montarLista(
     maisPedidosDisponivel,
     chips,
     subcategoriaAtiva: escolhida?.slug ?? null,
+    categoriasComFiltro: CATEGORIAS_DA_LISTA.filter(
+      (c) => chipsDaCategoria(c, daLista.filter((p) => categoriaCanonica(p.Categoria) === c), subcategorias).length > 0
+    ),
     temProdutosSemBusca: daSubcategoria.length > 0,
   };
 }
