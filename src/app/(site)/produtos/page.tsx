@@ -66,7 +66,20 @@ export default async function ListaPage({ searchParams }: Props) {
       </section>
 
       <div className="site-container lista-corpo">
-        <FiltroCategorias ativa={parametros.categoria} busca={parametros.busca} ordem={resultado?.ordem ?? parametros.ordem} />
+        {/* Categorias e subcategorias no mesmo bloco, nesta ordem do HTML (a
+            ordem de leitura e do Tab é a da tela em qualquer largura). */}
+        <div className="lista-filtro">
+          <FiltroCategorias ativa={parametros.categoria} busca={parametros.busca} ordem={resultado?.ordem ?? parametros.ordem} />
+          {resultado ? (
+            <FiltroSubcategorias
+              categoria={parametros.categoria}
+              chips={resultado.chips}
+              ativa={resultado.subcategoriaAtiva}
+              busca={parametros.busca}
+              ordem={resultado.ordem}
+            />
+          ) : null}
+        </div>
         <div className="lista-conteudo">
           {resultado ? (
             <BuscaEOrdem
@@ -75,15 +88,6 @@ export default async function ListaPage({ searchParams }: Props) {
               busca={parametros.busca}
               ordem={resultado.ordem}
               maisPedidosDisponivel={resultado.maisPedidosDisponivel}
-            />
-          ) : null}
-          {resultado ? (
-            <FiltroSubcategorias
-              categoria={parametros.categoria}
-              chips={resultado.chips}
-              ativa={resultado.subcategoriaAtiva}
-              busca={parametros.busca}
-              ordem={resultado.ordem}
             />
           ) : null}
           <ListaProdutos parametros={parametros} resultado={resultado} />

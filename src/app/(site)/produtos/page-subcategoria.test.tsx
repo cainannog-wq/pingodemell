@@ -102,10 +102,15 @@ async function pagina(query: Query = {}) {
 async function renderLista(query: Query = {}) {
   return render(await pagina(query));
 }
-const subfiltro = () => screen.queryByRole("navigation", { name: /^Subcategorias de / });
-const chips = () => (subfiltro() ? within(subfiltro()!).getAllByRole("link") : []);
-const textoDosChips = () => chips().map((a) => a.textContent);
-const chipAtual = () => chips().find((a) => a.getAttribute("aria-current") === "page");
+type Bloco = "celular" | "desktop";
+// As duas apresentações do mesmo filtro estão no HTML (a que não vale na
+// largura some por CSS, que o jsdom não carrega): cada afirmação é conferida
+// em cada bloco, pela classe dele.
+const subfiltro = (bloco: Bloco) => document.querySelector<HTMLElement>(`.lista-subfiltro--${bloco}`);
+const chips = (bloco: Bloco) => (subfiltro(bloco) ? within(subfiltro(bloco)!).getAllByRole("link", { hidden: true }) : []);
+const textoDosChips = (bloco: Bloco) => chips(bloco).map((a) => a.textContent);
+const chipAtual = (bloco: Bloco) => chips(bloco).find((a) => a.getAttribute("aria-current") === "page");
+const semFiltro = () => document.querySelector(".lista-subfiltro") === null;
 const cards = () => screen.queryAllByRole("heading", { level: 3 }).map((h) => h.textContent);
 
 beforeEach(() => {
@@ -115,56 +120,29 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-describe("chips na Lista", () => {
-  it("sem categoria não há chips, com ou sem ?subcategoria=", async () => {
+describe("filtro de subcategorias na Lista", () => {
+  it("sem categoria não há filtro, com ou sem ?subcategoria=", async () => {
     await renderLista();
-    expect(subfiltro()).toBeNull();
+    expect(semFiltro()).toBe(true);
     cleanup();
     await renderLista({ subcategoria: "gourmet-premium" });
-    expect(subfiltro()).toBeNull();
+    expect(semFiltro()).toBe(true);
     expect(cards()).toContain("Doce Solto");
     expect(cards()).toContain("Smash Safári");
   });
 
-  it("categoria com subcategorias: Todas e depois cada uma por ordem; 'Todas' atual por padrão", async () => {
-    await renderLista({ categoria: "doces" });
-    expect(textoDosChips()).toEqual(["Todas", "Finos", "Gourmet Premium"]);
-    expect(chipAtual()).toHaveTextContent("Todas");
-    expect(cards()).toHaveLength(4);
-  });
-
-  it("subcategoria de 1 produto aparece (Smash Cake)", async () => {
-    await renderLista({ categoria: "bolos" });
-    expect(textoDosChips()).toEqual(["Todas", "Smash Cake"]);
-  });
-
-  it("categoria sem subcategoria com produto (Bento Cake) não tem chips", async () => {
+  it("categoria sem subcategoria com produto (Bento Cake) não tem filtro nem buraco", async () => {
     await renderLista({ categoria: "bento-cake" });
-    expect(subfiltro()).toBeNull();
+    expect(semFiltro()).toBe(true);
+    const bloco = document.querySelector(".lista-filtro")!;
+    expect(bloco.children).toHaveLength(1); // só as categorias
   });
 
-  it("chip ativo leva aria-current e filtra os cards", async () => {
-    await renderLista({ categoria: "doces", subcategoria: "gourmet-premium" });
-    expect(chipAtual()).toHaveTextContent("Gourmet Premium");
-    expect(chips().filter((a) => a.hasAttribute("aria-current"))).toHaveLength(1);
-    expect(cards().sort()).toEqual(["Beijinho Gourmet", "Brigadeiro Gourmet"]);
-  });
-
-  it.each(["inexistente", "smash-cake", "premium"])("slug inválido para a categoria (%s) vale como 'Todas', sem erro", async (slug) => {
-    await renderLista({ categoria: "doces", subcategoria: slug });
-    expect(chipAtual()).toHaveTextContent("Todas");
+  it("leitura das subcategorias vazia: a Lista funciona sem filtro nem chips", async () => {
+    subcategoriasDoBanco = [];
+    await renderLista({ categoria: "doces", subcategoria: "finos" });
+    expect(semFiltro()).toBe(true);
     expect(cards()).toHaveLength(4);
-  });
-
-  it("os links levam busca e ordem e nunca a página; 'Todas' tira só a subcategoria", async () => {
-    await renderLista({ categoria: "doces", subcategoria: "finos", busca: "e", ordem: "a-z", pagina: "3" });
-    const hrefs = chips().map((a) => a.getAttribute("href"));
-    expect(hrefs).toEqual([
-      "/produtos?categoria=doces&busca=e&ordem=a-z",
-      "/produtos?categoria=doces&subcategoria=finos&busca=e&ordem=a-z",
-      "/produtos?categoria=doces&subcategoria=gourmet-premium&busca=e&ordem=a-z",
-    ]);
-    expect(hrefs.join()).not.toContain("pagina");
   });
 
   it("o filtro de categorias não leva a subcategoria", async () => {
@@ -174,29 +152,144 @@ describe("chips na Lista", () => {
     expect(hrefs).toContain("/produtos?categoria=salgados&busca=e");
   });
 
-  it("o HTML do servidor já traz os chips (sem JavaScript)", async () => {
-    const html = renderToStaticMarkup(await pagina({ categoria: "kit-festa", subcategoria: "premium" }));
-    expect(html).toContain('class="lista-subfiltro"');
-    expect(html).toContain('href="/produtos?categoria=kit-festa&amp;subcategoria=premium"');
-    expect(html).toMatch(/aria-current="page"[^>]*>Premium</);
-    expect(html).toContain("Kit Premium A");
-    expect(html).not.toContain("Kit Sem Sub");
-  });
-
-  it("busca sem resultado dentro da subcategoria: mensagem da busca, 'Limpar busca' mantém o filtro", async () => {
-    await renderLista({ categoria: "doces", subcategoria: "gourmet-premium", busca: "zzz" });
-    expect(screen.getByText(/Nenhum produto em Doces com “zzz” no nome/)).toBeInTheDocument();
-    expect(screen.queryByText(/Ainda não temos produtos nesta categoria/)).toBeNull();
-    const limpar = screen.getByRole("link", { name: "Limpar busca" });
-    expect(limpar).toHaveAttribute("href", "/produtos?categoria=doces&subcategoria=gourmet-premium");
-    expect(chipAtual()).toHaveTextContent("Gourmet Premium");
-  });
-
-  it("leitura das subcategorias vazia: a Lista funciona sem chips nem filtro", async () => {
-    subcategoriasDoBanco = [];
+  it("a ordem no HTML é a da tela: categorias, subcategorias, busca, lista (sem depender de CSS)", async () => {
     await renderLista({ categoria: "doces", subcategoria: "finos" });
-    expect(subfiltro()).toBeNull();
-    expect(cards()).toHaveLength(4);
+    const categorias = screen.getByRole("navigation", { name: "Categorias" });
+    const celular = subfiltro("celular")!;
+    const desktop = subfiltro("desktop")!;
+    const busca = screen.getByRole("search");
+    const grade = document.querySelector(".lista-grade")!;
+    const antes = (a: Node, b: Node) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(antes(categorias, desktop)).toBe(true);
+    expect(antes(categorias, celular)).toBe(true);
+    expect(antes(desktop, busca)).toBe(true);
+    expect(antes(celular, busca)).toBe(true);
+    expect(antes(busca, grade)).toBe(true);
+    // As subcategorias moram no mesmo bloco das categorias (o box do desktop).
+    expect(categorias.parentElement).toBe(document.querySelector(".lista-filtro"));
+    expect(desktop.parentElement).toBe(categorias.parentElement);
+    expect(celular.parentElement).toBe(categorias.parentElement);
+  });
+
+  describe.each(["celular", "desktop"] as const)("bloco %s", (bloco) => {
+    it("categoria com subcategorias: Todas e depois cada uma por ordem; 'Todas' atual por padrão", async () => {
+      await renderLista({ categoria: "doces" });
+      expect(textoDosChips(bloco)).toEqual(["Todas", "Finos", "Gourmet Premium"]);
+      expect(chipAtual(bloco)).toHaveTextContent("Todas");
+      expect(cards()).toHaveLength(4);
+    });
+
+    it("subcategoria de 1 produto aparece (Smash Cake)", async () => {
+      await renderLista({ categoria: "bolos" });
+      expect(textoDosChips(bloco)).toEqual(["Todas", "Smash Cake"]);
+    });
+
+    it("opção ativa leva aria-current (uma só) e filtra os cards", async () => {
+      await renderLista({ categoria: "doces", subcategoria: "gourmet-premium" });
+      expect(chipAtual(bloco)).toHaveTextContent("Gourmet Premium");
+      expect(chips(bloco).filter((a) => a.hasAttribute("aria-current"))).toHaveLength(1);
+      expect(cards().sort()).toEqual(["Beijinho Gourmet", "Brigadeiro Gourmet"]);
+    });
+
+    it.each(["inexistente", "smash-cake", "premium"])("slug inválido para a categoria (%s) vale como 'Todas', sem erro", async (slug) => {
+      await renderLista({ categoria: "doces", subcategoria: slug });
+      expect(chipAtual(bloco)).toHaveTextContent("Todas");
+      expect(cards()).toHaveLength(4);
+    });
+
+    it("os links levam busca e ordem e nunca a página; 'Todas' tira só a subcategoria", async () => {
+      await renderLista({ categoria: "doces", subcategoria: "finos", busca: "e", ordem: "a-z", pagina: "3" });
+      const hrefs = chips(bloco).map((a) => a.getAttribute("href"));
+      expect(hrefs).toEqual([
+        "/produtos?categoria=doces&busca=e&ordem=a-z",
+        "/produtos?categoria=doces&subcategoria=finos&busca=e&ordem=a-z",
+        "/produtos?categoria=doces&subcategoria=gourmet-premium&busca=e&ordem=a-z",
+      ]);
+      expect(hrefs.join()).not.toContain("pagina");
+    });
+
+    it("busca sem resultado dentro da subcategoria: mensagem da busca, 'Limpar busca' mantém o filtro", async () => {
+      await renderLista({ categoria: "doces", subcategoria: "gourmet-premium", busca: "zzz" });
+      expect(screen.getByText(/Nenhum produto em Doces com “zzz” no nome/)).toBeInTheDocument();
+      expect(screen.queryByText(/Ainda não temos produtos nesta categoria/)).toBeNull();
+      const limpar = screen.getByRole("link", { name: "Limpar busca" });
+      expect(limpar).toHaveAttribute("href", "/produtos?categoria=doces&subcategoria=gourmet-premium");
+      expect(chipAtual(bloco)).toHaveTextContent("Gourmet Premium");
+    });
+
+    it("o HTML do servidor já traz os links (sem JavaScript)", async () => {
+      const html = renderToStaticMarkup(await pagina({ categoria: "kit-festa", subcategoria: "premium" }));
+      const trecho = html.slice(html.indexOf(`lista-subfiltro--${bloco}`));
+      const nav = trecho.slice(0, trecho.indexOf("</nav>"));
+      expect(nav).toContain('href="/produtos?categoria=kit-festa&amp;subcategoria=premium"');
+      expect(nav).toContain('href="/produtos?categoria=kit-festa"');
+      expect(nav).toMatch(/aria-current="page"[^>]*>Premium</);
+      expect(html).toContain("Kit Premium A");
+      expect(html).not.toContain("Kit Sem Sub");
+    });
+  });
+
+  it("celular: rótulo curto 'Subcategorias' fora da leitura (a nav já tem nome); desktop: botão mostra a opção atual", async () => {
+    await renderLista({ categoria: "doces", subcategoria: "gourmet-premium" });
+    const titulo = subfiltro("celular")!.querySelector(".lista-subfiltro-titulo")!;
+    expect(titulo).toHaveTextContent("Subcategorias");
+    expect(titulo).toHaveAttribute("aria-hidden", "true");
+    const botao = subfiltro("desktop")!.querySelector("summary")!;
+    expect(botao).toHaveTextContent("Subcategoria: Gourmet Premium");
+    cleanup();
+    await renderLista({ categoria: "doces" });
+    expect(subfiltro("desktop")!.querySelector("summary")).toHaveTextContent("Subcategoria: Todas");
+  });
+
+  it("as duas navs têm o mesmo nome acessível", async () => {
+    await renderLista({ categoria: "doces" });
+    expect(subfiltro("celular")).toHaveAttribute("aria-label", "Subcategorias de Doces");
+    expect(subfiltro("desktop")).toHaveAttribute("aria-label", "Subcategorias de Doces");
+  });
+});
+
+describe("dropdown do desktop fecha sozinho", () => {
+  const aberto = async () => {
+    await renderLista({ categoria: "doces", subcategoria: "finos" });
+    const detalhes = subfiltro("desktop")!.querySelector("details")!;
+    detalhes.open = true;
+    return detalhes;
+  };
+
+  it("sem JavaScript é um <details> nativo, fechado, com os links reais dentro", async () => {
+    await renderLista({ categoria: "doces" });
+    const detalhes = subfiltro("desktop")!.querySelector("details")!;
+    expect(detalhes.open).toBe(false);
+    expect(detalhes.querySelector("summary")).not.toBeNull();
+    expect(within(detalhes).getAllByRole("link", { hidden: true })).toHaveLength(3);
+  });
+
+  it("escolher uma opção fecha", async () => {
+    const detalhes = await aberto();
+    fireEvent.click(within(detalhes).getByRole("link", { name: "Gourmet Premium", hidden: true }));
+    expect(detalhes.open).toBe(false);
+  });
+
+  it("Esc fecha e devolve o foco ao botão", async () => {
+    const detalhes = await aberto();
+    within(detalhes).getAllByRole("link", { hidden: true })[1].focus();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(detalhes.open).toBe(false);
+    expect(document.activeElement).toBe(detalhes.querySelector("summary"));
+  });
+
+  it("clicar fora fecha; clicar dentro não", async () => {
+    const detalhes = await aberto();
+    fireEvent.pointerDown(detalhes.querySelector("summary")!);
+    expect(detalhes.open).toBe(true);
+    fireEvent.pointerDown(screen.getByRole("search"));
+    expect(detalhes.open).toBe(false);
+  });
+
+  it("outras teclas não fecham", async () => {
+    const detalhes = await aberto();
+    fireEvent.keyDown(document, { key: "ArrowDown" });
+    expect(detalhes.open).toBe(true);
   });
 });
 
