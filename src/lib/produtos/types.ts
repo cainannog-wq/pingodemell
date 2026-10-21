@@ -14,10 +14,11 @@ export { CATEGORIA_VALUES, type CategoriaProduto } from "./categorias";
 
 // Comportamento do produto na interna, no carrinho e no cadastro. Espelha
 // o enum produto_tipo do banco (bolo e bento_cake entraram em
-// supabase/produto-tipo-bolo-bento.sql). A categoria é só filtro; quem
+// supabase/produto-tipo-bolo-bento.sql; kit_pessoa em
+// supabase/produto-tipo-kit-pessoa.sql, criado só pela carga CSV). A categoria é só filtro; quem
 // decide a tela é o tipo (src/lib/vitrine/variacao.ts). Smash Cake não tem
 // tipo: é um produto normal em Bolos.
-export const TIPO_PRODUTO_VALUES = ["normal", "cento", "bolo", "bento_cake"] as const;
+export const TIPO_PRODUTO_VALUES = ["normal", "cento", "bolo", "bento_cake", "kit_pessoa"] as const;
 export type TipoProduto = (typeof TIPO_PRODUTO_VALUES)[number];
 
 export const TIPO_PRODUTO_LABELS: Record<TipoProduto, string> = {
@@ -25,6 +26,7 @@ export const TIPO_PRODUTO_LABELS: Record<TipoProduto, string> = {
   cento: "Cento (com subitens)",
   bolo: "Bolo (recheio e tamanho em kg)",
   bento_cake: "Bento Cake (com recheio)",
+  kit_pessoa: "Kit por pessoa (composição por carga)",
 };
 
 // Categoria que cada tipo exige. O Bento Cake também é o único tipo aceito
@@ -32,6 +34,7 @@ export const TIPO_PRODUTO_LABELS: Record<TipoProduto, string> = {
 export const CATEGORIA_DO_TIPO: Partial<Record<TipoProduto, CategoriaProduto>> = {
   bolo: "Bolos",
   bento_cake: "Bento Cake",
+  kit_pessoa: "Kit Festa",
 };
 
 // Unidades sugeridas no campo "Unidade de venda" do cadastro. O banco

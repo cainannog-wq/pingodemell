@@ -27,7 +27,9 @@ export const TEXTO_ENTREGA_DECORACAO =
 export const TEXTO_FOTO = "Se eu tiver foto de referência, mando nesta conversa.";
 export const TEXTO_INSTABILIDADE = "Pedido não registrado no site, por instabilidade.";
 
-export type LinhaMensagem = ItemEnvio & { valor_centavos: number };
+// composicao: só no kit, as linhas do retrato (o corpo do pedido leva só ids;
+// os nomes vêm da linha do carrinho, no navegador).
+export type LinhaMensagem = ItemEnvio & { valor_centavos: number; composicao?: string[] };
 
 export type DadosMensagem = {
   // null = sem registro.
@@ -68,6 +70,7 @@ function quantidadeAvulso(quantidade: number, unidade: string | null): string {
 export function quantidadeDaLinha(l: ItemEnvio): string {
   if (l.tipo === "cento") return `${l.quantidade} ${l.quantidade === 1 ? "cento" : "centos"}`;
   if (l.tipo === "bolo") return `${l.quantidade} kg`;
+  if (l.tipo === "kit") return textoQuantidadeNaUnidade(l.quantidade, "a pessoa");
   // Bento Cake: "2 combos" no combo, "2 unidades" no simples.
   if (l.tipo === "bento") return textoQuantidadeNaUnidade(l.quantidade, unidadeDoBento(l.unidade_venda).chave);
   return quantidadeAvulso(l.quantidade, l.unidade_venda);
@@ -84,6 +87,9 @@ function linhaCompleta(l: LinhaMensagem, i: number): string[] {
     saida.push(`${i}. ${l.nome}, recheio ${l.recheio.nome}, ${l.quantidade} kg, ${l.formato}, ${valor} (valor base, sem decoração)`);
   } else if (l.tipo === "bento") {
     saida.push(`${i}. ${l.nome}, recheio ${l.recheio.nome}, ${quantidadeDaLinha(l)}, ${valor}`);
+  } else if (l.tipo === "kit") {
+    saida.push(`${i}. ${l.nome}, ${quantidadeDaLinha(l)}, ${valor}`);
+    for (const texto of l.composicao ?? []) saida.push(`   ${texto}`);
   } else if (l.recheio) {
     saida.push(`${i}. ${l.nome}, recheio ${l.recheio.nome}, ${quantidadeDaLinha(l)}, ${valor}`);
   } else {

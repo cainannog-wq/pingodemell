@@ -1,0 +1,11 @@
+produto,pessoas,grupo,opcao,total,max_sabores,rotulo
+Kit Exemplo Basico,10,bolo,,1,,
+Kit Exemplo Basico,10,doces,,20,2,
+Kit Exemplo Basico,10,bebida,Suco de uva,5,,
+Kit Exemplo Basico,10,bebida,Refrigerante,5,,
+Kit Exemplo Basico,10,descartaveis,,10,,Pratos e copos
+Kit Exemplo Basico,20,bolo,,1,,
+Kit Exemplo Basico,20,doces,,40,3,
+Kit Exemplo Basico,20,bebida,Suco de uva,10,,
+Kit Exemplo Basico,20,bebida,Refrigerante,10,,
+Kit Exemplo Basico,20,descartaveis,,20,,Pratos e copos

@@ -6,7 +6,15 @@ import { useCarrinho } from "@/components/site/CarrinhoProvider";
 import { Hive } from "@/components/site/Hive";
 import { PilhaDeAvisos, type Aviso } from "@/components/site/PilhaDeAvisos";
 import { useMontado } from "@/components/site/useMontado";
-import { alterarQuantidade, subtotalDaLinha, totalDoCarrinho, type LinhaCarrinho } from "@/lib/carrinho/regras";
+import {
+  alterarQuantidade,
+  contarKits,
+  MAX_KITS,
+  subtotalDaLinha,
+  TEXTO_LIMITE_DE_KITS,
+  totalDoCarrinho,
+  type LinhaCarrinho,
+} from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
 import { ROTAS } from "@/lib/site/rotas";
 import { TEXTO_DECORACAO } from "@/lib/vitrine/bolo";
@@ -116,6 +124,9 @@ export function Carrinho() {
 
   const total = formatMoeda(totalDoCarrinho(linhas));
   const temBolo = linhas.some((l) => l.tipo === "bolo");
+  // Só passa de MAX_KITS com o carrinho aberto em duas abas: o aviso aparece
+  // antes do checkout (o servidor recusa o pedido com o mesmo texto).
+  const kitsDemais = contarKits(linhas) > MAX_KITS;
 
   return (
     <div className="carrinho" ref={raiz}>
@@ -151,6 +162,12 @@ export function Carrinho() {
               <span>Subtotal</span>
               <strong>{total}</strong>
             </div>
+            {kitsDemais ? (
+              <p className="carrinho-resumo-info" role="alert">
+                <Icon name="info" size={20} color="var(--pdm-info)" />
+                <span>{TEXTO_LIMITE_DE_KITS} Remova algum kit para finalizar.</span>
+              </p>
+            ) : null}
             {temBolo ? (
               <p className="carrinho-resumo-info">
                 <Icon name="info" size={20} color="var(--pdm-info)" />

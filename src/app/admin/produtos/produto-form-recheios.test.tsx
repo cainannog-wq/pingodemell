@@ -108,7 +108,7 @@ describe("Lista de recheios do produto", () => {
     expect(campos().map((c) => c.value)).toEqual(["Dois amores", "Ouro branco"]);
   });
 
-  it("ligar abre o primeiro campo; adicionar, subir, descer e remover mexem na lista", () => {
+  it("ligar abre o primeiro campo; adicionar, reordenar (alça) e remover mexem na lista", () => {
     renderEdicao({ Categoria: "Bolos", tipo: "normal" });
     expect(interruptor()).not.toBeChecked();
     expect(campos()).toHaveLength(0);
@@ -117,14 +117,15 @@ describe("Lista de recheios do produto", () => {
     fireEvent.change(campos()[0], { target: { value: "A" } });
     fireEvent.click(screen.getByRole("button", { name: "Adicionar recheio" }));
     fireEvent.change(campos()[1], { target: { value: "B" } });
-    fireEvent.click(screen.getByRole("button", { name: "Subir o recheio 2" }));
+    fireEvent.keyDown(screen.getByRole("button", { name: /Reordenar recheio 2/ }), { key: "ArrowUp" });
     expect(campos().map((c) => c.value)).toEqual(["B", "A"]);
-    fireEvent.click(screen.getByRole("button", { name: "Descer o recheio 1" }));
+    fireEvent.keyDown(screen.getByRole("button", { name: /Reordenar recheio 1/ }), { key: "ArrowDown" });
     expect(campos().map((c) => c.value)).toEqual(["A", "B"]);
     fireEvent.click(screen.getByRole("button", { name: "Remover o recheio 1" }));
     expect(campos().map((c) => c.value)).toEqual(["B"]);
-    expect(screen.getByRole("button", { name: "Subir o recheio 1" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Descer o recheio 1" })).toBeDisabled();
+    // Com um recheio só, a alça fica desligada (nada a ordenar).
+    expect(screen.getByRole("button", { name: /Reordenar recheio 1/ })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /Subir o recheio|Descer o recheio/ })).toBeNull();
   });
 });
 

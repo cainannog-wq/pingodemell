@@ -769,3 +769,25 @@
     min-height: 420px;
   }
 }
+
+/* Reordenar arrastando (ordenar-arrastando.tsx): alça de seis pontos. */
+.admin-alca-ordem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius, 8px);
+  background: transparent;
+  color: var(--pdm-muted);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.admin-alca-ordem:hover { color: var(--pdm-brown); background: var(--pdm-cream); }
+.admin-alca-ordem:focus-visible { outline: 2px solid var(--pdm-brown); outline-offset: 2px; }
+.admin-alca-ordem:active { cursor: grabbing; }
+[data-arrastando="true"] { opacity: 0.55; background: var(--pdm-cream); }
+[data-sobre="true"] { outline: 2px dashed var(--pdm-brown); outline-offset: -2px; }

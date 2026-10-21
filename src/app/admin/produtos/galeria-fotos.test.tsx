@@ -83,26 +83,67 @@ describe("GaleriaFotosExtras — adicionar uma de cada vez", () => {
 });
 
 describe("GaleriaFotosExtras — ordem e remoção", () => {
-  it("subir desabilitado na primeira, descer na última, rótulos identificam a foto", () => {
+  it("não há setas de subir e descer: cada foto tem a alça de seis pontos, e os rótulos identificam a foto", () => {
     render(<Galeria iniciais={existentes(3)} />);
-    expect(screen.getByRole("button", { name: "Mover foto extra 1 para cima" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Mover foto extra 1 para baixo" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Mover foto extra 3 para baixo" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /para cima|para baixo/ })).toBeNull();
+    for (const n of [1, 2, 3]) expect(screen.getByRole("button", { name: new RegExp(`Reordenar foto extra ${n}`) })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Remover foto extra 2" })).toBeEnabled();
   });
 
-  it("mover a última até a primeira: ordem certa, foco acompanha a foto e a mudança é anunciada", () => {
-    render(<Galeria iniciais={existentes(3)} />);
-    fireEvent.click(screen.getByRole("button", { name: "Mover foto extra 3 para cima" }));
-    expect(urls()).toEqual(["foto-1.webp", "foto-3.webp", "foto-2.webp"]);
-    expect(screen.getByRole("button", { name: "Mover foto extra 2 para cima" })).toHaveFocus();
-    expect(screen.getByRole("status")).toHaveTextContent("Foto extra 3 movida para a posição 2 de 3.");
+  it("com uma foto só a alça fica desligada (nada a ordenar)", () => {
+    render(<Galeria iniciais={existentes(1)} />);
+    expect(screen.getByRole("button", { name: /Reordenar foto extra 1/ })).toBeDisabled();
+  });
 
-    fireEvent.click(screen.getByRole("button", { name: "Mover foto extra 2 para cima" }));
+  it("mover pelo teclado a última até a primeira: ordem certa, foco acompanha a alça e a mudança é anunciada", () => {
+    render(<Galeria iniciais={existentes(3)} />);
+    fireEvent.keyDown(screen.getByRole("button", { name: /Reordenar foto extra 3/ }), { key: "ArrowUp" });
+    expect(urls()).toEqual(["foto-1.webp", "foto-3.webp", "foto-2.webp"]);
+    expect(screen.getByRole("button", { name: /Reordenar foto extra 2/ })).toHaveFocus();
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent("Foto extra 3 movida para a posição 2 de 3.");
+
+    fireEvent.keyDown(screen.getByRole("button", { name: /Reordenar foto extra 2/ }), { key: "ArrowUp" });
     expect(urls()).toEqual(["foto-3.webp", "foto-1.webp", "foto-2.webp"]);
-    // Na primeira posição "subir" fica desabilitado: o foco vai para "descer" da mesma foto.
-    expect(screen.getByRole("button", { name: "Mover foto extra 1 para baixo" })).toHaveFocus();
-    expect(screen.getByRole("status")).toHaveTextContent("Foto extra 2 movida para a posição 1 de 3.");
+    expect(screen.getByRole("button", { name: /Reordenar foto extra 1/ })).toHaveFocus();
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent("Foto extra 2 movida para a posição 1 de 3.");
+  });
+
+  it("Home e End levam a foto ao começo e ao fim; na ponta, a seta não faz nada", () => {
+    render(<Galeria iniciais={existentes(3)} />);
+    fireEvent.keyDown(screen.getByRole("button", { name: /Reordenar foto extra 1/ }), { key: "ArrowUp" });
+    expect(urls()).toEqual(["foto-1.webp", "foto-2.webp", "foto-3.webp"]);
+    fireEvent.keyDown(screen.getByRole("button", { name: /Reordenar foto extra 1/ }), { key: "End" });
+    expect(urls()).toEqual(["foto-2.webp", "foto-3.webp", "foto-1.webp"]);
+    fireEvent.keyDown(screen.getByRole("button", { name: /Reordenar foto extra 3/ }), { key: "Home" });
+    expect(urls()).toEqual(["foto-1.webp", "foto-2.webp", "foto-3.webp"]);
+  });
+
+  it("arrastar a alça da primeira sobre a terceira (ponteiro) deixa a primeira no fim", () => {
+    const { container } = render(<Galeria iniciais={existentes(3)} />);
+    const itens = Array.from(container.querySelectorAll<HTMLElement>("[data-ordenar-id]"));
+    // jsdom não tem layout: cada item ocupa uma faixa de 100 px na vertical.
+    itens.forEach((el, i) => {
+      el.getBoundingClientRect = () => ({ left: 0, right: 300, top: i * 100, bottom: i * 100 + 90, width: 300, height: 90, x: 0, y: i * 100, toJSON: () => ({}) });
+    });
+    const alca = screen.getByRole("button", { name: /Reordenar foto extra 1/ });
+    fireEvent.pointerDown(alca, { pointerId: 1, button: 0, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(alca, { pointerId: 1, clientX: 10, clientY: 250 });
+    fireEvent.pointerUp(alca, { pointerId: 1, clientX: 10, clientY: 250 });
+    expect(urls()).toEqual(["foto-2.webp", "foto-3.webp", "foto-1.webp"]);
+  });
+
+  it("soltar no mesmo lugar, ou cancelar, não muda a ordem", () => {
+    const { container } = render(<Galeria iniciais={existentes(3)} />);
+    Array.from(container.querySelectorAll<HTMLElement>("[data-ordenar-id]")).forEach((el, i) => {
+      el.getBoundingClientRect = () => ({ left: 0, right: 300, top: i * 100, bottom: i * 100 + 90, width: 300, height: 90, x: 0, y: i * 100, toJSON: () => ({}) });
+    });
+    const alca = screen.getByRole("button", { name: /Reordenar foto extra 2/ });
+    fireEvent.pointerDown(alca, { pointerId: 1, button: 0, clientX: 10, clientY: 110 });
+    fireEvent.pointerUp(alca, { pointerId: 1, clientX: 10, clientY: 120 });
+    expect(urls()).toEqual(["foto-1.webp", "foto-2.webp", "foto-3.webp"]);
+    fireEvent.pointerDown(alca, { pointerId: 1, button: 0, clientX: 10, clientY: 110 });
+    fireEvent.pointerCancel(alca, { pointerId: 1 });
+    expect(urls()).toEqual(["foto-1.webp", "foto-2.webp", "foto-3.webp"]);
   });
 
   it("remover tira a foto da lista (só na tela), anuncia e leva o foco para a vizinha", () => {
@@ -118,7 +159,7 @@ describe("GaleriaFotosExtras — ordem e remoção", () => {
     const confirma = vi.spyOn(window, "confirm").mockImplementation(() => true);
     render(<Galeria iniciais={existentes(3)} />);
     fireEvent.click(screen.getByRole("button", { name: "Remover foto extra 1" }));
-    fireEvent.click(screen.getByRole("button", { name: "Mover foto extra 2 para cima" }));
+    fireEvent.keyDown(screen.getByRole("button", { name: /Reordenar foto extra 2/ }), { key: "ArrowUp" });
     expect(alerta).not.toHaveBeenCalled();
     expect(confirma).not.toHaveBeenCalled();
   });

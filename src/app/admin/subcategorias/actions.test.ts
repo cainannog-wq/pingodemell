@@ -67,7 +67,7 @@ vi.mock("@/lib/supabase/server", () => ({
   })),
 }));
 
-const { apagarSubcategoria, atualizarAtivoSubcategoria, criarSubcategoria, moverSubcategoria, renomearSubcategoria } =
+const { apagarSubcategoria, atualizarAtivoSubcategoria, criarSubcategoria, reordenarSubcategorias, renomearSubcategoria } =
   await import("./actions");
 
 beforeEach(() => {
@@ -180,7 +180,7 @@ describe("apagar", () => {
   });
 });
 
-describe("mover (setas)", () => {
+describe("reordenar (arrastar)", () => {
   beforeEach(() => {
     banco.linhas = [
       { id: ID, categoria: "Doces", nome: "A", ordem: 10 },
@@ -189,8 +189,8 @@ describe("mover (setas)", () => {
     ];
   });
 
-  it("descer troca com a vizinha da MESMA categoria e grava só as linhas que mudam", async () => {
-    expect(await moverSubcategoria(ID, "descer")).toEqual({});
+  it("troca com a vizinha da MESMA categoria e grava só as linhas que mudam", async () => {
+    expect(await reordenarSubcategorias("Doces", [OUTRA, ID])).toEqual({});
     expect(banco.updates).toEqual([
       { id: OUTRA, valores: { ordem: 10 } },
       { id: ID, valores: { ordem: 20 } },
@@ -198,25 +198,27 @@ describe("mover (setas)", () => {
     expect(updateTag).toHaveBeenCalledWith("vitrine");
   });
 
-  it("primeira subindo e última descendo: nada é gravado", async () => {
-    expect(await moverSubcategoria(ID, "subir")).toEqual({});
-    expect(await moverSubcategoria(OUTRA, "descer")).toEqual({});
+  it("mesma ordem: nada é gravado", async () => {
+    expect(await reordenarSubcategorias("Doces", [ID, OUTRA])).toEqual({});
+    expect(await reordenarSubcategorias("Bolos", [TERCEIRA])).toEqual({});
     expect(banco.updates).toHaveLength(0);
   });
 
-  it("categoria com uma só subcategoria: nada é gravado", async () => {
-    expect(await moverSubcategoria(TERCEIRA, "descer")).toEqual({});
+  it("ids que não são os da categoria (mudou em outra aba, ou de outra categoria): recusado sem gravar", async () => {
+    expect((await reordenarSubcategorias("Doces", [ID])).error).toMatch(/Recarregue/);
+    expect((await reordenarSubcategorias("Doces", [ID, TERCEIRA])).error).toMatch(/Recarregue/);
+    expect((await reordenarSubcategorias("Doces", [ID, ID])).error).toMatch(/Recarregue/);
     expect(banco.updates).toHaveLength(0);
   });
 
-  it("id que sumiu: avisa; direção inválida: recusa", async () => {
-    expect((await moverSubcategoria("3f1c9a52-0000-4000-8000-0000000000ff", "subir")).error).toMatch(/não encontrada/);
-    expect((await moverSubcategoria(ID, "lado" as never)).error).toMatch(/não encontrada/);
+  it("ids inválidos ou categoria desconhecida: recusa", async () => {
+    expect((await reordenarSubcategorias("Doces", ["x", "y"])).error).toMatch(/não encontrada/);
+    expect((await reordenarSubcategorias("Inexistente", [ID])).error).toMatch(/categoria/);
   });
 
   it("falha numa das gravações: invalida mesmo assim (uma linha pode ter mudado) e avisa", async () => {
     banco.erroEscritaDoId[ID] = { code: "XX000", message: "cru" };
-    const r = await moverSubcategoria(ID, "descer");
+    const r = await reordenarSubcategorias("Doces", [OUTRA, ID]);
     expect(r.error).toMatch(/Não foi possível/);
     expect(updateTag).toHaveBeenCalledWith("vitrine");
   });
@@ -227,7 +229,7 @@ describe("todas as ações exigem login", () => {
     await criarSubcategoria("Doces", "X");
     await renomearSubcategoria(ID, "X");
     await atualizarAtivoSubcategoria(ID, true);
-    await moverSubcategoria(ID, "subir");
+    await reordenarSubcategorias("Doces", [OUTRA, ID]);
     await apagarSubcategoria(ID);
     expect(requireAuth).toHaveBeenCalledTimes(5);
   });

@@ -1,5 +1,6 @@
 "use server";
 
+import { recusarTrocaDeTipo } from "./kit-servidor";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -176,6 +177,12 @@ export async function createProduto(
     return { error: recusaSubcategoria };
   }
 
+  const recusaDeTipo = await recusarTrocaDeTipo(supabase, produtoId, null, tipo);
+  if (recusaDeTipo) {
+    await descartar();
+    return { error: recusaDeTipo };
+  }
+
   const recheios = lerRecheiosDoEnvio(formData, { categoria, tipo });
   if (!recheios.ok) {
     await descartar();
@@ -277,9 +284,15 @@ export async function updateProduto(
 
   const { data: atual } = await supabase
     .from("produtos")
-    .select("id, image_url, Categoria, subcategoria_id")
+    .select("id, image_url, Categoria, subcategoria_id, tipo")
     .eq("nome", nomeOriginal)
-    .maybeSingle<{ id: string; image_url: string | null; Categoria?: string | null; subcategoria_id?: string | null }>();
+    .maybeSingle<{
+      id: string;
+      image_url: string | null;
+      Categoria?: string | null;
+      subcategoria_id?: string | null;
+      tipo?: string | null;
+    }>();
   if (!atual || !ehUuid(atual.id)) return { error: "Produto não encontrado. Ele pode ter sido excluído ou renomeado." };
   const produtoId = atual.id;
   const capaAntiga = atual.image_url ?? null;
@@ -310,6 +323,12 @@ export async function updateProduto(
   if (recusaSubcategoria) {
     await descartar();
     return { error: recusaSubcategoria };
+  }
+
+  const recusaDeTipo = await recusarTrocaDeTipo(supabase, produtoId, atual.tipo, tipo);
+  if (recusaDeTipo) {
+    await descartar();
+    return { error: recusaDeTipo };
   }
 
   const recheios = lerRecheiosDoEnvio(formData, { categoria, tipo });

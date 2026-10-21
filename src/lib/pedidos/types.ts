@@ -15,7 +15,7 @@ export type PedidoItem = {
   quantidade: number;
   preco_unitario: number;
   produto_id?: string;
-  tipo?: "normal" | "cento" | "bolo" | "bento";
+  tipo?: "normal" | "cento" | "bolo" | "bento" | "kit";
   unidade_venda?: string | null;
   observacao?: string | null;
 };
