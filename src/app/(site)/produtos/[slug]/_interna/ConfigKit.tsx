@@ -41,7 +41,11 @@ function textoPessoas(n: number): string {
   return `${n} ${n === 1 ? "pessoa" : "pessoas"}`;
 }
 
-export function ConfigKit({ produto, config }: { produto: ProdutoVitrine; config: KitConfig }) {
+// previa: prévia do admin de um kit inativo (/previa/{slug}). Tudo funciona como
+// para a cliente, menos o botão: um kit inativo não entra no pedido.
+export const TEXTO_PREVIA = "Prévia do admin: este kit está inativo e não pode ser adicionado ao pedido.";
+
+export function ConfigKit({ produto, config, previa = false }: { produto: ProdutoVitrine; config: KitConfig; previa?: boolean }) {
   const tamanhos = tamanhosDisponiveis(config);
   const { linhas } = useCarrinho();
   const { indo, adicionarEIr } = useAdicionarEIrAoCarrinho();
@@ -55,8 +59,10 @@ export function ConfigKit({ produto, config }: { produto: ProdutoVitrine; config
   const tamanho = tamanhos.find((t) => t.pessoas === pessoas);
   const resultado = validarEscolhas(config, pessoas, escolhas, "tela");
   const noLimite = contarKits(linhas) >= MAX_KITS;
-  const valida = resultado.ok && !noLimite && tamanho !== undefined;
-  const erro = noLimite
+  const valida = resultado.ok && !noLimite && tamanho !== undefined && !previa;
+  const erro = previa
+    ? TEXTO_PREVIA
+    : noLimite
     ? TEXTO_LIMITE_DE_KITS
     : resultado.ok
       ? null

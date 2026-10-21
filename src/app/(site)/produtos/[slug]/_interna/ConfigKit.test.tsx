@@ -86,6 +86,19 @@ describe("ConfigKit", () => {
     expect(screen.getByRole("button", { name: /Aumentar Doces, Olho de sogra/ })).toBeDisabled();
   });
 
+  it("prévia do admin: tudo funciona, mas o botão fica desligado mesmo com o kit fechado", () => {
+    render(<ConfigKit produto={produto} config={config} previa />);
+    fireEvent.click(screen.getByLabelText(/Ninho com morango/));
+    fireEvent.click(screen.getByLabelText(/Suco de uva/));
+    aumentar(/Aumentar Doces, Brigadeiro/);
+    aumentar(/Aumentar Doces, Beijinho/);
+    expect(screen.getByText("20 de 20 selecionados")).toBeInTheDocument();
+    expect(botaoAdicionar()).toBeDisabled();
+    expect(screen.getAllByText(/Prévia do admin: este kit está inativo/).length).toBeGreaterThan(0);
+    fireEvent.click(botaoAdicionar());
+    expect(adicionar).not.toHaveBeenCalled();
+  });
+
   it("com 5 kits no carrinho o botão fica desligado e o aviso do limite aparece", () => {
     linhasDoCarrinho = Array.from({ length: 5 }, (_, i) => ({ id: `k${i}`, tipo: "kit" }) as unknown as LinhaCarrinho);
     render(<ConfigKit produto={produto} config={config} />);

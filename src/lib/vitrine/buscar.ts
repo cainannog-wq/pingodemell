@@ -397,6 +397,49 @@ export async function buscarInterna(slug: string): Promise<Interna> {
   return { estado: "ok", produto: comPrecoAPartirDe([produto], recheios)[0], sabores, recheios, recheiosProduto: lido.recheiosProduto, fotos, kit };
 }
 
+// Prévia do admin (/previa/{slug}): a interna de um kit por pessoa como a cliente a
+// veria, mesmo INATIVO. Lê com o cliente COM sessão que a página recebe (a RLS do
+// logado enxerga produto e composição inativos), sem cache e sem filtro de
+// disponibilidade; quem chama confere a sessão antes. Só kit por pessoa: outro
+// tipo, slug inexistente ou fora do formato → "nao-encontrado". kitCompleto diz se
+// há ao menos um tamanho que a cliente conseguiria montar.
+export type InternaPrevia =
+  | { estado: "ok"; interna: Extract<Interna, { estado: "ok" }>; kitCompleto: boolean }
+  | { estado: "nao-encontrado" }
+  | { estado: "erro" };
+
+export async function buscarInternaPrevia(slug: string, supabase: Supabase): Promise<InternaPrevia> {
+  if (!FORMATO_SLUG.test(slug)) return { estado: "nao-encontrado" };
+  try {
+    const { data, error } = await supabase.from("produtos").select(CAMPOS_INTERNA).eq("slug", slug).maybeSingle();
+    if (error) return { estado: "erro" };
+    const completa = data as unknown as (ProdutoComSabores & { recheios_produto?: LinhaRecheioProduto[] | null }) | null;
+    if (!completa || completa.tipo !== "kit_pessoa") return { estado: "nao-encontrado" };
+    const { recheios_produto, ...linha } = completa;
+    const { produtos } = separarSabores([linha]);
+    const produto = produtos[0];
+    const configs = await lerConfigsDosKits(supabase, [String(produto.id)]);
+    const kit = configs[String(produto.id).toLowerCase()] ?? null;
+    const extras = await tentar(lerFotosExtras(supabase, slug), "Falha ao buscar as fotos extras (prévia):");
+    return {
+      estado: "ok",
+      kitCompleto: kit !== null && kitDisponivel(kit),
+      interna: {
+        estado: "ok",
+        produto,
+        sabores: [],
+        recheios: [],
+        recheiosProduto: recheiosDoProduto(recheios_produto),
+        fotos: montarFotos(produto, extras === FALHA ? [] : extras, (url) => url),
+        kit,
+      },
+    };
+  } catch (e) {
+    console.error("Falha ao montar a prévia do kit:", e instanceof Error ? e.message : e);
+    return { estado: "erro" };
+  }
+}
+
 // "Combina com o seu pedido" da interna: os mesmos produtos de "Os mais
 // pedidos" (ativo + destaque, sem bebida, sem Cento indisponível), sem o
 // produto da página (regra em selecionarRelacionados). Em caso de erro, o
