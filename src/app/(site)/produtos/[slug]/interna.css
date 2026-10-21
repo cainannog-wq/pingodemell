@@ -523,7 +523,8 @@
     white-space: nowrap;
   }
   .interna-barra[data-desktop] .interna-barra-linha > button {
-    width: auto;
+    /* O Button traz width: 100% inline (fullWidth, usado no celular). */
+    width: auto !important;
     min-width: 260px;
     flex: none;
   }
