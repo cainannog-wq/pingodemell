@@ -15,6 +15,9 @@ const POR_TIPO: Record<TipoProduto, Variacao> = {
   cento: "cento",
   bolo: "bolo",
   bento_cake: "bento",
+  // Provisório até a tela do kit (PR 3): o produto nasce inativo e só a carga
+  // o cria, então nenhum kit chega à vitrine antes disso.
+  kit_pessoa: "avulso",
 };
 
 export function variacaoDoProduto(produto: { tipo: TipoProduto }): Variacao {

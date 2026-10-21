@@ -136,6 +136,10 @@ export function ProdutoForm({
   // Textos que mudam com o tipo (não são campos).
   const bolo = tipo === "bolo";
   const bento = tipo === "bento_cake";
+  // Kit por pessoa: criado só pela carga CSV. O formulário só o mostra ao editar
+  // um produto que já é kit (a opção nunca aparece para os outros).
+  const kit = tipo === "kit_pessoa";
+  const tiposDaLista = produto?.tipo === "kit_pessoa" ? (["kit_pessoa"] as const) : TIPO_PRODUTO_VALUES.filter((t) => t !== "kit_pessoa");
 
   // Bolo e Bento Cake só existem em Bolos e Bento Cake (a categoria acompanha
   // o tipo); e a categoria Bento Cake só aceita o tipo Bento Cake.
@@ -309,7 +313,9 @@ export function ProdutoForm({
                 htmlFor="f-tipo"
                 required
                 hint={
-                  tipo === "cento"
+                  tipo === "kit_pessoa"
+                    ? "Kit por pessoa: a composição e as listas vêm da carga e de Cardápio, Listas do kit. O preço é por pessoa; o tipo não pode mudar."
+                    : tipo === "cento"
                     ? "Cento: quantidade sempre fixa em 100 unidades, o preço é o preço normal deste cadastro (não soma o dos subitens)."
                     : tipo === "bolo"
                       ? "Bolo tradicional: o cliente escolhe tamanho (kg), formato e um recheio do catálogo de recheios. O preço é o R$/kg do recheio × o tamanho."
@@ -325,7 +331,7 @@ export function ProdutoForm({
                   onChange={(e) => aoMudarTipo(e.target.value as TipoProduto)}
                   required
                 >
-                  {TIPO_PRODUTO_VALUES.map((valor) => (
+                  {tiposDaLista.map((valor) => (
                     <option key={valor} value={valor}>
                       {TIPO_PRODUTO_LABELS[valor]}
                     </option>
@@ -367,7 +373,7 @@ export function ProdutoForm({
             ) : null}
             <div className="produto-form-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
               {comPreco && (
-              <Field label="Preço" htmlFor="f-preco" required hint="Digite só números — a formatação em reais é automática.">
+              <Field label={kit ? "Preço por pessoa" : "Preço"} htmlFor="f-preco" required hint="Digite só números — a formatação em reais é automática.">
                 <PriceInput id="f-preco" name="preco" defaultValue={produto?.preco} required />
               </Field>
               )}
