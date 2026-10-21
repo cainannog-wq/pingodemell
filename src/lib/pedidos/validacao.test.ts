@@ -202,3 +202,57 @@ describe("avulso com recheio personalizado (Ganache, Kit Kat...)", () => {
     expect(recusa(corpo({ itens: itens({ recheio: { ...RECHEIO, preco: 1 } }) }))).toBeTruthy();
   });
 });
+
+// Sabores do Cento (PR servidor/cento-passo-soma): as mesmas regras da tela
+// (carrinho/regras.ts, linhaValida), sem recusar nada que ela permita.
+describe("validação do pedido no servidor: sabores do Cento", () => {
+  const cento = () => corpo().itens[1] as Extract<CorpoPedido["itens"][number], { tipo: "cento" }>;
+  const comSabores = (sabores: { nome: string; quantidade: number }[], quantidade = cento().quantidade) =>
+    corpo({ itens: [{ ...cento(), quantidade, sabores }] });
+  const SABORES = /sabores fora do limite/;
+
+  it("aceita a composição da fixtura (3 centos, 150 + 100 + 50) e sabor com 0", () => {
+    expect(validarPedido(comSabores(cento().sabores), HOJE).ok).toBe(true);
+    expect(validarPedido(comSabores([{ nome: "Coxinha", quantidade: 100 }, { nome: "Risoles", quantidade: 0 }], 1), HOJE).ok).toBe(true);
+    // Um sabor só, com o total inteiro (o caso de 1 sabor ativo na tela).
+    expect(validarPedido(comSabores([{ nome: "Coxinha", quantidade: 300 }]), HOJE).ok).toBe(true);
+    // O limite máximo da tela: 50 centos em 30 sabores.
+    const trinta = Array.from({ length: 30 }, (_, i) => ({ nome: `Sabor ${i}`, quantidade: i < 20 ? 170 : 160 }));
+    expect(validarPedido(comSabores(trinta, 50), HOJE).ok).toBe(true);
+  });
+
+  it("recusa quantidade fora do passo de 10", () => {
+    expect(recusa(comSabores([{ nome: "Coxinha", quantidade: 155 }, { nome: "Risoles", quantidade: 100 }, { nome: "Empada", quantidade: 45 }]))).toMatch(SABORES);
+    expect(recusa(comSabores([{ nome: "Coxinha", quantidade: 5 }, { nome: "Risoles", quantidade: 295 }]))).toMatch(SABORES);
+  });
+
+  it("recusa quantidade negativa, fracionada ou que não é número", () => {
+    for (const quantidade of [-10, 10.5, "10", null]) {
+      expect(recusa(comSabores([{ nome: "Coxinha", quantidade: quantidade as number }, { nome: "Risoles", quantidade: 300 }]))).toMatch(SABORES);
+    }
+  });
+
+  it("recusa soma diferente de 100 × centos (a mais e a menos)", () => {
+    expect(recusa(comSabores([{ nome: "Coxinha", quantidade: 150 }, { nome: "Risoles", quantidade: 100 }]))).toMatch(SABORES);
+    expect(recusa(comSabores([{ nome: "Coxinha", quantidade: 200 }, { nome: "Risoles", quantidade: 100 }, { nome: "Empada", quantidade: 50 }]))).toMatch(SABORES);
+    expect(recusa(comSabores(cento().sabores, 4))).toMatch(SABORES);
+  });
+
+  it("recusa sabor repetido (nome exato); nome só diferente na maiúscula não conta como repetido, como na tela", () => {
+    expect(recusa(comSabores([{ nome: "Coxinha", quantidade: 150 }, { nome: "Coxinha", quantidade: 150 }]))).toMatch(SABORES);
+    expect(validarPedido(comSabores([{ nome: "Coxinha", quantidade: 150 }, { nome: "coxinha", quantidade: 150 }]), HOJE).ok).toBe(true);
+  });
+
+  it("a mensagem não repete o que veio no corpo", () => {
+    const m = recusa(comSabores([{ nome: "Sabor-Secreto-123", quantidade: 5 }]));
+    expect(m).not.toContain("Secreto");
+  });
+
+  it("não mexe nos outros tipos nem no preço", () => {
+    const itens = corpo().itens;
+    expect(validarPedido(corpo({ itens: itens.filter((i) => i.tipo !== "cento") }), HOJE).ok).toBe(true);
+    expect(validarPedido(comSabores(cento().sabores, 3), HOJE).ok).toBe(true);
+    const barato = corpo({ itens: [{ ...cento(), preco: 0.01 }] });
+    expect(validarPedido(barato, HOJE).ok).toBe(true);
+  });
+});

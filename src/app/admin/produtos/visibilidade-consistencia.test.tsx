@@ -15,6 +15,9 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 const ID = "c7b3f34c-6f8f-4b39-a8fb-31369f1c4aee";
 const SUB_ID = "5d0c1b7e-2a4f-4c66-9a53-0f1d6e8b7a21";
 
+// Tipo que o banco simulado devolve como o já guardado do produto (a edição o lê).
+let tipoGuardado: string | undefined;
+
 const chamadas = { insert: [] as Record<string, unknown>[], update: [] as Record<string, unknown>[] };
 
 vi.mock("@/lib/supabase/dal", () => ({ requireAuth: vi.fn().mockResolvedValue({ id: "user-1" }) }));
@@ -42,7 +45,7 @@ vi.mock("@/lib/supabase/server", () => ({
         return {
           select: (colunas: string) => ({
             eq: () => ({
-              maybeSingle: async () => ({ data: colunas.startsWith("id") ? { id: ID, image_url: null } : null }),
+              maybeSingle: async () => ({ data: colunas.startsWith("id") ? { id: ID, image_url: null, tipo: tipoGuardado } : null }),
             }),
           }),
           insert: async (payload: Record<string, unknown>) => {
@@ -56,6 +59,10 @@ vi.mock("@/lib/supabase/server", () => ({
             },
           }),
         };
+      }
+      if (tabela === "kit_grupos") {
+        // Só é consultada quando um kit tenta mudar de tipo (nenhuma combinação da matriz faz isso).
+        return { select: () => ({ eq: async () => ({ count: 0, error: null }) }) };
       }
       if (tabela === "produto_fotos") {
         return { select: () => ({ eq: () => ({ order: async () => ({ data: [], error: null }) }) }) };
@@ -97,6 +104,7 @@ beforeAll(() => {
 beforeEach(() => {
   chamadas.insert.length = 0;
   chamadas.update.length = 0;
+  tipoGuardado = undefined;
 });
 afterEach(() => cleanup());
 
@@ -169,15 +177,15 @@ function tudoAForca(c: Caso): FormData {
 const VALORES_FORCADOS = { preco: 10, pedido_minimo: 3, step_quantidade: "multiplos_5", unidade_venda: "o kit" };
 
 describe("a matriz sai da tabela", () => {
-  it("são 14 combinações e o parser aceita exatamente essas", () => {
-    expect(COMBINACOES).toHaveLength(14);
+  it("são 15 combinações e o parser aceita exatamente essas", () => {
+    expect(COMBINACOES).toHaveLength(15);
     const aceitas = COMBINACOES.filter((c) => parseProdutoForm(tudoAForca(c)).success);
-    expect(aceitas).toHaveLength(14);
+    expect(aceitas).toHaveLength(15);
   });
 });
 
 // A tabela de campos depende também do fato "há subcategoria para escolher":
-// a matriz cruza as 14 combinações com os dois valores dele.
+// a matriz cruza as 15 combinações com os dois valores dele.
 const MATRIZ = COMBINACOES.flatMap((c) => [true, false].map((fato) => ({ ...c, fato })));
 
 describe.each(MATRIZ)("combinação $categoria / $tipo / há subcategoria para escolher: $fato", (c) => {
@@ -226,6 +234,7 @@ describe.each(MATRIZ)("combinação $categoria / $tipo / há subcategoria para e
   });
 
   it("UPDATE leva exatamente as colunas dos campos visíveis (e só colunas da tabela)", async () => {
+    tipoGuardado = c.tipo;
     await updateProduto(`Produto ${c.categoria} ${c.tipo}`, {}, tudoAForca(c));
     const chaves = Object.keys(chamadas.update[0]).sort();
     expect(chaves).toEqual([...colunasDaEdicao(contexto)].sort());
@@ -233,7 +242,13 @@ describe.each(MATRIZ)("combinação $categoria / $tipo / há subcategoria para e
   });
 
   it("INSERT leva as colunas visíveis com o valor da tela e as escondidas com o neutro (e só colunas da tabela)", async () => {
-    await createProduto({}, tudoAForca(c));
+    const resposta = await createProduto({}, tudoAForca(c));
+    if (c.tipo === "kit_pessoa") {
+      // O kit nasce só pela carga: o cadastro pelo formulário é recusado e nada é gravado.
+      expect(resposta).toEqual({ error: "O tipo Kit por pessoa só é criado pela carga de kits." });
+      expect(chamadas.insert).toHaveLength(0);
+      return;
+    }
     const { id, image_url, ...colunas } = chamadas.insert[0];
     expect(id).toBe(ID);
     expect(image_url).toBeNull();

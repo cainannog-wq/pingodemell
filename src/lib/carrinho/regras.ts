@@ -1,5 +1,7 @@
 import { STEP_QUANTIDADE_VALUES, type StepQuantidade } from "@/lib/produtos/types";
 import { formatoValido, kgValido, type FormatoBolo } from "@/lib/vitrine/bolo";
+import type { EscolhasKit } from "@/lib/kit/escolhas";
+import type { RetratoDoKit } from "@/lib/kit/texto";
 import { centosValidos, PASSO_SABOR, totalDoCento } from "@/lib/vitrine/cento";
 import {
   MAX_QUANTIDADE,
@@ -96,8 +98,35 @@ export type LinhaBento = LinhaBase & {
   unidade_venda?: string | null;
 };
 
-export type LinhaCarrinho = LinhaAvulso | LinhaCento | LinhaBolo | LinhaBento;
+// Kit Festa por pessoa: quantidade = número de pessoas (um dos tamanhos do kit)
+// e preco = preço por pessoa, então quantidade × preco é o preço do kit (a
+// mesma conta do pedido). As escolhas são pares [id da opção, quantidade] por
+// grupo (é o que viaja no pedido; o servidor resolve os nomes) e o retrato
+// guarda os nomes só para exibir, montar a mensagem e a confirmação sem banco.
+// Sem controle de quantidade no carrinho: mudar as pessoas invalida os
+// grupos, então se remove e se monta de novo.
+export type LinhaKit = LinhaBase & {
+  tipo: "kit";
+  quantidade: number;
+  unidade_venda?: string | null;
+  escolhas: EscolhasKit;
+  retrato: RetratoDoKit;
+};
+
+// Cada pedido aceita até MAX_KITS kits (linhas de kit, não pessoas): cabe com
+// folga no corpo, no que se grava e na mensagem do WhatsApp.
+export const MAX_KITS = 5;
+export const MAX_PESSOAS = 1000;
+export const TEXTO_LIMITE_DE_KITS = "Cada pedido aceita até 5 kits. Para mais, fale com a gente pelo WhatsApp.";
+
+export function contarKits(linhas: readonly LinhaCarrinho[]): number {
+  return linhas.filter((l) => l.tipo === "kit").length;
+}
+
+export type LinhaCarrinho = LinhaAvulso | LinhaCento | LinhaBolo | LinhaBento | LinhaKit;
 export type NovaLinha =
+  | Omit<LinhaKit, "id">
+
   | Omit<LinhaAvulso, "id">
   | Omit<LinhaCento, "id">
   | Omit<LinhaBolo, "id">
@@ -123,6 +152,8 @@ function mesmaCombinacao(a: LinhaCento, b: Omit<LinhaCento, "id">): boolean {
 //   (soma centos e sabores);
 // - Bento Cake: mesmo produto, mesmo recheio e mesma observação (soma as
 //   quantidades);
+// - Kit por pessoa: nunca junta (as pessoas mudam os grupos); passando de
+//   MAX_KITS kits a linha não entra;
 // - Bolo: nunca junta. Dois bolos de 2 kg não são um de 4 kg: cada
 //   "adicionar" é um bolo (uma linha).
 // Senão, linha nova no fim. Passar do teto não junta (vira linha nova, e a
@@ -132,7 +163,7 @@ export function adicionarLinha(linhas: LinhaCarrinho[], nova: NovaLinha, novoId:
   const alvo = { ...nova, observacao } as NovaLinha;
 
   const indice =
-    alvo.tipo === "bolo"
+    alvo.tipo === "bolo" || alvo.tipo === "kit"
       ? -1
       : linhas.findIndex((l) => {
           if (l.produtoId !== alvo.produtoId || l.tipo !== alvo.tipo || l.observacao !== observacao) return false;
@@ -151,13 +182,14 @@ export function adicionarLinha(linhas: LinhaCarrinho[], nova: NovaLinha, novoId:
 
   if (indice === -1) {
     if (linhas.length >= MAX_LINHAS) return linhas;
+    if (alvo.tipo === "kit" && contarKits(linhas) >= MAX_KITS) return linhas;
     return [...linhas, { ...alvo, id: novoId() } as LinhaCarrinho];
   }
 
   return linhas.map((l, i) => {
     if (i !== indice) return l;
     if (l.tipo === "normal" || l.tipo === "bento") return { ...l, quantidade: l.quantidade + alvo.quantidade };
-    if (l.tipo === "bolo") return l;
+    if (l.tipo === "bolo" || l.tipo === "kit") return l;
     const cento = alvo as Omit<LinhaCento, "id">;
     const somaPorNome = new Map(cento.sabores.map((s) => [s.nome, s.quantidade]));
     return {
@@ -317,6 +349,45 @@ function inteiro(v: unknown, min: number, max: number): v is number {
   return typeof v === "number" && Number.isInteger(v) && v >= min && v <= max;
 }
 
+const CHAVE_DO_GRUPO = /^[a-z][a-z0-9_]{0,29}$/;
+
+// Escolhas do kit: cada grupo uma lista de pares [id, quantidade inteira].
+function escolhasValidas(v: unknown): v is EscolhasKit {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return false;
+  const entradas = Object.entries(v);
+  if (entradas.length > 20) return false;
+  return entradas.every(
+    ([chave, pares]) =>
+      CHAVE_DO_GRUPO.test(chave) &&
+      Array.isArray(pares) &&
+      pares.length <= 60 &&
+      pares.every((p) => Array.isArray(p) && p.length === 2 && texto(p[0], 64) && inteiro(p[1], 1, 100000))
+  );
+}
+
+// Retrato do kit (só exibição): pessoas iguais à quantidade da linha e textos
+// de tamanho limitado.
+function retratoValido(v: unknown, pessoas: number): v is RetratoDoKit {
+  if (typeof v !== "object" || v === null) return false;
+  const r = v as Record<string, unknown>;
+  if (r.pessoas !== pessoas || typeof r.boloKg !== "number" || !(r.boloKg > 0 && r.boloKg <= 1000)) return false;
+  if (typeof r.descartaveis !== "boolean" || !Array.isArray(r.grupos) || r.grupos.length > 20) return false;
+  return r.grupos.every((g: unknown) => {
+    if (typeof g !== "object" || g === null) return false;
+    const grupo = g as Record<string, unknown>;
+    if (!texto(grupo.chave, 30) || !texto(grupo.rotulo, 60) || !Array.isArray(grupo.itens) || grupo.itens.length > 60) return false;
+    if (grupo.fixo !== undefined) {
+      const f = grupo.fixo as Record<string, unknown> | null;
+      if (typeof f !== "object" || f === null || !inteiro(f.total, 0, 100000)) return false;
+      if (f.rotulo !== null && !texto(f.rotulo, 80)) return false;
+    }
+    return grupo.itens.every((i: unknown) => {
+      const item = i as Record<string, unknown>;
+      return typeof item === "object" && item !== null && texto(item.id, 64) && texto(item.nome, 120) && inteiro(item.quantidade, 1, 100000);
+    });
+  });
+}
+
 function recheioValido(v: unknown): v is RecheioEscolhido {
   if (typeof v !== "object" || v === null) return false;
   const r = v as Record<string, unknown>;
@@ -347,6 +418,10 @@ export function linhaValida(v: unknown): v is LinhaCarrinho {
     if (l.pedidoMinimo !== undefined && !inteiro(l.pedidoMinimo, 1, MAX_QUANTIDADE)) return false;
     if (l.unidade_venda !== undefined && l.unidade_venda !== null && !texto(l.unidade_venda, 20)) return false;
     return inteiro(l.quantidade, 1, MAX_QUANTIDADE) && recheioValido(l.recheio);
+  }
+  if (l.tipo === "kit") {
+    if (l.unidade_venda !== undefined && l.unidade_venda !== null && !texto(l.unidade_venda, 20)) return false;
+    return inteiro(l.quantidade, 1, MAX_PESSOAS) && escolhasValidas(l.escolhas) && retratoValido(l.retrato, l.quantidade as number);
   }
   if (l.tipo === "cento") {
     if (typeof l.quantidade !== "number" || !centosValidos(l.quantidade)) return false;

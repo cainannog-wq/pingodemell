@@ -18,7 +18,7 @@ const ROTAS_PUBLICAS = [
   "/robots.txt",
   "/sitemap.xml",
 ];
-const ROTAS_SEMPRE_NOINDEX = ["/login", "/admin", "/admin/produtos", "/admin/pedidos/1048", "/api/pedidos"];
+const ROTAS_SEMPRE_NOINDEX = ["/login", "/admin", "/admin/produtos", "/admin/pedidos/1048", "/api/pedidos", "/previa/kit-festa-basico"];
 const ROTAS = [...ROTAS_PUBLICAS, ...ROTAS_SEMPRE_NOINDEX];
 const CONTEXTOS = ["production", "deploy-preview", "branch-deploy", undefined];
 
@@ -87,7 +87,7 @@ describe("X-Robots-Tag com a trava de indexação", () => {
   it("SITE_INDEXAVEL true: o cabeçalho de admin, login e API não pega rota pública de nome parecido", async () => {
     vi.stubEnv("CONTEXT", "production");
     const config = await configComIndexavel(true);
-    for (const rota of ["/administracao", "/login-x", "/apis", "/produtos/admin"]) {
+    for (const rota of ["/administracao", "/login-x", "/apis", "/produtos/admin", "/previas"]) {
       expect(await robots(rota, config), rota).toBeNull();
     }
   });

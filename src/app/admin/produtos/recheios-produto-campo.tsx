@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AlcaDeOrdem, ListaOrdenavel } from "../ordenar-arrastando";
 import { Button, Field, Input, Toggle } from "@/components/ds";
 import { RECHEIO_PRODUTO_NOME_MAX, validarRecheiosDoProduto, type RecheioDoProduto } from "@/lib/produtos/recheios-produto";
 
@@ -54,7 +55,7 @@ export function CamposEscondidosDosRecheios({
 }
 
 // Interruptor "Recheios personalizados" e a lista editável (um campo de texto
-// por recheio, adicionar, remover, subir e descer). Sem ativo/inativo por
+// por recheio, adicionar, remover e a alça de seis pontos para arrastar). Sem ativo/inativo por
 // recheio: a Taami remove e cadastra de novo. Componente controlado: o estado
 // vive no ProdutoForm, que bloqueia o Salvar enquanto houver erro.
 export function RecheiosDoProdutoCampo({
@@ -79,12 +80,9 @@ export function RecheiosDoProdutoCampo({
     const linhas = ligado && estado.linhas.length === 0 ? [{ chave: novaChave(), nome: "" }] : estado.linhas;
     aoMudar({ ligado, linhas });
   }
-  function mover(i: number, delta: -1 | 1) {
-    const j = i + delta;
-    if (j < 0 || j >= estado.linhas.length) return;
-    const linhas = [...estado.linhas];
-    [linhas[i], linhas[j]] = [linhas[j], linhas[i]];
-    definirLinhas(linhas);
+  // Nova ordem vinda da alça (arrastar, ou setas do teclado com o foco nela).
+  function ordenar(chaves: string[]) {
+    definirLinhas(chaves.map((c) => estado.linhas.find((l) => l.chave === c) as LinhaTela));
   }
 
   return (
@@ -104,8 +102,16 @@ export function RecheiosDoProdutoCampo({
       {estado.ligado ? (
         <Field label="Recheios deste produto" hint="Na ordem em que o cliente vai ver. Não pode repetir nem ficar em branco.">
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {estado.linhas.map((linha, i) => (
-              <div key={linha.chave} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <ListaOrdenavel
+              ids={estado.linhas.map((l) => l.chave)}
+              aoOrdenar={ordenar}
+              nomeDe={(chave) => `recheio ${estado.linhas.findIndex((l) => l.chave === chave) + 1}`}
+              style={{ display: "flex", flexDirection: "column", gap: 8 }}
+            >
+              {(ordem) =>
+            estado.linhas.map((linha, i) => (
+              <div key={linha.chave} {...ordem.propsDoItem(linha.chave)} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <AlcaDeOrdem nome={`recheio ${i + 1}`} desligada={desabilitado || estado.linhas.length < 2} {...ordem.propsDaAlca(linha.chave)} />
                 <Input
                   aria-label={`Recheio ${i + 1}`}
                   value={linha.nome}
@@ -119,28 +125,6 @@ export function RecheiosDoProdutoCampo({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  iconLeft="arrow_upward"
-                  aria-label={`Subir o recheio ${i + 1}`}
-                  title="Subir"
-                  style={BOTAO_ICONE}
-                  disabled={desabilitado || i === 0}
-                  onClick={() => mover(i, -1)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  iconLeft="arrow_downward"
-                  aria-label={`Descer o recheio ${i + 1}`}
-                  title="Descer"
-                  style={BOTAO_ICONE}
-                  disabled={desabilitado || i === estado.linhas.length - 1}
-                  onClick={() => mover(i, 1)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
                   iconLeft="delete"
                   aria-label={`Remover o recheio ${i + 1}`}
                   title="Remover"
@@ -149,7 +133,9 @@ export function RecheiosDoProdutoCampo({
                   onClick={() => definirLinhas(estado.linhas.filter((l) => l.chave !== linha.chave))}
                 />
               </div>
-            ))}
+            ))
+              }
+            </ListaOrdenavel>
             <div>
               <Button
                 type="button"

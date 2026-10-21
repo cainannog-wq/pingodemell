@@ -1,6 +1,7 @@
 import { FORMAS_PAGAMENTO, emailValido, enderecoCompleto, soDigitos } from "@/lib/checkout/formulario";
 import { FORMATOS_BOLO, KG_MAXIMO, KG_MINIMO } from "@/lib/vitrine/bolo";
-import { MAX_CENTOS } from "@/lib/vitrine/cento";
+import { MAX_CENTOS, PASSO_SABOR, totalDoCento } from "@/lib/vitrine/cento";
+import { MAX_KITS, MAX_PESSOAS, TEXTO_LIMITE_DE_KITS } from "@/lib/carrinho/regras";
 import { MAX_QUANTIDADE } from "@/lib/vitrine/quantidade";
 import { hojeBrasilia, instanteBrasilia, lerDataIso, somarMesesNaData } from "@/lib/tempo/brasilia";
 import { valorDaLinhaEmCentavos, type ItemEnvio } from "./envio";
@@ -12,6 +13,8 @@ import { valorDaLinhaEmCentavos, type ItemEnvio } from "./envio";
 //   preço até R$ 50.000 com 2 casas, itens até 16 KB;
 // - WhatsApp: só dígitos, com ou sem o 55 na frente, 10 ou 11 dígitos com DDD;
 // - data: não pode estar no passado nem passar de 12 meses (Brasília).
+// - Cento: passo, soma e repetição dos sabores (a lista do produto é conferida
+//   depois, na rota, com a leitura em cache: src/lib/pedidos/sabores-cento.ts).
 // O que NÃO é conferido aqui: produto ou recheio ativo, preço atual, id que
 // ainda existe (só o formato), antecedência, dias bloqueados, horário de
 // atendimento e prazo de produção — isso vive só no checkout.
@@ -21,6 +24,9 @@ import { valorDaLinhaEmCentavos, type ItemEnvio } from "./envio";
 export const LIMITES = {
   corpoBytes: 32 * 1024,
   itensBytes: 16 * 1024,
+  // Só com linha de kit (a composição ocupa mais): o corpo e o que se grava.
+  corpoBytesComKit: 64 * 1024,
+  itensBytesComKit: 32 * 1024,
   linhas: 50,
   nome: 100,
   whatsapp: 20,
@@ -53,12 +59,14 @@ const CAMPOS_ITEM: Record<ItemEnvio["tipo"], string[]> = {
   cento: [...CAMPOS_ITEM_BASE, "sabores"],
   bolo: [...CAMPOS_ITEM_BASE, "recheio", "formato"],
   bento: [...CAMPOS_ITEM_BASE, "recheio", "unidade_venda"],
+  kit: [...CAMPOS_ITEM_BASE, "unidade_venda", "escolhas"],
 };
 const MAX_POR_TIPO: Record<ItemEnvio["tipo"], [number, number]> = {
   normal: [1, MAX_QUANTIDADE],
   bento: [1, MAX_QUANTIDADE],
   cento: [1, MAX_CENTOS],
   bolo: [KG_MINIMO, KG_MAXIMO],
+  kit: [1, MAX_PESSOAS],
 };
 
 // Item como fica gravado em pedidos.itens. As 4 primeiras chaves são as de
@@ -77,6 +85,9 @@ export type ItemGravado = {
   sabores?: { nome: string; quantidade: number }[];
   recheio?: { id: string; nome: string };
   formato?: "redondo" | "quadrado";
+  // Kit: os pares [id da opção, quantidade] de cada grupo, como vieram. O
+  // texto da composição, com os nomes, vai em variacao.
+  escolhas?: Record<string, [string, number][]>;
 };
 
 export type PedidoValidado = {
@@ -161,10 +172,33 @@ function recheio(v: unknown): { id: string; nome: string } {
   return { id: id.toLowerCase(), nome: obrigatorio(r.nome, LIMITES.nomeItem, "Um item do pedido está com o recheio inválido.") };
 }
 
+// Escolhas de um kit: forma e limites (a conferência contra a configuração do
+// kit é da rota, com a leitura em cache): até 20 grupos, cada um com até 60
+// pares [uuid da opção, quantidade inteira].
+function escolhasDoKit(v: unknown): Record<string, [string, number][]> {
+  const mensagem = "A composição de um kit do pedido está inválida.";
+  if (typeof v !== "object" || v === null || Array.isArray(v)) falha(mensagem);
+  const entradas = Object.entries(v as Record<string, unknown>);
+  if (entradas.length > 20) falha(mensagem);
+  const saida: Record<string, [string, number][]> = {};
+  for (const [chave, pares] of entradas) {
+    if (!/^[a-z][a-z0-9_]{0,29}$/.test(chave) || !Array.isArray(pares) || pares.length > 60) falha(mensagem);
+    saida[chave] = pares.map((p) => {
+      if (!Array.isArray(p) || p.length !== 2) falha(mensagem);
+      const id = texto(p[0], 36, mensagem);
+      if (!UUID.test(id)) falha(mensagem);
+      return [id.toLowerCase(), inteiro(p[1], 1, 100000, mensagem)] as [string, number];
+    });
+  }
+  return saida;
+}
+
 function item(v: unknown): { gravado: ItemGravado; centavos: number } {
   if (typeof v !== "object" || v === null || Array.isArray(v)) falha("Um item do pedido está incompleto.");
   const tipo = (v as Record<string, unknown>).tipo;
-  if (tipo !== "normal" && tipo !== "cento" && tipo !== "bolo" && tipo !== "bento") falha("Um item do pedido está incompleto.");
+  if (tipo !== "normal" && tipo !== "cento" && tipo !== "bolo" && tipo !== "bento" && tipo !== "kit") {
+    falha("Um item do pedido está incompleto.");
+  }
   const o = objeto(v, CAMPOS_ITEM[tipo], "Um item do pedido está incompleto.");
 
   const produtoId = texto(o.produto_id, 36, "Um item do pedido está incompleto.");
@@ -189,23 +223,35 @@ function item(v: unknown): { gravado: ItemGravado; centavos: number } {
   };
 
   // Bento Cake: "o combo" no combo (só para exibir; não muda o valor).
-  if (tipo === "normal" || tipo === "bento") {
+  if (tipo === "normal" || tipo === "bento" || tipo === "kit") {
     gravado.unidade_venda =
       o.unidade_venda === null || o.unidade_venda === undefined
         ? null
         : texto(o.unidade_venda, LIMITES.unidadeVenda, "Um item do pedido está incompleto.") || null;
   }
+  if (tipo === "kit") {
+    gravado.escolhas = escolhasDoKit(o.escolhas);
+  }
   if (tipo === "cento") {
     if (!Array.isArray(o.sabores) || o.sabores.length === 0 || o.sabores.length > LIMITES.saboresPorLinha) {
       falha("Um Cento do pedido está com os sabores fora do limite.");
     }
+    // Mesmas regras da tela (carrinho/regras.ts, linhaValida): cada quantidade
+    // inteira, 0 ou mais e múltipla do passo; sem sabor repetido (nome
+    // exato); soma igual a 100 × centos.
+    const mensagemSabores = "Um Cento do pedido está com os sabores fora do limite.";
+    const nomes = new Set<string>();
+    let soma = 0;
     gravado.sabores = o.sabores.map((s) => {
-      const sabor = objeto(s, ["nome", "quantidade"], "Um Cento do pedido está com os sabores fora do limite.");
-      return {
-        nome: obrigatorio(sabor.nome, LIMITES.nomeItem, "Um Cento do pedido está com os sabores fora do limite."),
-        quantidade: inteiro(sabor.quantidade, 0, MAX_CENTOS * 100, "Um Cento do pedido está com os sabores fora do limite."),
-      };
+      const sabor = objeto(s, ["nome", "quantidade"], mensagemSabores);
+      const nomeSabor = obrigatorio(sabor.nome, LIMITES.nomeItem, mensagemSabores);
+      const quantidadeSabor = inteiro(sabor.quantidade, 0, totalDoCento(MAX_CENTOS), mensagemSabores);
+      if (nomes.has(nomeSabor) || quantidadeSabor % PASSO_SABOR !== 0) falha(mensagemSabores);
+      nomes.add(nomeSabor);
+      soma += quantidadeSabor;
+      return { nome: nomeSabor, quantidade: quantidadeSabor };
     });
+    if (soma !== totalDoCento(quantidade)) falha(mensagemSabores);
     gravado.variacao = gravado.sabores.filter((s) => s.quantidade > 0).map((s) => `${s.nome} ${s.quantidade}`).join(" · ") || null;
   }
   // Avulso com recheios personalizados: recheio opcional, só informativo.
@@ -268,7 +314,10 @@ export function validarPedido(bruto: unknown, hoje: string = hojeBrasilia()): Re
     if (o.itens.length > LIMITES.linhas) falha(`O pedido passou de ${LIMITES.linhas} itens.`);
     const itens = o.itens.map(item);
     const gravados = itens.map((i) => i.gravado);
-    if (new TextEncoder().encode(JSON.stringify(gravados)).length > LIMITES.itensBytes) {
+    const kits = gravados.filter((g) => g.tipo === "kit").length;
+    if (kits > MAX_KITS) falha(TEXTO_LIMITE_DE_KITS);
+    const limiteItens = kits > 0 ? LIMITES.itensBytesComKit : LIMITES.itensBytes;
+    if (new TextEncoder().encode(JSON.stringify(gravados)).length > limiteItens) {
       falha("O pedido ficou grande demais para o site. Tire alguns itens ou encurte as observações.");
     }
 

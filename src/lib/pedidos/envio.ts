@@ -30,7 +30,11 @@ export type ItemEnvio =
   | (ItemBase & { tipo: "bolo"; recheio: { id: string; nome: string }; formato: "redondo" | "quadrado" })
   // unidade_venda do Bento: "o combo" no combo; null no simples e em linha
   // de antes do campo. Só para exibir (mensagem, confirmação e painel).
-  | (ItemBase & { tipo: "bento"; recheio: { id: string; nome: string }; unidade_venda?: string | null });
+  | (ItemBase & { tipo: "bento"; recheio: { id: string; nome: string }; unidade_venda?: string | null })
+  // Kit por pessoa: quantidade = pessoas, preco = por pessoa. As escolhas vão
+  // como pares [id da opção, quantidade] por grupo; o servidor resolve os
+  // nomes pela configuração do kit e grava a composição em texto.
+  | (ItemBase & { tipo: "kit"; unidade_venda: string | null; escolhas: Record<string, [string, number][]> });
 
 export type CorpoPedido = {
   chave_idempotencia: string;
@@ -78,6 +82,9 @@ export function itemDaLinha(linha: LinhaCarrinho): ItemEnvio {
   };
   if (linha.tipo === "cento") return { ...base, tipo: "cento", sabores: linha.sabores.map((s) => ({ nome: s.nome, quantidade: s.quantidade })) };
   if (linha.tipo === "bolo") return { ...base, tipo: "bolo", recheio: { id: linha.recheio.id, nome: linha.recheio.nome }, formato: linha.formato };
+  if (linha.tipo === "kit") {
+    return { ...base, tipo: "kit", unidade_venda: linha.unidade_venda ?? null, escolhas: linha.escolhas };
+  }
   if (linha.tipo === "bento") {
     return { ...base, tipo: "bento", recheio: { id: linha.recheio.id, nome: linha.recheio.nome }, unidade_venda: linha.unidade_venda ?? null };
   }

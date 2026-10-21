@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { contextoDaGravacao, pedidoDeTeste } from "@/lib/pedidos/ambiente";
 import type { CodigoErro, RespostaPedido } from "@/lib/pedidos/envio";
 import { LIMITES, validarPedido } from "@/lib/pedidos/validacao";
+import { conferirSaboresDoCento, saboresDosCentosEmCache, temCento } from "@/lib/pedidos/sabores-cento";
+import { configsDosKitsEmCache, conferirKits, temKit } from "@/lib/pedidos/kits-servidor";
 
 // Único caminho de gravação de pedido (a cliente continua sem login). Desde o
 // PR seguranca-api, nenhum papel da API (anon, authenticated) grava direto na
@@ -14,6 +16,15 @@ import { LIMITES, validarPedido } from "@/lib/pedidos/validacao";
 //   2. validação de forma e limite (src/lib/pedidos/validacao.ts). NENHUMA
 //      chamada ao banco antes de ela passar: tentativa inválida não conta no
 //      limite por IP;
+//   2b. só se o pedido tem linha de Cento: confere os sabores contra a lista do
+//      produto, lida de um cache único de todos os Centos (5 minutos, leitura
+//      pela chave de serviço; src/lib/pedidos/sabores-cento.ts). Requisição
+//      inválida nunca chega aqui, e pedido sem Cento nunca lê o banco aqui;
+//   2c. só se o pedido tem linha de kit por pessoa: confere cada composição
+//      contra a configuração do kit (cache único de todos os kits, 5 minutos,
+//      src/lib/pedidos/kits-servidor.ts) e grava o texto da composição com os
+//      nomes da configuração. O corpo e o que se grava têm limite maior só
+//      com kit (64 KB e 32 KB);
 //   3. uma chamada só ao banco, public.criar_pedido (supabase/pedidos-gravacao.sql):
 //      interruptor do ambiente, trava e procura pela chave de idempotência,
 //      limite por IP (só quando vai gravar; chave repetida não conta) e a
@@ -47,6 +58,12 @@ function getClientIp(request: NextRequest): string {
   return "unknown";
 }
 
+// Só olha o tipo das linhas, sem validar nada (a validação vem depois).
+function corpoTemKit(corpo: unknown): boolean {
+  const itens = (corpo as { itens?: unknown } | null)?.itens;
+  return Array.isArray(itens) && itens.some((i) => (i as { tipo?: unknown } | null)?.tipo === "kit");
+}
+
 function erro(status: number, codigo: CodigoErro, mensagem: string, cabecalhos?: Record<string, string>) {
   return NextResponse.json({ codigo, mensagem }, { status, headers: cabecalhos });
 }
@@ -75,19 +92,64 @@ function resposta(linha: LinhaCriarPedido): RespostaPedido {
 
 export async function POST(request: NextRequest) {
   const texto = await request.text();
-  if (new TextEncoder().encode(texto).length > LIMITES.corpoBytes) {
-    return erro(413, "grande_demais", "O pedido ficou grande demais para o site. Tire alguns itens ou encurte as observações.");
-  }
+  const bytes = new TextEncoder().encode(texto).length;
+  const grandeDemais = () =>
+    erro(413, "grande_demais", "O pedido ficou grande demais para o site. Tire alguns itens ou encurte as observações.");
+  if (bytes > LIMITES.corpoBytesComKit) return grandeDemais();
   let corpo: unknown;
   try {
     corpo = JSON.parse(texto);
   } catch {
     return erro(400, "invalido", "O pedido chegou incompleto.");
   }
+  // Acima de 32 KB só passa corpo com linha de kit.
+  if (bytes > LIMITES.corpoBytes && !corpoTemKit(corpo)) return grandeDemais();
 
   const validado = validarPedido(corpo);
   if (!validado.ok) return erro(400, "invalido", validado.mensagem);
-  const { chave, pedido, subtotalCentavos, totalNavegadorCentavos } = validado.valor;
+  const { chave, subtotalCentavos, totalNavegadorCentavos } = validado.valor;
+  let pedido = validado.valor.pedido;
+
+  // Sabores do Cento na lista do próprio produto: leitura em cache (todos os
+  // Centos de uma vez, 5 minutos), só se o pedido tem Cento e só depois de a
+  // forma passar. Falha sem cópia anterior: 500, a tela mostra "Tentar de novo".
+  if (temCento(pedido.itens)) {
+    let conferencia;
+    try {
+      conferencia = conferirSaboresDoCento(pedido.itens, await saboresDosCentosEmCache());
+    } catch (e) {
+      console.error("pedidos: falha ao ler os sabores do Cento", { motivo: e instanceof Error ? e.message : "desconhecido" });
+      return erro(500, "erro", MENSAGEM_ERRO);
+    }
+    if (!conferencia.ok) return erro(400, "invalido", conferencia.mensagem);
+    if (conferencia.desconhecidos > 0) {
+      // Aceito: a tela deixa pedir produto desativado ou apagado depois de
+      // adicionado. Sem dado pessoal no log.
+      console.warn("pedidos: Cento de produto desconhecido, sabores não conferidos", { linhas: conferencia.desconhecidos });
+    }
+  }
+
+  // Kits por pessoa: composição conferida contra a configuração do kit (leitura
+  // em cache, só se o pedido tem kit e só depois de a forma passar). Falha sem
+  // cópia anterior: 500 ("Tentar de novo" na tela).
+  if (temKit(pedido.itens)) {
+    let conferencia;
+    try {
+      conferencia = conferirKits(pedido.itens, await configsDosKitsEmCache());
+    } catch (e) {
+      console.error("pedidos: falha ao ler a configuração dos kits", { motivo: e instanceof Error ? e.message : "desconhecido" });
+      return erro(500, "erro", MENSAGEM_ERRO);
+    }
+    if (!conferencia.ok) return erro(400, "invalido", conferencia.mensagem);
+    pedido = { ...pedido, itens: conferencia.itens };
+    if (conferencia.desconhecidos > 0 || conferencia.opcoesDesconhecidas > 0) {
+      // Aceito (decisão do Cainan): a atendente concilia. Sem dado pessoal no log.
+      console.warn("pedidos: kit com produto ou opção desconhecidos, composição não conferida por inteiro", {
+        produtos: conferencia.desconhecidos,
+        opcoes: conferencia.opcoesDesconhecidas,
+      });
+    }
+  }
 
   const { data, error } = await createAdminClient().rpc("criar_pedido", {
     p_contexto: contextoDaGravacao(),

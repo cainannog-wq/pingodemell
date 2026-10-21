@@ -198,7 +198,7 @@ export function parseProdutoForm(formData: FormData, opcoes: OpcoesParse = {}): 
       descricao,
       pedido_minimo,
       categoria: categoriaRaw as CategoriaProduto,
-      unidade_venda: comUnidade ? unidadeVenda || null : (neutros.unidade_venda as null),
+      unidade_venda: comUnidade ? unidadeVenda || null : (neutros.unidade_venda as string | null),
       prazo_producao_dias,
       step_quantidade: comStep ? (stepRaw as StepQuantidade) : (neutros.step_quantidade as StepQuantidade),
       destaque,

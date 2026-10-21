@@ -30,7 +30,7 @@ export async function GET(): Promise<Response> {
   const dep = await dependencias(supabase, ativos);
   if (!dep) return new Response("Service Unavailable", { status: 503 });
 
-  return new Response(montarSitemap(semIndisponiveis(ativos, dep.comSabor, dep.recheios)), {
+  return new Response(montarSitemap(semIndisponiveis(ativos, dep.comSabor, dep.recheios, dep.kits)), {
     status: 200,
     headers: { "Content-Type": "application/xml" },
   });

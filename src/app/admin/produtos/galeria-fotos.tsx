@@ -1,9 +1,12 @@
 "use client";
 
+/* eslint-disable react-hooks/refs -- useOrdenarArrastando guarda uma ref do contêiner, lida só em eventos e efeitos (nunca na renderização); a regra enxerga o objeto devolvido como se o lesse ao renderizar. */
+
 import { useEffect, useId, useRef, useState } from "react";
 import { Badge, Button, Icon } from "@/components/ds";
 import { reduzirFoto, type ResultadoReducao } from "@/lib/galeria/reduzir";
 import { DICA_SEM_CAPA, MAX_FOTOS_EXTRAS, MENSAGEM_LIMITE, textoAlternativo } from "@/lib/galeria/regras";
+import { AlcaDeOrdem, useOrdenarArrastando } from "../ordenar-arrastando";
 import type { FotoNaTela } from "./galeria-envio";
 
 // Seção "Fotos extras" do formulário de produto. Componente controlado:
@@ -14,7 +17,7 @@ import type { FotoNaTela } from "./galeria-envio";
 // Área de toque mínima de 44x44px nos botões de cada foto.
 const BOTAO_ICONE = { minWidth: 44, minHeight: 44, padding: 0 } as const;
 
-type Direcao = "subir" | "descer" | "remover";
+type Direcao = "remover";
 
 export function GaleriaFotosExtras({
   fotos,
@@ -49,8 +52,8 @@ export function GaleriaFotosExtras({
   const deslocamento = temCapa ? 1 : 0;
   const totalComCapa = fotos.length + deslocamento;
 
-  // O foco acompanha a foto movida (ou vai para o botão vizinho quando o da
-  // mesma direção fica desabilitado na ponta da lista).
+  // Depois de remover, o foco vai para o botão de remover da vizinha (a alça de
+  // ordem cuida do próprio foco ao mover pelo teclado).
   useEffect(() => {
     const foco = focoPendente.current;
     focoPendente.current = null;
@@ -59,11 +62,7 @@ export function GaleriaFotosExtras({
       addRef.current?.focus();
     } else {
       const { chave, direcao } = foco;
-      const alvo = botoes.current.get(`${chave}:${direcao}`);
-      const alternativo = botoes.current.get(`${chave}:${direcao === "subir" ? "descer" : "subir"}`);
-      if (alvo && !alvo.disabled) alvo.focus();
-      else if (alternativo && !alternativo.disabled) alternativo.focus();
-      else botoes.current.get(`${chave}:remover`)?.focus();
+      botoes.current.get(`${chave}:${direcao}`)?.focus();
     }
   }, [fotos]);
 
@@ -75,15 +74,17 @@ export function GaleriaFotosExtras({
     };
   }
 
-  function mover(indice: number, delta: -1 | 1) {
-    const destino = indice + delta;
-    if (destino < 0 || destino >= fotos.length) return;
-    const nova = [...fotos];
-    [nova[indice], nova[destino]] = [nova[destino], nova[indice]];
-    onChange(nova);
-    setAnuncio(`Foto extra ${indice + 1} movida para a posição ${destino + 1} de ${fotos.length}.`);
-    focoPendente.current = { chave: fotos[indice].chave, direcao: delta < 0 ? "subir" : "descer" };
+  // Nova ordem vinda da alça (arrastar, ou setas do teclado com o foco nela).
+  function ordenar(chaves: string[], idMovido: string, destino: number) {
+    const de = fotos.findIndex((f) => f.chave === idMovido);
+    onChange(chaves.map((c) => fotos.find((f) => f.chave === c) as FotoNaTela));
+    setAnuncio(`Foto extra ${de + 1} movida para a posição ${destino + 1} de ${fotos.length}.`);
   }
+  const ordem = useOrdenarArrastando(
+    fotos.map((f) => f.chave),
+    ordenar,
+    (chave) => `foto extra ${fotos.findIndex((f) => f.chave === chave) + 1}`
+  );
 
   function remover(indice: number) {
     const removida = fotos[indice];
@@ -149,13 +150,14 @@ export function GaleriaFotosExtras({
       )}
 
       {fotos.length > 0 && (
-        <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+        <ol ref={ordem.registrarRaiz} style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
           {fotos.map((foto, i) => {
             const numero = i + 1;
             const url = foto.tipo === "existente" ? foto.url : foto.previewUrl;
             return (
               <li
                 key={foto.chave}
+                {...ordem.propsDoItem(foto.chave)}
                 className="produto-galeria-item"
                 style={{
                   display: "flex",
@@ -194,32 +196,7 @@ export function GaleriaFotosExtras({
                     {foto.tipo === "nova" && <Badge variant="soft">Ainda não salva</Badge>}
                   </div>
                   <div style={{ display: "flex", gap: 4 }}>
-                    <Button
-                      ref={registrar(foto.chave, "subir")}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      iconLeft="arrow_upward"
-                      className="produto-galeria-botao"
-                      aria-label={`Mover foto extra ${numero} para cima`}
-                      title="Subir"
-                      disabled={desabilitado || i === 0}
-                      onClick={() => mover(i, -1)}
-                      style={BOTAO_ICONE}
-                    />
-                    <Button
-                      ref={registrar(foto.chave, "descer")}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      iconLeft="arrow_downward"
-                      className="produto-galeria-botao"
-                      aria-label={`Mover foto extra ${numero} para baixo`}
-                      title="Descer"
-                      disabled={desabilitado || i === fotos.length - 1}
-                      onClick={() => mover(i, 1)}
-                      style={BOTAO_ICONE}
-                    />
+                    <AlcaDeOrdem nome={`foto extra ${numero}`} desligada={desabilitado || fotos.length < 2} {...ordem.propsDaAlca(foto.chave)} />
                     <Button
                       ref={registrar(foto.chave, "remover")}
                       type="button"

@@ -68,7 +68,7 @@ describe("ProdutoForm — fotos extras só no Salvar", () => {
       />
     );
     await adicionarFotos(["a.jpg", "b.jpg"]);
-    fireEvent.click(screen.getByRole("button", { name: "Mover foto extra 3 para cima" }));
+    fireEvent.keyDown(screen.getByRole("button", { name: /Reordenar foto extra 3/ }), { key: "ArrowUp" });
     fireEvent.click(screen.getByRole("button", { name: "Remover foto extra 1" }));
     expect(screen.getAllByText("Ainda não salva")).toHaveLength(2);
 
@@ -90,7 +90,7 @@ describe("ProdutoForm — fotos extras só no Salvar", () => {
       />
     );
     await adicionarFotos(["a.jpg"]);
-    fireEvent.click(screen.getByRole("button", { name: "Mover foto extra 2 para cima" }));
+    fireEvent.keyDown(screen.getByRole("button", { name: /Reordenar foto extra 2/ }), { key: "ArrowUp" });
 
     // Campos obrigatórios do formulário.
     fireEvent.change(screen.getByLabelText(/Nome do produto/), { target: { value: "Morango Banhado" } });

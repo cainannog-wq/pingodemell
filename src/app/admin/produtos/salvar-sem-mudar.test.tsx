@@ -249,6 +249,10 @@ const CASOS: Caso[] = [
     produto: linha({ nome: "Kit Escolar 1", preco: 400, descricao: "Contém 100 brigadeiros de chocolate (8g), 2 kg de bolo com recheio de chocolate (cerca de 20 fatias, papel arroz incluso), 100 salgados fritos, 50 gelatinas (copinho 50ml), 3 sucos de uva 1L, velinha simples", pedido_minimo: 1, Categoria: "Kit Festa", prazo_producao_dias: 4, step_quantidade: "livre", tipo: "normal", unidade_venda: "o kit" }),
   },
   {
+    rotulo: "Kit Festa, kit por pessoa, a pessoa (Kit Festa Básico, preço por pessoa)",
+    produto: linha({ nome: "Kit Festa Básico", preco: 22, descricao: "Kit por pessoa", pedido_minimo: 10, Categoria: "Kit Festa", prazo_producao_dias: 5, step_quantidade: "livre", tipo: "kit_pessoa", unidade_venda: "a pessoa", destaque: true }),
+  },
+  {
     rotulo: "Doces, o combo (Combo 100 doces personalizados)",
     produto: linha({ nome: "Combo 100 doces personalizados", preco: 530, descricao: "10 cupcakes com modelagem 2D, 10 pirulitos com modelagem, 20 bombons com modelagem, 20 tarteletes com modelagem, 15 vasinhos com idade, 15 colheres de chocolate, 10 cones recheados com trufa. Combos prontos: não fazemos alterações nos combos personalizados. Você pode mandar sua foto de inspiração, na Pingo de Mell trabalhamos com todos os temas!", pedido_minimo: 1, Categoria: "Doces", prazo_producao_dias: 7, step_quantidade: "livre", tipo: "normal", unidade_venda: "o combo" }),
   },
@@ -312,7 +316,7 @@ const COLUNAS: [coluna: string, chave: keyof LinhaProduto][] = [
 
 async function salvarSemMexer(caso: Caso) {
   const { produto } = caso;
-  estado.atual = { id: produto.id, image_url: null, Categoria: produto.Categoria, subcategoria_id: produto.subcategoria_id ?? null };
+  estado.atual = { id: produto.id, image_url: null, Categoria: produto.Categoria, subcategoria_id: produto.subcategoria_id ?? null, tipo: produto.tipo };
   estado.subcategorias = caso.subcategorias ?? [];
   const candidatos = (caso.sabores ?? []).map((nome) => ({ nome, ativo: true }));
   const { container } = render(
@@ -348,6 +352,7 @@ describe("Salvar sem mudar nada não altera o produto", () => {
       "Salgados|normal|unidade",
       "Salgados|cento|o cento",
       "Kit Festa|normal|o kit",
+      "Kit Festa|kit_pessoa|a pessoa",
       "Adicionais|normal|unidade",
       "Bebidas|normal|unidade",
       "Bebidas|cento|o cento",

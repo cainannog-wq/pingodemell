@@ -8,7 +8,7 @@ const acoes = vi.hoisted(() => ({
   apagarSubcategoria: vi.fn(async (...args: unknown[]): Promise<{ error?: string }> => (void args, {})),
   atualizarAtivoSubcategoria: vi.fn(async (...args: unknown[]): Promise<{ error?: string }> => (void args, {})),
   criarSubcategoria: vi.fn(async (...args: unknown[]): Promise<{ error?: string }> => (void args, {})),
-  moverSubcategoria: vi.fn(async (...args: unknown[]): Promise<{ error?: string }> => (void args, {})),
+  reordenarSubcategorias: vi.fn(async (...args: unknown[]): Promise<{ error?: string }> => (void args, {})),
   renomearSubcategoria: vi.fn(async (...args: unknown[]): Promise<{ error?: string }> => (void args, {})),
 }));
 vi.mock("./actions", () => acoes);
@@ -51,21 +51,31 @@ describe("lista de subcategorias", () => {
     expect(within(linha).getByText("3")).toBeInTheDocument();
   });
 
-  it("setas desabilitadas no primeiro (subir) e no último (descer) de cada categoria", () => {
+  it("não há mais setas de subir e descer: cada linha tem a alça de seis pontos", () => {
     render(<SubcategoriasLista subcategorias={SUBS} produtosPorSubcategoria={{}} />);
-    expect(screen.getByRole("button", { name: "Subir Gourmet" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Descer Gourmet" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Subir Finos" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Descer Finos" })).toBeDisabled();
-    // Categoria com uma só: as duas desabilitadas.
-    expect(screen.getByRole("button", { name: "Subir Tradicional" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Descer Tradicional" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /^Subir / })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Descer / })).toBeNull();
+    // Categoria com duas: alça ligada nas duas; com uma só, desligada (nada a ordenar).
+    expect(screen.getAllByRole("button", { name: /Reordenar Gourmet/ })[0]).toBeEnabled();
+    expect(screen.getAllByRole("button", { name: /Reordenar Tradicional/ })[0]).toBeDisabled();
   });
 
-  it("descer chama a ação de mover com o id e a direção", async () => {
+  it("seta para baixo na alça (teclado) manda a nova ordem da categoria", async () => {
     render(<SubcategoriasLista subcategorias={SUBS} produtosPorSubcategoria={{}} />);
-    fireEvent.click(screen.getByRole("button", { name: "Descer Gourmet" }));
-    await waitFor(() => expect(acoes.moverSubcategoria).toHaveBeenCalledWith("d1", "descer"));
+    const alca = screen.getAllByRole("button", { name: /Reordenar Gourmet/ })[0];
+    alca.focus();
+    fireEvent.keyDown(alca, { key: "ArrowDown" });
+    await waitFor(() => expect(acoes.reordenarSubcategorias).toHaveBeenCalledWith("Doces", ["d2", "d1"]));
+  });
+
+  it("erro do servidor desfaz a ordem mostrada e aparece na tela", async () => {
+    acoes.reordenarSubcategorias.mockResolvedValueOnce({ error: "A lista mudou em outra tela. Recarregue a página e tente de novo." });
+    const { container } = render(<SubcategoriasLista subcategorias={SUBS} produtosPorSubcategoria={{}} />);
+    const alca = screen.getAllByRole("button", { name: /Reordenar Gourmet/ })[0];
+    fireEvent.keyDown(alca, { key: "ArrowDown" });
+    expect((await screen.findAllByRole("alert"))[0]).toHaveTextContent("A lista mudou em outra tela");
+    const nomes = [...container.querySelectorAll("tbody tr .admin-table-title > div:first-child")].map((e) => e.textContent);
+    expect(nomes).toEqual(["Tradicional", "Gourmet", "Finos"]);
   });
 
   it("criar usa a categoria da seção e limpa o campo quando dá certo", async () => {
@@ -128,10 +138,7 @@ describe("lista de subcategorias", () => {
     const menu = screen.getByRole("button", { name: "Ações de Finos" });
     expect(screen.queryByRole("menuitem")).toBeNull();
     fireEvent.click(menu);
-    expect(screen.getAllByRole("menuitem").map((e) => e.textContent?.replace(/^[a-z_]+/, ""))).toEqual(["Subir", "Descer", "Renomear", "Apagar"]);
-    fireEvent.click(screen.getByRole("menuitem", { name: /Descer/ }));
-    expect(acoes.moverSubcategoria).not.toHaveBeenCalled(); // Finos é a última: Descer desabilitado
-    fireEvent.click(screen.getByRole("menuitem", { name: /Subir/ }));
-    await waitFor(() => expect(acoes.moverSubcategoria).toHaveBeenCalledWith("d2", "subir"));
+    // Sem Subir e Descer: a ordem muda arrastando a alça.
+    expect(screen.getAllByRole("menuitem").map((e) => e.textContent?.replace(/^[a-z_]+/, ""))).toEqual(["Renomear", "Apagar"]);
   });
 });

@@ -15,6 +15,7 @@ const ARQUIVOS = {
   produtos: "src/app/admin/produtos/actions.ts",
   recheios: "src/app/admin/recheios/actions.ts",
   subcategorias: "src/app/admin/subcategorias/actions.ts",
+  kitListas: "src/app/admin/kit-listas/actions.ts",
 };
 
 // As ações que mudam o que a cliente vê (produto, preço, ativo, destaque,
@@ -26,15 +27,16 @@ const LISTADAS: Record<keyof typeof ARQUIVOS, string[]> = {
     "criarSubcategoria",
     "renomearSubcategoria",
     "atualizarAtivoSubcategoria",
-    "moverSubcategoria",
+    "reordenarSubcategorias",
     "apagarSubcategoria",
   ],
+  kitListas: ["adicionarOpcao", "editarOpcao", "atualizarAtivoOpcao", "reordenarOpcoes"],
 };
 
 // Gravações que mudam a vitrine: tabelas lidas pelo site e as funções que
 // gravam sabores do Cento, galeria e capa.
 const GRAVACAO =
-  /\.from\("(produtos|recheios|produto_cento_itens|produto_fotos|subcategorias)"\)\s*\.(insert|update|delete|upsert)\(|salvarSubitensCento\(|gravarGaleria\(|concluirTrocaDeCapa\(/;
+  /\.from\("(produtos|recheios|produto_cento_itens|produto_fotos|subcategorias|kit_lista_itens)"\)\s*\.(insert|update|delete|upsert)\(|salvarSubitensCento\(|gravarGaleria\(|concluirTrocaDeCapa\(/;
 
 // A linha i grava? A consulta pode estar quebrada em linhas
 // (.from("produtos") numa, .update(...) na seguinte): olha a linha junto com
@@ -142,8 +144,11 @@ describe("invalidação do cache da vitrine nas ações do admin (execução)", 
     const { updateProdutoAtivo, updateProdutoDestaque } = await import("./produtos/actions");
     await updateProdutoAtivo("Beijinho", false);
     await updateProdutoDestaque("Beijinho", true);
-    expect(updateTag).toHaveBeenCalledTimes(2);
+    expect(updateTag.mock.calls.filter(([e]) => e === "vitrine")).toHaveLength(2);
     expect(updateTag).toHaveBeenCalledWith("vitrine");
+    // Junto da vitrine, expira a leitura dos sabores do Cento (5 minutos) que
+    // a conferência do pedido usa (src/lib/cache/leitura-servidor.ts).
+    expect(updateTag).toHaveBeenCalledWith("sabores-cento");
   });
 
   it("ligar ou desligar recheio invalida a etiqueta 'vitrine'", async () => {

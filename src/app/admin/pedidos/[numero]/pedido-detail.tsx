@@ -162,7 +162,7 @@ export function PedidoDetail({ pedido }: { pedido: Pedido }) {
                     <Icon name="cake" size={22} tone="accent" style={{ marginTop: 2 }} />
                     <div>
                       <div style={{ fontWeight: 600 }}>{item.nome}</div>
-                      {item.variacao ? <div style={{ fontSize: 14, color: "var(--pdm-muted)" }}>{item.variacao}</div> : null}
+                      {item.variacao ? <div style={{ fontSize: 14, color: "var(--pdm-muted)", whiteSpace: "pre-line" }}>{item.variacao}</div> : null}
                       {item.observacao ? <div style={{ fontSize: 14, color: "var(--pdm-muted)" }}>Obs.: {item.observacao}</div> : null}
                     </div>
                   </div>

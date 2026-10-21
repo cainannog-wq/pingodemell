@@ -76,7 +76,8 @@ type DefinicaoCampo = {
   coluna?: ColunaProduto;
   // Valor que o cadastro novo grava quando o campo está escondido. Sem neutro
   // (undefined), o cadastro omite a coluna e vale o padrão do banco.
-  neutro?: unknown;
+  // Pode depender do contexto (a unidade neutra do kit por pessoa é "a pessoa").
+  neutro?: unknown | ((contexto: ContextoCampo) => unknown);
   // Grava em tabela filha: não segue a regra "escondido não vai ao UPDATE"
   // (ver a exceção deliberada acima).
   efeitoEmTabelaFilha?: boolean;
@@ -108,20 +109,20 @@ export const CAMPOS: Record<CampoProduto, DefinicaoCampo> = {
     coluna: "pedido_minimo",
     neutro: 1,
     nomesNoFormulario: ["pedido_minimo"],
-    visivel: ({ tipo }) => tipo !== "bolo",
+    visivel: ({ tipo }) => tipo !== "bolo" && tipo !== "kit_pessoa",
   },
   // O Bento Cake tem peso fechado: sem step (a unidade vale).
   step_quantidade: {
     coluna: "step_quantidade",
     neutro: "livre",
     nomesNoFormulario: ["step_quantidade"],
-    visivel: ({ tipo }) => tipo !== "bolo" && tipo !== "bento_cake",
+    visivel: ({ tipo }) => tipo !== "bolo" && tipo !== "bento_cake" && tipo !== "kit_pessoa",
   },
   unidade_venda: {
     coluna: "unidade_venda",
-    neutro: null,
+    neutro: ({ tipo }: ContextoCampo) => (tipo === "kit_pessoa" ? "a pessoa" : null),
     nomesNoFormulario: ["unidade_venda"],
-    visivel: ({ tipo }) => tipo !== "bolo",
+    visivel: ({ tipo }) => tipo !== "bolo" && tipo !== "kit_pessoa",
   },
   prazo_producao_dias: { coluna: "prazo_producao_dias", nomesNoFormulario: ["prazo_producao_dias"], visivel: sempre },
   destaque: { coluna: "destaque", nomesNoFormulario: ["destaque"], visivel: sempre },
@@ -164,7 +165,9 @@ export function neutrosDoCadastro(contexto: ContextoCampo): Partial<Record<Colun
   const saida: Partial<Record<ColunaProduto, unknown>> = {};
   for (const c of CHAVES) {
     const { coluna, neutro } = CAMPOS[c];
-    if (coluna && !campoVisivel(c, contexto) && neutro !== undefined) saida[coluna] = neutro;
+    if (coluna && !campoVisivel(c, contexto) && neutro !== undefined) {
+      saida[coluna] = typeof neutro === "function" ? (neutro as (x: ContextoCampo) => unknown)(contexto) : neutro;
+    }
   }
   return saida;
 }

@@ -23,7 +23,8 @@ export const NOINDEX = "noindex, nofollow";
 // valor e em qualquer contexto (PR fase4/indexacao-correcoes), no formato de
 // source do headers() do next.config.ts. "/admin/:path*" cobre também o
 // próprio "/admin".
-export const ROTAS_SEMPRE_NOINDEX = ["/admin/:path*", "/login", "/api/:path*"] as const;
+// "/previa/:path*" é a prévia do admin de um kit inativo (só com login).
+export const ROTAS_SEMPRE_NOINDEX = ["/admin/:path*", "/login", "/api/:path*", "/previa/:path*"] as const;
 
 // Valor do X-Robots-Tag, ou null para não enviar o cabeçalho. A homologação
 // (branch deploy da Netlify) fica fora dos buscadores sempre, mesmo com o
