@@ -28,6 +28,13 @@ const TABELAS = {
   recheios: ["S", SIUD],
   // Subcategorias (supabase/subcategorias.sql): modelo de recheios.
   subcategorias: ["S", SIUD],
+  // Kit Festa por pessoa (supabase/kit-pessoa-schema.sql): anônimo só lê,
+  // logado lê e escreve, ninguém trunca.
+  kit_listas: ["S", SIUD],
+  kit_lista_itens: ["S", SIUD],
+  kit_grupos: ["S", SIUD],
+  kit_tamanhos: ["S", SIUD],
+  kit_quantidades: ["S", SIUD],
   dias_off: ["S", SIUD],
   segunda_reaberturas: ["S", SIUD],
   // Logado: lê e muda só o status (supabase/pedidos-permissoes.sql). Antes
@@ -73,8 +80,9 @@ const FUNCOES = {
 // Tabelas de migração ainda não aplicada em produção: sem ela no banco (e sem
 // --com-migracao), a verificação sai como pulada em vez de falhar. Tirar da
 // lista quando a migração for aplicada.
-// (Vazia desde 13/10/2026: supabase/subcategorias.sql foi aplicada.)
-const TABELAS_AGUARDANDO_MIGRACAO = [];
+// (Vazia entre 13/10/2026 e o PR banco/kit-pessoa: subcategorias.sql foi aplicada.)
+const TABELAS_AGUARDANDO_MIGRACAO = ["kit_listas", "kit_lista_itens", "kit_grupos", "kit_tamanhos", "kit_quantidades"];
+const MIGRACAO_AGUARDADA = "supabase/produto-tipo-kit-pessoa.sql,supabase/kit-pessoa-schema.sql";
 
 // Sem política de propósito: só a chave de serviço acessa.
 const RLS_SEM_POLITICA_ESPERADO = ["heartbeat", "pedidos_rate_limit", "pedidos_gravacao"];
@@ -121,7 +129,7 @@ await emTransacaoDesfeita("Permissões por papel e alertas do verificador", asyn
     for (const [papel, esperado] of [["anon", esperadoAnon], ["authenticated", esperadoLogado]]) {
       const t = tabelas.find((x) => x.relname === tabela && x.papel === papel);
       if (!t && TABELAS_AGUARDANDO_MIGRACAO.includes(tabela)) {
-        pular(`permissões [${tabela}] ${papel}`, "migração ainda não aplicada; rode com --com-migracao=supabase/subcategorias.sql");
+        pular(`permissões [${tabela}] ${papel}`, "migração ainda não aplicada; rode com --com-migracao=" + MIGRACAO_AGUARDADA);
         continue;
       }
       if (!t) {

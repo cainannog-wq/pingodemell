@@ -1,0 +1,17 @@
+-- Desfazer de produto-tipo-kit-pessoa.sql: NÃO existe desfazer limpo.
+--
+-- O Postgres não tem "alter type ... drop value". Tirar 'kit_pessoa' do enum
+-- produto_tipo exigiria criar um tipo novo sem o valor, converter a coluna
+-- produtos.tipo para ele (reescreve a tabela, trava produtos) e trocar os
+-- tipos: uma migração não-aditiva, que só vai a produção depois de merge e
+-- com ok explícito do Cainan. Não vale a pena: um valor de enum sem nenhum
+-- produto é inofensivo.
+--
+-- Se for preciso voltar atrás, sem apagar o valor:
+--   1. desfazer kit-pessoa-schema.sql (kit-pessoa-schema-desfazer.sql);
+--   2. antes, passar para o tipo normal todo produto que estiver como
+--      kit_pessoa. Conferência, só leitura:
+--
+-- select nome, ativo from public.produtos where tipo = 'kit_pessoa';
+--
+-- Este arquivo não executa nenhuma mudança.

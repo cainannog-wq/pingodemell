@@ -1,0 +1,301 @@
+// Kit Festa por pessoa (supabase/produto-tipo-kit-pessoa.sql e
+// supabase/kit-pessoa-schema.sql), numa transação desfeita — nada é gravado.
+// Prova: RLS (anônimo lê só o que é de produto ativo e só item ativo de lista;
+// logado lê tudo e escreve; ninguém trunca), restrições de dados (grupo
+// coerente com o modo, meio quilo, duplicidade), cascatas e o valor novo do
+// enum produto_tipo.
+//
+// As tabelas só existem depois de aplicadas: sem elas, o script avisa e pula.
+// Use --com-migracao=supabase/produto-tipo-kit-pessoa.sql,supabase/kit-pessoa-schema.sql
+// para provar antes de aplicar. Nesse caso o valor novo do enum foi criado na
+// mesma transação e não pode ser usado nela: os produtos do teste são do tipo
+// normal (as tabelas não conferem o tipo do produto) e a parte do enum é
+// pulada com aviso.
+//
+// Uso: node scripts/banco/kit-pessoa.mjs [--com-migracao=<arquivo.sql>[,<outro.sql>]]
+
+import { cenario, descrever, emTransacaoDesfeita, nomeDaCategoriaKit, pular, registrar } from "./lib.mjs";
+
+const ATIVO = "PROVA_TRANSACAO_KIT_ATIVO";
+const INATIVO = "PROVA_TRANSACAO_KIT_INATIVO";
+
+async function criarProdutos(c, categoria) {
+  const { rows } = await c.q(
+    `insert into public.produtos (nome, preco, pedido_minimo, tipo, "Categoria", ativo)
+     values ($1, 22, 10, 'normal', $3, true), ($2, 22, 10, 'normal', $3, false)
+     returning id, nome`,
+    [ATIVO, INATIVO, categoria]
+  );
+  const id = (nome) => rows.find((r) => r.nome === nome).id;
+  return { ativo: id(ATIVO), inativo: id(INATIVO) };
+}
+
+// Monta um kit completo e pequeno para um produto: lista de recheios, lista de
+// bebidas (duas opções), grupo de recheio, de doces, de bebida e fixo; tamanhos
+// 10 e 15 (1 e 1,5 kg) e as quantidades.
+async function montarKit(c, produtoId, sufixo) {
+  const listas = await c.q(
+    `insert into public.kit_listas (nome) values ($1), ($2), ($3) returning id, nome`,
+    [`Recheios ${sufixo}`, `Doces ${sufixo}`, `Bebidas ${sufixo}`]
+  );
+  const lista = (nome) => listas.rows.find((l) => l.nome === `${nome} ${sufixo}`).id;
+  const itens = await c.q(
+    `insert into public.kit_lista_itens (lista_id, nome, descricao, posicao, ativo) values
+       ($1, 'Morango com chocolate', null, 1, true),
+       ($1, 'Recheios com chocolate', 'acréscimo a combinar no WhatsApp', 2, true),
+       ($1, 'Recheio escondido', null, 3, false),
+       ($2, 'Brigadeiro', null, 1, true),
+       ($2, 'Beijinho', null, 2, true),
+       ($3, 'Cini 2L', null, 1, true),
+       ($3, 'Coca 2L', null, 2, true)
+     returning id, lista_id, nome`,
+    [lista("Recheios"), lista("Doces"), lista("Bebidas")]
+  );
+  const item = (nome) => itens.rows.find((i) => i.nome === nome).id;
+  const grupos = await c.q(
+    `insert into public.kit_grupos (produto_id, chave, rotulo, modo, lista_id, passo, posicao) values
+       ($1, 'recheio', 'Recheio do bolo', 'escolha_unica', $2, null, 1),
+       ($1, 'doces', 'Doces', 'distribuicao', $3, 10, 2),
+       ($1, 'bebida', 'Bebida', 'escolha_unica', $4, null, 3),
+       ($1, 'descartavel', 'Descartáveis', 'fixo', null, null, 4)
+     returning id, chave`,
+    [produtoId, lista("Recheios"), lista("Doces"), lista("Bebidas")]
+  );
+  const grupo = (chave) => grupos.rows.find((g) => g.chave === chave).id;
+  await c.q(
+    `insert into public.kit_tamanhos (produto_id, pessoas, bolo_kg, descartaveis) values ($1, 10, 1, false), ($1, 15, 1.5, false)`,
+    [produtoId]
+  );
+  await c.q(
+    `insert into public.kit_quantidades (produto_id, pessoas, grupo_id, opcao_id, total, max_sabores, rotulo) values
+       ($1, 10, $2, null, 50, null, null),
+       ($1, 15, $2, null, 120, null, null),
+       ($1, 10, $3, $4, 2, null, '2 Cini 2L'),
+       ($1, 10, $3, $5, 1, null, '1 Coca 2L'),
+       ($1, 15, $3, $4, 2, null, '2 Cini 2L'),
+       ($1, 15, $3, $5, 1, null, '1 Coca 2L')`,
+    [produtoId, grupo("doces"), grupo("bebida"), item("Cini 2L"), item("Coca 2L")]
+  );
+  return { listas: listas.rows, grupo, item, lista };
+}
+
+await emTransacaoDesfeita("Kit Festa por pessoa (kit_pessoa)", async (db) => {
+  const existe = await db.query("select to_regclass('public.kit_quantidades') as t");
+  if (!existe.rows[0].t) {
+    pular(
+      "kit pessoa (todos)",
+      "as tabelas do kit não existem; use --com-migracao=supabase/produto-tipo-kit-pessoa.sql,supabase/kit-pessoa-schema.sql"
+    );
+    return;
+  }
+  const categoria = await nomeDaCategoriaKit(db);
+
+  // 1. RLS do anônimo.
+  await cenario(db, async (c) => {
+    const p = await criarProdutos(c, categoria);
+    const kitA = await montarKit(c, p.ativo, "ZZPA");
+    await montarKit(c, p.inativo, "ZZPI");
+    await c.como("anon");
+    const grupos = await c.tentar("select produto_id from public.kit_grupos where produto_id in ($1, $2)", [p.ativo, p.inativo]);
+    const tamanhos = await c.tentar("select produto_id from public.kit_tamanhos where produto_id in ($1, $2)", [p.ativo, p.inativo]);
+    const qtds = await c.tentar("select produto_id from public.kit_quantidades where produto_id in ($1, $2)", [p.ativo, p.inativo]);
+    const soAtivo = (r, n) => r.ok && r.rows.length === n && r.rows.every((x) => x.produto_id === p.ativo);
+    registrar("kit 1. anônimo lê os grupos só de produto ativo", soAtivo(grupos, 4), descrever(grupos));
+    registrar("kit 2. anônimo lê os tamanhos só de produto ativo", soAtivo(tamanhos, 2), descrever(tamanhos));
+    registrar("kit 3. anônimo lê as quantidades só de produto ativo", soAtivo(qtds, 6), descrever(qtds));
+
+    const listas = await c.tentar("select nome from public.kit_listas where nome like '% ZZPA' or nome like '% ZZPI' order by nome");
+    registrar(
+      "kit 4. anônimo lê só as listas usadas por produto ativo",
+      listas.ok && listas.rows.map((l) => l.nome).join("|") === "Bebidas ZZPA|Doces ZZPA|Recheios ZZPA",
+      listas.ok ? listas.rows.map((l) => l.nome).join("|") : descrever(listas)
+    );
+    const itens = await c.tentar(
+      "select i.nome from public.kit_lista_itens i join public.kit_listas l on l.id = i.lista_id where l.nome = 'Recheios ZZPA' order by i.posicao"
+    );
+    registrar(
+      "kit 5. anônimo não vê item inativo da lista nem item de lista de produto inativo",
+      itens.ok && itens.rows.map((i) => i.nome).join("|") === "Morango com chocolate|Recheios com chocolate",
+      itens.ok ? itens.rows.map((i) => i.nome).join("|") : descrever(itens)
+    );
+    const inativos = await c.tentar("select count(*)::int n from public.kit_lista_itens i join public.kit_listas l on l.id = i.lista_id where l.nome like '% ZZPI'");
+    registrar("kit 6. nenhum item de lista de produto inativo aparece ao anônimo", inativos.ok && inativos.rows[0].n === 0, descrever(inativos));
+
+    const escritas = [
+      ["lista", "insert into public.kit_listas (nome) values ('Nova')"],
+      ["item", "insert into public.kit_lista_itens (lista_id, nome, posicao) select id, 'X', 9 from public.kit_listas where nome = 'Doces ZZPA'"],
+      ["grupo", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, posicao) values ($1, 'x', 'X', 'fixo', 9)"],
+      ["tamanho", "insert into public.kit_tamanhos (produto_id, pessoas, bolo_kg, descartaveis) values ($1, 20, 2, true)"],
+    ];
+    const recusadas = [];
+    for (const [nome, sql] of escritas) {
+      const r = await c.tentar(sql, sql.includes("$1") ? [p.ativo] : undefined);
+      if (r.ok) recusadas.push(nome);
+    }
+    const altera = await c.tentar("update public.kit_tamanhos set bolo_kg = 9 where produto_id = $1", [p.ativo]);
+    const apaga = await c.tentar("delete from public.kit_quantidades where produto_id = $1", [p.ativo]);
+    const trunca = [];
+    for (const t of ["kit_listas", "kit_lista_itens", "kit_grupos", "kit_tamanhos", "kit_quantidades"]) {
+      const r = await c.tentar(`truncate public.${t}`);
+      if (r.ok) trunca.push(t);
+    }
+    await c.dono();
+    const restam = await c.q("select count(*)::int n from public.kit_quantidades where produto_id = $1", [p.ativo]);
+    const tam = await c.q("select bolo_kg from public.kit_tamanhos where produto_id = $1 order by pessoas", [p.ativo]);
+    registrar("kit 7. anônimo não insere em nenhuma tabela do kit", recusadas.length === 0, recusadas.length ? `aceitou: ${recusadas.join(", ")}` : "nenhuma aceita");
+    registrar(
+      "kit 8. anônimo não altera nem apaga",
+      (!altera.ok || altera.rowCount === 0) && (!apaga.ok || apaga.rowCount === 0) && restam.rows[0].n === 6 && Number(tam.rows[0].bolo_kg) === 1,
+      `${descrever(altera)}; ${descrever(apaga)}`
+    );
+    registrar("kit 9. anônimo não trunca", trunca.length === 0, trunca.length ? `truncou: ${trunca.join(", ")}` : "nenhuma tabela");
+    void kitA;
+  });
+
+  // 2. Logado: lê tudo, escreve, não trunca.
+  await cenario(db, async (c) => {
+    const p = await criarProdutos(c, categoria);
+    await montarKit(c, p.inativo, "ZZPL");
+    await c.como("authenticated");
+    const le = await c.tentar("select count(*)::int n from public.kit_grupos where produto_id = $1", [p.inativo]);
+    const leItens = await c.tentar("select count(*)::int n from public.kit_lista_itens i join public.kit_listas l on l.id = i.lista_id where l.nome = 'Recheios ZZPL'");
+    registrar("kit 10. logado lê também o que é de produto inativo e o item inativo", le.ok && le.rows[0].n === 4 && leItens.ok && leItens.rows[0].n === 3, `${descrever(le)}; itens ${leItens.ok ? leItens.rows[0].n : "?"}`);
+
+    const lista = await c.tentar("insert into public.kit_listas (nome) values ('Fritos ZZPL') returning id");
+    const item = await c.tentar("insert into public.kit_lista_itens (lista_id, nome, posicao) values ($1, 'Coxinha', 1)", [lista.rows?.[0]?.id]);
+    const altera = await c.tentar("update public.kit_lista_itens set ativo = false where nome = 'Coxinha'");
+    const tam = await c.tentar("insert into public.kit_tamanhos (produto_id, pessoas, bolo_kg, descartaveis) values ($1, 20, 2, true)", [p.inativo]);
+    const apaga = await c.tentar("delete from public.kit_quantidades where produto_id = $1", [p.inativo]);
+    registrar(
+      "kit 11. logado cria lista e item, altera, cadastra tamanho e apaga quantidades",
+      lista.ok && item.ok && altera.ok && altera.rowCount === 1 && tam.ok && apaga.ok && apaga.rowCount === 6,
+      [lista, item, altera, tam, apaga].map(descrever).join("; ")
+    );
+    const trunca = [];
+    for (const t of ["kit_listas", "kit_lista_itens", "kit_grupos", "kit_tamanhos", "kit_quantidades"]) {
+      const r = await c.tentar(`truncate public.${t}`);
+      if (r.ok) trunca.push(t);
+    }
+    registrar("kit 12. logado não trunca", trunca.length === 0, trunca.length ? `truncou: ${trunca.join(", ")}` : "nenhuma tabela");
+  });
+
+  // 3. Restrições de dados.
+  await cenario(db, async (c) => {
+    const p = await criarProdutos(c, categoria);
+    const kit = await montarKit(c, p.ativo, "ZZPR");
+    await c.como("authenticated");
+    const nega = async (nome, sql, args) => {
+      const r = await c.tentar(sql, args);
+      registrar(nome, !r.ok, descrever(r));
+    };
+    const aceita = async (nome, sql, args) => {
+      const r = await c.tentar(sql, args);
+      registrar(nome, r.ok, descrever(r));
+    };
+    const doces = kit.lista("Doces");
+    await nega("kit 13. lista com o mesmo nome (sem diferenciar maiúscula) é recusada", "insert into public.kit_listas (nome) values ('doces zzpr')");
+    await nega("kit 14. item repetido na lista (sem diferenciar maiúscula) é recusado", "insert into public.kit_lista_itens (lista_id, nome, posicao) values ($1, 'BRIGADEIRO', 9)", [doces]);
+    await nega("kit 15. nome de item com espaço sobrando é recusado", "insert into public.kit_lista_itens (lista_id, nome, posicao) values ($1, ' Novo', 9)", [doces]);
+    await nega("kit 16. descrição vazia ou com espaço sobrando é recusada", "insert into public.kit_lista_itens (lista_id, nome, descricao, posicao) values ($1, 'Novo', ' x', 9)", [doces]);
+    await aceita("kit 17. descrição opcional aceita texto", "insert into public.kit_lista_itens (lista_id, nome, descricao, posicao) values ($1, 'Novo', 'acréscimo a combinar no WhatsApp', 9)", [doces]);
+
+    await nega("kit 19. grupo de distribuição sem lista é recusado", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, passo, posicao) values ($1, 'f', 'F', 'distribuicao', 10, 9)", [p.ativo]);
+    await nega("kit 20. grupo de distribuição sem passo é recusado", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, lista_id, posicao) values ($1, 'f', 'F', 'distribuicao', $2, 9)", [p.ativo, doces]);
+    await nega("kit 21. grupo fixo com lista é recusado", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, lista_id, posicao) values ($1, 'f', 'F', 'fixo', $2, 9)", [p.ativo, doces]);
+    await nega("kit 22. grupo de escolha única com passo é recusado", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, lista_id, passo, posicao) values ($1, 'f', 'F', 'escolha_unica', $2, 10, 9)", [p.ativo, doces]);
+    await nega("kit 23. modo desconhecido é recusado", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, posicao) values ($1, 'f', 'F', 'qualquer', 9)", [p.ativo]);
+    await nega("kit 24. chave de grupo repetida no produto é recusada", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, posicao) values ($1, 'descartavel', 'F', 'fixo', 9)", [p.ativo]);
+    await nega("kit 25. chave de grupo fora do formato é recusada", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, posicao) values ($1, 'Doces Finos', 'F', 'fixo', 9)", [p.ativo]);
+
+    await aceita("kit 26. tamanho de 20 pessoas com 2 kg", "insert into public.kit_tamanhos (produto_id, pessoas, bolo_kg, descartaveis) values ($1, 20, 2, true)", [p.ativo]);
+    await aceita("kit 27. meio quilo é aceito (1,5 kg já está no kit montado)", "insert into public.kit_tamanhos (produto_id, pessoas, bolo_kg, descartaveis) values ($1, 30, 3.5, true)", [p.ativo]);
+    await nega("kit 28. bolo de 1,3 kg (fora do meio em meio quilo) é recusado", "insert into public.kit_tamanhos (produto_id, pessoas, bolo_kg, descartaveis) values ($1, 40, 1.3, true)", [p.ativo]);
+    await nega("kit 29. bolo de 0 kg é recusado", "insert into public.kit_tamanhos (produto_id, pessoas, bolo_kg, descartaveis) values ($1, 40, 0, true)", [p.ativo]);
+    await nega("kit 30. tamanho repetido no produto é recusado", "insert into public.kit_tamanhos (produto_id, pessoas, bolo_kg, descartaveis) values ($1, 10, 1, true)", [p.ativo]);
+
+    const bebida = kit.grupo("bebida");
+    const doce = kit.grupo("doces");
+    await nega("kit 31. quantidade repetida (tamanho, grupo e opção nula) é recusada", "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, total) values ($1, 10, $2, 60)", [p.ativo, doce]);
+    await nega("kit 32. quantidade repetida para a mesma opção é recusada", "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, opcao_id, total) values ($1, 10, $2, $3, 3)", [p.ativo, bebida, kit.item("Cini 2L")]);
+    await nega("kit 33. total zero é recusado", "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, opcao_id, total) values ($1, 15, $2, null, 0)", [p.ativo, kit.grupo("recheio")]);
+    await nega("kit 34. máximo de sabores zero é recusado", "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, total, max_sabores) values ($1, 15, $2, 10, 0)", [p.ativo, kit.grupo("recheio")]);
+    await nega("kit 35. quantidade para tamanho que não existe é recusada", "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, total) values ($1, 99, $2, 10)", [p.ativo, kit.grupo("recheio")]);
+  });
+
+  // Posição repetida na lista: a unicidade é adiada até o fim da transação (permite
+  // trocar posições de uma vez); aqui forçamos a conferência.
+  await cenario(db, async (c) => {
+    const p = await criarProdutos(c, categoria);
+    const kit = await montarKit(c, p.ativo, "ZZPP");
+    await c.como("authenticated");
+    const dup = await c.tentar("insert into public.kit_lista_itens (lista_id, nome, posicao) values ($1, 'Outro', 1)", [kit.lista("Doces")]);
+    const confere = await c.tentar("set constraints all immediate");
+    registrar(
+      "kit 18. posição repetida na lista é recusada (conferida ao fim da transação, adiada até lá)",
+      dup.ok && !confere.ok && confere.code === "23505",
+      `${descrever(dup)}; ${descrever(confere)}`
+    );
+  });
+
+  // 4. Cascatas e restrição.
+  await cenario(db, async (c) => {
+    const p = await criarProdutos(c, categoria);
+    const kit = await montarKit(c, p.ativo, "ZZPC");
+    await c.q("delete from public.produtos where id = $1", [p.ativo]);
+    const n = async (tabela) => (await c.q(`select count(*)::int n from public.${tabela} where produto_id = $1`, [p.ativo])).rows[0].n;
+    const listas = await c.q("select count(*)::int n from public.kit_listas where nome like '% ZZPC'");
+    registrar(
+      "kit 36. excluir o produto leva grupos, tamanhos e quantidades; as listas ficam",
+      (await n("kit_grupos")) === 0 && (await n("kit_tamanhos")) === 0 && (await n("kit_quantidades")) === 0 && listas.rows[0].n === 3,
+      `listas que ficaram: ${listas.rows[0].n}`
+    );
+    void kit;
+  });
+  await cenario(db, async (c) => {
+    const p = await criarProdutos(c, categoria);
+    const kit = await montarKit(c, p.ativo, "ZZPD");
+    const apagaLista = await c.tentar("delete from public.kit_listas where id = $1", [kit.lista("Doces")]);
+    registrar("kit 37. lista em uso por um grupo não pode ser apagada", !apagaLista.ok && apagaLista.code === "23503", descrever(apagaLista));
+    const apagaItem = await c.tentar("delete from public.kit_lista_itens where id = $1", [kit.item("Cini 2L")]);
+    const restam = await c.q("select count(*)::int n from public.kit_quantidades where produto_id = $1", [p.ativo]);
+    registrar("kit 38. apagar uma opção leva as quantidades dela (as 2 da opção saem, as outras 4 ficam)", apagaItem.ok && restam.rows[0].n === 4, `${descrever(apagaItem)}; restam ${restam.rows[0].n}`);
+    const apagaGrupo = await c.tentar("delete from public.kit_grupos where produto_id = $1 and chave = 'doces'", [p.ativo]);
+    const restam2 = await c.q("select count(*)::int n from public.kit_quantidades where produto_id = $1", [p.ativo]);
+    registrar("kit 39. apagar um grupo leva as quantidades dele", apagaGrupo.ok && restam2.rows[0].n === 2, `${descrever(apagaGrupo)}; restam ${restam2.rows[0].n}`);
+  });
+
+  // 5. RLS ligada em todas e nenhuma função nova no PR.
+  {
+    const { rows } = await db.query(
+      `select relname, relrowsecurity from pg_class
+       where relnamespace = 'public'::regnamespace and relname in ('kit_listas','kit_lista_itens','kit_grupos','kit_tamanhos','kit_quantidades') order by 1`
+    );
+    registrar("kit 40. as cinco tabelas têm RLS ligada", rows.length === 5 && rows.every((r) => r.relrowsecurity), rows.map((r) => `${r.relname}:${r.relrowsecurity}`).join(" "));
+  }
+
+  // 6. Enum: valor novo no fim da ordem; produto aceita o tipo.
+  await cenario(db, async (c) => {
+    const { rows: ordem } = await c.q(
+      `select string_agg(e.enumlabel, ',' order by e.enumsortorder) tipos from pg_enum e join pg_type t on t.oid = e.enumtypid where t.typname = 'produto_tipo'`
+    );
+    const tipos = ordem[0].tipos.split(",");
+    registrar(
+      "kit 41. produto_tipo ganhou kit_pessoa no fim; os quatro de antes seguem",
+      tipos.length === 5 && tipos[4] === "kit_pessoa" && ["normal", "cento", "bolo", "bento_cake"].every((t) => tipos.includes(t)),
+      tipos.join(", ")
+    );
+    const nova = await c.tentar(
+      `insert into public.produtos (nome, preco, pedido_minimo, tipo, "Categoria", ativo, unidade_venda)
+       values ('PROVA_KIT_PESSOA', 22, 10, 'kit_pessoa', $1, true, 'a pessoa') returning nome`,
+      [categoria]
+    );
+    if (!nova.ok && nova.code === "55P04") {
+      console.log("\n[AVISO] O valor novo foi criado nesta mesma transação: uso não testável na simulação (roda de verdade depois de aplicar).");
+      return;
+    }
+    registrar("kit 42. produtos aceita o tipo kit_pessoa em Kit Festa", nova.ok && nova.rowCount === 1, descrever(nova));
+    await c.como("anon");
+    const anon = await c.tentar("select nome from public.produtos where nome = 'PROVA_KIT_PESSOA'");
+    registrar("kit 43. anônimo lê o produto kit_pessoa ativo (RLS de ativo segue igual)", anon.ok && anon.rows.length === 1, descrever(anon));
+  });
+});
