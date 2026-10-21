@@ -1,0 +1,5 @@
+produto,chave,rotulo,modo,lista,passo
+Kit Exemplo Basico,bolo,Recheio do bolo,escolha_unica,Recheios,
+Kit Exemplo Basico,doces,Doces,distribuicao,Doces,10
+Kit Exemplo Basico,bebida,Bebida,escolha_unica,Bebidas,
+Kit Exemplo Basico,descartaveis,Descartáveis,fixo,,
