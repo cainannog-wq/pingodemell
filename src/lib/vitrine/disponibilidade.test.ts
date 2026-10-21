@@ -66,4 +66,12 @@ describe("disponibilidade — só o Bolo tradicional depende do catálogo de rec
     expect(r.find((x) => x.nome === "Bolo")?.preco_a_partir_de).toBe(60);
     expect(r.filter((x) => x.nome !== "Bolo").every((x) => !("preco_a_partir_de" in x))).toBe(true);
   });
+
+  it("Kit Festa por pessoa: 'a partir de' é o menor tamanho disponível vezes o preço por pessoa", () => {
+    const kit = { id: "kit-1", nome: "Kit Festa Básico", tipo: "kit_pessoa", Categoria: "Kit Festa", preco: 22, ativo: true } as unknown as ProdutoVitrine;
+    const outro = { ...kit, id: "kit-2", nome: "Sem tamanho", preco: 30 } as ProdutoVitrine;
+    const r = comPrecoAPartirDe([kit, outro], [], new Map([["kit-1", 10]]));
+    expect(r[0].preco_a_partir_de).toBe(220);
+    expect("preco_a_partir_de" in r[1]).toBe(false);
+  });
 });

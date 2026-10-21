@@ -152,7 +152,7 @@ describe("filtro de subcategorias na Lista", () => {
   it("nada usa 'Todas' nem rótulo 'Subcategorias' escrito na tela: é 'Todos', só os chips", async () => {
     await renderLista({ categoria: "doces" });
     expect(document.body.textContent).not.toMatch(/Todas|Subcategorias/);
-    expect(raiz("chips")!.textContent).toBe("TodosFinosGourmet Premium");
+    expect(raiz("chips")!.textContent).toBe("FinosGourmet PremiumTodos");
     expect(raiz("chips")!.querySelector("p")).toBeNull();
     expect(raiz("chips")).toHaveAttribute("aria-label", "Subcategorias de Doces");
   });
@@ -174,16 +174,16 @@ describe("filtro de subcategorias na Lista", () => {
   });
 
   describe.each(["chips", "acordeao"] as const)("bloco %s", (bloco) => {
-    it("categoria com subcategorias: Todos e depois cada uma por ordem; 'Todos' atual por padrão", async () => {
+    it("categoria com subcategorias: cada uma por ordem e 'Todos' por último; 'Todos' atual por padrão", async () => {
       await renderLista({ categoria: "doces" });
-      expect(textoDosChips(bloco)).toEqual(["Todos", "Finos", "Gourmet Premium"]);
+      expect(textoDosChips(bloco)).toEqual(["Finos", "Gourmet Premium", "Todos"]);
       expect(chipAtual(bloco)).toHaveTextContent("Todos");
       expect(cards()).toHaveLength(4);
     });
 
     it("subcategoria de 1 produto aparece (Smash Cake)", async () => {
       await renderLista({ categoria: "bolos" });
-      expect(textoDosChips(bloco)).toEqual(["Todos", "Smash Cake"]);
+      expect(textoDosChips(bloco)).toEqual(["Smash Cake", "Todos"]);
     });
 
     it("opção ativa leva aria-current (uma só) e filtra os cards", async () => {
@@ -203,9 +203,9 @@ describe("filtro de subcategorias na Lista", () => {
       await renderLista({ categoria: "doces", subcategoria: "finos", busca: "e", ordem: "a-z", pagina: "3" });
       const hrefs = chips(bloco).map((a) => a.getAttribute("href"));
       expect(hrefs).toEqual([
-        "/produtos?categoria=doces&busca=e&ordem=a-z",
         "/produtos?categoria=doces&subcategoria=finos&busca=e&ordem=a-z",
         "/produtos?categoria=doces&subcategoria=gourmet-premium&busca=e&ordem=a-z",
+        "/produtos?categoria=doces&busca=e&ordem=a-z",
       ]);
       expect(hrefs.join()).not.toContain("pagina");
     });

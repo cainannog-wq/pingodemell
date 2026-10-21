@@ -70,9 +70,11 @@ describe("ConfigKit", () => {
 
   it("trocar as pessoas zera a distribuição e avisa; o preço acompanha", () => {
     render(<ConfigKit produto={produto} config={config} />);
+    fireEvent.click(screen.getByLabelText(/Ninho com morango/));
+    fireEvent.click(screen.getByLabelText(/Suco de uva/));
     aumentar(/Aumentar Doces, Brigadeiro/);
     fireEvent.click(screen.getByLabelText("20 pessoas"));
-    expect(screen.getByText("0 de 40 selecionados")).toBeInTheDocument();
+    expect(screen.getAllByText("0 de 40 selecionados").length).toBeGreaterThan(0);
     expect(screen.getByText(/refaça a escolha/)).toBeInTheDocument();
     expect(screen.getByText("R$ 440,00", { selector: ".interna-resumo-valor" })).toBeInTheDocument();
   });
@@ -80,6 +82,7 @@ describe("ConfigKit", () => {
   it("máximo de sabores: com 3 já usados, o quarto não aumenta", () => {
     render(<ConfigKit produto={produto} config={config} />);
     fireEvent.click(screen.getByLabelText("30 pessoas"));
+    fireEvent.click(screen.getByRole("button", { name: /^Doces/ })); // abre o grupo à mão
     aumentar(/Aumentar Doces, Brigadeiro/);
     aumentar(/Aumentar Doces, Beijinho/);
     aumentar(/Aumentar Doces, Cajuzinho/);
@@ -104,5 +107,55 @@ describe("ConfigKit", () => {
     render(<ConfigKit produto={produto} config={config} />);
     expect(botaoAdicionar()).toBeDisabled();
     expect(screen.getAllByText(/Cada pedido aceita até 5 kits/).length).toBeGreaterThan(0);
+  });
+
+  describe("acordeão dos grupos", () => {
+    const botaoDoGrupo = (nome: RegExp) => screen.getByRole("button", { name: nome, expanded: undefined });
+    const abertoDoGrupo = (nome: RegExp) => botaoDoGrupo(nome).getAttribute("aria-expanded");
+
+    it("abre só o primeiro grupo que falta; os outros ficam fechados", () => {
+      render(<ConfigKit produto={produto} config={config} />);
+      expect(abertoDoGrupo(/^Recheio do bolo/)).toBe("true");
+      expect(abertoDoGrupo(/Bebida/)).toBe("false");
+      expect(abertoDoGrupo(/Doces/)).toBe("false");
+    });
+
+    it("escolher o recheio fecha o grupo, mostra o resumo e abre o próximo que falta (na ordem da tela)", () => {
+      render(<ConfigKit produto={produto} config={config} />);
+      fireEvent.click(screen.getByLabelText(/Ninho com morango/));
+      expect(abertoDoGrupo(/^Recheio do bolo/)).toBe("false");
+      expect(botaoDoGrupo(/^Recheio do bolo/)).toHaveTextContent("Ninho com morango");
+      // A ordem é a da configuração: recheio, doces, bebida.
+      expect(abertoDoGrupo(/^Doces/)).toBe("true");
+      expect(abertoDoGrupo(/^Bebida/)).toBe("false");
+    });
+
+    it("preencher um grupo de baixo leva de volta ao que ainda falta", () => {
+      render(<ConfigKit produto={produto} config={config} />);
+      fireEvent.click(screen.getByLabelText(/Suco de uva/));
+      expect(abertoDoGrupo(/^Bebida/)).toBe("false");
+      expect(abertoDoGrupo(/^Recheio do bolo/)).toBe("true");
+    });
+
+    it("fechar a soma de doces fecha o grupo; tudo completo deixa tudo recolhido", () => {
+      render(<ConfigKit produto={produto} config={config} />);
+      fireEvent.click(screen.getByLabelText(/Ninho com morango/));
+      aumentar(/Aumentar Doces, Brigadeiro/);
+      expect(abertoDoGrupo(/^Doces/)).toBe("true");
+      aumentar(/Aumentar Doces, Beijinho/);
+      expect(abertoDoGrupo(/^Doces/)).toBe("false");
+      expect(abertoDoGrupo(/^Bebida/)).toBe("true");
+      fireEvent.click(screen.getByLabelText(/Suco de uva/));
+      expect(abertoDoGrupo(/^Bebida/)).toBe("false");
+      expect(botaoAdicionar()).toBeEnabled();
+    });
+
+    it("o título abre um grupo fechado à mão, sem perder a escolha", () => {
+      render(<ConfigKit produto={produto} config={config} />);
+      fireEvent.click(screen.getByLabelText(/Ninho com morango/));
+      fireEvent.click(botaoDoGrupo(/^Recheio do bolo/));
+      expect(abertoDoGrupo(/^Recheio do bolo/)).toBe("true");
+      expect(screen.getByLabelText(/Ninho com morango/)).toBeChecked();
+    });
   });
 });

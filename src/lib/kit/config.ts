@@ -123,3 +123,10 @@ export function tamanhosDisponiveis(config: KitConfig): KitTamanho[] {
 export function kitDisponivel(config: KitConfig | null): boolean {
   return config !== null && tamanhosDisponiveis(config).length > 0;
 }
+
+// Menor número de pessoas que a cliente consegue fechar (o "a partir de" do
+// preço); nulo se o kit não tem nenhum tamanho completo.
+export function menorTamanhoDisponivel(config: KitConfig | null): number | null {
+  if (!config) return null;
+  return tamanhosDisponiveis(config)[0]?.pessoas ?? null;
+}

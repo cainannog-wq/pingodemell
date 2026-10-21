@@ -24,7 +24,7 @@ export function semIndisponiveis<T extends ProdutoVitrine>(
   produtos: T[],
   comSabor: Set<string>,
   recheios: RecheioVitrine[],
-  kitsDisponiveis: Set<string> = new Set()
+  kitsDisponiveis: ReadonlySet<string> | ReadonlyMap<string, number> = new Set<string>()
 ): T[] {
   const temBolo = boloDisponivel(recheios);
   return semCentoIndisponivel(produtos, comSabor).filter((p) => {
@@ -39,7 +39,24 @@ export function semIndisponiveis<T extends ProdutoVitrine>(
 // Bolo mostra "a partir de R$ X o kg" (o menor R$/kg entre os recheios
 // ativos do Bolo) no lugar do campo Preço, que não vale para ele. Os demais
 // produtos passam sem mudança.
-export function comPrecoAPartirDe<T extends ProdutoVitrine>(produtos: T[], recheios: RecheioVitrine[]): T[] {
+// O Kit Festa por pessoa mostra "A partir de" o menor tamanho disponível
+// vezes o preço por pessoa (ex.: R$ 22 x 10 pessoas = R$ 220), com o mapa
+// id → menor número de pessoas (kitsDisponiveis de buscar.ts). Sem o mapa, ou
+// com o kit fora dele, o preço fica o de sempre (por pessoa).
+export function comPrecoAPartirDe<T extends ProdutoVitrine>(
+  produtos: T[],
+  recheios: RecheioVitrine[],
+  menorKit: ReadonlyMap<string, number> = new Map()
+): T[] {
   const menor = menorPrecoKg(recheios);
-  return produtos.map((p) => (variacaoDoProduto(p) === "bolo" ? { ...p, preco_a_partir_de: menor } : p));
+  return produtos.map((p) => {
+    const variacao = variacaoDoProduto(p);
+    if (variacao === "bolo") return { ...p, preco_a_partir_de: menor };
+    if (variacao === "kit") {
+      const pessoas = menorKit.get(p.id);
+      const total = pessoas === undefined ? NaN : Math.round(pessoas * Number(p.preco) * 100) / 100;
+      return Number.isFinite(total) ? { ...p, preco_a_partir_de: total } : p;
+    }
+    return p;
+  });
 }

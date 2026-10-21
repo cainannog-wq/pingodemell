@@ -249,17 +249,42 @@ describe("URLs do filtro", () => {
   });
 });
 
+describe("Kit Festa: Por pessoa primeiro", () => {
+  const BASICO = sub({ id: "k-basico", categoria: "Kit Festa", nome: "Básico", slug: "basico", ordem: 10 });
+  const ESCOLAR = sub({ id: "k-escolar", categoria: "Kit Festa", nome: "Escolar", slug: "escolar", ordem: 40 });
+  const POR_PESSOA = sub({ id: "k-pp", categoria: "Kit Festa", nome: "Por pessoa", slug: "por-pessoa", ordem: 70 });
+  const kit = (sid: string) => produto({ Categoria: "Kit Festa", subcategoria_id: sid });
+  const ps = [kit(BASICO.id), kit(ESCOLAR.id), kit(POR_PESSOA.id)];
+
+  it("abre a lista do Kit Festa, mesmo cadastrada por último, e 'Todos' fica no fim", () => {
+    const chips = chipsDaCategoria("Kit Festa", ps, [BASICO, ESCOLAR, POR_PESSOA]);
+    expect(chips.map((c) => c.slug)).toEqual(["por-pessoa", "basico", "escolar"]);
+    const opcoes = opcoesDeSubcategoria({ categoria: "Kit Festa", busca: "", ordem: "recomendados" }, chips, null);
+    expect(opcoes.map((o) => o.nome)).toEqual(["Por pessoa", "Básico", "Escolar", "Todos"]);
+  });
+
+  it("sem produto em Por pessoa, ela não aparece e a ordem cadastrada vale", () => {
+    const chips = chipsDaCategoria("Kit Festa", [kit(BASICO.id), kit(ESCOLAR.id)], [BASICO, ESCOLAR, POR_PESSOA]);
+    expect(chips.map((c) => c.slug)).toEqual(["basico", "escolar"]);
+  });
+
+  it("outras categorias não mudam", () => {
+    const chips = chipsDaCategoria("Doces", [produto({ subcategoria_id: GOURMET.id }), produto({ subcategoria_id: FINOS.id })], [GOURMET, FINOS]);
+    expect(chips.map((c) => c.slug)).toEqual(["finos", "gourmet-premium"]);
+  });
+});
+
 describe("opções do filtro e categorias com filtro (acordeão do desktop)", () => {
-  it("'Todos' vem primeiro, depois os chips; só a ativa é atual; endereços mantêm busca e ordem, sem página", () => {
+  it("'Todos' vem por último, depois dos chips; só a ativa é atual; endereços mantêm busca e ordem, sem página", () => {
     const r = lista({ categoria: "Doces", subcategoria: "finos" });
     const opcoes = opcoesDeSubcategoria({ categoria: "Doces", busca: "e", ordem: "a-z" }, r.chips, r.subcategoriaAtiva);
-    expect(opcoes.map((o) => o.nome)).toEqual(["Todos", "Finos", "Gourmet Premium", "Premium"]);
-    expect(opcoes.map((o) => o.atual)).toEqual([false, true, false, false]);
+    expect(opcoes.map((o) => o.nome)).toEqual(["Finos", "Gourmet Premium", "Premium", "Todos"]);
+    expect(opcoes.map((o) => o.atual)).toEqual([true, false, false, false]);
     expect(opcoes.map((o) => o.href)).toEqual([
-      "/produtos?categoria=doces&busca=e&ordem=a-z",
       "/produtos?categoria=doces&subcategoria=finos&busca=e&ordem=a-z",
       "/produtos?categoria=doces&subcategoria=gourmet-premium&busca=e&ordem=a-z",
       "/produtos?categoria=doces&subcategoria=premium&busca=e&ordem=a-z",
+      "/produtos?categoria=doces&busca=e&ordem=a-z",
     ]);
   });
 

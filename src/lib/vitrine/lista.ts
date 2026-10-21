@@ -178,12 +178,22 @@ export function chipsDaCategoria(
 ): ChipSubcategoria[] {
   if (categoria === null) return [];
   const comProduto = new Set(daCategoria.map((p) => p.subcategoria_id).filter((id): id is string => !!id));
-  return ordenarSubcategorias(
+  const ordenadas = ordenarSubcategorias(
     subcategorias.filter(
       (s) => s.ativo === true && categoriaCanonica(s.categoria) === categoria && comProduto.has(s.id)
     )
   ).map(({ id, nome, slug }) => ({ id, nome, slug }));
+  // Kit Festa: "Por pessoa" vem sempre primeiro, qualquer que seja a ordem
+  // cadastrada no admin (decisão de 21/10/2026). As demais seguem a ordem.
+  if (categoria === "Kit Festa") {
+    const i = ordenadas.findIndex((c) => c.slug === SUBCATEGORIA_PRIMEIRA_KIT_FESTA);
+    if (i > 0) ordenadas.unshift(...ordenadas.splice(i, 1));
+  }
+  return ordenadas;
 }
+
+// Slug da subcategoria que abre a lista do Kit Festa.
+export const SUBCATEGORIA_PRIMEIRA_KIT_FESTA = "por-pessoa";
 
 // Endereço de um chip (ou de "Todas", com slug null): mantém categoria, busca
 // e ordem, troca a subcategoria e nunca leva a página (trocar volta à 1).
@@ -204,7 +214,8 @@ export function opcoesDeSubcategoria(
   chips: readonly ChipSubcategoria[],
   ativa: string | null
 ): OpcaoSubcategoria[] {
-  return [{ chave: "todos", nome: "Todos", slug: null }, ...chips.map((c) => ({ chave: c.id, nome: c.nome, slug: c.slug }))].map((o) => ({
+  // "Todos" é sempre a última opção, em todas as categorias.
+  return [...chips.map((c) => ({ chave: c.id, nome: c.nome, slug: c.slug })), { chave: "todos", nome: "Todos", slug: null }].map((o) => ({
     chave: o.chave,
     nome: o.nome,
     href: urlDaSubcategoria(parametros, o.slug),

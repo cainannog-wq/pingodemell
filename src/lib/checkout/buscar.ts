@@ -65,6 +65,6 @@ export async function buscarDadosDoCheckout(): Promise<DadosDoCheckout | null> {
   return {
     diasOff: ((diasOff.data ?? []) as { data: string }[]).map((d) => d.data),
     prazos,
-    ofertas: ordenarOfertas(comPrecoAPartirDe(semIndisponiveis(destaques, dep.comSabor, dep.recheios, dep.kits), dep.recheios)),
+    ofertas: ordenarOfertas(comPrecoAPartirDe(semIndisponiveis(destaques, dep.comSabor, dep.recheios, dep.kits), dep.recheios, dep.kits)),
   };
 }
