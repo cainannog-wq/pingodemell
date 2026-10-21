@@ -314,7 +314,7 @@ export function ProdutoForm({
                 required
                 hint={
                   tipo === "kit_pessoa"
-                    ? "Kit por pessoa: a composição e as listas vêm da carga e de Cardápio, Listas do kit. O preço é por pessoa; o tipo não pode mudar."
+                    ? "Kit por pessoa: a composição e as listas vêm da carga e de Cardápio, Kit Festa. O preço é por pessoa; o tipo não pode mudar."
                     : tipo === "cento"
                     ? "Cento: quantidade sempre fixa em 100 unidades, o preço é o preço normal deste cadastro (não soma o dos subitens)."
                     : tipo === "bolo"

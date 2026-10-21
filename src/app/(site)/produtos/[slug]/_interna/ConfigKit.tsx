@@ -350,7 +350,6 @@ export function ConfigKit({ produto, config, previa = false }: { produto: Produt
         adicionado={adicionado}
         aoAdicionar={aoAdicionar}
         indo={indo}
-        barraNoDesktop
       />
     </>
   );

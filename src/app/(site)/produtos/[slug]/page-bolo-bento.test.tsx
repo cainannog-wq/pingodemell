@@ -146,10 +146,22 @@ const contador = () => screen.queryByTestId("contador-sacola");
 const precoDoCabecalho = () => document.querySelector(".interna-preco")?.textContent?.replace(/\s+/g, " ");
 const salvo = () => JSON.parse(window.localStorage.getItem(CHAVE_CARRINHO)!).linhas;
 
+describe("Interna — barra de subtotal no desktop", () => {
+  it("Bolo e Bento Cake têm a barra fixa do desktop (data-desktop) e a caixa de subtotal escondida", async () => {
+    await renderInterna("bolo-de-chocolate");
+    expect(document.querySelector(".interna-barra[data-desktop]")).not.toBeNull();
+    expect(document.querySelector(".interna-resumo[data-escondido-desktop]")).not.toBeNull();
+    cleanup();
+    await renderInterna("bento-flork");
+    expect(document.querySelector(".interna-barra[data-desktop]")).not.toBeNull();
+    expect(document.querySelector(".interna-resumo[data-escondido-desktop]")).not.toBeNull();
+  });
+});
+
 describe("Interna — Bolo", () => {
   it("cabeçalho: 'a partir de' o menor R$/kg dos recheios ativos; sem Quantidade, mínimo nem step do cadastro", async () => {
     await renderInterna("bolo-de-chocolate");
-    expect(precoDoCabecalho()).toBe("a partir de R$ 75,00 o kg");
+    expect(precoDoCabecalho()).toBe("A partir de R$ 75,00 o kg");
     expect(screen.getByRole("textbox", { name: "Tamanho em kg" })).toHaveValue("1");
     expect(screen.queryByRole("textbox", { name: "Quantidade" })).toBeNull();
     expect(screen.queryByText(/Pedido mínimo/)).toBeNull();

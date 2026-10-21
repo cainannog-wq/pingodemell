@@ -85,7 +85,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             Subcategorias
           </NavLink>
           <NavLink href="/admin/kit-listas" icon="edit_note">
-            Listas do kit
+            Kit Festa
           </NavLink>
 
           <div

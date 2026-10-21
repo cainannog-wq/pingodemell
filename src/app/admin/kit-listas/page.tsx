@@ -23,7 +23,7 @@ export default async function KitListasPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div className="admin-page-header">
         <h1 className="admin-page-h1" style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.3, margin: 0, color: "var(--pdm-brown)" }}>
-          Listas do kit
+          Kit Festa
         </h1>
         <p style={{ margin: "4px 0 0", color: "var(--pdm-muted)", maxWidth: "70ch" }}>
           As opções que a cliente escolhe nos Kits Festa por pessoa (recheios do bolo, doces, fritos, assados, sanduíches e

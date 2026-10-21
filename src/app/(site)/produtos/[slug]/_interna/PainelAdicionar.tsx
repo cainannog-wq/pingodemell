@@ -36,7 +36,6 @@ export function PainelAdicionar({
   rotuloBarra = "Adicionar",
   mensagemAdicionado = "Adicionado ao pedido",
   barra,
-  barraNoDesktop = false,
 }: {
   subtotal: number;
   // "10 unidades × R$ 2,50", "2 centos × R$ 95,99".
@@ -54,10 +53,9 @@ export function PainelAdicionar({
   // virou item novo).
   mensagemAdicionado?: string;
   barra?: BarraDoCelular;
-  // Kit Festa por pessoa: a barra fixa na base vale também no desktop (no
-  // lugar da caixa de subtotal), com o detalhe da conta ("10 pessoas × R$ 22,00").
-  barraNoDesktop?: boolean;
 }) {
+  // A barra fixa na base vale também no desktop, para todo tipo de produto (no
+  // lugar da caixa de subtotal), com o detalhe da conta ("10 pessoas × R$ 22,00").
   // A barra muda de altura (seletor, linha do WhatsApp, avisos): a altura
   // medida vira --interna-barra-altura no <html>, e o CSS reserva esse espaço
   // no fim da página para a barra não cobrir o último conteúdo.
@@ -104,7 +102,7 @@ export function PainelAdicionar({
 
   return (
     <>
-      <div className="interna-resumo" data-escondido-desktop={barraNoDesktop ? true : undefined}>
+      <div className="interna-resumo" data-escondido-desktop>
         <div className="interna-resumo-linha">
           <div className="interna-resumo-textos">
             <span className="interna-resumo-rotulo">Subtotal</span>
@@ -128,14 +126,14 @@ export function PainelAdicionar({
       </div>
 
       {/* Barra fixa do celular: mesmo subtotal e mesmo botão. */}
-      <div className="interna-barra" ref={barraRef} data-desktop={barraNoDesktop ? true : undefined}>
+      <div className="interna-barra" ref={barraRef} data-desktop>
         {barra?.linhaTopo}
         {avisoDaBarra ? <div className="interna-barra-aviso">{avisoDaBarra}</div> : null}
         <div className={barra ? "interna-barra-linha interna-barra-linha--seletor" : "interna-barra-linha"}>
           {barra ? <div className="interna-barra-seletor">{barra.seletor}</div> : null}
           <div className="interna-resumo-textos">
             <span className="interna-resumo-rotulo">Subtotal</span>
-            {barraNoDesktop ? <span className="interna-barra-detalhe">{detalhe}</span> : null}
+            {barra ? null : <span className="interna-barra-detalhe">{detalhe}</span>}
             <span className="interna-barra-valor" data-apagado={!podeAdicionar} data-texto={barra?.textoSubtotal ? true : undefined}>
               {barra?.textoSubtotal ?? barra?.valor ?? valor}
             </span>

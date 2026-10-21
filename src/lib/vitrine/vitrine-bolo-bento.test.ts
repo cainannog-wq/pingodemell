@@ -130,9 +130,9 @@ describe("buscarInterna — Bolo e Bento Cake", () => {
 });
 
 describe("preço e mínimo nos cards e na interna", () => {
-  it("Bolo: 'a partir de R$ X o kg'; sem recheio ativo, 'Sob consulta' sem unidade", () => {
-    expect(partesPrecoVitrine({ ...BOLO, preco_a_partir_de: 65 })).toEqual({ prefixo: "a partir de", valor: "R$ 65,00", unidade: "o kg" });
-    expect(formatarPrecoVitrine({ ...BOLO, preco_a_partir_de: 65 })).toBe("a partir de R$ 65,00 o kg");
+  it("Bolo: 'A partir de R$ X o kg'; sem recheio ativo, 'Sob consulta' sem unidade", () => {
+    expect(partesPrecoVitrine({ ...BOLO, preco_a_partir_de: 65 })).toEqual({ prefixo: "A partir de", valor: "R$ 65,00", unidade: "o kg" });
+    expect(formatarPrecoVitrine({ ...BOLO, preco_a_partir_de: 65 })).toBe("A partir de R$ 65,00 o kg");
     expect(partesPrecoVitrine({ ...BOLO, preco_a_partir_de: null })).toEqual({ prefixo: null, valor: "Sob consulta", unidade: null });
   });
 
