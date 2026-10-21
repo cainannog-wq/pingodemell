@@ -233,6 +233,40 @@ await emTransacaoDesfeita(`Gravação de pedido pelo site — criar_pedido (limi
     );
   });
 
+  // --- kit por pessoa: os 31 tamanhos no gatilho (mesmo JSON do teste do navegador) ---
+  // O gatilho soma quantidade x preco_unitario dos itens. Aqui os 31 tamanhos de
+  // src/lib/kit/tamanhos-31.json entram como linhas de kit e o total do gatilho
+  // tem de ser a soma dos precos do kit antigo, tamanho a tamanho.
+  await cenario(db, async (c) => {
+    const f = await montarCopia(c);
+    const tamanhos31 = JSON.parse(readFileSync(path.join(raiz, "src", "lib", "kit", "tamanhos-31.json"), "utf8"));
+    const itensKit = tamanhos31.kits.flatMap((k) =>
+      k.tamanhos.map(([pessoas]) => ({
+        nome: k.nome,
+        variacao: "Bolo: 1 kg",
+        quantidade: pessoas,
+        preco_unitario: k.precoPorPessoaCentavos / 100,
+        produto_id: "11111111-1111-4111-8111-111111111111",
+        tipo: "kit",
+        observacao: null,
+      }))
+    );
+    const esperadoLinhas = tamanhos31.kits.flatMap((k) => k.tamanhos.map(([, antigo]) => antigo));
+    await c.como("service_role");
+    const r = await c.tentar(f, args("fora_producao", novaChave(), pedido({ itens: itensKit }), true, "prova-kit-31"));
+    await c.dono();
+    const g = r.rows?.[0];
+    const { rows: gravada } = await c.q("select subtotal::float, total::float from public.zz_prova_pedidos");
+    const valoresDoBanco = (g?.r_itens ?? []).map((i) => Math.round(Number(i.preco_unitario) * 100) * Number(i.quantidade));
+    const somaEsperada = esperadoLinhas.reduce((a, b) => a + b, 0);
+    registrar(
+      "gravação 6b. kit por pessoa: os 31 tamanhos, total do gatilho = soma dos preços do kit antigo, linha a linha",
+      itensKit.length === 31 && g?.r_situacao === "criado" && gravada[0]?.subtotal === somaEsperada / 100 && gravada[0]?.total === somaEsperada / 100 &&
+        valoresDoBanco.length === 31 && valoresDoBanco.every((v, i) => v === esperadoLinhas[i]),
+      g ? `gatilho: subtotal ${gravada[0]?.subtotal}, esperado ${somaEsperada / 100}; linhas ${valoresDoBanco.length}` : descrever(r)
+    );
+  });
+
   // --- limite por IP: verificações vindas de limite-pedidos.mjs ---------
   // limite-pedidos.mjs testava a função antiga (registrar_tentativa_pedido,
   // removida em supabase/pedidos-permissoes.sql). O que não tinha

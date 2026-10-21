@@ -31,6 +31,7 @@ export function semIndisponiveis<T extends ProdutoVitrine>(
     const variacao = variacaoDoProduto(p);
     if (variacao === "bolo") return temBolo;
     if (variacao === "kit") return kitsDisponiveis.has(p.id);
+    if (variacao === "desconhecido") return false;
     return true;
   });
 }

@@ -1,0 +1,14 @@
+{
+  "comentario": "Os 31 tamanhos dos Kits Festa Básico, Clássico e Premium ativos em 21/10/2026 (leitura do banco, produtos 'Kit Festa Básico|Clássico|Premium N pessoas'): preço por pessoa e preço do kit antigo, em centavos. Os kits novos cobram preço por pessoa x pessoas, então cada tamanho tem de dar EXATAMENTE o preço do kit antigo. O total do navegador (src/lib/carrinho/regras.ts), o da rota (src/lib/pedidos/validacao.ts) e o do gatilho pedidos_recalcular_totais (scripts/banco/gravacao-pedidos.mjs) conferem contra isto. Os Básico de 120 e 130 pessoas estão inativos e ficam fora.",
+  "kits": [
+    { "nome": "Kit Festa Básico", "precoPorPessoaCentavos": 2200, "tamanhos": [
+      [10, 22000], [15, 33000], [20, 44000], [30, 66000], [40, 88000], [50, 110000], [60, 132000], [70, 154000], [80, 176000], [90, 198000], [100, 220000]
+    ] },
+    { "nome": "Kit Festa Clássico", "precoPorPessoaCentavos": 3400, "tamanhos": [
+      [10, 34000], [15, 51000], [20, 68000], [30, 102000], [40, 136000], [50, 170000], [60, 204000], [70, 238000], [80, 272000], [100, 340000]
+    ] },
+    { "nome": "Kit Festa Premium", "precoPorPessoaCentavos": 3700, "tamanhos": [
+      [10, 37000], [15, 55500], [20, 74000], [30, 111000], [40, 148000], [50, 185000], [60, 222000], [70, 259000], [80, 296000], [100, 370000]
+    ] }
+  ]
+}

@@ -8,9 +8,13 @@ import type { TipoProduto } from "@/lib/produtos/types";
 // Smash Cake não tem variação própria: é um produto "normal" (na categoria
 // Bolos) e cai no avulso.
 
-export type Variacao = "avulso" | "cento" | "bolo" | "bento" | "kit";
+// "desconhecido": tipo que este código não conhece (um banco mais novo que o
+// código). Falha de forma explícita: o produto fica indisponível (some da
+// vitrine e a interna dá 404) em vez de ser vendido como avulso sem a
+// composição que o tipo novo exige.
+export type Variacao = "avulso" | "cento" | "bolo" | "bento" | "kit" | "desconhecido";
 
-const POR_TIPO: Record<TipoProduto, Variacao> = {
+const POR_TIPO: Record<TipoProduto, Exclude<Variacao, "desconhecido">> = {
   normal: "avulso",
   cento: "cento",
   bolo: "bolo",
@@ -19,5 +23,5 @@ const POR_TIPO: Record<TipoProduto, Variacao> = {
 };
 
 export function variacaoDoProduto(produto: { tipo: TipoProduto }): Variacao {
-  return POR_TIPO[produto.tipo] ?? "avulso";
+  return POR_TIPO[produto.tipo] ?? "desconhecido";
 }
