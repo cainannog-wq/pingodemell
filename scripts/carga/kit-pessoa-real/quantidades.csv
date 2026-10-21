@@ -1,0 +1,166 @@
+"produto,pessoas,grupo,opcao,total,max_sabores,rotulo"
+Kit Festa Básico,10,bolo,,1,,
+Kit Festa Básico,15,bolo,,1,,
+Kit Festa Básico,20,bolo,,1,,
+Kit Festa Básico,30,bolo,,1,,
+Kit Festa Básico,40,bolo,,1,,
+Kit Festa Básico,50,bolo,,1,,
+Kit Festa Básico,60,bolo,,1,,
+Kit Festa Básico,70,bolo,,1,,
+Kit Festa Básico,80,bolo,,1,,
+Kit Festa Básico,90,bolo,,1,,
+Kit Festa Básico,100,bolo,,1,,
+Kit Festa Clássico,10,bolo,,1,,
+Kit Festa Clássico,15,bolo,,1,,
+Kit Festa Clássico,20,bolo,,1,,
+Kit Festa Clássico,30,bolo,,1,,
+Kit Festa Clássico,40,bolo,,1,,
+Kit Festa Clássico,50,bolo,,1,,
+Kit Festa Clássico,60,bolo,,1,,
+Kit Festa Clássico,70,bolo,,1,,
+Kit Festa Clássico,80,bolo,,1,,
+Kit Festa Clássico,100,bolo,,1,,
+Kit Festa Premium,10,bolo,,1,,
+Kit Festa Premium,15,bolo,,1,,
+Kit Festa Premium,20,bolo,,1,,
+Kit Festa Premium,30,bolo,,1,,
+Kit Festa Premium,40,bolo,,1,,
+Kit Festa Premium,50,bolo,,1,,
+Kit Festa Premium,60,bolo,,1,,
+Kit Festa Premium,70,bolo,,1,,
+Kit Festa Premium,80,bolo,,1,,
+Kit Festa Premium,100,bolo,,1,,
+Kit Festa Básico,10,doces,,50,,
+Kit Festa Básico,10,fritos,,150,,
+Kit Festa Básico,10,bebida,Cini,2,,2 Cini 2L
+Kit Festa Básico,10,bebida,Coca,1,,1 Coca 1L
+Kit Festa Básico,15,doces,,120,,
+Kit Festa Básico,15,fritos,,170,,
+Kit Festa Básico,15,bebida,Cini,2,,2 Cini 2L
+Kit Festa Básico,15,bebida,Coca,1,,1 Coca 2L
+Kit Festa Básico,20,doces,,150,,
+Kit Festa Básico,20,fritos,,200,,
+Kit Festa Básico,20,bebida,Cini,2,,2 Cini 2L
+Kit Festa Básico,20,bebida,Coca,1,,1 Coca 2L
+Kit Festa Básico,30,doces,,240,,
+Kit Festa Básico,30,fritos,,300,,
+Kit Festa Básico,30,bebida,Cini,4,,4 Cini 2L
+Kit Festa Básico,30,bebida,Coca,2,,2 Coca 2L
+Kit Festa Básico,40,doces,,320,,
+Kit Festa Básico,40,fritos,,400,,
+Kit Festa Básico,40,bebida,Cini,6,,6 Cini 2L
+Kit Festa Básico,40,bebida,Coca,3,,3 Coca 2L
+Kit Festa Básico,50,doces,,400,,
+Kit Festa Básico,50,fritos,,500,,
+Kit Festa Básico,50,bebida,Cini,8,,8 Cini 2L
+Kit Festa Básico,50,bebida,Coca,4,,4 Coca 2L
+Kit Festa Básico,60,doces,,480,,
+Kit Festa Básico,60,fritos,,600,,
+Kit Festa Básico,60,bebida,Cini,10,,10 Cini 2L
+Kit Festa Básico,60,bebida,Coca,5,,5 Coca 2L
+Kit Festa Básico,70,doces,,560,,
+Kit Festa Básico,70,fritos,,700,,
+Kit Festa Básico,70,bebida,Cini,12,,12 Cini 2L
+Kit Festa Básico,70,bebida,Coca,6,,6 Coca 2L
+Kit Festa Básico,80,doces,,640,,
+Kit Festa Básico,80,fritos,,800,,
+Kit Festa Básico,80,bebida,Cini,14,,14 Cini 2L
+Kit Festa Básico,80,bebida,Coca,7,,7 Coca 2L
+Kit Festa Básico,90,doces,,720,,
+Kit Festa Básico,90,fritos,,900,,
+Kit Festa Básico,90,bebida,Cini,15,,15 Cini 2L
+Kit Festa Básico,90,bebida,Coca,7,,7 Coca 2L
+Kit Festa Básico,100,doces,,800,,
+Kit Festa Básico,100,fritos,,1000,,
+Kit Festa Básico,100,bebida,Cini,16,,16 Cini 2L
+Kit Festa Básico,100,bebida,Coca,8,,8 Coca 2L
+Kit Festa Clássico,10,doces,,50,,
+Kit Festa Clássico,10,fritos,,100,,
+Kit Festa Clássico,10,assados,,50,2,
+Kit Festa Clássico,10,bebida,,1,,Coca 2L
+Kit Festa Clássico,15,doces,,120,,
+Kit Festa Clássico,15,fritos,,100,,
+Kit Festa Clássico,15,assados,,70,2,
+Kit Festa Clássico,15,bebida,,1,,Coca 2L
+Kit Festa Clássico,20,doces,,150,,
+Kit Festa Clássico,20,fritos,,120,,
+Kit Festa Clássico,20,assados,,80,2,
+Kit Festa Clássico,20,bebida,,2,,Coca 2L
+Kit Festa Clássico,30,doces,,200,,
+Kit Festa Clássico,30,fritos,,180,,
+Kit Festa Clássico,30,assados,,120,2,
+Kit Festa Clássico,30,bebida,,3,,Coca 2L
+Kit Festa Clássico,40,doces,,300,,
+Kit Festa Clássico,40,fritos,,250,,
+Kit Festa Clássico,40,assados,,150,3,
+Kit Festa Clássico,40,bebida,,4,,Coca 2L
+Kit Festa Clássico,50,doces,,350,,
+Kit Festa Clássico,50,fritos,,300,,
+Kit Festa Clássico,50,assados,,200,4,
+Kit Festa Clássico,50,bebida,,5,,Coca 2L
+Kit Festa Clássico,60,doces,,400,,
+Kit Festa Clássico,60,fritos,,360,,
+Kit Festa Clássico,60,assados,,240,5,
+Kit Festa Clássico,60,bebida,,6,,Coca 2L
+Kit Festa Clássico,70,doces,,500,,
+Kit Festa Clássico,70,fritos,,400,,
+Kit Festa Clássico,70,assados,,300,6,
+Kit Festa Clássico,70,bebida,,7,,Coca 2L
+Kit Festa Clássico,80,doces,,600,,
+Kit Festa Clássico,80,fritos,,500,,
+Kit Festa Clássico,80,assados,,300,6,
+Kit Festa Clássico,80,bebida,,8,,Coca 2L
+Kit Festa Clássico,100,doces,,700,,
+Kit Festa Clássico,100,fritos,,600,,
+Kit Festa Clássico,100,assados,,400,8,
+Kit Festa Clássico,100,bebida,,10,,Coca 2L
+Kit Festa Premium,10,doces,,50,,
+Kit Festa Premium,10,fritos,,80,,
+Kit Festa Premium,10,assados,,50,2,
+Kit Festa Premium,10,sanduiches,,20,1,
+Kit Festa Premium,10,bebida,,1,,Coca 2L
+Kit Festa Premium,15,doces,,120,,
+Kit Festa Premium,15,fritos,,80,,
+Kit Festa Premium,15,assados,,60,2,
+Kit Festa Premium,15,sanduiches,,30,1,
+Kit Festa Premium,15,bebida,,1,,Coca 2L
+Kit Festa Premium,20,doces,,150,,
+Kit Festa Premium,20,fritos,,80,,
+Kit Festa Premium,20,assados,,80,2,
+Kit Festa Premium,20,sanduiches,,40,1,
+Kit Festa Premium,20,bebida,,1,,Coca 2L
+Kit Festa Premium,30,doces,,200,,
+Kit Festa Premium,30,fritos,,120,,
+Kit Festa Premium,30,assados,,120,3,
+Kit Festa Premium,30,sanduiches,,60,2,
+Kit Festa Premium,30,bebida,,3,,Coca 2L
+Kit Festa Premium,40,doces,,300,,
+Kit Festa Premium,40,fritos,,170,,
+Kit Festa Premium,40,assados,,150,3,
+Kit Festa Premium,40,sanduiches,,80,2,
+Kit Festa Premium,40,bebida,,4,,Coca 2L
+Kit Festa Premium,50,doces,,350,,
+Kit Festa Premium,50,fritos,,200,,
+Kit Festa Premium,50,assados,,200,4,
+Kit Festa Premium,50,sanduiches,,100,2,
+Kit Festa Premium,50,bebida,,5,,Coca 2L
+Kit Festa Premium,60,doces,,400,,
+Kit Festa Premium,60,fritos,,240,,
+Kit Festa Premium,60,assados,,240,5,
+Kit Festa Premium,60,sanduiches,,120,2,
+Kit Festa Premium,60,bebida,,6,,Coca 2L
+Kit Festa Premium,70,doces,,500,,
+Kit Festa Premium,70,fritos,,250,,
+Kit Festa Premium,70,assados,,300,6,
+Kit Festa Premium,70,sanduiches,,150,3,
+Kit Festa Premium,70,bebida,,7,,Coca 2L
+Kit Festa Premium,80,doces,,600,,
+Kit Festa Premium,80,fritos,,300,,
+Kit Festa Premium,80,assados,,350,6,
+Kit Festa Premium,80,sanduiches,,160,3,
+Kit Festa Premium,80,bebida,,8,,Coca 2L
+Kit Festa Premium,100,doces,,700,,
+Kit Festa Premium,100,fritos,,400,,
+Kit Festa Premium,100,assados,,400,8,
+Kit Festa Premium,100,sanduiches,,200,4,
+Kit Festa Premium,100,bebida,,10,,Coca 2L

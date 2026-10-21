@@ -94,7 +94,8 @@ export function montarPlano(dados) {
     if (!r.subcategoria) erro("produtos", r._linha, "subcategoria (slug) vazia.");
     if (!(preco > 0)) erro("produtos", r._linha, `preço inválido: "${r.preco}".`);
     if (!Number.isInteger(prazo)) erro("produtos", r._linha, `prazo inválido: "${r.prazo_producao_dias}".`);
-    if (!simOuNao(r.destaque)) erro("produtos", r._linha, 'destaque deve ser "sim" ou "nao".');
+    // Vazio só vale com herda_destaque_de (o destaque vem de um produto que já existe).
+    if (r.destaque === "" ? !r.herda_destaque_de : !simOuNao(r.destaque)) erro("produtos", r._linha, 'destaque deve ser "sim" ou "nao" (ou ficar vazio com herda_destaque_de).');
     if (r.destaque && r.herda_destaque_de) erro("produtos", r._linha, "use destaque OU herda_destaque_de, não os dois com valor.");
     produtos.set(chaveNome(r.produto), {
       nome: r.produto, subcategoria: r.subcategoria, preco, prazo, destaque: sim(r.destaque || "nao"),

@@ -1,0 +1,16 @@
+"produto,chave,rotulo,modo,lista,passo"
+Kit Festa Básico,bolo,Recheio do bolo,escolha_unica,Recheios do bolo,
+Kit Festa Básico,doces,Doces,distribuicao,Doces 8g,10
+Kit Festa Básico,fritos,Fritos,distribuicao,Fritos,10
+Kit Festa Básico,bebida,Bebida,escolha_unica,Bebidas do Básico,
+Kit Festa Clássico,bolo,Recheio do bolo,escolha_unica,Recheios do bolo,
+Kit Festa Clássico,doces,Doces,distribuicao,Doces 15g,10
+Kit Festa Clássico,fritos,Fritos,distribuicao,Fritos,10
+Kit Festa Clássico,assados,Assados,distribuicao,Assados,10
+Kit Festa Clássico,bebida,Bebida,fixo,,
+Kit Festa Premium,bolo,Recheio do bolo,escolha_unica,Recheios do bolo,
+Kit Festa Premium,doces,Doces,distribuicao,Doces 15g,10
+Kit Festa Premium,fritos,Fritos,distribuicao,Fritos,10
+Kit Festa Premium,assados,Assados,distribuicao,Assados,10
+Kit Festa Premium,sanduiches,Sanduíches,distribuicao,Sanduíches,10
+Kit Festa Premium,bebida,Bebida,fixo,,

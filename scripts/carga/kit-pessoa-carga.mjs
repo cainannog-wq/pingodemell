@@ -13,6 +13,8 @@
 //   --com-migracao=<a.sql,b.sql>  só ensaio: roda as migrações dentro da transação desfeita antes da carga
 //                      (enquanto não foram aplicadas); com isso o tipo do produto vira normal (o valor novo
 //                      do enum não pode ser usado na transação que o cria)
+//   --criar-subcategoria=<nome>  cria a subcategoria (categoria Kit Festa) dentro da mesma transação, se o
+//                      slug que o CSV pede ainda não existir (ex.: "Por pessoa" para o slug por-pessoa)
 //   --desfazer=<json>  desfaz com o registro da carga (ROLLBACK; com --aplicar, COMMIT)
 //
 // O que a carga faz: cria listas e opções que faltam (nunca altera a que existe),
@@ -40,6 +42,7 @@ const PASTA_REGISTRO = typeof opcao("backup") === "string" ? opcao("backup") : "
 const APLICAR = opcao("aplicar") === true;
 const IDA_E_VOLTA = opcao("ida-e-volta") === true;
 const DESFAZER = typeof opcao("desfazer") === "string" ? opcao("desfazer") : null;
+const CRIAR_SUB = typeof opcao("criar-subcategoria") === "string" ? opcao("criar-subcategoria") : null;
 const PLANO_SHA = typeof opcao("plano-sha") === "string" ? opcao("plano-sha").toLowerCase() : null;
 const MD5_INFORMADO = typeof opcao("md5") === "string" ? opcao("md5").toLowerCase() : null;
 if (opcao("desfazer") === true) throw new Error("Use --desfazer=<arquivo de registro>.");
@@ -94,11 +97,21 @@ async function aplicar(db, plano, modo) {
   console.log(`produtos: ${inicio.n}; md5 do início: ${inicio.h}`);
   console.log(`tabelas do kit no início: ${JSON.stringify(contInicio)}`);
 
-  const subs = (await db.query(`select id::text, slug, ativo from public.subcategorias where categoria = $1::public.categoria_produto`, [categoria])).rows;
+  const lerSubs = async () => (await db.query(`select id::text, slug, ativo from public.subcategorias where categoria = $1::public.categoria_produto`, [categoria])).rows;
+  let subs = await lerSubs();
+  const subcategoriasInicio = (await db.query(`select count(*)::int n from public.subcategorias`)).rows[0].n;
   const existentes = (await db.query(`select id::text, nome, destaque from public.produtos`)).rows;
   const porNome = new Map(existentes.map((p) => [p.nome.toLowerCase(), p]));
   const listasBanco = (await db.query(`select l.id::text, l.nome, coalesce(json_agg(json_build_object('id', i.id::text, 'nome', i.nome, 'descricao', i.descricao, 'posicao', i.posicao) order by i.posicao) filter (where i.id is not null), '[]') itens
       from public.kit_listas l left join public.kit_lista_itens i on i.lista_id = l.id group by l.id`)).rows;
+
+  const registro0 = { subcategoriasCriadas: [] };
+  if (CRIAR_SUB && plano.produtos.some((p) => !subs.some((s) => s.slug === p.subcategoria))) {
+    const { rows: [nova] } = await db.query(`insert into public.subcategorias (categoria, nome) values ($1::public.categoria_produto, $2) returning id::text, slug`, [categoria, CRIAR_SUB]);
+    registro0.subcategoriasCriadas.push(nova.id);
+    console.log(`subcategoria criada: "${CRIAR_SUB}" (slug ${nova.slug}, ordem pelo gatilho: no fim da categoria)`);
+    subs = await lerSubs();
+  }
 
   const problemas = [];
   for (const p of plano.produtos) {
@@ -110,7 +123,7 @@ async function aplicar(db, plano, modo) {
   }
   if (problemas.length) throw new Error(`Plano recusado:\n  ${problemas.join("\n  ")}`);
 
-  const registro = { criadoEm: new Date().toISOString(), md5Inicio: inicio.h, contagensInicio: contInicio, listasCriadas: [], itensCriados: [], produtosCriados: [] };
+  const registro = { criadoEm: new Date().toISOString(), md5Inicio: inicio.h, contagensInicio: contInicio, subcategoriasInicio, subcategoriasCriadas: registro0.subcategoriasCriadas, listasCriadas: [], itensCriados: [], produtosCriados: [] };
 
   titulo("Listas");
   const idLista = new Map();
@@ -201,11 +214,14 @@ async function desfazer(db, registro) {
   const apagados = (await db.query(`delete from public.produtos where id = any($1::uuid[])`, [ids])).rowCount;
   const itens = (await db.query(`delete from public.kit_lista_itens where id = any($1::uuid[])`, [registro.itensCriados])).rowCount;
   const listas = (await db.query(`delete from public.kit_listas l where l.id = any($1::uuid[]) and not exists (select 1 from public.kit_lista_itens i where i.lista_id = l.id)`, [registro.listasCriadas])).rowCount;
+  const subs = (await db.query(`delete from public.subcategorias where id = any($1::uuid[])`, [registro.subcategoriasCriadas ?? []])).rowCount;
+  if (subs) console.log(`subcategorias criadas pela carga apagadas: ${subs}`);
   console.log(`desfeito: ${apagados} produtos (a composição sai em cascata), ${itens} opções, ${listas} listas`);
   const md5 = (await db.query(SQL_MD5)).rows[0].h;
   const cont = await contagens(db);
-  console.log(`md5 dos produtos depois: ${md5}; tabelas do kit: ${JSON.stringify(cont)}`);
-  return { md5, cont, apagados };
+  const nSubs = (await db.query(`select count(*)::int n from public.subcategorias`)).rows[0].n;
+  console.log(`md5 dos produtos depois: ${md5}; tabelas do kit: ${JSON.stringify(cont)}; subcategorias: ${nSubs}`);
+  return { md5, cont, apagados, nSubs };
 }
 
 async function main() {
@@ -240,7 +256,7 @@ async function main() {
       const registro = JSON.parse(bruto.toString("utf8"));
       const d = await desfazer(db, registro);
       console.log(`${d.md5 === registro.md5Inicio ? "OK  " : "FALHA"} md5 dos produtos = o de antes da carga`);
-      if (d.md5 !== registro.md5Inicio || JSON.stringify(d.cont) !== JSON.stringify(registro.contagensInicio)) throw new Error("O desfazer não voltou ao estado de antes da carga.");
+      if (d.md5 !== registro.md5Inicio || JSON.stringify(d.cont) !== JSON.stringify(registro.contagensInicio) || (registro.subcategoriasInicio !== undefined && d.nSubs !== registro.subcategoriasInicio)) throw new Error("O desfazer não voltou ao estado de antes da carga.");
     } else {
       const r = await aplicar(db, plano, modo);
       if (MD5_INFORMADO && r.inicio.h !== MD5_INFORMADO) throw new Error(`md5 do início (${r.inicio.h}) difere do informado (${MD5_INFORMADO}): nada foi gravado.`);
@@ -253,7 +269,7 @@ async function main() {
       if (modo === "ida-e-volta") {
         titulo("Desfazer (dentro da mesma transação)");
         const d = await desfazer(db, r.registro);
-        const certo = d.md5 === r.inicio.h && JSON.stringify(d.cont) === JSON.stringify(r.contInicio);
+        const certo = d.md5 === r.inicio.h && JSON.stringify(d.cont) === JSON.stringify(r.contInicio) && d.nSubs === r.registro.subcategoriasInicio;
         console.log(`${certo ? "OK  " : "FALHA"} ida e volta: md5 e contagens iguais às do início`);
         if (!certo) throw new Error("Ida e volta falhou.");
       }
