@@ -13,6 +13,9 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // As worktrees de outras sessões (.claude/worktrees) têm cópias dos testes:
+    // a suíte da cópia principal não deve executar o trabalho em andamento delas.
+    exclude: [...configDefaults.exclude, "**/.claude/**"],
     setupFiles: ["./vitest.setup.ts"],
     // A suíte inteira roda duas vezes: no fuso do servidor (UTC, Netlify e
     // Supabase) e no da loja (America/Sao_Paulo). Um teste que dependa do
