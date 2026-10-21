@@ -31,10 +31,17 @@
 -- depende de produto-tipo-kit-pessoa.sql só para o produto existir com o tipo,
 -- não para criar estas tabelas.
 --
--- Limite aceito: o banco não confere que a opção de uma linha de
--- kit_quantidades pertence à lista do grupo, nem que o total de um grupo de
--- distribuição é múltiplo do passo. Isso é conferido pelo script de carga
--- (relatório de divergência) e pelo servidor.
+-- Integridade da opção: uma linha de kit_quantidades com opção guarda também a
+-- lista (lista_id). Duas chaves estrangeiras compostas garantem que a opção
+-- pertence a essa lista (kit_quantidades_opcao_fkey, ON DELETE RESTRICT: o
+-- admin desativa itens, nunca os apaga enquanto usados) e que essa lista é a
+-- lista do grupo (kit_quantidades_grupo_lista_fkey, ON DELETE CASCADE, o mesmo
+-- comportamento da chave (produto_id, grupo_id): apagar o grupo leva as
+-- quantidades dele).
+--
+-- Limite aceito: o banco não confere que o total de um grupo de distribuição
+-- é múltiplo do passo (o passo está em outra tabela). Isso é conferido pelo
+-- script de carga (relatório de divergência) e pelo servidor.
 --
 -- Desfazer: kit-pessoa-schema-desfazer.sql.
 
@@ -69,7 +76,9 @@ create table public.kit_lista_itens (
   constraint kit_lista_itens_posicao_faixa check (posicao between 1 and 200),
   -- Conferida só no fim da transação: permite trocar posições numa gravação em
   -- lote (mesmo padrão de produto_recheios).
-  constraint kit_lista_itens_posicao_unica unique (lista_id, posicao) deferrable initially deferred
+  constraint kit_lista_itens_posicao_unica unique (lista_id, posicao) deferrable initially deferred,
+  -- Alvo da chave composta de kit_quantidades (a opção pertence à lista).
+  constraint kit_lista_itens_lista_id_unico unique (lista_id, id)
 );
 
 -- Item repetido na mesma lista, sem diferenciar maiúscula. A conferência sem
@@ -103,7 +112,9 @@ create table public.kit_grupos (
     or (modo = 'distribuicao' and lista_id is not null and passo is not null and passo between 1 and 100)
   ),
   constraint kit_grupos_chave_unica unique (produto_id, chave),
-  constraint kit_grupos_posicao_unica unique (produto_id, posicao) deferrable initially deferred
+  constraint kit_grupos_posicao_unica unique (produto_id, posicao) deferrable initially deferred,
+  -- Alvo da chave composta de kit_quantidades (a lista é a do grupo).
+  constraint kit_grupos_produto_id_lista_unico unique (produto_id, id, lista_id)
 );
 
 create index kit_grupos_lista_idx on public.kit_grupos (lista_id);
@@ -128,12 +139,15 @@ create table public.kit_quantidades (
   produto_id uuid not null,
   pessoas smallint not null,
   grupo_id uuid not null,
-  -- Nulo nos grupos de distribuição e fixos; preenchido, uma linha por opção
-  -- nos grupos de escolha única que variam por opção (bebida).
-  opcao_id uuid references public.kit_lista_itens(id) on delete cascade,
+  -- Nulos nos grupos de distribuição e fixos; preenchidos (juntos), uma linha
+  -- por opção nos grupos de escolha única que variam por opção (bebida).
+  -- lista_id é a lista do grupo; opcao_id é um item dessa lista.
+  lista_id uuid,
+  opcao_id uuid,
   total integer not null,
   max_sabores smallint,
   rotulo text,
+  constraint kit_quantidades_lista_coerente check ((opcao_id is null) = (lista_id is null)),
   constraint kit_quantidades_total_faixa check (total > 0 and total <= 100000),
   constraint kit_quantidades_max_sabores_faixa check (max_sabores is null or max_sabores > 0),
   constraint kit_quantidades_rotulo_formato
@@ -141,14 +155,22 @@ create table public.kit_quantidades (
   constraint kit_quantidades_tamanho_fkey
     foreign key (produto_id, pessoas) references public.kit_tamanhos (produto_id, pessoas) on delete cascade,
   constraint kit_quantidades_grupo_fkey
-    foreign key (produto_id, grupo_id) references public.kit_grupos (produto_id, id) on delete cascade
+    foreign key (produto_id, grupo_id) references public.kit_grupos (produto_id, id) on delete cascade,
+  -- A opção pertence à lista informada. Item usado por uma quantidade não pode
+  -- ser apagado (desativa-se).
+  constraint kit_quantidades_opcao_fkey
+    foreign key (lista_id, opcao_id) references public.kit_lista_itens (lista_id, id) on delete restrict,
+  -- A lista informada é a lista do grupo (só vale com opção: com lista_id nulo
+  -- a chave não se aplica e a de (produto_id, grupo_id) acima já cobre o grupo).
+  constraint kit_quantidades_grupo_lista_fkey
+    foreign key (produto_id, grupo_id, lista_id) references public.kit_grupos (produto_id, id, lista_id) on delete cascade
 );
 
 -- Uma linha por tamanho, grupo e opção (opção nula conta como uma só).
 create unique index kit_quantidades_chave on public.kit_quantidades
   (produto_id, pessoas, grupo_id, coalesce(opcao_id, '00000000-0000-0000-0000-000000000000'::uuid));
 create index kit_quantidades_grupo_idx on public.kit_quantidades (produto_id, grupo_id);
-create index kit_quantidades_opcao_idx on public.kit_quantidades (opcao_id) where opcao_id is not null;
+create index kit_quantidades_opcao_idx on public.kit_quantidades (lista_id, opcao_id) where opcao_id is not null;
 
 comment on table public.kit_quantidades is 'Total a distribuir (ou quantidade por opção) de cada grupo, por tamanho de um produto kit_pessoa.';
 

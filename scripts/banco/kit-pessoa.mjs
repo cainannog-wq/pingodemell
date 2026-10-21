@@ -67,14 +67,14 @@ async function montarKit(c, produtoId, sufixo) {
     [produtoId]
   );
   await c.q(
-    `insert into public.kit_quantidades (produto_id, pessoas, grupo_id, opcao_id, total, max_sabores, rotulo) values
-       ($1, 10, $2, null, 50, null, null),
-       ($1, 15, $2, null, 120, null, null),
-       ($1, 10, $3, $4, 2, null, '2 Cini 2L'),
-       ($1, 10, $3, $5, 1, null, '1 Coca 2L'),
-       ($1, 15, $3, $4, 2, null, '2 Cini 2L'),
-       ($1, 15, $3, $5, 1, null, '1 Coca 2L')`,
-    [produtoId, grupo("doces"), grupo("bebida"), item("Cini 2L"), item("Coca 2L")]
+    `insert into public.kit_quantidades (produto_id, pessoas, grupo_id, lista_id, opcao_id, total, max_sabores, rotulo) values
+       ($1, 10, $2, null, null, 50, null, null),
+       ($1, 15, $2, null, null, 120, null, null),
+       ($1, 10, $3, $6, $4, 2, null, '2 Cini 2L'),
+       ($1, 10, $3, $6, $5, 1, null, '1 Coca 2L'),
+       ($1, 15, $3, $6, $4, 2, null, '2 Cini 2L'),
+       ($1, 15, $3, $6, $5, 1, null, '1 Coca 2L')`,
+    [produtoId, grupo("doces"), grupo("bebida"), item("Cini 2L"), item("Coca 2L"), lista("Bebidas")]
   );
   return { listas: listas.rows, grupo, item, lista };
 }
@@ -216,7 +216,7 @@ await emTransacaoDesfeita("Kit Festa por pessoa (kit_pessoa)", async (db) => {
     const bebida = kit.grupo("bebida");
     const doce = kit.grupo("doces");
     await nega("kit 31. quantidade repetida (tamanho, grupo e opção nula) é recusada", "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, total) values ($1, 10, $2, 60)", [p.ativo, doce]);
-    await nega("kit 32. quantidade repetida para a mesma opção é recusada", "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, opcao_id, total) values ($1, 10, $2, $3, 3)", [p.ativo, bebida, kit.item("Cini 2L")]);
+    await nega("kit 32. quantidade repetida para a mesma opção é recusada", "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, lista_id, opcao_id, total) values ($1, 10, $2, $4, $3, 3)", [p.ativo, bebida, kit.item("Cini 2L"), kit.lista("Bebidas")]);
     await nega("kit 33. total zero é recusado", "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, opcao_id, total) values ($1, 15, $2, null, 0)", [p.ativo, kit.grupo("recheio")]);
     await nega("kit 34. máximo de sabores zero é recusado", "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, total, max_sabores) values ($1, 15, $2, 10, 0)", [p.ativo, kit.grupo("recheio")]);
     await nega("kit 35. quantidade para tamanho que não existe é recusada", "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, total) values ($1, 99, $2, 10)", [p.ativo, kit.grupo("recheio")]);
@@ -227,6 +227,43 @@ await emTransacaoDesfeita("Kit Festa por pessoa (kit_pessoa)", async (db) => {
     await nega("kit 46. grupo de distribuição com passo 0 é recusado", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, lista_id, passo, posicao) values ($1, 'f3', 'F', 'distribuicao', $2, 0, 9)", [p.ativo, doces]);
     await nega("kit 47. grupo de distribuição com passo 101 é recusado", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, lista_id, passo, posicao) values ($1, 'f4', 'F', 'distribuicao', $2, 101, 9)", [p.ativo, doces]);
     await aceita("kit 48. grupo de distribuição com lista e passo 10 é aceito", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, lista_id, passo, posicao) values ($1, 'f5', 'F', 'distribuicao', $2, 10, 9)", [p.ativo, doces]);
+  });
+
+  // 3b. Integridade da opção: a opção pertence à lista informada e essa lista é a
+  // do grupo (chaves compostas). Cada tamanho usado uma vez, para a recusa vir da
+  // chave estrangeira e não de linha repetida.
+  await cenario(db, async (c) => {
+    const p = await criarProdutos(c, categoria);
+    const kit = await montarKit(c, p.ativo, "ZZPK");
+    for (const n of [20, 30, 40, 50, 60, 70]) {
+      await c.q("insert into public.kit_tamanhos (produto_id, pessoas, bolo_kg, descartaveis) values ($1, $2, 2, true)", [p.ativo, n]);
+    }
+    await c.como("authenticated");
+    const bebida = kit.grupo("bebida");
+    const listaBebidas = kit.lista("Bebidas");
+    const listaDoces = kit.lista("Doces");
+    const brigadeiro = kit.item("Brigadeiro");
+    const cini = kit.item("Cini 2L");
+    const insere = (pessoas, lista, opcao) =>
+      c.tentar(
+        "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, lista_id, opcao_id, total) values ($1, $2, $3, $4, $5, 2)",
+        [p.ativo, pessoas, bebida, lista, opcao]
+      );
+    const quem = (r) => (r.ok ? "aceito" : `${r.code} ${r.message.match(/constraint "([^"]+)"/)?.[1] ?? ""}`);
+    const certa = await insere(20, listaBebidas, cini);
+    registrar("kit 51. opção da lista do grupo, com a lista informada certa, é aceita", certa.ok, quem(certa));
+    const outraLista = await insere(30, listaDoces, brigadeiro);
+    registrar("kit 52. opção de OUTRA lista (Doces num grupo de Bebidas) é recusada pela chave da lista do grupo", !outraLista.ok && outraLista.code === "23503", quem(outraLista));
+    const mentindo = await insere(40, listaBebidas, brigadeiro);
+    registrar("kit 53. opção de Doces dizendo ser de Bebidas é recusada pela chave da opção", !mentindo.ok && mentindo.code === "23503", quem(mentindo));
+    const semLista = await insere(50, null, cini);
+    registrar("kit 54. opção sem lista informada é recusada", !semLista.ok && semLista.code === "23514", quem(semLista));
+    const semOpcao = await insere(60, listaBebidas, null);
+    registrar("kit 55. lista informada sem opção é recusada", !semOpcao.ok && semOpcao.code === "23514", quem(semOpcao));
+    const semNada = await c.tentar("insert into public.kit_quantidades (produto_id, pessoas, grupo_id, total) values ($1, 70, $2, 5)", [p.ativo, bebida]);
+    registrar("kit 56. linha sem opção nem lista (grupo existente) continua aceita", semNada.ok, quem(semNada));
+    const grupoFalso = await c.tentar("insert into public.kit_quantidades (produto_id, pessoas, grupo_id, total) values ($1, 70, '00000000-0000-4000-8000-000000000000', 5)", [p.ativo]);
+    registrar("kit 57. grupo que não existe é recusado", !grupoFalso.ok && grupoFalso.code === "23503", quem(grupoFalso));
   });
 
   // Posição repetida na lista: a unicidade é adiada até o fim da transação (permite
@@ -263,13 +300,58 @@ await emTransacaoDesfeita("Kit Festa por pessoa (kit_pessoa)", async (db) => {
     const kit = await montarKit(c, p.ativo, "ZZPD");
     const apagaLista = await c.tentar("delete from public.kit_listas where id = $1", [kit.lista("Doces")]);
     registrar("kit 37. lista em uso por um grupo não pode ser apagada", !apagaLista.ok && apagaLista.code === "23503", descrever(apagaLista));
+    // Item usado por uma quantidade não pode ser apagado (RESTRICT): o admin
+    // desativa. Item que ninguém usa pode.
     const apagaItem = await c.tentar("delete from public.kit_lista_itens where id = $1", [kit.item("Cini 2L")]);
-    const restam = await c.q("select count(*)::int n from public.kit_quantidades where produto_id = $1", [p.ativo]);
-    registrar("kit 38. apagar uma opção leva as quantidades dela (as 2 da opção saem, as outras 4 ficam)", apagaItem.ok && restam.rows[0].n === 4, `${descrever(apagaItem)}; restam ${restam.rows[0].n}`);
+    const restamItem = await c.q("select count(*)::int n from public.kit_quantidades where produto_id = $1", [p.ativo]);
+    const itemFicou = await c.q("select count(*)::int n from public.kit_lista_itens where id = $1", [kit.item("Cini 2L")]);
+    registrar(
+      "kit 38. item de lista usado por uma quantidade não pode ser apagado (RESTRICT) e nada some",
+      !apagaItem.ok && apagaItem.code === "23503" && /kit_quantidades_opcao_fkey/.test(apagaItem.message) && restamItem.rows[0].n === 6 && itemFicou.rows[0].n === 1,
+      `${descrever(apagaItem)}; quantidades ${restamItem.rows[0].n}, item ${itemFicou.rows[0].n}`
+    );
+    const apagaLivre = await c.tentar("delete from public.kit_lista_itens where lista_id = $1 and nome = 'Recheio escondido'", [kit.lista("Recheios")]);
+    registrar("kit 50. item que nenhuma quantidade usa pode ser apagado", apagaLivre.ok && apagaLivre.rowCount === 1, descrever(apagaLivre));
+
+    // Apagar o grupo leva as quantidades dele (CASCADE), com ou sem opção, e não
+    // leva a lista nem os itens.
     const apagaGrupo = await c.tentar("delete from public.kit_grupos where produto_id = $1 and chave = 'doces'", [p.ativo]);
     const restam2 = await c.q("select count(*)::int n from public.kit_quantidades where produto_id = $1", [p.ativo]);
-    registrar("kit 39. apagar um grupo leva as quantidades dele", apagaGrupo.ok && restam2.rows[0].n === 2, `${descrever(apagaGrupo)}; restam ${restam2.rows[0].n}`);
+    registrar("kit 39. apagar um grupo sem opção leva as quantidades dele (2 saem, 4 ficam)", apagaGrupo.ok && restam2.rows[0].n === 4, `${descrever(apagaGrupo)}; restam ${restam2.rows[0].n}`);
+    const apagaBebida = await c.tentar("delete from public.kit_grupos where produto_id = $1 and chave = 'bebida'", [p.ativo]);
+    const restam3 = await c.q("select count(*)::int n from public.kit_quantidades where produto_id = $1", [p.ativo]);
+    const preservados = await c.q(
+      "select (select count(*)::int from public.kit_lista_itens where lista_id = $1) itens, (select count(*)::int from public.kit_listas where id = $1) listas",
+      [kit.lista("Bebidas")]
+    );
+    registrar(
+      "kit 49. apagar um grupo cujas quantidades têm opção leva essas quantidades (4 saem, 0 ficam); a lista e os itens ficam",
+      apagaBebida.ok && apagaBebida.rowCount === 1 && restam3.rows[0].n === 0 && preservados.rows[0].itens === 2 && preservados.rows[0].listas === 1,
+      `${descrever(apagaBebida)}; quantidades restantes ${restam3.rows[0].n}; itens da lista ${preservados.rows[0].itens}; lista ${preservados.rows[0].listas}`
+    );
   });
+
+  // O teste 49 sozinho não distingue CASCADE de NO ACTION na chave nova (a chave
+  // antiga já apaga as linhas antes da conferência); o comportamento declarado de
+  // cada chave de kit_quantidades é lido do catálogo.
+  {
+    const { rows } = await db.query(
+      `select conname, confdeltype::text tipo from pg_constraint
+       where conrelid = 'public.kit_quantidades'::regclass and contype = 'f' order by conname`
+    );
+    const esperado = {
+      kit_quantidades_grupo_fkey: "c",
+      kit_quantidades_grupo_lista_fkey: "c",
+      kit_quantidades_opcao_fkey: "r",
+      kit_quantidades_tamanho_fkey: "c",
+    };
+    const lido = Object.fromEntries(rows.map((r) => [r.conname, r.tipo]));
+    registrar(
+      "kit 58. chaves de kit_quantidades: grupo, grupo+lista e tamanho em CASCADE; opção em RESTRICT",
+      Object.entries(esperado).every(([k, v]) => lido[k] === v) && rows.length === 4,
+      rows.map((r) => `${r.conname}=${r.tipo}`).join(" ")
+    );
+  }
 
   // 5. RLS ligada em todas e nenhuma função nova no PR.
   {
