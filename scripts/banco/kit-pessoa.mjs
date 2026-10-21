@@ -220,6 +220,13 @@ await emTransacaoDesfeita("Kit Festa por pessoa (kit_pessoa)", async (db) => {
     await nega("kit 33. total zero é recusado", "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, opcao_id, total) values ($1, 15, $2, null, 0)", [p.ativo, kit.grupo("recheio")]);
     await nega("kit 34. máximo de sabores zero é recusado", "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, total, max_sabores) values ($1, 15, $2, 10, 0)", [p.ativo, kit.grupo("recheio")]);
     await nega("kit 35. quantidade para tamanho que não existe é recusada", "insert into public.kit_quantidades (produto_id, pessoas, grupo_id, total) values ($1, 99, $2, 10)", [p.ativo, kit.grupo("recheio")]);
+    // Colunas anuláveis dentro de CHECK: um resultado nulo aprovaria a linha, então
+    // cada combinação inválida de modo, lista e passo tem o seu caso.
+    await nega("kit 44. grupo de escolha única sem lista é recusado", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, posicao) values ($1, 'f1', 'F', 'escolha_unica', 9)", [p.ativo]);
+    await nega("kit 45. grupo fixo com passo é recusado", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, passo, posicao) values ($1, 'f2', 'F', 'fixo', 10, 9)", [p.ativo]);
+    await nega("kit 46. grupo de distribuição com passo 0 é recusado", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, lista_id, passo, posicao) values ($1, 'f3', 'F', 'distribuicao', $2, 0, 9)", [p.ativo, doces]);
+    await nega("kit 47. grupo de distribuição com passo 101 é recusado", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, lista_id, passo, posicao) values ($1, 'f4', 'F', 'distribuicao', $2, 101, 9)", [p.ativo, doces]);
+    await aceita("kit 48. grupo de distribuição com lista e passo 10 é aceito", "insert into public.kit_grupos (produto_id, chave, rotulo, modo, lista_id, passo, posicao) values ($1, 'f5', 'F', 'distribuicao', $2, 10, 9)", [p.ativo, doces]);
   });
 
   // Posição repetida na lista: a unicidade é adiada até o fim da transação (permite
@@ -290,7 +297,10 @@ await emTransacaoDesfeita("Kit Festa por pessoa (kit_pessoa)", async (db) => {
       [categoria]
     );
     if (!nova.ok && nova.code === "55P04") {
-      console.log("\n[AVISO] O valor novo foi criado nesta mesma transação: uso não testável na simulação (roda de verdade depois de aplicar).");
+      pular(
+        "kit 42 e 43. produto com o tipo kit_pessoa em Kit Festa e leitura anônima dele",
+        "o valor novo do enum foi criado nesta mesma transação (55P04); roda de verdade depois de aplicado"
+      );
       return;
     }
     registrar("kit 42. produtos aceita o tipo kit_pessoa em Kit Festa", nova.ok && nova.rowCount === 1, descrever(nova));
