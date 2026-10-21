@@ -44,7 +44,19 @@ const rpc = vi.fn(async (fn: string, a: Record<string, unknown>) => {
   return { data: [{ r_situacao: "criado", r_numero: linha.numero, r_itens: itens, r_subtotal: totais(itens), r_total: totais(itens), r_retry_segundos: null }], error: null };
 });
 
-vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ rpc }) }));
+// Leitura dos sabores dos Centos (produtos tipo Cento com a lista embutida):
+// um único select, que o teste conta.
+const ID_CENTO = "22222222-2222-4222-8222-222222222222";
+const SABORES_PADRAO = [{ subitem_nome: "Coxinha" }, { subitem_nome: "Risoles" }, { subitem_nome: "Empada" }];
+const lista = {
+  linhas: [] as unknown[],
+  erro: null as { code: string; message: string } | null,
+};
+const eq = vi.fn(async () => (lista.erro ? { data: null, error: lista.erro } : { data: lista.linhas, error: null }));
+const select = vi.fn(() => ({ eq }));
+const from = vi.fn(() => ({ select }));
+
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ rpc, from }) }));
 
 const { POST } = await import("./route");
 
@@ -73,6 +85,11 @@ function requisicao(c: unknown, cabecalhos: Record<string, string> = {}) {
 const logs: unknown[][] = [];
 beforeEach(() => {
   rpc.mockClear();
+  from.mockClear();
+  select.mockClear();
+  eq.mockClear();
+  lista.erro = null;
+  lista.linhas = [{ id: ID_CENTO, sabores: SABORES_PADRAO }];
   banco.ligada = { producao: true, fora_producao: true };
   banco.pedidos = [];
   banco.tentativas = new Map();
@@ -265,4 +282,84 @@ describe("POST /api/pedidos: IP", () => {
 // Chave de teste fixa usada em outros testes: formato aceito.
 it("a chave de teste compartilhada tem o formato de uuid", () => {
   expect(CHAVE_TESTE).toMatch(/^[0-9a-f-]{36}$/);
+});
+
+describe("POST /api/pedidos: sabores do Cento (PR servidor/cento-passo-soma)", () => {
+  const itemCento = () => corpo().itens.find((i) => i.tipo === "cento") as Extract<CorpoPedido["itens"][number], { tipo: "cento" }>;
+  const comCento = (alteracao: Partial<ReturnType<typeof itemCento>>) =>
+    corpo({ itens: [{ ...itemCento(), ...alteracao }] });
+
+  it("pedido normal com Cento lê a lista uma vez (todos os Centos, pelo tipo) e grava", async () => {
+    const res = await POST(requisicao(corpo()));
+    expect(res.status).toBe(201);
+    expect(from).toHaveBeenCalledTimes(1);
+    expect(from).toHaveBeenCalledWith("produtos");
+    expect(eq).toHaveBeenCalledWith("tipo", "cento");
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("passo errado, soma errada e sabor repetido voltam 400 antes de qualquer leitura ou gravação, e não contam no limite", async () => {
+    const adulterados = [
+      comCento({ sabores: [{ nome: "Coxinha", quantidade: 155 }, { nome: "Risoles", quantidade: 100 }, { nome: "Empada", quantidade: 45 }] }),
+      comCento({ sabores: [{ nome: "Coxinha", quantidade: 150 }, { nome: "Risoles", quantidade: 100 }] }),
+      comCento({ sabores: [{ nome: "Coxinha", quantidade: 150 }, { nome: "Coxinha", quantidade: 150 }] }),
+    ];
+    for (const c of adulterados) {
+      const res = await POST(requisicao(c));
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.codigo).toBe("invalido");
+      expect(JSON.stringify(json)).not.toContain("Coxinha");
+    }
+    expect(from).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+    expect(banco.tentativas.size).toBe(0);
+    expect(banco.proximo).toBe(1048);
+  });
+
+  it("sabor fora da lista do produto: 400, depois da leitura e antes do banco de pedidos", async () => {
+    const res = await POST(requisicao(comCento({ sabores: [{ nome: "Pizza", quantidade: 300 }] })));
+    expect(res.status).toBe(400);
+    expect((await res.json()).codigo).toBe("invalido");
+    expect(from).toHaveBeenCalledTimes(1);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(banco.tentativas.size).toBe(0);
+  });
+
+  it("sabor que está na lista é aceito mesmo inativo (a lista não olha ativo)", async () => {
+    lista.linhas = [{ id: ID_CENTO, sabores: [...SABORES_PADRAO, { subitem_nome: "Antigo (inativo)" }] }];
+    const res = await POST(requisicao(comCento({ sabores: [{ nome: "Antigo (inativo)", quantidade: 300 }] })));
+    expect(res.status).toBe(201);
+  });
+
+  it("produto que não está entre os Centos conhecidos passa, com aviso sem dado pessoal", async () => {
+    lista.linhas = [];
+    const res = await POST(requisicao(corpo()));
+    expect(res.status).toBe(201);
+    const aviso = logs.find((l) => String(l[0]).includes("produto desconhecido"));
+    expect(aviso?.[1]).toEqual({ linhas: 1 });
+    expect(JSON.stringify(logs)).not.toContain("Juliana");
+  });
+
+  it("falha na leitura vira 500 com a mensagem padrão e não grava", async () => {
+    lista.erro = { code: "XX000", message: "falha com dado" };
+    const res = await POST(requisicao(corpo()));
+    expect(res.status).toBe(500);
+    expect((await res.json()).mensagem).toBe("Não conseguimos registrar o pedido agora. Tente de novo.");
+    expect(rpc).not.toHaveBeenCalled();
+    expect(JSON.stringify(logs)).not.toContain("falha com dado");
+  });
+
+  it("pedido sem Cento não lê o banco de sabores", async () => {
+    const semCento = corpo().itens.filter((i) => i.tipo !== "cento");
+    const res = await POST(requisicao(corpo({ itens: semCento })));
+    expect(res.status).toBe(201);
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("requisição inválida (mesmo com Cento) não lê o banco", async () => {
+    const res = await POST(requisicao(corpo({ whatsapp: "123" })));
+    expect(res.status).toBe(400);
+    expect(from).not.toHaveBeenCalled();
+  });
 });
