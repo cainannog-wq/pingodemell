@@ -281,6 +281,95 @@ await emTransacaoDesfeita("Kit Festa por pessoa (kit_pessoa)", async (db) => {
     );
   });
 
+  // 3c. O que o editor de listas faz, sem função de banco (decisão do Cainan em
+  // 21/10/2026): reordenar é UM upsert por id (insert ... on conflict (id) do
+  // update) com todos os itens da lista, o que troca posições numa instrução só
+  // porque a unicidade (lista_id, posicao) é adiada; renomear, ativar e desativar
+  // são update por id; adicionar é insert com a próxima posição; o editor não
+  // apaga item. Prova nas tabelas reais, como o logado.
+  await cenario(db, async (c) => {
+    const p = await criarProdutos(c, categoria);
+    const kit = await montarKit(c, p.ativo, "ZZPE");
+    await c.como("authenticated");
+    const ordem = async (lista) =>
+      (await c.q("select nome from public.kit_lista_itens where lista_id = $1 order by posicao", [lista])).rows.map((r) => r.nome).join("|");
+    const upsertPosicoes = (lista, caso) =>
+      c.tentar(
+        `insert into public.kit_lista_itens (id, lista_id, nome, descricao, posicao, ativo)
+         select id, lista_id, nome, descricao, ${caso}, ativo from public.kit_lista_itens where lista_id = $1
+         on conflict (id) do update set posicao = excluded.posicao`,
+        [lista]
+      );
+
+    // Troca de duas posições (lista Doces: Brigadeiro 1, Beijinho 2).
+    const doces = kit.lista("Doces");
+    const antes = await ordem(doces);
+    const troca = await upsertPosicoes(doces, "case posicao when 1 then 2 when 2 then 1 end");
+    const imediata = await c.tentar("set constraints all immediate");
+    const depois = await ordem(doces);
+    registrar(
+      "kit 59. trocar duas posições é um upsert por id, aceito com a unicidade adiada e conferida no fim",
+      troca.ok && imediata.ok && antes === "Brigadeiro|Beijinho" && depois === "Beijinho|Brigadeiro",
+      `${antes} -> ${depois}; ${descrever(troca)}; conferência ao fim: ${descrever(imediata)}`
+    );
+    await c.q("set constraints all deferred");
+
+    // Reordenação de três itens (lista Recheios: 1, 2, 3 passam a 2, 3, 1).
+    const recheios = kit.lista("Recheios");
+    const antes3 = await ordem(recheios);
+    const gira = await upsertPosicoes(recheios, "case posicao when 1 then 2 when 2 then 3 when 3 then 1 end");
+    const imediata3 = await c.tentar("set constraints all immediate");
+    const depois3 = await ordem(recheios);
+    registrar(
+      "kit 60. reordenar três itens é um upsert por id, aceito",
+      gira.ok && imediata3.ok && antes3 === "Morango com chocolate|Recheios com chocolate|Recheio escondido" && depois3 === "Recheio escondido|Morango com chocolate|Recheios com chocolate",
+      `${antes3} -> ${depois3}; ${descrever(gira)}; conferência ao fim: ${descrever(imediata3)}`
+    );
+    await c.q("set constraints all deferred");
+
+    // Cada chamada do supabase-js é uma transação própria, então a conferência
+    // acontece ao fim de cada instrução (modo imediato). Num upsert só, a troca
+    // passa (restrição deferrable confere no fim da instrução, não linha a linha);
+    // com dois update separados, o primeiro já viola a unicidade.
+    await c.q("set constraints public.kit_lista_itens_posicao_unica immediate");
+    const umSo = await upsertPosicoes(doces, "case posicao when 1 then 2 when 2 then 1 end");
+    const ordemUmSo = await ordem(doces);
+    registrar(
+      "kit 61. no modo imediato (uma chamada por transação), um upsert só ainda troca as posições",
+      umSo.ok && ordemUmSo === "Brigadeiro|Beijinho",
+      `${ordemUmSo}; ${descrever(umSo)}`
+    );
+    const doisUpdates = await c.tentar("update public.kit_lista_itens set posicao = 2 where lista_id = $1 and nome = 'Brigadeiro'", [doces]);
+    registrar(
+      "kit 64. no mesmo modo, dois update separados falham (23505) já no primeiro: por isso reordenar é um upsert só",
+      !doisUpdates.ok && doisUpdates.code === "23505",
+      descrever(doisUpdates)
+    );
+  });
+  await cenario(db, async (c) => {
+    const p = await criarProdutos(c, categoria);
+    const kit = await montarKit(c, p.ativo, "ZZPF");
+    await c.como("authenticated");
+    // Item em uso por quantidade (Cini 2L, na lista Bebidas): desativar não dá erro e
+    // as quantidades ficam; renomear também.
+    const desativa = await c.tentar("update public.kit_lista_itens set ativo = false where id = $1", [kit.item("Cini 2L")]);
+    const renomeia = await c.tentar("update public.kit_lista_itens set nome = 'Cini dois litros' where id = $1", [kit.item("Cini 2L")]);
+    const restam = await c.q("select count(*)::int n from public.kit_quantidades where opcao_id = $1", [kit.item("Cini 2L")]);
+    registrar(
+      "kit 62. item em uso por quantidade desativa e renomeia sem erro, e as quantidades ficam",
+      desativa.ok && desativa.rowCount === 1 && renomeia.ok && renomeia.rowCount === 1 && restam.rows[0].n === 2,
+      `${descrever(desativa)}; ${descrever(renomeia)}; quantidades do item ${restam.rows[0].n}`
+    );
+    // Adicionar: insert com a próxima posição (maior mais um).
+    const adiciona = await c.tentar(
+      `insert into public.kit_lista_itens (lista_id, nome, posicao)
+       select $1, 'Pêssego com doce de leite', coalesce(max(posicao), 0) + 1 from public.kit_lista_itens where lista_id = $1
+       returning posicao`,
+      [kit.lista("Recheios")]
+    );
+    registrar("kit 63. adicionar item na próxima posição", adiciona.ok && adiciona.rows[0].posicao === 4, descrever(adiciona));
+  });
+
   // 4. Cascatas e restrição.
   await cenario(db, async (c) => {
     const p = await criarProdutos(c, categoria);
