@@ -8,16 +8,14 @@ import type { TipoProduto } from "@/lib/produtos/types";
 // Smash Cake não tem variação própria: é um produto "normal" (na categoria
 // Bolos) e cai no avulso.
 
-export type Variacao = "avulso" | "cento" | "bolo" | "bento";
+export type Variacao = "avulso" | "cento" | "bolo" | "bento" | "kit";
 
 const POR_TIPO: Record<TipoProduto, Variacao> = {
   normal: "avulso",
   cento: "cento",
   bolo: "bolo",
   bento_cake: "bento",
-  // Provisório até a tela do kit (PR 3): o produto nasce inativo e só a carga
-  // o cria, então nenhum kit chega à vitrine antes disso.
-  kit_pessoa: "avulso",
+  kit_pessoa: "kit",
 };
 
 export function variacaoDoProduto(produto: { tipo: TipoProduto }): Variacao {

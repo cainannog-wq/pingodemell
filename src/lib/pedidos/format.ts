@@ -102,6 +102,7 @@ export function textoValorEntrega(pedido: { modo_entrega: "entrega" | "retirada"
 // pedido gravado não muda.
 export function textoQuantidadeItem(item: { quantidade: number; tipo?: string; unidade_venda?: string | null }): string {
   if (item.tipo === "bolo") return `${item.quantidade} kg`;
+  if (item.tipo === "kit") return textoQuantidadeNaUnidade(item.quantidade, "a pessoa");
   if (item.tipo === "cento") return `${item.quantidade} ${item.quantidade === 1 ? "cento" : "centos"}`;
   if (item.tipo === "bento") return textoQuantidadeNaUnidade(item.quantidade, unidadeDoBento(item.unidade_venda).chave);
   const unidade = item.tipo === "normal" ? item.unidade_venda?.trim() : null;

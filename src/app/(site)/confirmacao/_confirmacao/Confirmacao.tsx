@@ -152,9 +152,9 @@ function ComRetrato({ retrato, titulo, aoMudar }: { retrato: Retrato; titulo: Re
                 <li key={i}>
                   <div>
                     <p className="confirmacao-item-nome">{l.nome}</p>
-                    <p className="confirmacao-item-detalhe">
+                    <p className="confirmacao-item-detalhe" style={{ whiteSpace: "pre-line" }}>
                       {l.quantidade}
-                      {l.detalhe ? `, ${l.detalhe}` : ""}
+                      {l.detalhe ? (l.detalhe.includes("\n") ? `\n${l.detalhe}` : `, ${l.detalhe}`) : ""}
                     </p>
                     {l.observacao ? <p className="confirmacao-item-detalhe">Obs.: {l.observacao}</p> : null}
                   </div>

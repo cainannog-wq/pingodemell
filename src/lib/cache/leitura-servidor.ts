@@ -34,7 +34,10 @@ export const PRAZO_LEITURA_SERVIDOR_SEGUNDOS = 300;
 // Lista dos sabores de cada produto tipo Cento (produto_cento_itens).
 export const ETIQUETA_SABORES_CENTO = "sabores-cento";
 
-export const ETIQUETAS_LEITURA_SERVIDOR = [ETIQUETA_SABORES_CENTO] as const;
+// Configuração de todos os kits por pessoa (kit_* lidas com a chave de serviço).
+export const ETIQUETA_CONFIG_KITS = "config-kits";
+
+export const ETIQUETAS_LEITURA_SERVIDOR = [ETIQUETA_SABORES_CENTO, ETIQUETA_CONFIG_KITS] as const;
 
 export function emCacheDoServidor<A extends unknown[], R>(
   leitura: (...args: A) => Promise<R>,

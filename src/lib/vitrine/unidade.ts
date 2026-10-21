@@ -24,6 +24,8 @@ const LISTA: UnidadeVenda[] = [
   { chave: "cento", preco: "o cento", singular: "cento", plural: "centos" },
   { chave: "kg", preco: "o kg", singular: "kg", plural: "kg" },
   { chave: "combo", preco: "o combo", singular: "combo", plural: "combos" },
+  // Kit Festa por pessoa: as pessoas são a quantidade e o preço é por pessoa.
+  { chave: "pessoa", preco: "a pessoa", singular: "pessoa", plural: "pessoas" },
   // Fora da lista do PR, mas já reconhecido antes dele; nenhum produto usa.
   { chave: "litro", preco: "o litro", singular: "litro", plural: "litros" },
 ];

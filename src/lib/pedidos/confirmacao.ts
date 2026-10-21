@@ -1,5 +1,6 @@
 import { subtotalEmCentavos, type LinhaCarrinho } from "@/lib/carrinho/regras";
 import type { DadosCheckout, FormaPagamento, ModoEntrega } from "@/lib/checkout/formulario";
+import { linhasDaComposicao } from "@/lib/kit/texto";
 import { itemDaLinha, type RespostaPedido } from "./envio";
 import { montarMensagem, quantidadeDaLinha, type DadosMensagem, type LinhaMensagem, type Mensagem } from "./mensagem";
 import type { LinhaDoRetrato, Retrato } from "./retrato";
@@ -9,7 +10,11 @@ import type { LinhaDoRetrato, Retrato } from "./retrato";
 // registrado, dos valores devolvidos pelo servidor.
 
 function linhasDaMensagem(linhas: LinhaCarrinho[], valores: number[]): LinhaMensagem[] {
-  return linhas.map((l, i) => ({ ...itemDaLinha(l), valor_centavos: valores[i] }));
+  return linhas.map((l, i) => ({
+    ...itemDaLinha(l),
+    valor_centavos: valores[i],
+    ...(l.tipo === "kit" ? { composicao: linhasDaComposicao(l.retrato) } : {}),
+  }));
 }
 
 function dadosDaMensagem(
@@ -64,6 +69,8 @@ function detalheDaLinha(l: LinhaCarrinho): string | null {
   }
   if (l.tipo === "bolo") return `Recheio ${l.recheio.nome}, ${l.formato}`;
   if (l.tipo === "bento") return `Recheio ${l.recheio.nome}`;
+  // Kit: uma linha por item da composição (a confirmação mostra com quebras).
+  if (l.tipo === "kit") return linhasDaComposicao(l.retrato).join("\n");
   if (l.tipo === "normal" && l.recheio) return `Recheio ${l.recheio.nome}`;
   return null;
 }

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { Hive } from "@/components/site/Hive";
 import type { LinhaCarrinho } from "@/lib/carrinho/regras";
+import { linhasDaComposicao } from "@/lib/kit/texto";
 import { formatMoeda } from "@/lib/pedidos/format";
 import { FORMATO_BOLO_LABELS } from "@/lib/vitrine/bolo";
 import { UNIDADES_POR_CENTO } from "@/lib/vitrine/cento";
@@ -64,6 +65,18 @@ export function DetalhesDaLinha({ linha }: { linha: LinhaCarrinho }) {
       </>
     );
   }
+  if (linha.tipo === "kit") {
+    return (
+      <>
+        {linhasDaComposicao(linha.retrato).map((texto) => (
+          <p key={texto}>{texto}</p>
+        ))}
+        <p>
+          <Dinheiro valor={linha.preco} /> {textoUnidadeVenda({ tipo: "kit_pessoa", unidade_venda: "a pessoa" })}
+        </p>
+      </>
+    );
+  }
   if (linha.tipo === "bento") {
     return (
       <>
@@ -92,5 +105,6 @@ export function textoQuantidadeDaLinha(linha: LinhaCarrinho): string {
   if (linha.tipo === "normal") return textoQuantidadeNaUnidade(linha.quantidade, linha.unidade_venda);
   if (linha.tipo === "bolo") return `${linha.quantidade} kg`;
   if (linha.tipo === "cento") return `${linha.quantidade} ${linha.quantidade === 1 ? "cento" : "centos"}`;
+  if (linha.tipo === "kit") return textoQuantidadeNaUnidade(linha.quantidade, "a pessoa");
   return textoQuantidadeNaUnidade(linha.quantidade, unidadeDoBento(linha.unidade_venda).chave);
 }
