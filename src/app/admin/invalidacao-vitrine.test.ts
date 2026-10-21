@@ -144,8 +144,11 @@ describe("invalidação do cache da vitrine nas ações do admin (execução)", 
     const { updateProdutoAtivo, updateProdutoDestaque } = await import("./produtos/actions");
     await updateProdutoAtivo("Beijinho", false);
     await updateProdutoDestaque("Beijinho", true);
-    expect(updateTag).toHaveBeenCalledTimes(2);
+    expect(updateTag.mock.calls.filter(([e]) => e === "vitrine")).toHaveLength(2);
     expect(updateTag).toHaveBeenCalledWith("vitrine");
+    // Junto da vitrine, expira a leitura dos sabores do Cento (5 minutos) que
+    // a conferência do pedido usa (src/lib/cache/leitura-servidor.ts).
+    expect(updateTag).toHaveBeenCalledWith("sabores-cento");
   });
 
   it("ligar ou desligar recheio invalida a etiqueta 'vitrine'", async () => {

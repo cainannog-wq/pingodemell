@@ -1,6 +1,6 @@
 import { FORMAS_PAGAMENTO, emailValido, enderecoCompleto, soDigitos } from "@/lib/checkout/formulario";
 import { FORMATOS_BOLO, KG_MAXIMO, KG_MINIMO } from "@/lib/vitrine/bolo";
-import { MAX_CENTOS } from "@/lib/vitrine/cento";
+import { MAX_CENTOS, PASSO_SABOR, totalDoCento } from "@/lib/vitrine/cento";
 import { MAX_QUANTIDADE } from "@/lib/vitrine/quantidade";
 import { hojeBrasilia, instanteBrasilia, lerDataIso, somarMesesNaData } from "@/lib/tempo/brasilia";
 import { valorDaLinhaEmCentavos, type ItemEnvio } from "./envio";
@@ -12,6 +12,8 @@ import { valorDaLinhaEmCentavos, type ItemEnvio } from "./envio";
 //   preço até R$ 50.000 com 2 casas, itens até 16 KB;
 // - WhatsApp: só dígitos, com ou sem o 55 na frente, 10 ou 11 dígitos com DDD;
 // - data: não pode estar no passado nem passar de 12 meses (Brasília).
+// - Cento: passo, soma e repetição dos sabores (a lista do produto é conferida
+//   depois, na rota, com a leitura em cache: src/lib/pedidos/sabores-cento.ts).
 // O que NÃO é conferido aqui: produto ou recheio ativo, preço atual, id que
 // ainda existe (só o formato), antecedência, dias bloqueados, horário de
 // atendimento e prazo de produção — isso vive só no checkout.
@@ -199,13 +201,22 @@ function item(v: unknown): { gravado: ItemGravado; centavos: number } {
     if (!Array.isArray(o.sabores) || o.sabores.length === 0 || o.sabores.length > LIMITES.saboresPorLinha) {
       falha("Um Cento do pedido está com os sabores fora do limite.");
     }
+    // Mesmas regras da tela (carrinho/regras.ts, linhaValida): cada quantidade
+    // inteira, 0 ou mais e múltipla do passo; sem sabor repetido (nome
+    // exato); soma igual a 100 × centos.
+    const mensagemSabores = "Um Cento do pedido está com os sabores fora do limite.";
+    const nomes = new Set<string>();
+    let soma = 0;
     gravado.sabores = o.sabores.map((s) => {
-      const sabor = objeto(s, ["nome", "quantidade"], "Um Cento do pedido está com os sabores fora do limite.");
-      return {
-        nome: obrigatorio(sabor.nome, LIMITES.nomeItem, "Um Cento do pedido está com os sabores fora do limite."),
-        quantidade: inteiro(sabor.quantidade, 0, MAX_CENTOS * 100, "Um Cento do pedido está com os sabores fora do limite."),
-      };
+      const sabor = objeto(s, ["nome", "quantidade"], mensagemSabores);
+      const nomeSabor = obrigatorio(sabor.nome, LIMITES.nomeItem, mensagemSabores);
+      const quantidadeSabor = inteiro(sabor.quantidade, 0, totalDoCento(MAX_CENTOS), mensagemSabores);
+      if (nomes.has(nomeSabor) || quantidadeSabor % PASSO_SABOR !== 0) falha(mensagemSabores);
+      nomes.add(nomeSabor);
+      soma += quantidadeSabor;
+      return { nome: nomeSabor, quantidade: quantidadeSabor };
     });
+    if (soma !== totalDoCento(quantidade)) falha(mensagemSabores);
     gravado.variacao = gravado.sabores.filter((s) => s.quantidade > 0).map((s) => `${s.nome} ${s.quantidade}`).join(" · ") || null;
   }
   // Avulso com recheios personalizados: recheio opcional, só informativo.

@@ -1,4 +1,5 @@
 import { unstable_cache, updateTag } from "next/cache";
+import { invalidarLeiturasDoServidor } from "@/lib/cache/leitura-servidor";
 
 // Cache da vitrine (PR perf/vitrine-consultas-cache). As leituras públicas
 // de Home, Lista e interna ficam guardadas com a etiqueta ETIQUETA_VITRINE:
@@ -34,6 +35,10 @@ export function emCacheDaVitrine<A extends unknown[], R>(leitura: (...args: A) =
 // Chamada por toda Server Action do admin que muda produto, preço, ativo,
 // destaque, categoria, tipo, fotos, capa, composição do Cento ou recheio
 // (teste: src/app/admin/invalidacao-vitrine.test.ts).
+// Expira também as leituras do servidor (sabores do Cento etc., 5 minutos,
+// src/lib/cache/leitura-servidor.ts): composição do Cento, nome e tipo do
+// produto mudam por estas mesmas ações.
 export function invalidarVitrine() {
   updateTag(ETIQUETA_VITRINE);
+  invalidarLeiturasDoServidor();
 }
