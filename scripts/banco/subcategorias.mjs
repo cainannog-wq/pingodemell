@@ -440,6 +440,14 @@ await emTransacaoDesfeita("Subcategorias — banco (tabela, slug, ordem, chave c
   await cenario(db, async (c) => {
     const docesGourmet = await idDe(c, "Doces", "gourmet");
     const docesFinos = await idDe(c, "Doces", "finos");
+    const contar = (id) => c.tentar("select count(*)::int n from public.produtos where subcategoria_id = $1", [id]);
+
+    // O banco tem produtos reais ligados (carga de 13/10/2026): a prova é o
+    // aumento da contagem, lida antes e depois na mesma transação.
+    await c.como("authenticated");
+    const gourmetAntes = await contar(docesGourmet);
+    const finosAntes = await contar(docesFinos);
+    await c.dono();
     const a = await novoProduto(c, "zz Ensaio PR3 contagem A", "Doces");
     const b = await novoProduto(c, "zz Ensaio PR3 contagem B", "Doces");
     await c.q("update public.produtos set subcategoria_id = $1 where id in ($2, $3)", [docesGourmet, a, b]);
@@ -448,13 +456,16 @@ await emTransacaoDesfeita("Subcategorias — banco (tabela, slug, ordem, chave c
     // (i3) A contagem que a Server Action de apagar faz, como logado: conta
     // também o produto inativo (a RLS do logado enxerga todos).
     await c.como("authenticated");
-    const gourmet = await c.tentar("select count(*)::int n from public.produtos where subcategoria_id = $1", [docesGourmet]);
-    const finos = await c.tentar("select count(*)::int n from public.produtos where subcategoria_id = $1", [docesFinos]);
+    const gourmet = await contar(docesGourmet);
+    const finos = await contar(docesFinos);
     await c.dono();
+    const ok = gourmetAntes.ok && finosAntes.ok && gourmet.ok && finos.ok;
     registrar(
-      "subcategorias (i3). a contagem de produtos por subcategoria, como logado, conta ativos e inativos (2 e 0)",
-      gourmet.ok && gourmet.rows[0].n === 2 && finos.ok && finos.rows[0].n === 0,
-      `${gourmet.ok ? gourmet.rows[0].n : descrever(gourmet)} e ${finos.ok ? finos.rows[0].n : descrever(finos)}`
+      "subcategorias (i3). a contagem de produtos por subcategoria, como logado, conta ativos e inativos (+2 e +0)",
+      ok && gourmet.rows[0].n - gourmetAntes.rows[0].n === 2 && finos.rows[0].n - finosAntes.rows[0].n === 0,
+      ok
+        ? `Gourmet ${gourmetAntes.rows[0].n} -> ${gourmet.rows[0].n}; Finos ${finosAntes.rows[0].n} -> ${finos.rows[0].n}`
+        : [gourmetAntes, finosAntes, gourmet, finos].map(descrever).join("; ")
     );
   });
 
