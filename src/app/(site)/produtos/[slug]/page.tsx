@@ -16,6 +16,7 @@ import { textoMinimo } from "@/lib/vitrine/minimo";
 import { variacaoDoProduto } from "@/lib/vitrine/variacao";
 import { ConfigAvulso } from "./_interna/ConfigAvulso";
 import { ConfigBento } from "./_interna/ConfigBento";
+import { ConfigKit } from "./_interna/ConfigKit";
 import { ConfigEditavel } from "./_interna/ConfigEditavel";
 import { ConfigEditavelDaUrl } from "./_interna/ConfigEditavelDaUrl";
 import { Galeria } from "./_interna/Galeria";
@@ -83,7 +84,7 @@ export default async function ProdutoPage({ params }: Props) {
   // não houver nenhuma, mostra o aviso de falha de error.tsx.
   if (interna.estado === "erro") throw new Error("Falha ao carregar o produto.");
 
-  const { produto, sabores, recheios, recheiosProduto, fotos } = interna;
+  const { produto, sabores, recheios, recheiosProduto, fotos, kit } = interna;
   const relacionados = selecionarRelacionados(maisPedidos, produto.id);
   const variacao = variacaoDoProduto(produto);
   const cento = variacao === "cento";
@@ -163,6 +164,8 @@ export default async function ProdutoPage({ params }: Props) {
             <Suspense fallback={<ConfigEditavel tipo="bolo" produto={produto} recheios={recheios} editarId={null} />}>
               <ConfigEditavelDaUrl tipo="bolo" produto={produto} recheios={recheios} />
             </Suspense>
+          ) : variacao === "kit" && kit ? (
+            <ConfigKit produto={produto} config={kit} />
           ) : variacao === "bento" && recheiosProduto.length > 0 ? (
             <ConfigBento produto={produto} recheios={recheiosProduto} />
           ) : (

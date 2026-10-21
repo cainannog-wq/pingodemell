@@ -3,6 +3,8 @@ import { cache } from "react";
 import type { CategoriaProduto } from "@/lib/produtos/types";
 import type { RecheioDoProduto } from "@/lib/produtos/recheios-produto";
 import { CAMPOS_SUBCATEGORIA, type Subcategoria } from "@/lib/subcategorias/types";
+import { kitDisponivel, type KitConfig } from "@/lib/kit/config";
+import { lerConfigsDosKits } from "@/lib/kit/leitura";
 import { emCacheDaVitrine } from "./cache";
 import { CAMPOS_SABOR, centosComSabor, saboresAtivos, type LinhaSabor } from "./cento";
 import { CAMPOS_RECHEIO_VITRINE, comPrecoAPartirDe, semIndisponiveis, type RecheioVitrine } from "./disponibilidade";
@@ -116,6 +118,21 @@ const lerProdutosEmCache = emCacheDaVitrine(
   "vitrine-produtos"
 );
 
+// Configuração dos kits por pessoa (tabelas kit_*): todos os kits ativos de uma
+// vez, uma entrada só no cache da vitrine (mesma etiqueta e prazo; a RLS só
+// devolve o que é de produto ativo e opção ativa). Só é lida quando a tela tem
+// produto do tipo kit_pessoa: um banco sem as tabelas continua servindo a
+// vitrine enquanto nenhum kit existe.
+const lerKitsEmCache = emCacheDaVitrine(async () => lerConfigsDosKits(await clientePublico()), "vitrine-kits");
+
+function temKitNaTela(produtos: ProdutoVitrine[]): boolean {
+  return produtos.some((p) => variacaoDoProduto(p) === "kit");
+}
+
+function kitsDisponiveisDe(configs: Record<string, KitConfig>): Set<string> {
+  return new Set(Object.entries(configs).filter(([, c]) => kitDisponivel(c)).map(([id]) => id));
+}
+
 const lerRecheiosEmCache = emCacheDaVitrine(async () => consultarRecheios(await clientePublico()), "vitrine-recheios");
 
 // Subcategorias ativas (filtro da Lista). Sem argumento: uma entrada só no
@@ -204,9 +221,18 @@ export async function dependencias(supabase: Supabase, produtos: ProdutoVitrine[
       return null;
     }
   };
-  const [comSabor, recheios] = await Promise.all([centosDisponiveis(supabase, produtos), recheiosLidos()]);
-  if (!comSabor || !recheios) return null;
-  return { comSabor, recheios };
+  const kitsLidos = async (): Promise<Set<string> | null> => {
+    if (!temKitNaTela(produtos)) return new Set();
+    try {
+      return kitsDisponiveisDe(await lerConfigsDosKits(supabase));
+    } catch (e) {
+      console.error("Falha ao buscar os kits:", e instanceof Error ? e.message : e);
+      return null;
+    }
+  };
+  const [comSabor, recheios, kits] = await Promise.all([centosDisponiveis(supabase, produtos), recheiosLidos(), kitsLidos()]);
+  if (!comSabor || !recheios || !kits) return null;
+  return { comSabor, recheios, kits };
 }
 
 // ---- Vitrine ----
@@ -238,8 +264,16 @@ async function lerVitrineEmUmaViagem(
   if (lidos === FALHA) return null;
   const recheios = recheiosParaATela(lidos.produtos, recheiosLidos);
   if (!recheios) return null;
+  // Kits: só lê a configuração quando há kit na tela; falha da leitura = falha
+  // da vitrine (como a dos recheios com Bolo na tela).
+  let kits = new Set<string>();
+  if (temKitNaTela(lidos.produtos)) {
+    const configs = await tentar(lerKitsEmCache(), "Falha ao buscar os kits:");
+    if (configs === FALHA) return null;
+    kits = kitsDisponiveisDe(configs);
+  }
   return {
-    produtos: comPrecoAPartirDe(semIndisponiveis(lidos.produtos, centosComSabor(lidos.sabores), recheios), recheios),
+    produtos: comPrecoAPartirDe(semIndisponiveis(lidos.produtos, centosComSabor(lidos.sabores), recheios, kits), recheios),
     subcategorias: subcategoriasLidas === FALHA ? [] : subcategoriasLidas,
   };
 }
@@ -304,6 +338,9 @@ export type Interna =
       // na ordem do admin; vazio = o produto não tem recheio a escolher.
       recheiosProduto: RecheioDoProduto[];
       fotos: FotoProduto[];
+      // Kit por pessoa: a configuração (tamanhos, grupos, opções e quantidades);
+      // nulo nos outros tipos.
+      kit: KitConfig | null;
     }
   | { estado: "nao-encontrado" }
   | { estado: "erro" };
@@ -322,7 +359,10 @@ export type Interna =
 // - fotos: capa e extras na ordem (se as extras falharem, só a capa);
 // - falha do banco no produto, nos sabores ou (só para o Bolo tradicional)
 //   nos recheios → "erro" (a página lança erro: o Next mantém a versão
-//   anterior, e na primeira geração mostra o error.tsx da interna).
+//   anterior, e na primeira geração mostra o error.tsx da interna);
+// - Kit por pessoa: a configuração do kit (cache único de todos os kits);
+//   sem nenhum tamanho completo o kit é indisponível → "nao-encontrado";
+//   falha da leitura → "erro".
 export async function buscarInterna(slug: string): Promise<Interna> {
   if (!FORMATO_SLUG.test(slug)) return { estado: "nao-encontrado" };
 
@@ -343,11 +383,18 @@ export async function buscarInterna(slug: string): Promise<Interna> {
 
   const recheios = recheiosParaATela([produto], recheiosLidos);
   if (!recheios) return { estado: "erro" };
+  let kit: KitConfig | null = null;
+  if (produto.tipo === "kit_pessoa") {
+    const configs = await tentar(lerKitsEmCache(), "Falha ao buscar os kits:");
+    if (configs === FALHA) return { estado: "erro" };
+    kit = configs[String(produto.id).toLowerCase()] ?? null;
+  }
+  const kits = kit && kitDisponivel(kit) ? new Set([produto.id]) : new Set<string>();
   // semIndisponiveis dá a mesma resposta da Home e da Lista.
-  if (semIndisponiveis([produto], new Set([produto.nome]), recheios).length === 0) return { estado: "nao-encontrado" };
+  if (semIndisponiveis([produto], new Set([produto.nome]), recheios, kits).length === 0) return { estado: "nao-encontrado" };
 
   const fotos = montarFotos(produto, extras === FALHA ? [] : extras, (url) => url);
-  return { estado: "ok", produto: comPrecoAPartirDe([produto], recheios)[0], sabores, recheios, recheiosProduto: lido.recheiosProduto, fotos };
+  return { estado: "ok", produto: comPrecoAPartirDe([produto], recheios)[0], sabores, recheios, recheiosProduto: lido.recheiosProduto, fotos, kit };
 }
 
 // "Combina com o seu pedido" da interna: os mesmos produtos de "Os mais

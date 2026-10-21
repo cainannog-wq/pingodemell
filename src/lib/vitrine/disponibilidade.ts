@@ -17,15 +17,20 @@ export type RecheioVitrine = Pick<Recheio, "id" | "nome" | "vale_bolo" | "vale_b
 // 404. O Bento Cake não depende mais do catálogo (a lista é do próprio
 // produto; sem lista, ele é vendido sem escolha de recheio), e o Smash Cake
 // (avulso) nunca é afetado.
+// - Kit por pessoa sem nenhum tamanho completo (ids em kitsDisponiveis, de
+//   src/lib/kit/config.ts): indisponível; sem o conjunto, todo kit é
+//   indisponível (o padrão seguro).
 export function semIndisponiveis<T extends ProdutoVitrine>(
   produtos: T[],
   comSabor: Set<string>,
-  recheios: RecheioVitrine[]
+  recheios: RecheioVitrine[],
+  kitsDisponiveis: Set<string> = new Set()
 ): T[] {
   const temBolo = boloDisponivel(recheios);
   return semCentoIndisponivel(produtos, comSabor).filter((p) => {
     const variacao = variacaoDoProduto(p);
     if (variacao === "bolo") return temBolo;
+    if (variacao === "kit") return kitsDisponiveis.has(p.id);
     return true;
   });
 }
