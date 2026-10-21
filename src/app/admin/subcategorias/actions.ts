@@ -6,7 +6,7 @@ import { requireAuth } from "@/lib/supabase/dal";
 import { ehUuid } from "@/lib/galeria/regras";
 import { mensagemEmUso, traduzirErroSubcategoria } from "@/lib/subcategorias/erros";
 import { parseCategoriaSubcategoria, parseNomeSubcategoria } from "@/lib/subcategorias/parse";
-import { planejarMovimento, type Direcao } from "@/lib/subcategorias/regras";
+import { planejarOrdem } from "@/lib/subcategorias/regras";
 import { invalidarVitrine } from "@/lib/vitrine/cache";
 
 export type ResultadoSubcategoria = { error?: string };
@@ -72,28 +72,26 @@ export async function atualizarAtivoSubcategoria(id: string, ativo: boolean): Pr
   return {};
 }
 
-// Sobe ou desce uma posição dentro da categoria. A categoria é relida aqui, na
-// hora do clique (não vale a ordem que a tela mostrava), e a categoria inteira
-// é renumerada de 10 em 10, gravando só as linhas cujo `ordem` mudou. Não há
-// `unique` em `ordem`: se uma gravação falhar no meio, sobra no máximo um
-// empate (desempata por nome) que o próximo clique corrige.
-export async function moverSubcategoria(id: string, direcao: Direcao): Promise<ResultadoSubcategoria> {
+// Nova ordem de uma categoria (a pessoa arrastou uma subcategoria). Os ids chegam
+// na ordem nova; a categoria é relida aqui, na hora (não vale a ordem que a tela
+// mostrava) e a ordem só vale se cobrir exatamente as subcategorias de hoje. A
+// categoria inteira é renumerada de 10 em 10, gravando só as linhas cujo `ordem`
+// mudou. Não há `unique` em `ordem`: se uma gravação falhar no meio, sobra no
+// máximo um empate (desempata por nome) que a próxima ordenação corrige.
+export async function reordenarSubcategorias(categoriaBruta: string, ids: string[]): Promise<ResultadoSubcategoria> {
   await requireAuth();
-  if (!ehUuid(id) || (direcao !== "subir" && direcao !== "descer")) return { error: NAO_ENCONTRADA };
+  const categoria = parseCategoriaSubcategoria(categoriaBruta);
+  if (!categoria.success) return { error: categoria.error };
+  if (!Array.isArray(ids) || ids.length > 100 || !ids.every((id) => typeof id === "string" && ehUuid(id))) return { error: NAO_ENCONTRADA };
 
   const supabase = await createClient();
   const { data: linhas, error: erroLeitura } = await supabase.from("subcategorias").select("id, categoria, nome, ordem");
   if (erroLeitura) return { error: traduzirErroSubcategoria(erroLeitura) };
 
-  const alvo = (linhas ?? []).find((l) => l.id === id);
-  if (!alvo) return { error: NAO_ENCONTRADA };
-  const mudancas = planejarMovimento(
-    (linhas ?? []).filter((l) => l.categoria === alvo.categoria),
-    id,
-    direcao
-  );
-  // Já é o primeiro (ou o último): nada a gravar.
-  if (!mudancas || mudancas.length === 0) return {};
+  const mudancas = planejarOrdem((linhas ?? []).filter((l) => l.categoria === categoria.data), ids);
+  if (mudancas === null) return { error: "A lista mudou em outra tela. Recarregue a página e tente de novo." };
+  // Já estava nessa ordem: nada a gravar.
+  if (mudancas.length === 0) return {};
 
   const resultados = await Promise.all(
     mudancas.map((m) => supabase.from("subcategorias").update({ ordem: m.ordem }).eq("id", m.id))

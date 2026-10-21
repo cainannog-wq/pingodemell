@@ -5,7 +5,7 @@ import {
   agruparPorCategoria,
   opcoesDoSeletor,
   ordenarSubcategorias,
-  planejarMovimento,
+  planejarOrdem,
   recusaDaSubcategoria,
   temSubcategoriaParaEscolher,
 } from "./regras";
@@ -27,60 +27,38 @@ describe("ordem e agrupamento", () => {
   });
 });
 
-describe("planejarMovimento (reordenar com setas)", () => {
+describe("planejarOrdem (reordenar arrastando)", () => {
+  const l = (id: string, nome: string, ordem: number) => ({ id, nome, ordem });
   const dezEmDez = [l("a", "A", 10), l("b", "B", 20), l("c", "C", 30)];
 
-  it("descer o primeiro troca os dois e só grava as duas linhas que mudam", () => {
-    expect(planejarMovimento(dezEmDez, "a", "descer")).toEqual([
+  it("grava só as linhas cujo ordem muda, de 10 em 10", () => {
+    expect(planejarOrdem(dezEmDez, ["b", "a", "c"])).toEqual([
       { id: "b", ordem: 10 },
       { id: "a", ordem: 20 },
     ]);
-  });
-
-  it("subir o último troca os dois últimos", () => {
-    expect(planejarMovimento(dezEmDez, "c", "subir")).toEqual([
-      { id: "c", ordem: 20 },
-      { id: "b", ordem: 30 },
-    ]);
-  });
-
-  it("o primeiro não sobe e o último não desce (nada a gravar)", () => {
-    expect(planejarMovimento(dezEmDez, "a", "subir")).toBeNull();
-    expect(planejarMovimento(dezEmDez, "c", "descer")).toBeNull();
-  });
-
-  it("id que não está na categoria: nada a gravar", () => {
-    expect(planejarMovimento(dezEmDez, "x", "subir")).toBeNull();
-  });
-
-  it("categoria com uma só subcategoria: nada a gravar", () => {
-    expect(planejarMovimento([l("a", "A", 10)], "a", "descer")).toBeNull();
-  });
-
-  it("empate: renumera a categoria e o resultado sai sem empate", () => {
-    // A e B empatam em 10; pelo nome, A vem antes. Descer A deixa B, A, C.
-    const r = planejarMovimento([l("a", "A", 10), l("b", "B", 10), l("c", "C", 20)], "a", "descer");
-    expect(r).toEqual([
+    expect(planejarOrdem(dezEmDez, ["c", "a", "b"])).toEqual([
+      { id: "c", ordem: 10 },
       { id: "a", ordem: 20 },
-      { id: "c", ordem: 30 },
-    ]);
-    const final = [l("a", "A", 20), l("b", "B", 10), l("c", "C", 30)];
-    expect(new Set(final.map((x) => x.ordem)).size).toBe(3);
-  });
-
-  it("números tortos: renumera de 10 em 10 e grava só o que mudou", () => {
-    const r = planejarMovimento([l("a", "A", 5), l("b", "B", 17), l("c", "C", 90)], "c", "subir");
-    // Nova fila: A, C, B -> 10, 20, 30; B (17 -> 30), C (90 -> 20), A (5 -> 10).
-    expect(r).toEqual([
-      { id: "a", ordem: 10 },
-      { id: "c", ordem: 20 },
       { id: "b", ordem: 30 },
     ]);
   });
 
-  it("ordem zero é aceita; só muda o que precisa mudar", () => {
-    // B já está em 10: só A muda.
-    expect(planejarMovimento([l("a", "A", 0), l("b", "B", 10)], "a", "descer")).toEqual([{ id: "a", ordem: 20 }]);
+  it("a mesma ordem não grava nada", () => {
+    expect(planejarOrdem(dezEmDez, ["a", "b", "c"])).toEqual([]);
+  });
+
+  it("ids que não cobrem exatamente as linhas (repetido, faltando, sobrando, desconhecido): null", () => {
+    expect(planejarOrdem(dezEmDez, ["a", "b"])).toBeNull();
+    expect(planejarOrdem(dezEmDez, ["a", "a", "b"])).toBeNull();
+    expect(planejarOrdem(dezEmDez, ["a", "b", "x"])).toBeNull();
+    expect(planejarOrdem(dezEmDez, ["a", "b", "c", "d"])).toBeNull();
+  });
+
+  it("partindo de empate e números tortos, o resultado sai sem empate", () => {
+    const r = planejarOrdem([l("a", "A", 10), l("b", "B", 10), l("c", "C", 20)], ["c", "b", "a"]) ?? [];
+    const final = new Map([["a", 10], ["b", 10], ["c", 20]]);
+    for (const m of r) final.set(m.id, m.ordem);
+    expect([final.get("c"), final.get("b"), final.get("a")]).toEqual([10, 20, 30]);
   });
 });
 

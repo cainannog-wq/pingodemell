@@ -17,8 +17,6 @@ export type ItemDaLista = {
 
 export type Lista = { id: string; nome: string; itens: ItemDaLista[] };
 
-export type Direcao = "subir" | "descer";
-
 export type ResultadoParse<T> = { success: true; data: T } | { success: false; error: string };
 
 // Espaços nas pontas saem e os repetidos viram um só, para o banco (nome sem
@@ -53,28 +51,22 @@ export function proximaPosicao(itens: readonly { posicao: number }[]): number | 
   return proxima > POSICAO_MAX ? null : proxima;
 }
 
-// Sobe ou desce um item uma posição e renumera a lista de 1 em 1. Devolve só
-// as linhas cuja posição mudou, para um upsert único por id (a unicidade
-// (lista_id, posicao) é conferida no fim da instrução, então a troca passa).
-// Primeiro subindo, último descendo ou id desconhecido: null (nada a gravar).
-export function planejarMovimento(
+// Nova ordem da lista (os ids, na ordem que a pessoa deixou) renumerada de 1 em 1.
+// Devolve só as linhas cuja posição mudou, para um upsert único por id (a
+// unicidade (lista_id, posicao) é conferida no fim da instrução, então a
+// troca passa). Os ids têm de ser EXATAMENTE os itens da lista, sem repetir:
+// senão null (a lista mudou em outra aba; recarregar).
+export function planejarOrdem(
   itens: readonly ItemDaLista[],
-  id: string,
-  direcao: Direcao
+  ids: readonly string[]
 ): { id: string; lista_id: string; nome: string; posicao: number }[] | null {
-  const fila = ordenarItens(itens);
-  const i = fila.findIndex((l) => l.id === id);
-  if (i < 0) return null;
-  const j = direcao === "subir" ? i - 1 : i + 1;
-  if (j < 0 || j >= fila.length) return null;
-  const nova = [...fila];
-  [nova[i], nova[j]] = [nova[j], nova[i]];
-  const mudancas: { id: string; lista_id: string; nome: string; posicao: number }[] = [];
-  nova.forEach((item, indice) => {
-    const posicao = indice + 1;
-    if (item.posicao !== posicao) mudancas.push({ id: item.id, lista_id: item.lista_id, nome: item.nome, posicao });
+  if (ids.length !== itens.length || new Set(ids).size !== ids.length) return null;
+  const porId = new Map(itens.map((i) => [i.id, i]));
+  if (!ids.every((id) => porId.has(id))) return null;
+  return ids.flatMap((id, indice) => {
+    const item = porId.get(id) as ItemDaLista;
+    return item.posicao === indice + 1 ? [] : [{ id, lista_id: item.lista_id, nome: item.nome, posicao: indice + 1 }];
   });
-  return mudancas;
 }
 
 type ErroBanco = { code?: string | null } | null | undefined;

@@ -27,10 +27,10 @@ const LISTADAS: Record<keyof typeof ARQUIVOS, string[]> = {
     "criarSubcategoria",
     "renomearSubcategoria",
     "atualizarAtivoSubcategoria",
-    "moverSubcategoria",
+    "reordenarSubcategorias",
     "apagarSubcategoria",
   ],
-  kitListas: ["adicionarOpcao", "editarOpcao", "atualizarAtivoOpcao", "moverOpcao"],
+  kitListas: ["adicionarOpcao", "editarOpcao", "atualizarAtivoOpcao", "reordenarOpcoes"],
 };
 
 // Gravações que mudam a vitrine: tabelas lidas pelo site e as funções que

@@ -8,10 +8,11 @@ import {
   apagarSubcategoria,
   atualizarAtivoSubcategoria,
   criarSubcategoria,
-  moverSubcategoria,
+  reordenarSubcategorias,
   renomearSubcategoria,
   type ResultadoSubcategoria,
 } from "./actions";
+import { AlcaDeOrdem, ListaOrdenavel } from "../ordenar-arrastando";
 import { SubcategoriaMenu } from "./subcategoria-menu";
 
 const thStyle = {
@@ -66,6 +67,25 @@ export function SubcategoriasLista({
       if (r.error) {
         setAtivoLocal((a) => ({ ...a, [s.id]: anterior }));
         setErro({ alvo: s.id, texto: r.error });
+      }
+    });
+  }
+
+  // Ordem mostrada logo depois de arrastar (até a página recarregar); se o servidor
+  // recusar, volta à ordem de antes.
+  const [ordemLocal, setOrdemLocal] = useState<Record<string, string[]>>({});
+  function ordenar(categoria: string, ids: string[]) {
+    setOrdemLocal((o) => ({ ...o, [categoria]: ids }));
+    setErro(null);
+    iniciar(async () => {
+      const r = await reordenarSubcategorias(categoria, ids);
+      if (r.error) {
+        setOrdemLocal((o) => {
+          const { [categoria]: _descartada, ...resto } = o;
+          void _descartada;
+          return resto;
+        });
+        setErro({ alvo: `cat:${categoria}`, texto: r.error });
       }
     });
   }
@@ -161,7 +181,13 @@ export function SubcategoriasLista({
         ) : null}
       </div>
 
-      {agruparPorCategoria(subcategorias).map((grupo) => (
+      {agruparPorCategoria(subcategorias).map((grupoBruto) => {
+        const local = ordemLocal[grupoBruto.categoria];
+        const cobre = local && local.length === grupoBruto.itens.length && grupoBruto.itens.every((x) => local.includes(x.id));
+        const grupo = cobre ? { ...grupoBruto, itens: local.map((id) => grupoBruto.itens.find((x) => x.id === id)!) } : grupoBruto;
+        const ids = grupo.itens.map((x) => x.id);
+        const nomeDe = (id: string) => grupo.itens.find((x) => x.id === id)?.nome ?? "subcategoria";
+        return (
         <Card key={grupo.categoria} tone="white" padding="0">
           <h2
             style={{ fontFamily: "var(--font-heading)", fontSize: 22, lineHeight: 1.3, margin: 0, padding: "20px 24px 12px", color: "var(--pdm-brown)" }}
@@ -173,7 +199,8 @@ export function SubcategoriasLista({
             <p style={{ margin: 0, padding: "0 24px 16px", color: "var(--pdm-muted)" }}>Nenhuma subcategoria</p>
           ) : (
             <>
-              <div className="admin-table-desktop-wrap" style={{ overflowX: "auto" }}>
+              <ListaOrdenavel ids={ids} aoOrdenar={(n) => ordenar(grupo.categoria, n)} nomeDe={nomeDe} className="admin-table-desktop-wrap" style={{ overflowX: "auto" }}>
+                {(ordem) => (
                 <table className="admin-table" style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr style={{ background: "var(--pdm-cream)" }}>
@@ -185,11 +212,11 @@ export function SubcategoriasLista({
                     </tr>
                   </thead>
                   <tbody>
-                    {grupo.itens.map((s, i) => {
+                    {grupo.itens.map((s) => {
                       const ativo = ativoLocal[s.id] ?? s.ativo;
                       const quantos = produtosPorSubcategoria[s.id] ?? 0;
                       return (
-                        <tr key={s.id} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                        <tr key={s.id} {...ordem.propsDoItem(s.id)} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
                           <td className="admin-table-title" style={{ padding: "12px 24px" }}>
                             {renomeando?.id === s.id ? (
                               <>
@@ -213,28 +240,7 @@ export function SubcategoriasLista({
                             />
                           </td>
                           <td style={{ padding: "12px 24px" }}>
-                            <div style={{ display: "flex", gap: 8 }}>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="secondary"
-                                iconLeft="arrow_upward"
-                                aria-label={`Subir ${s.nome}`}
-                                title="Subir"
-                                disabled={i === 0 || pendente}
-                                onClick={() => executar(s.id, () => moverSubcategoria(s.id, "subir"))}
-                              />
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="secondary"
-                                iconLeft="arrow_downward"
-                                aria-label={`Descer ${s.nome}`}
-                                title="Descer"
-                                disabled={i === grupo.itens.length - 1 || pendente}
-                                onClick={() => executar(s.id, () => moverSubcategoria(s.id, "descer"))}
-                              />
-                            </div>
+                            <AlcaDeOrdem nome={s.nome} desligada={pendente || grupo.itens.length < 2} {...ordem.propsDaAlca(s.id)} />
                             {renomeando?.id !== s.id && apagando !== s.id ? mensagemDe(s.id) : null}
                           </td>
                           <td style={{ padding: "12px 24px", textAlign: "right" }}>
@@ -268,15 +274,17 @@ export function SubcategoriasLista({
                     })}
                   </tbody>
                 </table>
-              </div>
+                )}
+              </ListaOrdenavel>
 
-              <div className="admin-mobile-cards" style={{ paddingTop: 0 }}>
-                {grupo.itens.map((s, i) => {
+              <ListaOrdenavel ids={ids} aoOrdenar={(n) => ordenar(grupo.categoria, n)} nomeDe={nomeDe} className="admin-mobile-cards" style={{ paddingTop: 0 }}>
+                {(ordem) => grupo.itens.map((s) => {
                   const ativo = ativoLocal[s.id] ?? s.ativo;
                   const quantos = produtosPorSubcategoria[s.id] ?? 0;
                   return (
-                    <div key={s.id} className="produto-mobile-row-card" style={{ background: "var(--pdm-cream)", opacity: ativo ? 1 : 0.7 }}>
-                      <div style={{ paddingRight: 44 }}>
+                    <div key={s.id} {...ordem.propsDoItem(s.id)} className="produto-mobile-row-card" style={{ background: "var(--pdm-cream)", opacity: ativo ? 1 : 0.7, display: "flex", alignItems: "flex-start", gap: 4 }}>
+                      <AlcaDeOrdem nome={s.nome} desligada={pendente || grupo.itens.length < 2} {...ordem.propsDaAlca(s.id)} />
+                      <div style={{ paddingRight: 44, flex: 1 }}>
                         {renomeando?.id === s.id ? (
                           formularioDeNome(s)
                         ) : (
@@ -302,10 +310,6 @@ export function SubcategoriasLista({
                       <div className="produto-mobile-row-card-menu">
                         <SubcategoriaMenu
                           nome={s.nome}
-                          podeSubir={i > 0 && !pendente}
-                          podeDescer={i < grupo.itens.length - 1 && !pendente}
-                          onSubir={() => executar(s.id, () => moverSubcategoria(s.id, "subir"))}
-                          onDescer={() => executar(s.id, () => moverSubcategoria(s.id, "descer"))}
                           onRenomear={() => abrirRenomear(s)}
                           onApagar={() => abrirApagar(s)}
                         />
@@ -313,7 +317,7 @@ export function SubcategoriasLista({
                     </div>
                   );
                 })}
-              </div>
+              </ListaOrdenavel>
             </>
           )}
 
@@ -336,11 +340,12 @@ export function SubcategoriasLista({
             {mensagemDe(`cat:${grupo.categoria}`)}
           </form>
         </Card>
-      ))}
+        );
+      })}
 
       <p style={{ margin: 0, fontSize: 13, color: "var(--pdm-muted)", display: "flex", gap: 8, alignItems: "center" }}>
         <Icon name="info" size={18} tone="inherit" />
-        Só dá para apagar uma subcategoria que nenhum produto usa; senão, desative. A categoria não muda depois de criada.
+        Para mudar a ordem, segure os seis pontos e arraste a subcategoria. Só dá para apagar uma subcategoria que nenhum produto usa; senão, desative. A categoria não muda depois de criada.
       </p>
     </div>
   );

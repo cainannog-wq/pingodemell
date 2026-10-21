@@ -7,10 +7,9 @@ import { ehUuid } from "@/lib/galeria/regras";
 import {
   parseDescricaoItem,
   parseNomeItem,
-  planejarMovimento,
+  planejarOrdem,
   proximaPosicao,
   traduzirErroKit,
-  type Direcao,
 } from "@/lib/kit/listas";
 import { invalidarVitrine } from "@/lib/vitrine/cache";
 
@@ -91,31 +90,27 @@ export async function atualizarAtivoOpcao(id: string, ativo: boolean): Promise<R
   return {};
 }
 
-// Sobe ou desce uma posição. A lista é relida aqui, na hora do clique (não
-// vale a ordem que a tela mostrava) e renumerada de 1 em 1; só as linhas que
-// mudaram vão, num upsert único por id.
-export async function moverOpcao(id: string, direcao: Direcao): Promise<ResultadoKitLista> {
+// Nova ordem de uma lista (a pessoa arrastou uma opção). Os ids chegam na ordem
+// nova; a lista é relida aqui e a ordem só vale se cobrir exatamente os itens
+// de hoje (senão a lista mudou em outra aba). Renumera de 1 em 1 e grava só as
+// linhas que mudaram, num upsert único por id.
+export async function reordenarOpcoes(listaId: string, ids: string[]): Promise<ResultadoKitLista> {
   await requireAuth();
-  if (!ehUuid(id) || (direcao !== "subir" && direcao !== "descer")) return { error: NAO_ENCONTRADO };
+  if (!ehUuid(listaId) || !Array.isArray(ids) || ids.length > 200 || !ids.every((id) => typeof id === "string" && ehUuid(id))) {
+    return { error: NAO_ENCONTRADO };
+  }
 
   const supabase = await createClient();
-  const { data: alvo, error: erroAlvo } = await supabase
-    .from("kit_lista_itens")
-    .select("id, lista_id")
-    .eq("id", id)
-    .maybeSingle<{ id: string; lista_id: string }>();
-  if (erroAlvo) return { error: traduzirErroKit(erroAlvo) };
-  if (!alvo) return { error: NAO_ENCONTRADO };
-
   const { data: itens, error: erroLeitura } = await supabase
     .from("kit_lista_itens")
     .select("id, lista_id, nome, descricao, posicao, ativo")
-    .eq("lista_id", alvo.lista_id);
+    .eq("lista_id", listaId);
   if (erroLeitura) return { error: traduzirErroKit(erroLeitura) };
 
-  const mudancas = planejarMovimento((itens ?? []) as never[], id, direcao);
-  // Já é o primeiro (ou o último): nada a gravar.
-  if (!mudancas || mudancas.length === 0) return {};
+  const mudancas = planejarOrdem((itens ?? []) as never[], ids);
+  if (mudancas === null) return { error: "A lista mudou em outra tela. Recarregue a página e tente de novo." };
+  // Já estava nessa ordem: nada a gravar.
+  if (mudancas.length === 0) return {};
 
   const { error } = await supabase.from("kit_lista_itens").upsert(mudancas, { onConflict: "id" });
   invalidarVitrine();

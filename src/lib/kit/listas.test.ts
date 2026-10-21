@@ -5,7 +5,7 @@ import {
   ordenarItens,
   parseDescricaoItem,
   parseNomeItem,
-  planejarMovimento,
+  planejarOrdem,
   proximaPosicao,
   traduzirErroKit,
   type ItemDaLista,
@@ -48,28 +48,30 @@ describe("posição e movimento", () => {
     expect(proximaPosicao([{ posicao: 200 }])).toBeNull();
   });
 
-  it("trocar dois vizinhos grava só os dois", () => {
+  it("nova ordem grava só as linhas que mudaram, renumeradas de 1 em 1", () => {
     const itens = [item("a", "A", 1), item("b", "B", 2), item("c", "C", 3)];
-    expect(planejarMovimento(itens, "b", "subir")).toEqual([
+    expect(planejarOrdem(itens, ["b", "a", "c"])).toEqual([
       { id: "b", lista_id: LISTA, nome: "B", posicao: 1 },
       { id: "a", lista_id: LISTA, nome: "A", posicao: 2 },
     ]);
+    expect(planejarOrdem(itens, ["a", "b", "c"])).toEqual([]);
+    expect(planejarOrdem(itens, ["c", "a", "b"])?.map((m) => m.id)).toEqual(["c", "a", "b"]);
   });
 
-  it("primeiro subindo, último descendo e id desconhecido: nada a gravar", () => {
+  it("ids que não cobrem exatamente os itens (lista mudou em outra aba) não valem", () => {
     const itens = [item("a", "A", 1), item("b", "B", 2)];
-    expect(planejarMovimento(itens, "a", "subir")).toBeNull();
-    expect(planejarMovimento(itens, "b", "descer")).toBeNull();
-    expect(planejarMovimento(itens, "x", "subir")).toBeNull();
+    expect(planejarOrdem(itens, ["a"])).toBeNull();
+    expect(planejarOrdem(itens, ["a", "a"])).toBeNull();
+    expect(planejarOrdem(itens, ["a", "x"])).toBeNull();
+    expect(planejarOrdem(itens, ["a", "b", "c"])).toBeNull();
   });
 
   it("posições tortas (buraco e empate) saem renumeradas de 1 em 1", () => {
     const itens = [item("a", "A", 3), item("b", "B", 3), item("c", "C", 9)];
-    const mudancas = planejarMovimento(itens, "c", "subir") ?? [];
+    const mudancas = planejarOrdem(itens, ["c", "a", "b"]) ?? [];
     const posicoes = new Map(itens.map((i) => [i.id, i.posicao]));
     for (const m of mudancas) posicoes.set(m.id, m.posicao);
-    expect([...posicoes.values()].sort()).toEqual([1, 2, 3]);
-    expect(posicoes.get("c")).toBe(2);
+    expect([posicoes.get("c"), posicoes.get("a"), posicoes.get("b")]).toEqual([1, 2, 3]);
   });
 });
 

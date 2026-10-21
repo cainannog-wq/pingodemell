@@ -20,30 +20,21 @@ export function agruparPorCategoria<T extends ComOrdem & { categoria: string }>(
   }));
 }
 
-export type Direcao = "subir" | "descer";
-
-// Reordenação: devolve só as linhas cujo `ordem` muda, renumerando a
-// categoria inteira de 10 em 10 depois de mover a linha uma posição. Partindo
-// de empate ou de números tortos, o resultado sai sem empate. Primeira
-// subindo, última descendo, ou id desconhecido: null (nada a gravar).
-export function planejarMovimento(
+// Nova ordem de uma categoria (a pessoa arrastou uma subcategoria): os ids na
+// ordem que ela deixou, renumerados de 10 em 10. Devolve só as linhas cujo
+// `ordem` muda. Os ids têm de ser EXATAMENTE as subcategorias da categoria, sem
+// repetir (senão a lista mudou em outra aba): null.
+export function planejarOrdem(
   linhas: readonly ComOrdem[],
-  id: string,
-  direcao: Direcao
+  ids: readonly string[]
 ): { id: string; ordem: number }[] | null {
-  const fila = ordenarSubcategorias(linhas);
-  const i = fila.findIndex((l) => l.id === id);
-  if (i < 0) return null;
-  const j = direcao === "subir" ? i - 1 : i + 1;
-  if (j < 0 || j >= fila.length) return null;
-  const nova = [...fila];
-  [nova[i], nova[j]] = [nova[j], nova[i]];
-  const mudancas: { id: string; ordem: number }[] = [];
-  nova.forEach((linha, posicao) => {
-    const ordem = (posicao + 1) * 10;
-    if (linha.ordem !== ordem) mudancas.push({ id: linha.id, ordem });
+  if (ids.length !== linhas.length || new Set(ids).size !== ids.length) return null;
+  const porId = new Map(linhas.map((l) => [l.id, l]));
+  if (!ids.every((id) => porId.has(id))) return null;
+  return ids.flatMap((id, indice) => {
+    const ordem = (indice + 1) * 10;
+    return porId.get(id)!.ordem === ordem ? [] : [{ id, ordem }];
   });
-  return mudancas;
 }
 
 // Vínculo que o produto já tem (edição). Só conta quando a categoria

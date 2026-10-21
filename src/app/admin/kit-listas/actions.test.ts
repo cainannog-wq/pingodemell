@@ -65,7 +65,7 @@ vi.mock("@/lib/supabase/server", () => ({
   })),
 }));
 
-const { adicionarOpcao, atualizarAtivoOpcao, editarOpcao, moverOpcao } = await import("./actions");
+const { adicionarOpcao, atualizarAtivoOpcao, editarOpcao, reordenarOpcoes } = await import("./actions");
 
 const linha = (id: string, nome: string, posicao: number) => ({ id, lista_id: LISTA, nome, descricao: null, posicao, ativo: true });
 
@@ -120,10 +120,10 @@ describe("editar, ativar e desativar", () => {
   });
 });
 
-describe("mover", () => {
-  it("troca duas posições com UM upsert por id e nenhum delete", async () => {
+describe("reordenar (arrastar)", () => {
+  it("troca posições com UM upsert por id e nenhum delete", async () => {
     banco.itens = [linha(ITEM, "A", 1), linha(OUTRO, "B", 2), linha(TERCEIRO, "C", 3)];
-    expect(await moverOpcao(OUTRO, "subir")).toEqual({});
+    expect(await reordenarOpcoes(LISTA, [OUTRO, ITEM, TERCEIRO])).toEqual({});
     expect(banco.upserts).toHaveLength(1);
     expect(banco.upserts[0].opcoes).toEqual({ onConflict: "id" });
     expect(banco.upserts[0].linhas).toEqual([
@@ -135,20 +135,30 @@ describe("mover", () => {
     expect(updateTag).toHaveBeenCalledWith("vitrine");
   });
 
-  it("primeiro subindo: nada é gravado", async () => {
+  it("arrastar o último para o começo renumera os três", async () => {
+    banco.itens = [linha(ITEM, "A", 1), linha(OUTRO, "B", 2), linha(TERCEIRO, "C", 3)];
+    await reordenarOpcoes(LISTA, [TERCEIRO, ITEM, OUTRO]);
+    expect((banco.upserts[0].linhas as { posicao: number }[]).map((l) => l.posicao)).toEqual([1, 2, 3]);
+  });
+
+  it("mesma ordem: nada é gravado", async () => {
     banco.itens = [linha(ITEM, "A", 1), linha(OUTRO, "B", 2)];
-    expect(await moverOpcao(ITEM, "subir")).toEqual({});
+    expect(await reordenarOpcoes(LISTA, [ITEM, OUTRO])).toEqual({});
     expect(banco.upserts).toHaveLength(0);
   });
 
-  it("id desconhecido e direção inválida", async () => {
-    expect((await moverOpcao(ITEM, "subir")).error).toMatch(/não encontrada/);
-    expect((await moverOpcao(ITEM, "lado" as never)).error).toMatch(/não encontrada/);
+  it("ids que não são os itens da lista (mudou em outra aba), ou inválidos: recusado sem gravar", async () => {
+    banco.itens = [linha(ITEM, "A", 1), linha(OUTRO, "B", 2)];
+    expect((await reordenarOpcoes(LISTA, [ITEM])).error).toMatch(/Recarregue/);
+    expect((await reordenarOpcoes(LISTA, [ITEM, TERCEIRO])).error).toMatch(/Recarregue/);
+    expect((await reordenarOpcoes(LISTA, ["x", "y"])).error).toMatch(/não encontrada/);
+    expect((await reordenarOpcoes("x", [ITEM])).error).toMatch(/não encontrada/);
+    expect(banco.upserts).toHaveLength(0);
   });
 
   it("falha do upsert vira mensagem traduzida", async () => {
     banco.itens = [linha(ITEM, "A", 1), linha(OUTRO, "B", 2)];
     banco.erroEscrita = { code: "23505", message: "boom" };
-    expect((await moverOpcao(OUTRO, "subir")).error).toMatch(/Já existe/);
+    expect((await reordenarOpcoes(LISTA, [OUTRO, ITEM])).error).toMatch(/Já existe/);
   });
 });

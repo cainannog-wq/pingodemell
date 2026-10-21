@@ -8,18 +8,10 @@ import { Icon } from "@/components/ds";
 // ao abrir e volta ao botão ao fechar.
 export function SubcategoriaMenu({
   nome,
-  podeSubir,
-  podeDescer,
-  onSubir,
-  onDescer,
   onRenomear,
   onApagar,
 }: {
   nome: string;
-  podeSubir: boolean;
-  podeDescer: boolean;
-  onSubir: () => void;
-  onDescer: () => void;
   onRenomear: () => void;
   onApagar: () => void;
 }) {
@@ -55,9 +47,7 @@ export function SubcategoriaMenu({
     fn();
   }
 
-  const itens: { texto: string; icone: "arrow_upward" | "arrow_downward" | "edit" | "delete"; ativo: boolean; fn: () => void; perigo?: boolean }[] = [
-    { texto: "Subir", icone: "arrow_upward", ativo: podeSubir, fn: onSubir },
-    { texto: "Descer", icone: "arrow_downward", ativo: podeDescer, fn: onDescer },
+  const itens: { texto: string; icone: "edit" | "delete"; ativo: boolean; fn: () => void; perigo?: boolean }[] = [
     { texto: "Renomear", icone: "edit", ativo: true, fn: onRenomear },
     { texto: "Apagar", icone: "delete", ativo: true, fn: onApagar, perigo: true },
   ];
