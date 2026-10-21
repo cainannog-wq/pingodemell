@@ -1,0 +1,3 @@
+# Os instantaneos do vitest sao gravados com LF; sem isto, o autocrlf do Windows
+# lista o .snap como modificado depois de toda rodada de testes.
+*.snap text eol=lf
