@@ -43,6 +43,8 @@ export const LIMITES = {
   unidadeVenda: 20,
   saboresPorLinha: 30,
   precoMaximoCentavos: 5_000_000,
+  // pedidos.subtotal e pedidos.total são numeric(10,2): R$ 99.999.999,99.
+  subtotalMaximoCentavos: 9_999_999_999,
   mesesAFrente: 12,
 } as const;
 
@@ -334,6 +336,12 @@ export function validarPedido(bruto: unknown, hoje: string = hojeBrasilia()): Re
     }
 
     const valores = itens.map((i) => i.centavos);
+    // Acima disso o insert estoura a coluna (22003): virava 500 e, como a
+    // falha desfaz a contagem do limite por IP, gastava número de pedido sem
+    // contar no limite.
+    if (valores.reduce((a, b) => a + b, 0) > LIMITES.subtotalMaximoCentavos) {
+      falha("O valor do pedido ficou alto demais para o site. Tire alguns itens ou fale com a gente pelo WhatsApp.");
+    }
     return {
       ok: true,
       valor: {
