@@ -95,15 +95,20 @@ test("(f) ?editar=abc cortado no page_location e no page_referrer; referrer exte
   const [inicial] = await pageViews(page);
   expect(inicial.page_referrer).toBe("https://l.instagram.com/");
 
-  await page.goto("/produtos/brigadeiro-gourmet?editar=abc");
+  // O site lê o catálogo real: o slug vem do primeiro produto que a Home linka
+  // (um slug escrito aqui quebra quando o produto sai do catálogo).
+  const href = await page.locator('a[href^="/produtos/"]').first().getAttribute("href");
+  expect(href, "a Home precisa linkar ao menos um produto").toMatch(/^\/produtos\/[a-z0-9-]+$/);
+  const caminhoProduto = href as string;
+  await page.goto(`${caminhoProduto}?editar=abc`);
   let pvs = await pageViews(page);
-  expect(pvs.at(-1)!.page_location).toBe(`${baseURL}/produtos/brigadeiro-gourmet`);
+  expect(pvs.at(-1)!.page_location).toBe(`${baseURL}${caminhoProduto}`);
   // Navegação interna (sem recarregar): o referrer é o endereço limpo.
   await page.locator(".site-header-logo").click();
   await page.waitForURL(`${baseURL}/`);
   await expect.poll(async () => (await pageViews(page)).length).toBe(2);
   pvs = await pageViews(page);
-  expect(pvs[1]).toMatchObject({ page_location: `${baseURL}/`, page_referrer: `${baseURL}/produtos/brigadeiro-gourmet` });
+  expect(pvs[1]).toMatchObject({ page_location: `${baseURL}/`, page_referrer: `${baseURL}${caminhoProduto}` });
   expect(JSON.stringify(await eventos(page))).not.toContain("editar");
 });
 
@@ -162,6 +167,20 @@ test("(i) versaoPolitica diferente pergunta de novo", async ({ page }) => {
 test("(j) /admin e /login: sem banner e 0 requisições ao Google, mesmo com aceite salvo", async ({ page }) => {
   await page.goto("/quem-somos");
   await gravarEscolha(page, "aceito");
+  // A página de partida (/quem-somos) pode reagir ao aceite recém-gravado e
+  // mandar o próprio page_view um instante depois. O teste só mede o que sai
+  // das duas páginas seguintes: espera a contagem parar de andar antes de
+  // medir (sem isso, o teste falhava de vez em quando com 1 requisição).
+  let ultima = -1;
+  await expect
+    .poll(async () => {
+      const agora = registro.google.length;
+      const estavel = agora === ultima;
+      ultima = agora;
+      await page.waitForTimeout(500);
+      return estavel;
+    }, { timeout: 15_000 })
+    .toBe(true);
   const antes = registro.google.length;
   for (const caminho of ["/login", "/admin"]) {
     await page.goto(caminho);
