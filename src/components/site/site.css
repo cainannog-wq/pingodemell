@@ -387,6 +387,12 @@ body:has(.pdm-site) {
   align-items: center;
   min-height: var(--tap-min);
 }
+/* Telefone fixo dentro do texto do rodapé: sem esta regra pegava o
+   --text-link do site (--brown-500, 3,32:1 sobre o fundo escuro). Usa o
+   mesmo creme dos links da navegação do rodapé. */
+.pdm-site .site-footer-text a {
+  color: var(--cream-100);
+}
 .pdm-site .site-footer-links a:hover {
   text-decoration: underline;
   text-underline-offset: 3px;

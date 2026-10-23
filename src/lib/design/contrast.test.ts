@@ -79,3 +79,30 @@ describe("Botão do WhatsApp — texto sobre o verde", () => {
     expect(botao).toMatch(/whatsappHover: \{ background: "#1da851" \}/);
   });
 });
+
+// Telefone fixo do rodapé (PR fase4/contraste-telefone-rodape): o Lighthouse
+// acusou 3,32:1 (--brown-500 do link comum sobre --footer-bg). O link passa a
+// usar o --cream-100 dos outros links do rodapé.
+describe("Rodapé — link do telefone fixo", () => {
+  const css = readFileSync(join(process.cwd(), "src/styles/ds/tokens/colors.css"), "utf8");
+  const token = (nome: string) => {
+    const achado = css.match(new RegExp(`--${nome}:\s*(#[0-9a-fA-F]{6})`));
+    if (!achado) throw new Error(`token --${nome} não encontrado`);
+    return achado[1];
+  };
+  const site = readFileSync(join(process.cwd(), "src/components/site/site.css"), "utf8");
+
+  it("--cream-100 sobre --footer-bg atinge 4,5:1 (17,2:1)", () => {
+    expect(contrastRatio(token("cream-100"), token("footer-bg"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(token("cream-100"), token("footer-bg"))).toBeCloseTo(17.2, 1);
+  });
+
+  it("regressão: o marrom do link comum falhava (3,32:1)", () => {
+    expect(contrastRatio(token("brown-500"), token("footer-bg"))).toBeCloseTo(3.32, 1);
+  });
+
+  it("o link dentro do texto do rodapé usa o mesmo creme dos links da navegação", () => {
+    expect(site).toMatch(/\.pdm-site \.site-footer-text a \{\s*color: var\(--cream-100\);/);
+    expect(site).toMatch(/\.pdm-site \.site-footer-links a \{[^}]*color: var\(--cream-100\);/);
+  });
+});
