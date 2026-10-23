@@ -174,9 +174,15 @@ describe("filtro de subcategorias na Lista", () => {
   });
 
   describe.each(["chips", "acordeao"] as const)("bloco %s", (bloco) => {
-    it("categoria com subcategorias: cada uma por ordem e 'Todos' por último; 'Todos' atual por padrão", async () => {
+    it("categoria com subcategorias: cada uma por ordem e 'Todos' por último; a primeira abre por padrão", async () => {
       await renderLista({ categoria: "doces" });
       expect(textoDosChips(bloco)).toEqual(["Finos", "Gourmet Premium", "Todos"]);
+      expect(chipAtual(bloco)).toHaveTextContent("Finos");
+      expect(cards()).toEqual(["Éclair"]);
+    });
+
+    it("?subcategoria=todos mostra a categoria inteira e marca 'Todos'", async () => {
+      await renderLista({ categoria: "doces", subcategoria: "todos" });
       expect(chipAtual(bloco)).toHaveTextContent("Todos");
       expect(cards()).toHaveLength(4);
     });
@@ -193,10 +199,10 @@ describe("filtro de subcategorias na Lista", () => {
       expect(cards().sort()).toEqual(["Beijinho Gourmet", "Brigadeiro Gourmet"]);
     });
 
-    it.each(["inexistente", "smash-cake", "premium"])("slug inválido para a categoria (%s) vale como 'Todos', sem erro", async (slug) => {
+    it.each(["inexistente", "smash-cake", "premium"])("slug inválido para a categoria (%s) vale como a primeira subcategoria, sem erro", async (slug) => {
       await renderLista({ categoria: "doces", subcategoria: slug });
-      expect(chipAtual(bloco)).toHaveTextContent("Todos");
-      expect(cards()).toHaveLength(4);
+      expect(chipAtual(bloco)).toHaveTextContent("Finos");
+      expect(cards()).toEqual(["Éclair"]);
     });
 
     it("os links levam busca e ordem e nunca a página; 'Todos' tira só a subcategoria", async () => {
@@ -205,7 +211,7 @@ describe("filtro de subcategorias na Lista", () => {
       expect(hrefs).toEqual([
         "/produtos?categoria=doces&subcategoria=finos&busca=e&ordem=a-z",
         "/produtos?categoria=doces&subcategoria=gourmet-premium&busca=e&ordem=a-z",
-        "/produtos?categoria=doces&busca=e&ordem=a-z",
+        "/produtos?categoria=doces&subcategoria=todos&busca=e&ordem=a-z",
       ]);
       expect(hrefs.join()).not.toContain("pagina");
     });
@@ -225,7 +231,7 @@ describe("filtro de subcategorias na Lista", () => {
       const trecho = html.slice(html.indexOf(marca));
       const trechoDoBloco = trecho.slice(0, trecho.indexOf(bloco === "chips" ? "</nav>" : "</ul>"));
       expect(trechoDoBloco).toContain('href="/produtos?categoria=kit-festa&amp;subcategoria=premium"');
-      expect(trechoDoBloco).toContain('href="/produtos?categoria=kit-festa"');
+      expect(trechoDoBloco).toContain('href="/produtos?categoria=kit-festa&amp;subcategoria=todos"');
       expect(trechoDoBloco).toMatch(/aria-current="page"[^>]*>Premium</);
       expect(html).toContain("Kit Premium A");
       expect(html).not.toContain("Kit Sem Sub");
@@ -305,9 +311,16 @@ describe("BuscaEOrdem mantém a subcategoria", () => {
     expect(form.querySelector('input[type="hidden"][name="subcategoria"]')).toHaveValue("finos");
   });
 
-  it("sem subcategoria ativa (ou inválida) não há campo escondido dela", async () => {
-    await renderLista({ categoria: "doces", subcategoria: "inexistente" });
+  it("categoria sem filtro não tem campo escondido de subcategoria; com 'todos' o campo leva 'todos'", async () => {
+    await renderLista({ categoria: "bento-cake", subcategoria: "inexistente" });
     expect(screen.getByRole("search").querySelector('input[name="subcategoria"]')).toBeNull();
+    cleanup();
+    await renderLista({ categoria: "doces", subcategoria: "todos" });
+    expect(screen.getByRole("search").querySelector('input[name="subcategoria"]')).toHaveValue("todos");
+    cleanup();
+    // Sem o parâmetro, a categoria abre na primeira e o campo leva ela.
+    await renderLista({ categoria: "doces" });
+    expect(screen.getByRole("search").querySelector('input[name="subcategoria"]')).toHaveValue("finos");
   });
 
   it("com JavaScript: buscar, trocar a ordem e limpar a busca mantêm o filtro e voltam à página 1", async () => {

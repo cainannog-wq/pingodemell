@@ -64,7 +64,7 @@ export function conferirKits(itens: ItemGravado[], configs: ConfigsDosKits): Con
     const r = validarEscolhas(config, item.quantidade, escolhas, "servidor");
     if (!r.ok) return { ok: false, mensagem: MENSAGEM_KIT_NAO_CONFERE };
     opcoesDesconhecidas += r.avisos.length;
-    conferidos.push({ ...item, variacao: textoDaComposicao(montarRetrato(config, item.quantidade, escolhas)) });
+    conferidos.push({ ...item, variacao: textoDaComposicao(montarRetrato(config, item.quantidade, escolhas, item.formato)) });
   }
   return { ok: true, itens: conferidos, desconhecidos, opcoesDesconhecidas };
 }

@@ -38,12 +38,23 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 const botaoAdicionar = () => screen.getAllByRole("button", { name: /Adicionar/ })[0];
+const seletorDePessoas = () => screen.getByRole("combobox", { name: /Para quantas pessoas/ }) as HTMLSelectElement;
+const escolherPessoas = (n: number) => fireEvent.change(seletorDePessoas(), { target: { value: String(n) } });
 const aumentar = (nome: RegExp) => fireEvent.click(screen.getByRole("button", { name: nome }));
 
 describe("ConfigKit", () => {
-  it("abre no menor tamanho, com o botão desligado e o primeiro problema explicado", () => {
+  it("as pessoas são um select que abre em 10 pessoas e lista os tamanhos do kit", () => {
     render(<ConfigKit produto={produto} config={config} />);
-    expect(screen.getByLabelText("10 pessoas")).toBeChecked();
+    expect(seletorDePessoas().value).toBe("10");
+    const opcoes = Array.from(seletorDePessoas().options).map((o) => o.textContent);
+    expect(opcoes[0]).toBe("10 pessoas");
+    expect(opcoes).toEqual(expect.arrayContaining(["20 pessoas", "30 pessoas"]));
+    expect(screen.queryAllByRole("radio", { name: /pessoas/ })).toHaveLength(0);
+  });
+
+  it("abre em 10 pessoas, com o botão desligado e o primeiro problema explicado", () => {
+    render(<ConfigKit produto={produto} config={config} />);
+    expect(seletorDePessoas().value).toBe("10");
     expect(botaoAdicionar()).toBeDisabled();
     expect(screen.getAllByText(/Recheio do bolo: escolha uma opção/).length).toBeGreaterThan(0);
     expect(screen.getByText("R$ 220,00", { selector: ".interna-resumo-valor" })).toBeInTheDocument();
@@ -68,12 +79,43 @@ describe("ConfigKit", () => {
     expect(push).toHaveBeenCalledWith("/carrinho");
   });
 
+  it("o formato do bolo (redondo ou quadrado) fica dentro da caixa do recheio, abre em redondo e vai na linha", () => {
+    render(<ConfigKit produto={produto} config={config} />);
+    const caixa = screen.getByRole("button", { name: /^Recheio do bolo/ }).closest("section, div")!;
+    const redondo = screen.getByRole("radio", { name: "Redondo" });
+    const quadrado = screen.getByRole("radio", { name: "Quadrado" });
+    expect(redondo).toBeChecked();
+    expect(caixa.parentElement!.contains(quadrado)).toBe(true);
+    fireEvent.click(quadrado);
+    expect(quadrado).toBeChecked();
+    fireEvent.click(screen.getByLabelText(/Ninho com morango/));
+    // O resumo da caixa fechada mostra o recheio e o formato.
+    expect(screen.getByRole("button", { name: /^Recheio do bolo/ })).toHaveTextContent("Quadrado");
+    fireEvent.click(screen.getByLabelText(/Suco de uva/));
+    aumentar(/Aumentar Doces, Brigadeiro/);
+    aumentar(/Aumentar Doces, Beijinho/);
+    fireEvent.click(botaoAdicionar());
+    const linha = adicionar.mock.calls[0][0];
+    expect(linha.formato).toBe("quadrado");
+    expect(linha.retrato.formato).toBe("quadrado");
+  });
+
+  it("sem mexer no formato, a linha leva redondo", () => {
+    render(<ConfigKit produto={produto} config={config} />);
+    fireEvent.click(screen.getByLabelText(/Ninho com morango/));
+    fireEvent.click(screen.getByLabelText(/Suco de uva/));
+    aumentar(/Aumentar Doces, Brigadeiro/);
+    aumentar(/Aumentar Doces, Beijinho/);
+    fireEvent.click(botaoAdicionar());
+    expect(adicionar.mock.calls[0][0]).toMatchObject({ formato: "redondo", retrato: { formato: "redondo" } });
+  });
+
   it("trocar as pessoas zera a distribuição e avisa; o preço acompanha", () => {
     render(<ConfigKit produto={produto} config={config} />);
     fireEvent.click(screen.getByLabelText(/Ninho com morango/));
     fireEvent.click(screen.getByLabelText(/Suco de uva/));
     aumentar(/Aumentar Doces, Brigadeiro/);
-    fireEvent.click(screen.getByLabelText("20 pessoas"));
+    escolherPessoas(20);
     expect(screen.getAllByText("0 de 40 selecionados").length).toBeGreaterThan(0);
     expect(screen.getByText(/refaça a escolha/)).toBeInTheDocument();
     expect(screen.getByText("R$ 440,00", { selector: ".interna-resumo-valor" })).toBeInTheDocument();
@@ -81,7 +123,7 @@ describe("ConfigKit", () => {
 
   it("máximo de sabores: com 3 já usados, o quarto não aumenta", () => {
     render(<ConfigKit produto={produto} config={config} />);
-    fireEvent.click(screen.getByLabelText("30 pessoas"));
+    escolherPessoas(30);
     fireEvent.click(screen.getByRole("button", { name: /^Doces/ })); // abre o grupo à mão
     aumentar(/Aumentar Doces, Brigadeiro/);
     aumentar(/Aumentar Doces, Beijinho/);

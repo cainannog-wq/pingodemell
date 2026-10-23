@@ -1,4 +1,5 @@
 import { linhaGeral, opcoesDeEscolha, type KitConfig } from "./config";
+import type { FormatoBolo } from "@/lib/vitrine/bolo";
 import type { EscolhasKit } from "./escolhas";
 
 // Retrato legível de um kit montado: o que a cliente escolheu, com os nomes.
@@ -21,6 +22,8 @@ export type GrupoDoRetrato = {
 export type RetratoDoKit = {
   pessoas: number;
   boloKg: number;
+  // Redondo ou quadrado; ausente em retrato de antes do campo.
+  formato?: FormatoBolo;
   descartaveis: boolean;
   grupos: GrupoDoRetrato[];
 };
@@ -34,11 +37,12 @@ export function textoKg(kg: number): string {
 
 // Monta o retrato a partir da configuração e das escolhas. Opção que a
 // configuração não conhece fica com NOME_OPCAO_DESCONHECIDA.
-export function montarRetrato(config: KitConfig, pessoas: number, escolhas: EscolhasKit): RetratoDoKit {
+export function montarRetrato(config: KitConfig, pessoas: number, escolhas: EscolhasKit, formato?: FormatoBolo): RetratoDoKit {
   const tamanho = config.tamanhos.find((t) => t.pessoas === pessoas);
   return {
     pessoas,
     boloKg: tamanho?.boloKg ?? 0,
+    ...(formato ? { formato } : {}),
     descartaveis: tamanho?.descartaveis ?? false,
     grupos: config.grupos.map((g) => {
       const base: GrupoDoRetrato = {
@@ -78,7 +82,7 @@ function linhaDoGrupo(g: GrupoDoRetrato): string {
 // Linhas da composição, sem emoji e sem hífen: tamanho, bolo, grupos e
 // descartáveis. Usadas na mensagem, na confirmação e no painel.
 export function linhasDaComposicao(r: RetratoDoKit): string[] {
-  const linhas = [`Bolo: ${textoKg(r.boloKg)}`];
+  const linhas = [`Bolo: ${textoKg(r.boloKg)}${r.formato ? `, ${r.formato}` : ""}`];
   for (const g of r.grupos) linhas.push(linhaDoGrupo(g));
   if (r.descartaveis) linhas.push("Descartáveis incluídos");
   return linhas;

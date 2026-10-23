@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AcordeaoDoGrupo } from "./AcordeaoDoGrupo";
-import { Icon } from "@/components/ds";
+import { Icon, Select } from "@/components/ds";
 import { Seletor } from "@/components/site/Seletor";
 import { useCarrinho } from "@/components/site/CarrinhoProvider";
 import { contarKits, MAX_KITS, normalizarObservacao, TEXTO_LIMITE_DE_KITS } from "@/lib/carrinho/regras";
@@ -10,6 +10,7 @@ import { linhaGeral, opcoesDeEscolha, tamanhosDisponiveis, type KitConfig, type 
 import { progressoDaDistribuicao, validarEscolhas, type EscolhasKit } from "@/lib/kit/escolhas";
 import { montarRetrato, textoKg } from "@/lib/kit/texto";
 import { formatMoeda } from "@/lib/pedidos/format";
+import { FORMATO_BOLO_LABELS, FORMATOS_BOLO, type FormatoBolo } from "@/lib/vitrine/bolo";
 import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
 import { useAdicionarEIrAoCarrinho } from "./edicao";
 import { EscolhaRecheio } from "./EscolhaRecheio";
@@ -64,23 +65,32 @@ function proximoAberto(config: KitConfig, pessoas: number, escolhas: EscolhasKit
   return pendentes[0].chave;
 }
 
+// A tela abre com 10 pessoas quando o kit tem esse tamanho; senão, no menor.
+export const PESSOAS_INICIAIS = 10;
+
 function textoPessoas(n: number): string {
   return `${n} ${n === 1 ? "pessoa" : "pessoas"}`;
 }
 
 // previa: prévia do admin de um kit inativo (/previa/{slug}). Tudo funciona como
 // para a cliente, menos o botão: um kit inativo não entra no pedido.
+// Grupo do kit que é o recheio do bolo: o formato (redondo ou quadrado) fica
+// dentro dessa caixa. A chave é a da configuração do kit (CSV de carga).
+export const GRUPO_DO_BOLO = "bolo";
+
 export const TEXTO_PREVIA = "Prévia do admin: este kit está inativo e não pode ser adicionado ao pedido.";
 
 export function ConfigKit({ produto, config, previa = false }: { produto: ProdutoVitrine; config: KitConfig; previa?: boolean }) {
   const tamanhos = tamanhosDisponiveis(config);
   const { linhas } = useCarrinho();
   const { indo, adicionarEIr } = useAdicionarEIrAoCarrinho();
-  const [pessoas, setPessoas] = useState(tamanhos[0]?.pessoas ?? 0);
-  const [escolhas, setEscolhas] = useState<EscolhasKit>(() => escolhasIniciais(config, tamanhos[0]?.pessoas ?? 0));
+  const inicial = (tamanhos.find((t) => t.pessoas === PESSOAS_INICIAIS) ?? tamanhos[0])?.pessoas ?? 0;
+  const [pessoas, setPessoas] = useState(inicial);
+  const [formato, setFormato] = useState<FormatoBolo>("redondo");
+  const [escolhas, setEscolhas] = useState<EscolhasKit>(() => escolhasIniciais(config, inicial));
   // Grupo aberto no acordeão (um por vez): começa no primeiro que falta.
   const [aberto, setAberto] = useState<string | null>(() =>
-    proximoAberto(config, tamanhos[0]?.pessoas ?? 0, escolhasIniciais(config, tamanhos[0]?.pessoas ?? 0))
+    proximoAberto(config, inicial, escolhasIniciais(config, inicial))
   );
   const [observacao, setObservacao] = useState("");
   const [adicionado, setAdicionado] = useState(false);
@@ -161,7 +171,8 @@ export function ConfigKit({ produto, config, previa = false }: { produto: Produt
       quantidade: pessoas,
       unidade_venda: "a pessoa",
       escolhas,
-      retrato: montarRetrato(config, pessoas, escolhas),
+      retrato: montarRetrato(config, pessoas, escolhas, formato),
+      formato,
       foto: produto.image_url,
       observacao: normalizarObservacao(observacao),
     });
@@ -192,7 +203,13 @@ export function ConfigKit({ produto, config, previa = false }: { produto: Produt
           key={grupo.chave}
           id={`interna-kit-${grupo.chave}`}
           titulo={grupo.rotulo}
-          resumo={escolhida ? [escolhida.opcao.nome, escolhida.rotulo].filter(Boolean).join(" · ") : "Escolha uma opção"}
+          resumo={
+            escolhida
+              ? [escolhida.opcao.nome, escolhida.rotulo, grupo.chave === GRUPO_DO_BOLO ? FORMATO_BOLO_LABELS[formato] : null]
+                  .filter(Boolean)
+                  .join(" · ")
+              : "Escolha uma opção"
+          }
           completo={grupoCompleto(grupo, pessoas, escolhas)}
           aberto={aberto === grupo.chave}
           aoAlternar={() => setAberto(aberto === grupo.chave ? null : grupo.chave)}
@@ -217,6 +234,28 @@ export function ConfigKit({ produto, config, previa = false }: { produto: Produt
             },
           ]}
         />
+        {grupo.chave === GRUPO_DO_BOLO ? (
+          <fieldset className="interna-bloco interna-formato interna-formato-do-kit">
+            <legend className="interna-bloco-titulo">Formato do bolo</legend>
+            <div className="interna-formatos">
+              {FORMATOS_BOLO.map((f) => (
+                <label key={f} className="interna-opcao interna-opcao-pilula" data-marcada={formato === f}>
+                  <input
+                    type="radio"
+                    name="interna-kit-formato"
+                    value={f}
+                    checked={formato === f}
+                    onChange={() => {
+                      setFormato(f);
+                      setAdicionado(false);
+                    }}
+                  />
+                  <span className="interna-opcao-nome">{FORMATO_BOLO_LABELS[f]}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
         </AcordeaoDoGrupo>
       );
     }
@@ -304,21 +343,19 @@ export function ConfigKit({ produto, config, previa = false }: { produto: Produt
   return (
     <>
       <fieldset className="interna-bloco interna-formato">
-        <legend className="interna-bloco-titulo">Para quantas pessoas?</legend>
-        <div className="interna-formatos">
+        <legend className="interna-bloco-titulo" id="interna-kit-pessoas-titulo">Para quantas pessoas?</legend>
+        <Select
+          aria-labelledby="interna-kit-pessoas-titulo"
+          name="interna-kit-pessoas"
+          value={pessoas}
+          onChange={(e) => trocarPessoas(Number(e.target.value))}
+        >
           {tamanhos.map((t) => (
-            <label key={t.pessoas} className="interna-opcao interna-opcao-pilula" data-marcada={pessoas === t.pessoas}>
-              <input
-                type="radio"
-                name="interna-kit-pessoas"
-                value={t.pessoas}
-                checked={pessoas === t.pessoas}
-                onChange={() => trocarPessoas(t.pessoas)}
-              />
-              <span className="interna-opcao-nome">{textoPessoas(t.pessoas)}</span>
-            </label>
+            <option key={t.pessoas} value={t.pessoas}>
+              {textoPessoas(t.pessoas)}
+            </option>
           ))}
-        </div>
+        </Select>
         {tamanho ? (
           <p className="interna-bloco-dica">
             Bolo de {textoKg(tamanho.boloKg)}

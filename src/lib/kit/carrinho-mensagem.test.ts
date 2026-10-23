@@ -85,6 +85,22 @@ describe("kit no carrinho", () => {
   });
 });
 
+describe("formato do bolo do kit", () => {
+  it("linha com formato válido vale; formato fora da lista invalida a linha; linha de antes (sem formato) continua valendo", () => {
+    const base = { ...nova(), id: "a" } as LinhaKit;
+    expect(linhaValida({ ...base, formato: "quadrado", retrato: montarRetrato(config, 10, CERTO, "quadrado") })).toBe(true);
+    expect(linhaValida(base)).toBe(true);
+    expect(linhaValida({ ...base, formato: "triangular" })).toBe(false);
+    expect(linhaValida({ ...base, retrato: { ...base.retrato, formato: "triangular" } })).toBe(false);
+  });
+
+  it("a composição escreve o formato depois do peso do bolo e some sem formato", async () => {
+    const { linhasDaComposicao } = await import("./texto");
+    expect(linhasDaComposicao(montarRetrato(config, 10, CERTO, "redondo"))[0]).toBe("Bolo: 1 kg, redondo");
+    expect(linhasDaComposicao(montarRetrato(config, 10, CERTO))[0]).toBe("Bolo: 1 kg");
+  });
+});
+
 describe("kit na mensagem do WhatsApp e na confirmação", () => {
   const linha = { ...nova(), id: "k1" } as LinhaCarrinho;
   const dados = { ...DADOS_TESTE, nome: "Teste Silva" };

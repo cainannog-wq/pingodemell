@@ -51,7 +51,7 @@ beforeAll(() => {
 afterAll(() => vi.useRealTimers());
 
 const config = configDoExemplo();
-function kit(pessoas: number, escolhas: LinhaKit["escolhas"], produtoId = PRODUTO, id = "k1"): LinhaKit {
+function kit(pessoas: number, escolhas: LinhaKit["escolhas"], produtoId = PRODUTO, id = "k1", formato?: "redondo" | "quadrado"): LinhaKit {
   return {
     id,
     tipo: "kit",
@@ -63,7 +63,8 @@ function kit(pessoas: number, escolhas: LinhaKit["escolhas"], produtoId = PRODUT
     quantidade: pessoas,
     unidade_venda: "a pessoa",
     escolhas,
-    retrato: montarRetrato(config, pessoas, escolhas),
+    retrato: montarRetrato(config, pessoas, escolhas, formato),
+    ...(formato ? { formato } : {}),
   };
 }
 const CERTO: LinhaKit["escolhas"] = { bolo: [[NINHO, 1]], doces: [[BRIGADEIRO, 10], [BEIJINHO, 10]], bebida: [[SUCO, 2]] };
@@ -104,6 +105,22 @@ describe("kit no pedido", () => {
     expect(item.escolhas).toEqual(CERTO);
     // Uma leitura de cada tabela do kit, e só.
     expect([...chamadas.leituras].sort()).toEqual(["kit_grupos", "kit_lista_itens", "kit_quantidades", "kit_tamanhos"]);
+  });
+
+  it("formato do bolo: vai na primeira linha da composição e no item; sem formato, como antes", async () => {
+    const res = await POST(requisicao(pedido([kit(10, CERTO, PRODUTO, "k1", "quadrado")])));
+    expect(res.status).toBe(201);
+    const item = (chamadas.rpc[0].p_pedido as { itens: Record<string, unknown>[] }).itens[0];
+    expect(String(item.variacao).split("\n")[0]).toBe("Bolo: 1 kg, quadrado");
+    expect(item.formato).toBe("quadrado");
+  });
+
+  it("formato do bolo inválido é recusado e nada grava", async () => {
+    const corpo = pedido([kit(10, CERTO, PRODUTO, "k1", "quadrado")]) as unknown as { itens: Record<string, unknown>[] };
+    corpo.itens[0].formato = "triangular";
+    const res = await POST(requisicao(corpo));
+    expect(res.status).toBe(400);
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("composição que não fecha (soma, passo, quantidade, opção repetida) é recusada e nada grava", async () => {

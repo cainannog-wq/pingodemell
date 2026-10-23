@@ -911,3 +911,13 @@
 .interna-edicao-carregando {
   min-height: 240px;
 }
+
+/* Formato do bolo (redondo ou quadrado) dentro da caixa do recheio do kit. */
+.interna-formato-do-kit {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+.interna-formato-do-kit .interna-bloco-titulo {
+  margin-bottom: 8px;
+}

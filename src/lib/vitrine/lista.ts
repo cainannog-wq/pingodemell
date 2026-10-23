@@ -192,6 +192,11 @@ export function chipsDaCategoria(
   return ordenadas;
 }
 
+// Valor de `?subcategoria=` que pede "Todos" de uma categoria que tem filtro.
+// Sem o parâmetro, a categoria abre na primeira subcategoria (decisão do Cainan,
+// 23/10/2026); "Todos" precisa de um endereço próprio para continuar alcançável.
+export const SUBCATEGORIA_TODOS = "todos";
+
 // Slug da subcategoria que abre a lista do Kit Festa.
 export const SUBCATEGORIA_PRIMEIRA_KIT_FESTA = "por-pessoa";
 
@@ -218,7 +223,7 @@ export function opcoesDeSubcategoria(
   return [...chips.map((c) => ({ chave: c.id, nome: c.nome, slug: c.slug })), { chave: "todos", nome: "Todos", slug: null }].map((o) => ({
     chave: o.chave,
     nome: o.nome,
-    href: urlDaSubcategoria(parametros, o.slug),
+    href: urlDaSubcategoria(parametros, o.slug === null && chips.length > 0 ? SUBCATEGORIA_TODOS : o.slug),
     atual: o.slug === ativa,
   }));
 }
@@ -241,6 +246,10 @@ export type ResultadoLista = {
   // slug inválido ou sem chips).
   chips: ChipSubcategoria[];
   subcategoriaAtiva: string | null;
+  // O que a URL leva para manter a escolha: o slug, ou "todos" quando a
+  // categoria tem filtro e a cliente está em "Todos" (sem isso a página
+  // voltaria à primeira subcategoria). Nulo sem filtro.
+  subcategoriaNaUrl: string | null;
   // Categorias da Lista que têm filtro (pelo menos um chip), para o acordeão
   // do desktop mostrar a seta em cada uma, não só na escolhida.
   categoriasComFiltro: CategoriaProduto[];
@@ -271,7 +280,12 @@ export function montarLista(
 
   const daCategoria = categoria === null ? daLista : daLista.filter((p) => categoriaCanonica(p.Categoria) === categoria);
   const chips = chipsDaCategoria(categoria, daCategoria, subcategorias);
-  const escolhida = chips.find((c) => c.slug === parametros.subcategoria) ?? null;
+  // Categoria com filtro sem `?subcategoria=` (ou com valor que não vale)
+  // abre na primeira subcategoria; "todos" mostra a categoria inteira.
+  const escolhida =
+    parametros.subcategoria === SUBCATEGORIA_TODOS
+      ? null
+      : (chips.find((c) => c.slug === parametros.subcategoria) ?? chips[0] ?? null);
   const daSubcategoria = escolhida ? daCategoria.filter((p) => p.subcategoria_id === escolhida.id) : daCategoria;
   const palavras = palavrasDaBusca(busca);
   const encontrados = daSubcategoria.filter((p) => nomeCasaComBusca(p.nome, palavras)).sort(comparador(ordem, categoria));
@@ -290,6 +304,7 @@ export function montarLista(
     maisPedidosDisponivel,
     chips,
     subcategoriaAtiva: escolhida?.slug ?? null,
+    subcategoriaNaUrl: escolhida?.slug ?? (chips.length > 0 ? SUBCATEGORIA_TODOS : null),
     categoriasComFiltro: CATEGORIAS_DA_LISTA.filter(
       (c) => chipsDaCategoria(c, daLista.filter((p) => categoriaCanonica(p.Categoria) === c), subcategorias).length > 0
     ),
