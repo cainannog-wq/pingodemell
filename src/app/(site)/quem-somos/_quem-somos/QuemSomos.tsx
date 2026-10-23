@@ -162,6 +162,14 @@ export function QuemSomos() {
                 <NovaAba />
               </a>
             </li>
+            <li>
+              <a className="qs-contato-item qs-contato-whatsapp" href={LOJA.telefoneFixoHref}>
+                <Icon name="call" size={26} tone="accent" />
+                <span>
+                  <span className="site-visually-hidden">Telefone fixo</span> {LOJA.telefoneFixo}
+                </span>
+              </a>
+            </li>
           </ul>
 
           <div className="qs-botoes qs-area-botoes">

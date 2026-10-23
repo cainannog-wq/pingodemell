@@ -150,7 +150,10 @@ describe("Quem Somos", () => {
   it("nenhum hífen nem travessão no main (texto, alt, aria-label e title), fora os valores de LOJA", () => {
     const main = montar();
     console.log("[quem-somos] valores de LOJA com hífen, fora da checagem:", VALORES_LOJA_COM_HIFEN);
-    expect(VALORES_LOJA_COM_HIFEN).toEqual([LOJA.telefone, LOJA.cnpj]);
+    // O endereço novo (decisão da Taami) tem hífen: "Av. Mato Grosso, 1831 - Estados".
+    expect(VALORES_LOJA_COM_HIFEN).toEqual(
+      expect.arrayContaining([LOJA.endereco, LOJA.enderecoCurto, LOJA.cidade, LOJA.telefone, LOJA.telefoneFixo, LOJA.cnpj])
+    );
     for (const texto of textosDoMain(main)) {
       const limpo = semValoresDaLoja(texto);
       expect(limpo.match(HIFENS)?.[0] ?? null, limpo).toBeNull();

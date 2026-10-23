@@ -466,7 +466,7 @@ describe("Checkout — validação do formulário", () => {
   it("retirada mostra o endereço completo da loja, com a cidade; topo com o texto do envio pelo WhatsApp", async () => {
     await abrir();
     const retirada = screen.getByRole("radio", { name: /Retirar na loja/ }).closest("label")!;
-    expect(retirada).toHaveTextContent("Rua das Acácias, 412, Nações, Fazenda Rio Grande/PR · sem custo");
+    expect(retirada).toHaveTextContent("Av. Mato Grosso, 1831 - Estados, Fazenda Rio Grande - PR, 83830-481 · sem custo");
     expect(
       screen.getByText("Preencha seus dados e envie seu pedido pelo WhatsApp. A gente confirma tudo e combina o pagamento por lá.")
     ).toBeInTheDocument();

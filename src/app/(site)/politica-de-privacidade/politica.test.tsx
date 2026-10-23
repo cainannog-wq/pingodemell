@@ -46,7 +46,7 @@ const TEXTO_LITERAL = [
   "Política de Privacidade",
   'A presente Política de Privacidade ("Política") estabelece as condições em que a Pingo de Mell realiza o tratamento de dados pessoais das pessoas que visitam este sítio eletrônico e dos usuários que efetuam pedidos por meio dele ("Titular"), em conformidade com a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais, "LGPD").',
   "1. Identificação do Controlador",
-  "O Controlador dos dados pessoais é a Yaguiu Eventos e Esporte LTDA, que atua sob o nome Pingo de Mell, inscrita no CNPJ sob o nº 22.066.065/0001-72, estabelecida na Rua das Acácias, 412, Nações, Fazenda Rio Grande/PR.",
+  "O Controlador dos dados pessoais é a Yaguiu Eventos e Esporte LTDA, que atua sob o nome Pingo de Mell, inscrita no CNPJ sob o nº 22.066.065/0001-72, estabelecida na Av. Mato Grosso, 1831 - Estados, Fazenda Rio Grande - PR, 83830-481.",
   `Os canais de atendimento ao Titular, para o exercício de direitos e para quaisquer questões relativas ao tratamento de dados pessoais, são o WhatsApp (41) 98800-2315, durante o horário de atendimento da loja, e o correio eletrônico ${LOJA.emailPrivacidade}.`,
   "2. Dados Pessoais Tratados",
   "2.1. No momento da finalização do pedido, são solicitados os seguintes dados: nome, número de WhatsApp, endereço de correio eletrônico (campo facultativo), endereço de entrega (somente quando escolhida a modalidade de entrega), data e horário desejados, ocasião, forma de pagamento escolhida, observações e itens do pedido, com as respectivas quantidades e preços.",
@@ -204,7 +204,7 @@ describe("Política de Privacidade — página", () => {
   it("sem hífen nem travessão no texto visível, fora do telefone, do CNPJ e do email de LOJA", () => {
     render(<PoliticaDePrivacidadePage />);
     const artigo = document.querySelector("article.politica")!;
-    const permitidos = [LOJA.telefone, LOJA.cnpj, LOJA.emailPrivacidade];
+    const permitidos = [LOJA.endereco, LOJA.telefone, LOJA.cnpj, LOJA.emailPrivacidade];
     const limpo = permitidos.reduce((t, v) => t.split(v).join(""), textoVisivel(artigo));
     expect(limpo.match(HIFENS)?.[0] ?? null).toBeNull();
     // A checagem pega mesmo cada caractere (controle positivo).
@@ -315,8 +315,8 @@ describe("Política de Privacidade — mesma fonte do rodapé", () => {
     }
     expect(responsavel).toContain(`e o correio eletrônico ${LOJA.emailPrivacidade}.`);
     // O endereço de LOJA, na frase do texto aprovado, sai idêntico.
-    expect(LOJA.endereco).toBe("Rua das Acácias, 412, Nações, Fazenda Rio Grande/PR");
-    expect(responsavel).toContain("estabelecida na Rua das Acácias, 412, Nações, Fazenda Rio Grande/PR.");
+    expect(LOJA.endereco).toBe("Av. Mato Grosso, 1831 - Estados, Fazenda Rio Grande - PR, 83830-481");
+    expect(responsavel).toContain("estabelecida na Av. Mato Grosso, 1831 - Estados, Fazenda Rio Grande - PR, 83830-481.");
     // O número do wa.me é o mesmo telefone, só com dígitos e DDI 55.
     expect(WHATSAPP.numero).toBe(`55${LOJA.telefone.replace(/\D/g, "")}`);
   });

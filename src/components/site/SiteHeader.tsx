@@ -120,7 +120,7 @@ export function SiteHeader() {
             Fale conosco
           </Button>
           <p className="site-menu-contact">
-            {LOJA.telefone} · {LOJA.instagram}
+            {LOJA.telefone} · <a href={LOJA.telefoneFixoHref}>{LOJA.telefoneFixo}</a> · {LOJA.instagram}
           </p>
         </div>
       </dialog>
