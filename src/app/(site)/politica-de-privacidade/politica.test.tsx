@@ -268,20 +268,20 @@ describe("Política de Privacidade — página", () => {
 });
 
 describe("Política de Privacidade — versão e data de vigência", () => {
-  it("versão 3, vigente a partir de 07/10/2026 (calendário de Brasília)", () => {
-    expect(VERSAO_POLITICA).toBe(3);
-    expect(DATA_VIGENCIA_POLITICA).toBe("2026-10-07");
+  it("versão 4, vigente a partir de 23/10/2026 (calendário de Brasília)", () => {
+    expect(VERSAO_POLITICA).toBe(4);
+    expect(DATA_VIGENCIA_POLITICA).toBe("2026-10-23");
     // A página de verdade usa a constante.
     render(<PoliticaDePrivacidadePage />);
     expect(document.querySelector(".politica-versao")).toHaveTextContent(
-      /^Versão 3\. Vigente a partir de 07\/10\/2026\.$/
+      /^Versão 4\. Vigente a partir de 23\/10\/2026\.$/
     );
     expect(document.body.innerHTML).not.toMatch(/\{\{|\}\}/);
   });
 
-  it("com a data nula, mostra só 'Versão 3.' e nenhum campo entre chaves", () => {
+  it("com a data nula, mostra só 'Versão 4.' e nenhum campo entre chaves", () => {
     const { container } = render(<PoliticaDePrivacidade dataVigencia={null} />);
-    expect(container.querySelector(".politica-versao")).toHaveTextContent(/^Versão 3\.$/);
+    expect(container.querySelector(".politica-versao")).toHaveTextContent(/^Versão 4\.$/);
     expect(container.textContent).not.toContain("Vigente");
     expect(container.innerHTML).not.toMatch(/\{\{|\}\}/);
   });
@@ -289,7 +289,7 @@ describe("Política de Privacidade — versão e data de vigência", () => {
   it("com uma data de teste, a frase de vigência aparece com essa data", () => {
     const { container } = render(<PoliticaDePrivacidade dataVigencia="2026-10-20" />);
     expect(container.querySelector(".politica-versao")).toHaveTextContent(
-      /^Versão 3\. Vigente a partir de 20\/10\/2026\.$/
+      /^Versão 4\. Vigente a partir de 20\/10\/2026\.$/
     );
     expect(container.innerHTML).not.toMatch(/\{\{|\}\}/);
   });
