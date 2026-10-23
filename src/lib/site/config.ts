@@ -7,14 +7,15 @@ import type { CategoriaProduto } from "@/lib/produtos/types";
 
 export const LOJA = {
   nome: "Pingo de Mell",
-  endereco: "Rua das Acácias, 412, Nações, Fazenda Rio Grande/PR",
-  enderecoCurto: "Rua das Acácias, 412, Nações",
+  endereco: "Av. Mato Grosso, 1831 - Estados, Fazenda Rio Grande - PR, 83830-481",
+  enderecoCurto: "Av. Mato Grosso, 1831 - Estados",
   // Segunda linha do endereço na Quem Somos (a primeira é enderecoCurto).
-  cidade: "Fazenda Rio Grande, PR",
-  // Local da loja no Google Maps (link do handoff). Mesmo lugar do
-  // avaliacoesGoogleUrl (id 0x94dc5570c97917bd:0x6afc7f109f7f4b13), conferido
-  // em 30/09/2026.
-  mapsUrl: "https://maps.app.goo.gl/WV9T6qZpGMNdrXjk9",
+  cidade: "Fazenda Rio Grande - PR, 83830-481",
+  // Busca no Google Maps pelo endereço novo da loja. O link curto anterior
+  // apontava para o endereço antigo; trocar por um link do perfil da loja
+  // quando o Google dela estiver atualizado.
+  mapsUrl:
+    "https://www.google.com/maps/search/?api=1&query=Av.+Mato+Grosso%2C+1831+-+Estados%2C+Fazenda+Rio+Grande+-+PR%2C+83830-481",
   horario: "Terça a sábado, 9h às 18h · domingo, 9h às 15h",
   // Também está dentro de horarioAtendimento; config.test.ts falha se as
   // duas cópias divergirem.
@@ -22,6 +23,9 @@ export const LOJA = {
   horarioAtendimento:
     "Terça a sábado, 9h às 18h · domingo, 9h às 15h · segunda fechado. Fim de semana: peça até quinta.",
   telefone: "(41) 98800-2315",
+  // Telefone fixo, atende nos mesmos horários do WhatsApp.
+  telefoneFixo: "(41) 3627-5234",
+  telefoneFixoHref: "tel:+554136275234",
   instagram: "@pingodemell.frg",
   cnpj: "22.066.065/0001-72",
   // Correio eletrônico de atendimento ao titular, citado na seção 1 da

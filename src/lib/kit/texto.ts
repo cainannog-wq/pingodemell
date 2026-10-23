@@ -1,5 +1,5 @@
 import { linhaGeral, opcoesDeEscolha, type KitConfig } from "./config";
-import type { FormatoBolo } from "@/lib/vitrine/bolo";
+import { formatoDoPedido, type FormatoBolo } from "@/lib/vitrine/bolo";
 import type { EscolhasKit } from "./escolhas";
 
 // Retrato legível de um kit montado: o que a cliente escolheu, com os nomes.
@@ -82,7 +82,7 @@ function linhaDoGrupo(g: GrupoDoRetrato): string {
 // Linhas da composição, sem emoji e sem hífen: tamanho, bolo, grupos e
 // descartáveis. Usadas na mensagem, na confirmação e no painel.
 export function linhasDaComposicao(r: RetratoDoKit): string[] {
-  const linhas = [`Bolo: ${textoKg(r.boloKg)}${r.formato ? `, ${r.formato}` : ""}`];
+  const linhas = [`Bolo: ${textoKg(r.boloKg)}${r.formato ? `, ${formatoDoPedido(r.formato)}` : ""}`];
   for (const g of r.grupos) linhas.push(linhaDoGrupo(g));
   if (r.descartaveis) linhas.push("Descartáveis incluídos");
   return linhas;

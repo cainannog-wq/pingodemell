@@ -42,6 +42,7 @@ import { ROTAS } from "@/lib/site/rotas";
 import { diaDaSemana, hojeBrasilia, somarDias } from "@/lib/tempo/brasilia";
 import { nomeDaUnidade, textoQuantidadeNaUnidade } from "@/lib/vitrine/minimo";
 import { CarrinhoVazio } from "../../carrinho/_carrinho/CarrinhoVazio";
+import { TEXTO_SINAL_CHECKOUT } from "@/lib/pedidos/mensagem";
 import { Calendario } from "./Calendario";
 import { Ofertas } from "./Ofertas";
 import { mostraSaida, PainelEnvio, type EstadoEnvio } from "./PainelEnvio";
@@ -765,10 +766,16 @@ function Formulario({
               }}
               avisoSemRegistro={avisoSemRegistro}
             />
-            <p className="checkout-sem-pagamento">
-              <Icon name="payments" size={18} color="var(--brown-500)" />
-              Nenhum pagamento é feito aqui no site.
-            </p>
+            <div className="checkout-sem-pagamento">
+              <p>
+                <Icon name="payments" size={18} color="var(--brown-500)" />
+                Nenhum pagamento é feito aqui no site.
+              </p>
+              <p className="checkout-sinal">
+                <Icon name="info" size={18} color="var(--brown-500)" />
+                {TEXTO_SINAL_CHECKOUT}
+              </p>
+            </div>
           </div>
         </aside>
       </form>

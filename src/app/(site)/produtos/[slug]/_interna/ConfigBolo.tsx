@@ -6,20 +6,18 @@ import { Seletor } from "@/components/site/Seletor";
 import { normalizarObservacao } from "@/lib/carrinho/regras";
 import { formatMoeda } from "@/lib/pedidos/format";
 import { agruparRecheiosDoBolo, precoDoBolo } from "@/lib/recheios/regras";
-import { atributosWhatsApp, LINK_WHATSAPP_CONTATO } from "@/lib/site/whatsapp";
 import {
+  ajustarKgAoTrocarFormato,
   detalheDoBolo,
   erroKg,
   FORMATO_BOLO_LABELS,
   FORMATOS_BOLO,
-  KG_MINIMO,
+  formatoDoPedido,
+  limitesKg,
   normalizarKg,
   passoKg,
-  KG_AVISO,
-  KG_MAXIMO,
   TEXTO_DECORACAO,
   TEXTO_FOTO_REFERENCIA,
-  textoAvisoKg,
   type FormatoBolo,
 } from "@/lib/vitrine/bolo";
 import type { RecheioVitrine } from "@/lib/vitrine/disponibilidade";
@@ -31,15 +29,16 @@ import { PainelAdicionar } from "./PainelAdicionar";
 import { useCelular } from "./useCelular";
 
 // Configuração do produto tipo Bolo (regras em src/lib/vitrine/bolo.ts e
-// src/lib/recheios/regras.ts): tamanho em kg (de 1 em 1; acima de 10 kg só
-// avisa para combinar pelo WhatsApp, sem bloquear), formato (informativo),
-// um recheio do catálogo (agrupado) e observação do item. O preço é sempre
+// src/lib/recheios/regras.ts): formato (redondo de 1 a 4 kg, retangular de 2 a
+// 5 kg), tamanho em kg de 1 em 1 dentro da faixa do formato (trocar o formato
+// ajusta o tamanho para o limite mais próximo e avisa), um recheio do
+// catálogo (agrupado) e observação do item. O preço é sempre
 // R$/kg do recheio × kg; o campo Preço do cadastro não vale aqui. Cada
 // "Adicionar ao pedido" é um bolo (uma linha no carrinho).
 //
 // No celular o seletor de tamanho sai do corpo e vive na barra fixa do rodapé,
-// só com − e +, de 1 a 10 kg (no 10 o + desliga e a barra mostra a linha do
-// WhatsApp). No desktop nada muda: campo digitável, até 50 kg.
+// só com − e + (desliga nos limites do formato). No desktop é um campo
+// digitável: fora da faixa mostra a mensagem e bloqueia o botão.
 //
 // Em modo edição (edicao, vindo do ?editar= do carrinho) começa preenchido com
 // o que está gravado na linha: kg, formato, recheio e observação. Recheio que
@@ -57,28 +56,39 @@ export function ConfigBolo({
   const celular = useCelular();
   const grupos = agruparRecheiosDoBolo(recheios);
   const gravada = edicao?.linha.tipo === "bolo" ? edicao.linha : null;
-  const [texto, setTexto] = useState(String(gravada?.quantidade ?? KG_MINIMO));
+  // Bolo gravado como "quadrado" (carrinho antigo) abre como retangular.
+  const [formato, setFormato] = useState<FormatoBolo>(gravada ? formatoDoPedido(gravada.formato) : "redondo");
+  const [texto, setTexto] = useState(String(gravada?.quantidade ?? limitesKg(formato).min));
+  const [avisoFormato, setAvisoFormato] = useState<string | null>(null);
   const [recheioId, setRecheioId] = useState<string | null>(() =>
     gravada && grupos.some((g) => g.recheios.some((r) => r.id === gravada.recheio.id)) ? gravada.recheio.id : null
   );
-  const [formato, setFormato] = useState<FormatoBolo>(gravada?.formato ?? "redondo");
   const [observacao, setObservacao] = useState(gravada?.observacao ?? "");
   const [adicionado, setAdicionado] = useState(false);
 
   const kg = texto === "" ? NaN : Number(texto);
-  const erroDoTamanho = texto === "" ? `Tamanho mínimo: ${KG_MINIMO} kg` : erroKg(kg);
+  const limite = limitesKg(formato);
+  const erroDoTamanho = texto === "" ? erroKg(0, formato) : erroKg(kg, formato);
   const recheio = grupos.flatMap((g) => g.recheios).find((r) => r.id === recheioId) ?? null;
   const precoKg = recheio ? Number(recheio.preco_kg) : null;
   const valida = erroDoTamanho === null && recheio !== null;
   const erro = erroDoTamanho ?? (recheio ? null : "Escolha o recheio para adicionar.");
-  const aviso = erroDoTamanho === null ? textoAvisoKg(kg) : null;
-  const tetoKg = celular ? KG_AVISO : KG_MAXIMO;
 
   function alterar<T>(definir: (v: T) => void) {
     return (v: T) => {
       definir(v);
       setAdicionado(false);
     };
+  }
+
+  function aoTrocarFormato(novo: FormatoBolo) {
+    const ajuste = ajustarKgAoTrocarFormato(kg, novo);
+    // Tamanho vazio ou fora da faixa vai para o limite mais próximo do novo formato.
+    const novoKg = texto === "" ? normalizarKg(NaN, novo) : ajuste.kg;
+    setFormato(novo);
+    setTexto(String(novoKg));
+    setAvisoFormato(ajuste.aviso);
+    setAdicionado(false);
   }
 
   function aoAdicionar() {
@@ -98,18 +108,23 @@ export function ConfigBolo({
     if (resultado === "adicionou") setAdicionado(true);
   }
 
+  function alterarTamanho(v: string) {
+    setAvisoFormato(null);
+    alterar(setTexto)(v);
+  }
+
   const seletor = (
     <Seletor
       rotulo="Tamanho em kg"
       idCampo="interna-tamanho"
       valor={texto}
       invalido={erroDoTamanho !== null}
-      podeMenos={erroDoTamanho === null ? kg > KG_MINIMO : true}
-      podeMais={erroDoTamanho === null ? kg < tetoKg : true}
-      aoMenos={() => alterar(setTexto)(String(passoKg(kg, -1)))}
-      aoMais={() => alterar(setTexto)(String(passoKg(kg, 1)))}
-      aoDigitar={celular ? undefined : alterar(setTexto)}
-      aoSairDoCampo={() => setTexto(String(normalizarKg(kg)))}
+      podeMenos={erroDoTamanho === null ? kg > limite.min : true}
+      podeMais={erroDoTamanho === null ? kg < limite.max : true}
+      aoMenos={() => alterarTamanho(String(passoKg(kg, -1, formato)))}
+      aoMais={() => alterarTamanho(String(passoKg(kg, 1, formato)))}
+      aoDigitar={celular ? undefined : alterarTamanho}
+      aoSairDoCampo={() => setTexto(String(normalizarKg(kg, formato)))}
     />
   );
 
@@ -121,7 +136,9 @@ export function ConfigBolo({
           <label className="interna-bloco-titulo" htmlFor="interna-tamanho">
             Tamanho
           </label>
-          <span className="interna-bloco-dica">Em quilos, de 1 em 1</span>
+          <span className="interna-bloco-dica">
+            Em quilos, de 1 em 1 ({limite.min} a {limite.max} kg)
+          </span>
         </div>
         <div className="interna-quantidade">
           {seletor}
@@ -130,12 +147,6 @@ export function ConfigBolo({
         <p className="interna-campo-erro" aria-live="polite">
           {erroDoTamanho ?? ""}
         </p>
-        {aviso ? (
-          <p className="interna-aviso" role="status">
-            <Icon name="info" size={20} tone="inherit" />
-            {aviso}
-          </p>
-        ) : null}
       </div>
       )}
 
@@ -149,12 +160,22 @@ export function ConfigBolo({
                 name="interna-formato"
                 value={f}
                 checked={formato === f}
-                onChange={() => alterar(setFormato)(f)}
+                onChange={() => aoTrocarFormato(f)}
               />
               <span className="interna-opcao-nome">{FORMATO_BOLO_LABELS[f]}</span>
             </label>
           ))}
         </div>
+        <p className="interna-formato-faixa">
+          Redondo: de {limitesKg("redondo").min} a {limitesKg("redondo").max} kg. Retangular: de {limitesKg("retangular").min} a{" "}
+          {limitesKg("retangular").max} kg.
+        </p>
+        {avisoFormato ? (
+          <p className="interna-aviso" role="status">
+            <Icon name="info" size={20} tone="inherit" />
+            {avisoFormato}
+          </p>
+        ) : null}
       </fieldset>
 
       <EscolhaRecheio
@@ -214,13 +235,6 @@ export function ConfigBolo({
                 textoSubtotal: recheio ? undefined : "Escolha o recheio",
                 // O recheio faltando já está dito no subtotal.
                 erro: erroDoTamanho,
-                linhaTopo:
-                  erroDoTamanho === null && kg >= KG_AVISO ? (
-                    <p className="interna-barra-whatsapp">
-                      Mais de {KG_AVISO} kg?{" "}
-                      <a {...atributosWhatsApp("barra_bolo", LINK_WHATSAPP_CONTATO)}>Combine pelo WhatsApp</a>
-                    </p>
-                  ) : null,
               }
             : undefined
         }

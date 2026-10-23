@@ -93,6 +93,19 @@ describe("carrinho — leitura do que está salvo (Bolo e Bento)", () => {
     expect(lerCarrinho(escreverCarrinho(linhas))).toEqual(linhas);
   });
 
+  it("lê o quadrado antigo e aceita redondo e retangular dentro da faixa", () => {
+    const lidas = lerCarrinho(
+      salvar([
+        { ...linhaBolo, id: "q", formato: "quadrado", quantidade: 5 },
+        { ...linhaBolo, id: "r", formato: "retangular", quantidade: 2 },
+        { ...linhaBolo, id: "o", formato: "redondo", quantidade: 1 },
+        { ...linhaBolo, id: "o4", formato: "redondo", quantidade: 4 },
+      ])
+    );
+    expect(lidas.map((l) => l.id)).toEqual(["q", "r", "o", "o4"]);
+    expect(lidas[0]).toMatchObject({ formato: "quadrado", quantidade: 5 });
+  });
+
   it("aceita linhas válidas de Bolo e Bento", () => {
     expect(lerCarrinho(salvar([linhaBolo, linhaBento]))).toHaveLength(2);
   });
@@ -104,6 +117,10 @@ describe("carrinho — leitura do que está salvo (Bolo e Bento)", () => {
     ["Bolo de 0 kg", { ...linhaBolo, quantidade: 0 }],
     ["Bolo de meio quilo", { ...linhaBolo, quantidade: 1.5 }],
     ["Bolo de 51 kg", { ...linhaBolo, quantidade: 51 }],
+    ["Bolo redondo de 5 kg (máximo 4)", { ...linhaBolo, formato: "redondo", quantidade: 5 }],
+    ["Bolo retangular de 1 kg (mínimo 2)", { ...linhaBolo, formato: "retangular", quantidade: 1 }],
+    ["Bolo retangular de 6 kg (máximo 5)", { ...linhaBolo, formato: "retangular", quantidade: 6 }],
+    ["Bolo quadrado antigo de 1 kg (regras do retangular)", { ...linhaBolo, formato: "quadrado", quantidade: 1 }],
     ["Bento sem recheio", { ...linhaBento, recheio: undefined }],
     ["Bento com quantidade 0", { ...linhaBento, quantidade: 0 }],
     ["tipo desconhecido", { ...linhaBento, tipo: "smash" }],

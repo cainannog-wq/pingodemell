@@ -79,25 +79,25 @@ describe("ConfigKit", () => {
     expect(push).toHaveBeenCalledWith("/carrinho");
   });
 
-  it("o formato do bolo (redondo ou quadrado) fica dentro da caixa do recheio, abre em redondo e vai na linha", () => {
+  it("o formato do bolo (redondo ou retangular) fica dentro da caixa do recheio, abre em redondo e vai na linha", () => {
     render(<ConfigKit produto={produto} config={config} />);
     const caixa = screen.getByRole("button", { name: /^Recheio do bolo/ }).closest("section, div")!;
     const redondo = screen.getByRole("radio", { name: "Redondo" });
-    const quadrado = screen.getByRole("radio", { name: "Quadrado" });
+    const retangular = screen.getByRole("radio", { name: "Retangular" });
     expect(redondo).toBeChecked();
-    expect(caixa.parentElement!.contains(quadrado)).toBe(true);
-    fireEvent.click(quadrado);
-    expect(quadrado).toBeChecked();
+    expect(caixa.parentElement!.contains(retangular)).toBe(true);
+    fireEvent.click(retangular);
+    expect(retangular).toBeChecked();
     fireEvent.click(screen.getByLabelText(/Ninho com morango/));
     // O resumo da caixa fechada mostra o recheio e o formato.
-    expect(screen.getByRole("button", { name: /^Recheio do bolo/ })).toHaveTextContent("Quadrado");
+    expect(screen.getByRole("button", { name: /^Recheio do bolo/ })).toHaveTextContent("Retangular");
     fireEvent.click(screen.getByLabelText(/Suco de uva/));
     aumentar(/Aumentar Doces, Brigadeiro/);
     aumentar(/Aumentar Doces, Beijinho/);
     fireEvent.click(botaoAdicionar());
     const linha = adicionar.mock.calls[0][0];
-    expect(linha.formato).toBe("quadrado");
-    expect(linha.retrato.formato).toBe("quadrado");
+    expect(linha.formato).toBe("retangular");
+    expect(linha.retrato.formato).toBe("retangular");
   });
 
   it("sem mexer no formato, a linha leva redondo", () => {

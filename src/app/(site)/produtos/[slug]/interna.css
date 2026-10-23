@@ -838,6 +838,11 @@
   border: 0;
   min-width: 0;
 }
+.interna-formato-faixa {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
 .interna-formatos {
   display: flex;
   flex-wrap: wrap;

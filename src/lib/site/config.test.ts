@@ -14,7 +14,13 @@ describe("LOJA", () => {
   });
 
   it("endereco é enderecoCurto mais a cidade", () => {
-    expect(LOJA.endereco).toBe(`${LOJA.enderecoCurto}, ${LOJA.cidade.replace(", ", "/")}`);
+    expect(LOJA.endereco).toBe(`${LOJA.enderecoCurto}, ${LOJA.cidade}`);
+    expect(LOJA.endereco).toBe("Av. Mato Grosso, 1831 - Estados, Fazenda Rio Grande - PR, 83830-481");
+  });
+
+  it("o telefone fixo e o link tel: dizem o mesmo número", () => {
+    expect(LOJA.telefoneFixo).toBe("(41) 3627-5234");
+    expect(LOJA.telefoneFixoHref).toBe(`tel:+55${LOJA.telefoneFixo.replace(/\D/g, "")}`);
   });
 
   it("o Instagram sai do @ de LOJA", () => {

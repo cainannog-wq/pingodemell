@@ -121,6 +121,30 @@ describe("validação do pedido no servidor: recusa", () => {
     expect(recusa(corpo({ itens: [{ ...bento, quantidade: 10_000 }] }))).toMatch(/quantidade/);
   });
 
+  it("peso do bolo por formato: redondo de 1 a 4 kg, retangular de 2 a 5 kg", () => {
+    const [, , bolo] = corpo().itens;
+    const com = (formato: string, quantidade: number) =>
+      corpo({ itens: [{ ...bolo, formato, quantidade } as CorpoPedido["itens"][number]] });
+    for (const [formato, kg] of [["redondo", 1], ["redondo", 4], ["retangular", 2], ["retangular", 5]] as const) {
+      expect(validarPedido(com(formato, kg), HOJE).ok, `${formato} ${kg} kg`).toBe(true);
+    }
+    expect(recusa(com("redondo", 5))).toMatch(/redondo: 4 kg/); // cabe no retangular, não no redondo
+    expect(recusa(com("retangular", 1))).toMatch(/retangular: 2 kg/);
+    expect(recusa(com("retangular", 6))).toMatch(/quantidade/); // acima do teto de qualquer formato
+    expect(recusa(com("redondo", 0))).toMatch(/quantidade/);
+  });
+
+  it("formato quadrado (carrinho antigo) vale como retangular e o pedido novo grava retangular", () => {
+    const [, , bolo] = corpo().itens;
+    const com = (quantidade: number) => corpo({ itens: [{ ...bolo, formato: "quadrado", quantidade } as CorpoPedido["itens"][number]] });
+    expect(recusa(com(1))).toMatch(/retangular: 2 kg/);
+    const r = validarPedido(com(3), HOJE);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.valor.pedido.itens[0]).toMatchObject({ formato: "retangular", variacao: expect.stringContaining("retangular") });
+    expect(JSON.stringify(r.valor.pedido.itens)).not.toMatch(/quadrado/i);
+  });
+
   it("preço negativo, com 3 casas ou acima de R$ 50.000", () => {
     const [avulso] = corpo().itens;
     for (const preco of [-1, 1.005, 50_000.01, Number.NaN]) {

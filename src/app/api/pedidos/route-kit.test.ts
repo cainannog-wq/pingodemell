@@ -51,7 +51,7 @@ beforeAll(() => {
 afterAll(() => vi.useRealTimers());
 
 const config = configDoExemplo();
-function kit(pessoas: number, escolhas: LinhaKit["escolhas"], produtoId = PRODUTO, id = "k1", formato?: "redondo" | "quadrado"): LinhaKit {
+function kit(pessoas: number, escolhas: LinhaKit["escolhas"], produtoId = PRODUTO, id = "k1", formato?: "redondo" | "retangular" | "quadrado"): LinhaKit {
   return {
     id,
     tipo: "kit",
@@ -108,11 +108,19 @@ describe("kit no pedido", () => {
   });
 
   it("formato do bolo: vai na primeira linha da composição e no item; sem formato, como antes", async () => {
+    const res = await POST(requisicao(pedido([kit(10, CERTO, PRODUTO, "k1", "retangular")])));
+    expect(res.status).toBe(201);
+    const item = (chamadas.rpc[0].p_pedido as { itens: Record<string, unknown>[] }).itens[0];
+    expect(String(item.variacao).split("\n")[0]).toBe("Bolo: 1 kg, retangular");
+    expect(item.formato).toBe("retangular");
+  });
+
+  it("carrinho antigo com formato quadrado ainda é aceito, mas o pedido novo grava retangular", async () => {
     const res = await POST(requisicao(pedido([kit(10, CERTO, PRODUTO, "k1", "quadrado")])));
     expect(res.status).toBe(201);
     const item = (chamadas.rpc[0].p_pedido as { itens: Record<string, unknown>[] }).itens[0];
-    expect(String(item.variacao).split("\n")[0]).toBe("Bolo: 1 kg, quadrado");
-    expect(item.formato).toBe("quadrado");
+    expect(String(item.variacao).split("\n")[0]).toBe("Bolo: 1 kg, retangular");
+    expect(item.formato).toBe("retangular");
   });
 
   it("formato do bolo inválido é recusado e nada grava", async () => {

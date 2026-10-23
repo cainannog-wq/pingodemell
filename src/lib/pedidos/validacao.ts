@@ -1,5 +1,5 @@
 import { FORMAS_PAGAMENTO, emailValido, enderecoCompleto, soDigitos } from "@/lib/checkout/formulario";
-import { FORMATOS_BOLO, KG_MAXIMO, KG_MINIMO } from "@/lib/vitrine/bolo";
+import { erroKg, formatoDoPedido, formatoValido, KG_MAXIMO, KG_MINIMO, type FormatoBolo } from "@/lib/vitrine/bolo";
 import { MAX_CENTOS, PASSO_SABOR, totalDoCento } from "@/lib/vitrine/cento";
 import { MAX_KITS, MAX_PESSOAS, TEXTO_LIMITE_DE_KITS } from "@/lib/carrinho/regras";
 import { MAX_QUANTIDADE } from "@/lib/vitrine/quantidade";
@@ -84,7 +84,7 @@ export type ItemGravado = {
   observacao: string | null;
   sabores?: { nome: string; quantidade: number }[];
   recheio?: { id: string; nome: string };
-  formato?: "redondo" | "quadrado";
+  formato?: "redondo" | "retangular";
   // Kit: os pares [id da opção, quantidade] de cada grupo, como vieram. O
   // texto da composição, com os nomes, vai em variacao.
   escolhas?: Record<string, [string, number][]>;
@@ -232,8 +232,8 @@ function item(v: unknown): { gravado: ItemGravado; centavos: number } {
   if (tipo === "kit") {
     gravado.escolhas = escolhasDoKit(o.escolhas);
     if (o.formato !== undefined && o.formato !== null) {
-      if (!(FORMATOS_BOLO as readonly unknown[]).includes(o.formato)) falha("Um kit do pedido está com o formato do bolo inválido.");
-      gravado.formato = o.formato as "redondo" | "quadrado";
+      if (!formatoValido(o.formato)) falha("Um kit do pedido está com o formato do bolo inválido.");
+      gravado.formato = formatoDoPedido(o.formato);
     }
   }
   if (tipo === "cento") {
@@ -268,8 +268,11 @@ function item(v: unknown): { gravado: ItemGravado; centavos: number } {
     gravado.variacao = `Recheio ${gravado.recheio.nome}`;
   }
   if (tipo === "bolo") {
-    if (!(FORMATOS_BOLO as readonly unknown[]).includes(o.formato)) falha("Um bolo do pedido está com o formato inválido.");
-    gravado.formato = o.formato as "redondo" | "quadrado";
+    if (!formatoValido(o.formato)) falha("Um bolo do pedido está com o formato inválido.");
+    // Regra de peso por formato (o "quadrado" de um carrinho antigo vale como retangular).
+    const erroDePeso = erroKg(quantidade, o.formato as FormatoBolo);
+    if (erroDePeso) falha(`Um bolo do pedido está fora do tamanho aceito. ${erroDePeso}.`);
+    gravado.formato = formatoDoPedido(o.formato);
     gravado.variacao = `Recheio ${gravado.recheio!.nome} · ${gravado.formato}`;
   }
 

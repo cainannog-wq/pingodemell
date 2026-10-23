@@ -466,7 +466,7 @@ describe("Checkout — validação do formulário", () => {
   it("retirada mostra o endereço completo da loja, com a cidade; topo com o texto do envio pelo WhatsApp", async () => {
     await abrir();
     const retirada = screen.getByRole("radio", { name: /Retirar na loja/ }).closest("label")!;
-    expect(retirada).toHaveTextContent("Rua das Acácias, 412, Nações, Fazenda Rio Grande/PR · sem custo");
+    expect(retirada).toHaveTextContent("Av. Mato Grosso, 1831 - Estados, Fazenda Rio Grande - PR, 83830-481 · sem custo");
     expect(
       screen.getByText("Preencha seus dados e envie seu pedido pelo WhatsApp. A gente confirma tudo e combina o pagamento por lá.")
     ).toBeInTheDocument();
@@ -833,6 +833,20 @@ describe("Checkout — envio do pedido", () => {
 // PR de ajustes visuais (07/10/2026): saem os cinco subtítulos das seções;
 // ficam os títulos, o aviso das datas bloqueadas, a frase do pagamento e o
 // texto de abertura.
+describe("Checkout — aviso do sinal", () => {
+  it("o aviso do sinal fica junto de 'Nenhum pagamento é feito aqui no site.', no mesmo bloco, antes do fim do resumo", async () => {
+    await abrir();
+    const pagamento = screen.getByText("Nenhum pagamento é feito aqui no site.");
+    const sinal = screen.getByText("50% de sinal no pedido e negocie condições");
+    const bloco = pagamento.closest(".checkout-sem-pagamento")!;
+    expect(bloco).not.toBeNull();
+    expect(bloco.contains(sinal)).toBe(true);
+    // Um logo depois do outro.
+    expect(pagamento.compareDocumentPosition(sinal) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(sinal.closest("p")!.previousElementSibling).toBe(pagamento.closest("p"));
+  });
+});
+
 describe("Checkout — seções sem subtítulo", () => {
   const SUBTITULOS = [
     "É por aqui que a gente vai te responder.",

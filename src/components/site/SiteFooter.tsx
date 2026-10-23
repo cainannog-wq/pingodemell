@@ -25,7 +25,7 @@ export function SiteFooter() {
             <br />
             {LOJA.horario}
             <br />
-            {LOJA.telefone}
+            {LOJA.telefone} · <a href={LOJA.telefoneFixoHref}>{LOJA.telefoneFixo}</a>
             <span className="site-so-desktop"> · {LOJA.instagram}</span> · CNPJ {LOJA.cnpj}
           </p>
         </div>
