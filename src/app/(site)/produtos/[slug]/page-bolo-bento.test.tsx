@@ -196,24 +196,51 @@ describe("Interna — Bolo", () => {
     expect(within(resumo()).getByText("R$ 285,00")).toBeInTheDocument();
   });
 
-  it("acima de 10 kg só avisa (WhatsApp), sem bloquear; número inválido bloqueia", async () => {
+  it("peso por formato: redondo de 1 a 4 kg, retangular de 2 a 5 kg; fora da faixa bloqueia com mensagem", async () => {
     const user = userEvent.setup();
     await renderInterna("bolo-de-chocolate");
     fireEvent.click(screen.getByRole("radio", { name: /Brigadeiro/ }));
     const campo = screen.getByRole("textbox", { name: "Tamanho em kg" });
+    // Redondo (padrão): 1 a 4.
     await user.clear(campo);
-    await user.type(campo, "10");
-    expect(screen.queryByText(/acima de 10 kg/)).toBeNull();
-    await user.clear(campo);
-    await user.type(campo, "12");
-    expect(screen.getByText("Para bolos acima de 10 kg, combine com a gente pelo WhatsApp.")).toBeInTheDocument();
+    await user.type(campo, "4");
     expect(botaoAdicionar()).toBeEnabled();
+    await user.clear(campo);
+    await user.type(campo, "5");
+    expect(botaoAdicionar()).toBeDisabled();
+    expect(within(resumo()).getByText("Tamanho máximo para bolo redondo: 4 kg")).toBeInTheDocument();
     await user.clear(campo);
     await user.type(campo, "0");
     expect(botaoAdicionar()).toBeDisabled();
-    expect(within(resumo()).getByText("Tamanho mínimo: 1 kg")).toBeInTheDocument();
+    expect(within(resumo()).getByText("Tamanho mínimo para bolo redondo: 1 kg")).toBeInTheDocument();
     await user.tab();
     expect(campo).toHaveValue("1");
+    // Retangular: 2 a 5. O 1 kg já escolhido sobe para 2 e a cliente é avisada.
+    fireEvent.click(screen.getByRole("radio", { name: "Retangular" }));
+    expect(campo).toHaveValue("2");
+    expect(screen.getByText("Bolo retangular aceita de 2 a 5 kg. Ajustamos o tamanho para 2 kg.")).toBeInTheDocument();
+    await user.clear(campo);
+    await user.type(campo, "6");
+    expect(botaoAdicionar()).toBeDisabled();
+    expect(within(resumo()).getByText("Tamanho máximo para bolo retangular: 5 kg")).toBeInTheDocument();
+    await user.clear(campo);
+    await user.type(campo, "5");
+    expect(botaoAdicionar()).toBeEnabled();
+    // Volta ao redondo com 5 kg: desce para 4 e avisa.
+    fireEvent.click(screen.getByRole("radio", { name: "Redondo" }));
+    expect(campo).toHaveValue("4");
+    expect(screen.getByText("Bolo redondo aceita de 1 a 4 kg. Ajustamos o tamanho para 4 kg.")).toBeInTheDocument();
+    // Peso que cabe nos dois formatos não muda nem avisa.
+    fireEvent.click(screen.getByRole("radio", { name: "Retangular" }));
+    expect(campo).toHaveValue("4");
+    expect(screen.queryByText(/Ajustamos o tamanho/)).toBeNull();
+  });
+
+  it("só oferece Redondo e Retangular (nunca Quadrado)", async () => {
+    await renderInterna("bolo-de-chocolate");
+    expect(screen.getByRole("radio", { name: "Redondo" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Retangular" })).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "Quadrado" })).toBeNull();
   });
 
   it("mostra o texto fixo da foto de referência e da decoração (nada de upload)", async () => {
@@ -226,7 +253,7 @@ describe("Interna — Bolo", () => {
   it("adicionar grava tipo bolo (recheio, formato, R$/kg); cada adicionar é um bolo, sem juntar", async () => {
     await renderInterna("bolo-de-chocolate");
     fireEvent.click(screen.getByRole("radio", { name: /Brigadeiro/ }));
-    fireEvent.click(screen.getByRole("radio", { name: "Quadrado" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Retangular" }));
     fireEvent.change(screen.getByRole("textbox", { name: /observação/i }), { target: { value: "tema unicórnio" } });
     fireEvent.click(botaoAdicionar());
     expect(contador()).toHaveTextContent("1");
@@ -234,9 +261,9 @@ describe("Interna — Bolo", () => {
       {
         tipo: "bolo",
         produtoId: BOLO.id,
-        quantidade: 1,
+        quantidade: 2, // 1 kg não cabe no retangular: o tamanho subiu para o mínimo
         preco: 80,
-        formato: "quadrado",
+        formato: "retangular",
         recheio: { id: BRIGADEIRO.id, nome: "Brigadeiro" },
         observacao: "tema unicórnio",
       },
@@ -245,7 +272,7 @@ describe("Interna — Bolo", () => {
     cleanup();
     await renderInterna("bolo-de-chocolate");
     fireEvent.click(screen.getByRole("radio", { name: /Brigadeiro/ }));
-    fireEvent.click(screen.getByRole("radio", { name: "Quadrado" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Retangular" }));
     fireEvent.change(screen.getByRole("textbox", { name: /observação/i }), { target: { value: "tema unicórnio" } });
     fireEvent.click(botaoAdicionar());
     expect(contador()).toHaveTextContent("2");

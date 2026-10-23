@@ -143,24 +143,22 @@ describe('Interna no celular — seletor na barra fixa', () => {
     expect(within(barra()).getByText('Escolha o recheio')).toBeInTheDocument();
   });
 
-  it('Bolo: 1 kg desliga o −; o + vai até 10 kg e desliga; a linha do WhatsApp só aparece no 10', async () => {
+  it('Bolo redondo: 1 kg desliga o −; o + vai até 4 kg e desliga; retangular vai de 2 a 5 kg', async () => {
     const user = userEvent.setup();
     await renderInterna('bolo-de-chocolate');
     const menos = () => within(barra()).getByRole('button', { name: 'Diminuir Tamanho em kg' });
     const mais = () => within(barra()).getByRole('button', { name: 'Aumentar Tamanho em kg' });
     expect(menos()).toBeDisabled();
-    for (let i = 1; i < 9; i++) await user.click(mais());
-    expect(within(barra()).getByText('9', { exact: false })).toBeInTheDocument();
+    for (let i = 1; i < 4; i++) await user.click(mais());
+    expect(mais()).toBeDisabled();
+    expect(within(barra()).queryByRole('link', { name: 'Combine pelo WhatsApp' })).toBeNull();
+    // Retangular: 4 kg cabe; o + vai até 5 e o − para no 2.
+    await user.click(screen.getByRole('radio', { name: 'Retangular' }));
     expect(mais()).toBeEnabled();
-    expect(within(barra()).queryByText(/Mais de 10 kg/)).toBeNull();
     await user.click(mais());
     expect(mais()).toBeDisabled();
-    const link = within(barra()).getByRole('link', { name: 'Combine pelo WhatsApp' });
-    expect(link.getAttribute('href')).toMatch(/^https:\/\/wa\.me\//);
-    expect(link).toHaveAttribute('data-whatsapp-origem', 'barra_bolo');
-    expect(within(barra()).getByText(/Mais de 10 kg\?/)).toBeInTheDocument();
-    await user.click(menos());
-    expect(within(barra()).queryByText(/Mais de 10 kg/)).toBeNull();
+    for (let i = 5; i > 2; i--) await user.click(menos());
+    expect(menos()).toBeDisabled();
   });
 
   it('Bolo: subtotal = R$/kg do recheio × kg a cada clique; a linha do carrinho mantém o formato', async () => {

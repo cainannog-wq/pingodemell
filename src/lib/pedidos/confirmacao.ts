@@ -1,6 +1,7 @@
 import { subtotalEmCentavos, type LinhaCarrinho } from "@/lib/carrinho/regras";
 import type { DadosCheckout, FormaPagamento, ModoEntrega } from "@/lib/checkout/formulario";
 import { linhasDaComposicao } from "@/lib/kit/texto";
+import { formatoDoPedido } from "@/lib/vitrine/bolo";
 import { itemDaLinha, type RespostaPedido } from "./envio";
 import { montarMensagem, quantidadeDaLinha, type DadosMensagem, type LinhaMensagem, type Mensagem } from "./mensagem";
 import type { LinhaDoRetrato, Retrato } from "./retrato";
@@ -67,7 +68,7 @@ function detalheDaLinha(l: LinhaCarrinho): string | null {
     const s = l.sabores.filter((x) => x.quantidade > 0).map((x) => `${x.nome} ${x.quantidade}`);
     return s.length ? s.join(", ") : null;
   }
-  if (l.tipo === "bolo") return `Recheio ${l.recheio.nome}, ${l.formato}`;
+  if (l.tipo === "bolo") return `Recheio ${l.recheio.nome}, ${formatoDoPedido(l.formato)}`;
   if (l.tipo === "bento") return `Recheio ${l.recheio.nome}`;
   // Kit: uma linha por item da composição (a confirmação mostra com quebras).
   if (l.tipo === "kit") return linhasDaComposicao(l.retrato).join("\n");

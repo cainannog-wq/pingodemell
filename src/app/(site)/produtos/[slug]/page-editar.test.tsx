@@ -207,7 +207,7 @@ describe("Editar Bolo — abrir pré-preenchido", () => {
 
     expect(kg()).toHaveValue("3");
     expect(screen.getByRole("radio", { name: /Brigadeiro/ })).toBeChecked();
-    expect(screen.getByRole("radio", { name: "Quadrado" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Retangular" })).toBeChecked(); // gravado como quadrado (registro antigo): abre como retangular
     expect(observacao()).toHaveValue("tema unicórnio");
     expect(aviso(TEXTO_EDITANDO)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Cancelar e voltar ao carrinho" })).toHaveAttribute("href", "/carrinho");
@@ -238,13 +238,13 @@ describe("Editar Bolo — abrir pré-preenchido", () => {
 
 describe("Editar Bolo — confirmar troca a linha", () => {
   it("troca na mesma posição, com o mesmo id, sem mudar o tamanho da lista, e leva ao carrinho", async () => {
-    const outro = linhaBolo("l-outro", { quantidade: 8, formato: "redondo", observacao: null });
+    const outro = linhaBolo("l-outro", { quantidade: 4, formato: "redondo", observacao: null });
     gravar([avulso, linhaBolo("l-bolo"), outro]);
     await renderInterna("bolo-de-chocolate", "l-bolo");
 
-    fireEvent.change(kg(), { target: { value: "5" } });
-    fireEvent.click(screen.getByRole("radio", { name: /Morango/ }));
     fireEvent.click(screen.getByRole("radio", { name: "Redondo" }));
+    fireEvent.change(kg(), { target: { value: "4" } });
+    fireEvent.click(screen.getByRole("radio", { name: /Morango/ }));
     fireEvent.change(observacao(), { target: { value: "sem topo" } });
     expect(salvo()[1]).toEqual(linhaBolo("l-bolo")); // ainda nada mudou
     fireEvent.click(botaoSalvar());
@@ -254,7 +254,7 @@ describe("Editar Bolo — confirmar troca a linha", () => {
     expect(linhas[1]).toMatchObject({
       id: "l-bolo",
       tipo: "bolo",
-      quantidade: 5,
+      quantidade: 4,
       preco: 95,
       formato: "redondo",
       observacao: "sem topo",
@@ -266,17 +266,17 @@ describe("Editar Bolo — confirmar troca a linha", () => {
   });
 
   it("editar um Bolo até ficar igual a outro Bolo não junta: continuam duas linhas", async () => {
-    const outro = linhaBolo("l-outro", { observacao: null });
+    const outro = linhaBolo("l-outro", { observacao: null, formato: "retangular" });
     gravar([linhaBolo("l-bolo", { quantidade: 2, formato: "redondo" }), outro]);
     await renderInterna("bolo-de-chocolate", "l-bolo");
     fireEvent.change(kg(), { target: { value: "3" } });
-    fireEvent.click(screen.getByRole("radio", { name: "Quadrado" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Retangular" }));
     fireEvent.change(observacao(), { target: { value: "" } });
     fireEvent.click(botaoSalvar());
     const linhas = salvo();
     expect(linhas).toHaveLength(2);
     expect(linhas.map((l) => l.id)).toEqual(["l-bolo", "l-outro"]);
-    expect(linhas[0]).toMatchObject({ quantidade: 3, formato: "quadrado", observacao: null });
+    expect(linhas[0]).toMatchObject({ quantidade: 3, formato: "retangular", observacao: null });
   });
 });
 
@@ -340,20 +340,20 @@ describe("Editar Bolo — desistir e perder o vínculo", () => {
   });
 
   it("a linha some em outra aba depois de abrir: confirmar não troca nada em silêncio, entra como item novo e avisa", async () => {
-    const outro = linhaBolo("l-outro", { observacao: null });
+    const outro = linhaBolo("l-outro", { observacao: null, formato: "retangular" });
     gravar([linhaBolo("l-bolo"), outro]);
     await renderInterna("bolo-de-chocolate", "l-bolo");
     expect(aviso(TEXTO_EDITANDO)).toBeInTheDocument();
 
     gravar([outro]); // outra aba removeu a linha
-    fireEvent.change(kg(), { target: { value: "6" } });
+    fireEvent.change(kg(), { target: { value: "5" } });
     fireEvent.click(botaoSalvar());
 
     const linhas = salvo();
     expect(linhas.map((l) => l.id)).toContain("l-outro");
     expect(linhas).toHaveLength(2);
     expect(linhas[0]).toEqual(outro);
-    expect(linhas[1]).toMatchObject({ tipo: "bolo", quantidade: 6 });
+    expect(linhas[1]).toMatchObject({ tipo: "bolo", quantidade: 5 });
     expect(linhas[1].id).not.toBe("l-bolo");
     expect(push).not.toHaveBeenCalled();
     expect(screen.getAllByText(AVISO_VIROU_ITEM_NOVO).length).toBeGreaterThan(0);
@@ -364,15 +364,15 @@ describe("Editar Bolo — desistir e perder o vínculo", () => {
     gravar([linhaBolo("l-bolo")]);
     await renderInterna("bolo-de-chocolate", "l-bolo");
 
-    const mexida = linhaBolo("l-bolo", { quantidade: 10 });
+    const mexida = linhaBolo("l-bolo", { quantidade: 4 });
     gravar([mexida]);
-    fireEvent.change(kg(), { target: { value: "6" } });
+    fireEvent.change(kg(), { target: { value: "5" } });
     fireEvent.click(botaoSalvar());
 
     const linhas = salvo();
     expect(linhas).toHaveLength(2);
     expect(linhas[0]).toEqual(mexida);
-    expect(linhas[1]).toMatchObject({ tipo: "bolo", quantidade: 6 });
+    expect(linhas[1]).toMatchObject({ tipo: "bolo", quantidade: 5 });
     expect(linhas[1].id).not.toBe("l-bolo");
     expect(push).not.toHaveBeenCalled();
   });

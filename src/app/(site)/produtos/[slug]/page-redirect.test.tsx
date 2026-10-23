@@ -224,13 +224,13 @@ describe("validação que falha: fica na interna, sem gravar, sem navegar e sem 
     expect(addToCart()).toEqual([]);
   });
 
-  it("Bolo acima de 10 kg só avisa (regra de sempre): adiciona e vai ao carrinho", async () => {
+  it("Bolo fora da faixa do formato (redondo até 4 kg): mostra a mensagem, fica na interna e não grava", async () => {
     await renderInterna(BOLO.slug!);
     fireEvent.click(screen.getByRole("radio", { name: /Brigadeiro/ }));
-    fireEvent.change(screen.getByRole("textbox", { name: "Tamanho em kg" }), { target: { value: "12" } });
-    expect(screen.getByText("Para bolos acima de 10 kg, combine com a gente pelo WhatsApp.")).toBeInTheDocument();
-    fireEvent.click(botaoAdicionar());
-    expect(salvo()).toMatchObject([{ tipo: "bolo", quantidade: 12 }]);
-    expect(navegacao.destinos).toEqual(["/carrinho"]);
+    fireEvent.change(screen.getByRole("textbox", { name: "Tamanho em kg" }), { target: { value: "5" } });
+    expect(screen.getAllByText("Tamanho máximo para bolo redondo: 4 kg").length).toBeGreaterThan(0);
+    expect(botaoAdicionar()).toBeDisabled();
+    expect(salvo()).toEqual([]);
+    expect(navegacao.destinos).toEqual([]);
   });
 });

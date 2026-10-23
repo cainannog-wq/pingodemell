@@ -2,6 +2,7 @@ import { rotuloHorario, dataCompleta } from "@/lib/checkout/datas";
 import { FORMAS_PAGAMENTO, type FormaPagamento, type ModoEntrega } from "@/lib/checkout/formulario";
 import { formatMoeda } from "@/lib/pedidos/format";
 import { linkWhatsApp } from "@/lib/site/whatsapp";
+import { formatoDoPedido } from "@/lib/vitrine/bolo";
 import { textoQuantidadeNaUnidade } from "@/lib/vitrine/minimo";
 import { unidadeDoBento } from "@/lib/vitrine/unidade";
 import type { ItemEnvio } from "./envio";
@@ -84,7 +85,7 @@ function linhaCompleta(l: LinhaMensagem, i: number): string[] {
     const sabores = l.sabores.filter((s) => s.quantidade > 0).map((s) => `${s.nome} ${s.quantidade}`);
     if (sabores.length) saida.push(`   Sabores: ${sabores.join(", ")}`);
   } else if (l.tipo === "bolo") {
-    saida.push(`${i}. ${l.nome}, recheio ${l.recheio.nome}, ${l.quantidade} kg, ${l.formato}, ${valor} (valor base, sem decoração)`);
+    saida.push(`${i}. ${l.nome}, recheio ${l.recheio.nome}, ${l.quantidade} kg, ${formatoDoPedido(l.formato)}, ${valor} (valor base, sem decoração)`);
   } else if (l.tipo === "bento") {
     saida.push(`${i}. ${l.nome}, recheio ${l.recheio.nome}, ${quantidadeDaLinha(l)}, ${valor}`);
   } else if (l.tipo === "kit") {

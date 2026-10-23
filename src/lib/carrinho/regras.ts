@@ -416,7 +416,7 @@ export function linhaValida(v: unknown): v is LinhaCarrinho {
     return inteiro(l.quantidade, 1, MAX_QUANTIDADE);
   }
   if (l.tipo === "bolo") {
-    return kgValido(l.quantidade as number) && recheioValido(l.recheio) && formatoValido(l.formato);
+    return formatoValido(l.formato) && kgValido(l.quantidade as number, l.formato) && recheioValido(l.recheio);
   }
   if (l.tipo === "bento") {
     if (l.pedidoMinimo !== undefined && !inteiro(l.pedidoMinimo, 1, MAX_QUANTIDADE)) return false;

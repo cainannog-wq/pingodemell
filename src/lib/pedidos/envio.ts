@@ -27,14 +27,14 @@ export type ItemEnvio =
   // que têm lista); informativo, sem efeito no preço.
   | (ItemBase & { tipo: "normal"; unidade_venda: string | null; recheio?: { id: string; nome: string } })
   | (ItemBase & { tipo: "cento"; sabores: { nome: string; quantidade: number }[] })
-  | (ItemBase & { tipo: "bolo"; recheio: { id: string; nome: string }; formato: "redondo" | "quadrado" })
+  | (ItemBase & { tipo: "bolo"; recheio: { id: string; nome: string }; formato: "redondo" | "retangular" | "quadrado" })
   // unidade_venda do Bento: "o combo" no combo; null no simples e em linha
   // de antes do campo. Só para exibir (mensagem, confirmação e painel).
   | (ItemBase & { tipo: "bento"; recheio: { id: string; nome: string }; unidade_venda?: string | null })
   // Kit por pessoa: quantidade = pessoas, preco = por pessoa. As escolhas vão
   // como pares [id da opção, quantidade] por grupo; o servidor resolve os
   // nomes pela configuração do kit e grava a composição em texto.
-  | (ItemBase & { tipo: "kit"; unidade_venda: string | null; escolhas: Record<string, [string, number][]>; formato?: "redondo" | "quadrado" });
+  | (ItemBase & { tipo: "kit"; unidade_venda: string | null; escolhas: Record<string, [string, number][]>; formato?: "redondo" | "retangular" | "quadrado" });
 
 export type CorpoPedido = {
   chave_idempotencia: string;

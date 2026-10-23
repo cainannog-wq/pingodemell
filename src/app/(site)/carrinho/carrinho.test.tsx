@@ -85,9 +85,9 @@ const bolo: LinhaCarrinho = {
   produtoId: "p-bolo",
   slug: "bolo-recheado",
   nome: "Bolo Recheado",
-  preco: 89.9,
+  preco: 269.7,
   tipo: "bolo",
-  quantidade: 12, // acima de 10 kg: só exibe o que foi gravado
+  quantidade: 4, // formato "quadrado": registro antigo, lido e exibido como foi gravado
   recheio: { id: "r-ninho", nome: "Ninho com morango" },
   formato: "quadrado",
   observacao: 'Escrever "Feliz 5 anos, Manu" na cobertura',
@@ -196,7 +196,7 @@ describe("Carrinho — exibição do que está gravado", () => {
 
     const b = within(itemOuFalha("l-bolo"));
     expect(b.getByText("Recheio: Ninho com morango · Formato: Quadrado")).toBeInTheDocument();
-    expect(paragrafo(itemOuFalha("l-bolo"), "12 kg × R$ 89,90 o kg")).toBeInTheDocument();
+    expect(paragrafo(itemOuFalha("l-bolo"), "4 kg × R$ 269,70 o kg")).toBeInTheDocument();
     expect(b.getByText('Escrever "Feliz 5 anos, Manu" na cobertura')).toBeInTheDocument();
     expect(b.getByText("R$ 1.078,80")).toBeInTheDocument();
 
