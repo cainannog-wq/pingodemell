@@ -102,7 +102,12 @@ export function partesPrecoVitrine(produto: PrecoDoProduto): {
   if (produto.tipo === "bolo") {
     const a = produto.preco_a_partir_de;
     if (typeof a !== "number") return { prefixo: null, valor: "Sob consulta", unidade: null };
-    return { prefixo: "a partir de", valor: formatMoeda(a), unidade: textoUnidadeVenda(produto) };
+    return { prefixo: "A partir de", valor: formatMoeda(a), unidade: textoUnidadeVenda(produto) };
+  }
+  // Kit Festa por pessoa: "A partir de R$ 220,00" (menor tamanho x preço por
+  // pessoa), sem unidade. Sem o valor calculado, cai no preço por pessoa.
+  if (produto.tipo === "kit_pessoa" && typeof produto.preco_a_partir_de === "number") {
+    return { prefixo: "A partir de", valor: formatMoeda(produto.preco_a_partir_de), unidade: null };
   }
   return {
     prefixo: null,

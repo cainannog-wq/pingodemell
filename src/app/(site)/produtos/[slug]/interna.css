@@ -397,6 +397,145 @@
   gap: 24px;
 }
 
+/* Acordeão dos grupos do Kit Festa por pessoa: um aberto por vez; os fechados
+   mostram o título e o resumo da escolha. */
+.interna-acordeao {
+  background: var(--surface-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-rest);
+  overflow: hidden;
+}
+.interna-acordeao-botao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 18px 24px;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.interna-acordeao-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.interna-acordeao-resumo {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.interna-acordeao[data-completo="true"] .interna-acordeao-resumo {
+  color: var(--pdm-success-text);
+}
+.interna-acordeao-ok {
+  color: var(--pdm-success-text);
+}
+.interna-acordeao-seta {
+  transition: transform var(--duration) var(--easing);
+}
+.interna-acordeao[data-aberto="true"] .interna-acordeao-seta {
+  transform: rotate(180deg);
+}
+.interna-acordeao-corpo {
+  border-top: 1px solid var(--border-subtle);
+}
+/* O título do grupo já está no cabeçalho do acordeão: o de dentro fica só para
+   leitor de tela (rotula o grupo de opções). */
+.interna-acordeao-corpo .interna-composicao {
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
+}
+.interna-acordeao-corpo .interna-bloco-titulo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.interna-acordeao-corpo .interna-sabores {
+  border-top: 0;
+}
+
+/* Barra de subtotal fixa também no desktop (Kit Festa por pessoa). No celular
+   vale a barra de sempre, abaixo. */
+@media (min-width: 768px) {
+  .interna-resumo[data-escondido-desktop] {
+    display: none;
+  }
+  .pdm-site:has(.interna-barra[data-desktop]) {
+    padding-bottom: var(--interna-barra-altura, 84px);
+  }
+  .interna-barra[data-desktop] {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px var(--container-pad);
+    background: var(--surface-raised);
+    border-top: 1px solid var(--border-subtle);
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.1);
+  }
+  .interna-barra[data-desktop] > * {
+    width: 100%;
+    max-width: var(--container-max);
+    margin-inline: auto;
+  }
+  .interna-barra[data-desktop] .interna-barra-linha {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 24px;
+  }
+  .interna-barra[data-desktop] .interna-resumo-textos {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 12px;
+    margin-right: auto;
+  }
+  .interna-barra[data-desktop] .interna-resumo-rotulo {
+    font-weight: var(--fw-semibold);
+    font-size: 16px;
+    color: var(--brown-700);
+  }
+  .interna-barra[data-desktop] .interna-barra-detalhe {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .interna-barra[data-desktop] .interna-barra-valor {
+    font-weight: var(--fw-bold);
+    font-size: 26px;
+    color: var(--ink-900);
+    white-space: nowrap;
+  }
+  .interna-barra[data-desktop] .interna-barra-linha > button {
+    /* O Button traz width: 100% inline (fullWidth, usado no celular). */
+    width: auto !important;
+    min-width: 260px;
+    flex: none;
+  }
+  .interna-barra[data-desktop] .interna-barra-aviso {
+    text-align: right;
+  }
+  .pdm-site:has(.interna-barra[data-desktop]) .site-fab {
+    bottom: calc(var(--interna-barra-altura, 84px) + 18px) !important;
+  }
+}
+
 @media (max-width: 1023px) {
   .interna-corpo {
     gap: 32px;
@@ -478,6 +617,12 @@
   }
   .interna-composicao-topo {
     padding: 16px;
+  }
+  .interna-acordeao-botao {
+    padding: 14px 16px;
+  }
+  .interna-barra-detalhe {
+    display: none;
   }
   .interna-bloco-titulo {
     font-size: 16px;
@@ -765,4 +910,28 @@
 }
 .interna-edicao-carregando {
   min-height: 240px;
+}
+
+/* Formato do bolo (redondo ou quadrado) dentro da caixa do recheio do kit. */
+.interna-formato-do-kit {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+.interna-formato-do-kit .interna-bloco-titulo {
+  margin-bottom: 8px;
+}
+.interna-acordeao-corpo .interna-formato-do-kit {
+  margin: 0;
+  padding: 16px 20px 20px;
+}
+.interna-acordeao-corpo .interna-formato-do-kit .interna-bloco-titulo {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0 0 10px;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  font-size: 15px;
 }

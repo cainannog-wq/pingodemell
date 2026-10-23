@@ -111,6 +111,9 @@ export type LinhaKit = LinhaBase & {
   unidade_venda?: string | null;
   escolhas: EscolhasKit;
   retrato: RetratoDoKit;
+  // Formato do bolo (redondo ou quadrado), só informativo como no Bolo. Linha
+  // de antes do campo não tem.
+  formato?: FormatoBolo;
 };
 
 // Cada pedido aceita até MAX_KITS kits (linhas de kit, não pessoas): cabe com
@@ -371,6 +374,7 @@ function retratoValido(v: unknown, pessoas: number): v is RetratoDoKit {
   if (typeof v !== "object" || v === null) return false;
   const r = v as Record<string, unknown>;
   if (r.pessoas !== pessoas || typeof r.boloKg !== "number" || !(r.boloKg > 0 && r.boloKg <= 1000)) return false;
+  if (r.formato !== undefined && !formatoValido(r.formato)) return false;
   if (typeof r.descartaveis !== "boolean" || !Array.isArray(r.grupos) || r.grupos.length > 20) return false;
   return r.grupos.every((g: unknown) => {
     if (typeof g !== "object" || g === null) return false;
@@ -421,6 +425,7 @@ export function linhaValida(v: unknown): v is LinhaCarrinho {
   }
   if (l.tipo === "kit") {
     if (l.unidade_venda !== undefined && l.unidade_venda !== null && !texto(l.unidade_venda, 20)) return false;
+    if (l.formato !== undefined && !formatoValido(l.formato)) return false;
     return inteiro(l.quantidade, 1, MAX_PESSOAS) && escolhasValidas(l.escolhas) && retratoValido(l.retrato, l.quantidade as number);
   }
   if (l.tipo === "cento") {

@@ -34,7 +34,7 @@ export type ItemEnvio =
   // Kit por pessoa: quantidade = pessoas, preco = por pessoa. As escolhas vão
   // como pares [id da opção, quantidade] por grupo; o servidor resolve os
   // nomes pela configuração do kit e grava a composição em texto.
-  | (ItemBase & { tipo: "kit"; unidade_venda: string | null; escolhas: Record<string, [string, number][]> });
+  | (ItemBase & { tipo: "kit"; unidade_venda: string | null; escolhas: Record<string, [string, number][]>; formato?: "redondo" | "quadrado" });
 
 export type CorpoPedido = {
   chave_idempotencia: string;
@@ -83,7 +83,7 @@ export function itemDaLinha(linha: LinhaCarrinho): ItemEnvio {
   if (linha.tipo === "cento") return { ...base, tipo: "cento", sabores: linha.sabores.map((s) => ({ nome: s.nome, quantidade: s.quantidade })) };
   if (linha.tipo === "bolo") return { ...base, tipo: "bolo", recheio: { id: linha.recheio.id, nome: linha.recheio.nome }, formato: linha.formato };
   if (linha.tipo === "kit") {
-    return { ...base, tipo: "kit", unidade_venda: linha.unidade_venda ?? null, escolhas: linha.escolhas };
+    return { ...base, tipo: "kit", unidade_venda: linha.unidade_venda ?? null, escolhas: linha.escolhas, ...(linha.formato ? { formato: linha.formato } : {}) };
   }
   if (linha.tipo === "bento") {
     return { ...base, tipo: "bento", recheio: { id: linha.recheio.id, nome: linha.recheio.nome }, unidade_venda: linha.unidade_venda ?? null };

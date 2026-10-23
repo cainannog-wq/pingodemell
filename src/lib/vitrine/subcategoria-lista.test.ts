@@ -108,8 +108,9 @@ describe("filtro por subcategoria — montarLista", () => {
   });
 
   it("slug em maiúscula direto em montarLista (sem normalizar) não casa: a normalização é da leitura", () => {
-    expect(lista({ categoria: "Doces", subcategoria: "FINOS" }).subcategoriaAtiva).toBeNull();
-    expect(lista({ categoria: "Doces", subcategoria: " finos" }).subcategoriaAtiva).toBeNull();
+    // Não casa o slug, então vale o padrão da categoria (a primeira subcategoria).
+    expect(lista({ categoria: "Doces", subcategoria: "GOURMET-PREMIUM" }).subcategoriaAtiva).toBe("finos");
+    expect(lista({ categoria: "Doces", subcategoria: " gourmet-premium" }).subcategoriaAtiva).toBe("finos");
   });
 
   it.each([
@@ -117,17 +118,40 @@ describe("filtro por subcategoria — montarLista", () => {
     ["de outra categoria", "smash-cake"],
     ["inativa", "inativa"],
     ["sem produto da Lista (só produto inativo)", "vazia"],
-  ])("slug %s vale como 'Todas', sem erro", (_nome, slug) => {
-    const todas = lista({ categoria: "Doces" });
+  ])("slug %s vale como a primeira subcategoria, sem erro", (_nome, slug) => {
+    const primeira = lista({ categoria: "Doces", subcategoria: "finos" });
     const r = lista({ categoria: "Doces", subcategoria: slug });
+    expect(r.subcategoriaAtiva).toBe("finos");
+    expect(nomes(r)).toEqual(nomes(primeira));
+    expect(r.total).toBe(primeira.total);
+  });
+
+  it("categoria com filtro, sem o parâmetro, abre na primeira subcategoria", () => {
+    const r = lista({ categoria: "Doces" });
+    expect(r.subcategoriaAtiva).toBe("finos");
+    expect(r.subcategoriaNaUrl).toBe("finos");
+    expect(nomes(r)).toEqual(["Éclair Fino"]);
+    expect(lista({ categoria: "Bolos" }).subcategoriaAtiva).toBe("smash-cake");
+  });
+
+  it("'todos' mostra a categoria inteira e leva 'todos' na URL", () => {
+    const r = lista({ categoria: "Doces", subcategoria: "todos" });
     expect(r.subcategoriaAtiva).toBeNull();
-    expect(nomes(r)).toEqual(nomes(todas));
-    expect(r.total).toBe(todas.total);
+    expect(r.subcategoriaNaUrl).toBe("todos");
+    expect(r.total).toBe(lista({ categoria: "Doces" }, CATALOGO.filter((p) => p.Categoria === "Doces" && p.ativo && !(p.subcategoria_id === "s-adicional")), []).total);
+    expect(nomes(r)).toContain("Doce Sem Subcategoria");
+  });
+
+  it("sem filtro na categoria, 'todos' e o padrão não mudam nada e a URL não leva o parâmetro", () => {
+    const r = lista({ categoria: "Salgados", subcategoria: "todos" });
+    expect(r.subcategoriaAtiva).toBeNull();
+    expect(r.subcategoriaNaUrl).toBeNull();
   });
 
   it("sem categoria o parâmetro é ignorado e não há chips", () => {
     const r = lista({ categoria: null, subcategoria: "finos" });
     expect(r.subcategoriaAtiva).toBeNull();
+    expect(r.subcategoriaNaUrl).toBeNull();
     expect(r.chips).toEqual([]);
     expect(r.total).toBe(lista().total);
   });
@@ -249,22 +273,50 @@ describe("URLs do filtro", () => {
   });
 });
 
+describe("Kit Festa: Por pessoa primeiro", () => {
+  const BASICO = sub({ id: "k-basico", categoria: "Kit Festa", nome: "Básico", slug: "basico", ordem: 10 });
+  const ESCOLAR = sub({ id: "k-escolar", categoria: "Kit Festa", nome: "Escolar", slug: "escolar", ordem: 40 });
+  const POR_PESSOA = sub({ id: "k-pp", categoria: "Kit Festa", nome: "Por pessoa", slug: "por-pessoa", ordem: 70 });
+  const kit = (sid: string) => produto({ Categoria: "Kit Festa", subcategoria_id: sid });
+  const ps = [kit(BASICO.id), kit(ESCOLAR.id), kit(POR_PESSOA.id)];
+
+  it("abre a lista do Kit Festa, mesmo cadastrada por último, e 'Todos' fica no fim", () => {
+    const chips = chipsDaCategoria("Kit Festa", ps, [BASICO, ESCOLAR, POR_PESSOA]);
+    expect(chips.map((c) => c.slug)).toEqual(["por-pessoa", "basico", "escolar"]);
+    const opcoes = opcoesDeSubcategoria({ categoria: "Kit Festa", busca: "", ordem: "recomendados" }, chips, null);
+    expect(opcoes.map((o) => o.nome)).toEqual(["Por pessoa", "Básico", "Escolar", "Todos"]);
+  });
+
+  it("sem produto em Por pessoa, ela não aparece e a ordem cadastrada vale", () => {
+    const chips = chipsDaCategoria("Kit Festa", [kit(BASICO.id), kit(ESCOLAR.id)], [BASICO, ESCOLAR, POR_PESSOA]);
+    expect(chips.map((c) => c.slug)).toEqual(["basico", "escolar"]);
+  });
+
+  it("outras categorias não mudam", () => {
+    const chips = chipsDaCategoria("Doces", [produto({ subcategoria_id: GOURMET.id }), produto({ subcategoria_id: FINOS.id })], [GOURMET, FINOS]);
+    expect(chips.map((c) => c.slug)).toEqual(["finos", "gourmet-premium"]);
+  });
+});
+
 describe("opções do filtro e categorias com filtro (acordeão do desktop)", () => {
-  it("'Todos' vem primeiro, depois os chips; só a ativa é atual; endereços mantêm busca e ordem, sem página", () => {
+  it("'Todos' vem por último, depois dos chips; só a ativa é atual; endereços mantêm busca e ordem, sem página", () => {
     const r = lista({ categoria: "Doces", subcategoria: "finos" });
     const opcoes = opcoesDeSubcategoria({ categoria: "Doces", busca: "e", ordem: "a-z" }, r.chips, r.subcategoriaAtiva);
-    expect(opcoes.map((o) => o.nome)).toEqual(["Todos", "Finos", "Gourmet Premium", "Premium"]);
-    expect(opcoes.map((o) => o.atual)).toEqual([false, true, false, false]);
+    expect(opcoes.map((o) => o.nome)).toEqual(["Finos", "Gourmet Premium", "Premium", "Todos"]);
+    expect(opcoes.map((o) => o.atual)).toEqual([true, false, false, false]);
     expect(opcoes.map((o) => o.href)).toEqual([
-      "/produtos?categoria=doces&busca=e&ordem=a-z",
       "/produtos?categoria=doces&subcategoria=finos&busca=e&ordem=a-z",
       "/produtos?categoria=doces&subcategoria=gourmet-premium&busca=e&ordem=a-z",
       "/produtos?categoria=doces&subcategoria=premium&busca=e&ordem=a-z",
+      "/produtos?categoria=doces&subcategoria=todos&busca=e&ordem=a-z",
     ]);
   });
 
-  it("sem subcategoria ativa (ou inválida), 'Todos' é o atual", () => {
-    const r = lista({ categoria: "Doces", subcategoria: "lixo" });
+  it("com 'todos' na URL, 'Todos' é o atual; sem parâmetro ou inválido, a primeira é a atual", () => {
+    const padrao = lista({ categoria: "Doces", subcategoria: "lixo" });
+    const base = { categoria: "Doces" as const, busca: "", ordem: "recomendados" as const };
+    expect(opcoesDeSubcategoria(base, padrao.chips, padrao.subcategoriaAtiva).find((o) => o.atual)?.nome).toBe("Finos");
+    const r = lista({ categoria: "Doces", subcategoria: "todos" });
     const opcoes = opcoesDeSubcategoria({ categoria: "Doces", busca: "", ordem: "recomendados" }, r.chips, r.subcategoriaAtiva);
     expect(opcoes.find((o) => o.atual)?.nome).toBe("Todos");
   });

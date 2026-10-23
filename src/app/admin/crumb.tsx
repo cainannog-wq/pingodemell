@@ -7,7 +7,7 @@ function labelFor(pathname: string): string {
   if (pathname.startsWith("/admin/recheios/")) return "Cardápio · Editar recheio";
   if (pathname === "/admin/recheios") return "Cardápio · Recheios";
   if (pathname === "/admin/subcategorias") return "Cardápio · Subcategorias";
-  if (pathname === "/admin/kit-listas") return "Cardápio · Listas do kit";
+  if (pathname === "/admin/kit-listas") return "Cardápio · Kit Festa";
   if (pathname === "/admin/produtos/novo") return "Cardápio · Novo produto";
   if (pathname.startsWith("/admin/produtos/")) return "Cardápio · Editar produto";
   if (pathname.startsWith("/admin/pedidos/")) return "Pedidos · Detalhe do pedido";

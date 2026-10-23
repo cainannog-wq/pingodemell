@@ -102,7 +102,7 @@ export default async function ListaPage({ searchParams }: Props) {
           {resultado ? (
             <BuscaEOrdem
               categoria={parametros.categoria}
-              subcategoria={resultado.subcategoriaAtiva}
+              subcategoria={resultado.subcategoriaNaUrl}
               busca={parametros.busca}
               ordem={resultado.ordem}
               maisPedidosDisponivel={resultado.maisPedidosDisponivel}
@@ -111,7 +111,7 @@ export default async function ListaPage({ searchParams }: Props) {
           <ListaProdutos parametros={parametros} resultado={resultado} />
           {resultado ? (
             <Paginacao
-              parametros={{ ...parametros, subcategoria: resultado.subcategoriaAtiva, ordem: resultado.ordem }}
+              parametros={{ ...parametros, subcategoria: resultado.subcategoriaNaUrl, ordem: resultado.ordem }}
               resultado={resultado}
             />
           ) : null}

@@ -59,7 +59,7 @@ const CAMPOS_ITEM: Record<ItemEnvio["tipo"], string[]> = {
   cento: [...CAMPOS_ITEM_BASE, "sabores"],
   bolo: [...CAMPOS_ITEM_BASE, "recheio", "formato"],
   bento: [...CAMPOS_ITEM_BASE, "recheio", "unidade_venda"],
-  kit: [...CAMPOS_ITEM_BASE, "unidade_venda", "escolhas"],
+  kit: [...CAMPOS_ITEM_BASE, "unidade_venda", "escolhas", "formato"],
 };
 const MAX_POR_TIPO: Record<ItemEnvio["tipo"], [number, number]> = {
   normal: [1, MAX_QUANTIDADE],
@@ -231,6 +231,10 @@ function item(v: unknown): { gravado: ItemGravado; centavos: number } {
   }
   if (tipo === "kit") {
     gravado.escolhas = escolhasDoKit(o.escolhas);
+    if (o.formato !== undefined && o.formato !== null) {
+      if (!(FORMATOS_BOLO as readonly unknown[]).includes(o.formato)) falha("Um kit do pedido está com o formato do bolo inválido.");
+      gravado.formato = o.formato as "redondo" | "quadrado";
+    }
   }
   if (tipo === "cento") {
     if (!Array.isArray(o.sabores) || o.sabores.length === 0 || o.sabores.length > LIMITES.saboresPorLinha) {

@@ -63,7 +63,7 @@ describe("primeira tela e menu do admin", () => {
     const { Crumb } = await import("./crumb");
     const casos: Array<[string, string]> = [
       ["/admin/visitas", "Site · Visitas do site"],
-      ["/admin/kit-listas", "Cardápio · Listas do kit"],
+      ["/admin/kit-listas", "Cardápio · Kit Festa"],
       ["/admin/produtos", "Cardápio · Produtos"],
       ["/admin/produtos/novo", "Cardápio · Novo produto"],
       ["/admin/pedidos", "Pedidos · Histórico"],

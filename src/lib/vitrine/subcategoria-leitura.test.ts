@@ -157,7 +157,9 @@ describe("cache da Lista", () => {
     const { buscarLista } = await import("./buscar");
     const nomes = async (p: Parameters<typeof buscarLista>[0]) => (await buscarLista(p))!.itens.map((i) => i.produto.nome);
     expect(await nomes(URLS[2])).toEqual(["Éclair"]);
-    expect(await nomes(URLS[1])).toEqual(["Brigadeiro", "Éclair"]);
+    // Categoria com filtro, sem o parâmetro: abre na primeira subcategoria.
+    expect(await nomes(URLS[1])).toEqual(["Éclair"]);
+    expect(await nomes({ ...URLS[1], subcategoria: "todos" })).toEqual(["Brigadeiro", "Éclair"]);
     expect(await nomes(URLS[3])).toEqual(["Brigadeiro"]); // página 3 fora do intervalo vai para a última
     expect(await nomes(URLS[2])).toEqual(["Éclair"]);
     expect(await nomes(URLS[4])).toEqual(["Bolo Comum"]);

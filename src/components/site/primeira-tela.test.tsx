@@ -82,6 +82,7 @@ describe("Primeira tela — Lista", () => {
           maisPedidosDisponivel: false,
           chips: [],
           subcategoriaAtiva: null,
+    subcategoriaNaUrl: null,
           categoriasComFiltro: [],
           temProdutosSemBusca: true,
         }}

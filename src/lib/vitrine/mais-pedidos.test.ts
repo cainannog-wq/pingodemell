@@ -168,3 +168,19 @@ describe("Preço do card em partes", () => {
     expect(partesPrecoVitrine({ preco: 2.5, tipo: "normal", unidade_venda: null }).unidade).toBeNull();
   });
 });
+
+describe("Preço do Kit Festa por pessoa", () => {
+  const kit = (extra: Partial<ProdutoVitrine> = {}) =>
+    produto({ nome: "Kit Festa Básico", tipo: "kit_pessoa", Categoria: "Kit Festa", preco: 22, unidade_venda: "a pessoa", ...extra });
+
+  it("com o menor tamanho calculado, mostra 'A partir de' e o total, sem unidade", () => {
+    const partes = partesPrecoVitrine(kit({ preco_a_partir_de: 220 }));
+    expect(partes).toEqual({ prefixo: "A partir de", valor: formatarPrecoVitrine(kit({ preco: 220, tipo: "normal", unidade_venda: null })), unidade: null });
+    expect(formatarPrecoVitrine(kit({ preco_a_partir_de: 220 }))).toMatch(/^A partir de R\$\s220,00$/);
+  });
+
+  it("sem o total calculado, cai no preço por pessoa de sempre", () => {
+    expect(partesPrecoVitrine(kit()).prefixo).toBeNull();
+    expect(formatarPrecoVitrine(kit())).toMatch(/R\$\s22,00/);
+  });
+});

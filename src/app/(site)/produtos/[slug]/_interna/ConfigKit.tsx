@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Icon } from "@/components/ds";
+import { AcordeaoDoGrupo } from "./AcordeaoDoGrupo";
+import { Icon, Select } from "@/components/ds";
 import { Seletor } from "@/components/site/Seletor";
 import { useCarrinho } from "@/components/site/CarrinhoProvider";
 import { contarKits, MAX_KITS, normalizarObservacao, TEXTO_LIMITE_DE_KITS } from "@/lib/carrinho/regras";
@@ -9,6 +10,7 @@ import { linhaGeral, opcoesDeEscolha, tamanhosDisponiveis, type KitConfig, type 
 import { progressoDaDistribuicao, validarEscolhas, type EscolhasKit } from "@/lib/kit/escolhas";
 import { montarRetrato, textoKg } from "@/lib/kit/texto";
 import { formatMoeda } from "@/lib/pedidos/format";
+import { FORMATO_BOLO_LABELS, FORMATOS_BOLO, type FormatoBolo } from "@/lib/vitrine/bolo";
 import type { ProdutoVitrine } from "@/lib/vitrine/mais-pedidos";
 import { useAdicionarEIrAoCarrinho } from "./edicao";
 import { EscolhaRecheio } from "./EscolhaRecheio";
@@ -37,20 +39,59 @@ function escolhasIniciais(config: KitConfig, pessoas: number, anteriores: Escolh
   return saida;
 }
 
+// Um grupo está fechado quando a escolha está completa: escolha única com uma
+// opção, distribuição com a soma exata. Grupo fixo (só informação) conta como
+// completo e não entra no acordeão.
+function grupoCompleto(g: KitGrupo, pessoas: number, escolhas: EscolhasKit): boolean {
+  if (g.modo === "fixo") return true;
+  if (g.modo === "escolha_unica") return (escolhas[g.chave]?.length ?? 0) > 0;
+  if (!linhaGeral(g, pessoas)) return true;
+  const p = progressoDaDistribuicao(g, pessoas, escolhas[g.chave] ?? []);
+  return p.falta === 0 && p.sobra === 0;
+}
+
+// Qual grupo fica aberto: o primeiro pendente depois de `depoisDe` (o grupo que
+// acabou de ser preenchido) e, se não houver, o primeiro pendente de todos.
+// Tudo completo: nenhum aberto (a cliente revê os resumos).
+function proximoAberto(config: KitConfig, pessoas: number, escolhas: EscolhasKit, depoisDe?: string): string | null {
+  const interativos = config.grupos.filter((g) => g.modo !== "fixo" && (g.modo !== "distribuicao" || linhaGeral(g, pessoas)));
+  const pendentes = interativos.filter((g) => !grupoCompleto(g, pessoas, escolhas));
+  if (pendentes.length === 0) return null;
+  if (depoisDe) {
+    const i = interativos.findIndex((g) => g.chave === depoisDe);
+    const seguinte = pendentes.find((g) => interativos.indexOf(g) > i);
+    if (seguinte) return seguinte.chave;
+  }
+  return pendentes[0].chave;
+}
+
+// A tela abre com 10 pessoas quando o kit tem esse tamanho; senão, no menor.
+export const PESSOAS_INICIAIS = 10;
+
 function textoPessoas(n: number): string {
   return `${n} ${n === 1 ? "pessoa" : "pessoas"}`;
 }
 
 // previa: prévia do admin de um kit inativo (/previa/{slug}). Tudo funciona como
 // para a cliente, menos o botão: um kit inativo não entra no pedido.
+// Grupo do kit que é o recheio do bolo: o formato (redondo ou quadrado) fica
+// dentro dessa caixa. A chave é a da configuração do kit (CSV de carga).
+export const GRUPO_DO_BOLO = "bolo";
+
 export const TEXTO_PREVIA = "Prévia do admin: este kit está inativo e não pode ser adicionado ao pedido.";
 
 export function ConfigKit({ produto, config, previa = false }: { produto: ProdutoVitrine; config: KitConfig; previa?: boolean }) {
   const tamanhos = tamanhosDisponiveis(config);
   const { linhas } = useCarrinho();
   const { indo, adicionarEIr } = useAdicionarEIrAoCarrinho();
-  const [pessoas, setPessoas] = useState(tamanhos[0]?.pessoas ?? 0);
-  const [escolhas, setEscolhas] = useState<EscolhasKit>(() => escolhasIniciais(config, tamanhos[0]?.pessoas ?? 0));
+  const inicial = (tamanhos.find((t) => t.pessoas === PESSOAS_INICIAIS) ?? tamanhos[0])?.pessoas ?? 0;
+  const [pessoas, setPessoas] = useState(inicial);
+  const [formato, setFormato] = useState<FormatoBolo>("redondo");
+  const [escolhas, setEscolhas] = useState<EscolhasKit>(() => escolhasIniciais(config, inicial));
+  // Grupo aberto no acordeão (um por vez): começa no primeiro que falta.
+  const [aberto, setAberto] = useState<string | null>(() =>
+    proximoAberto(config, inicial, escolhasIniciais(config, inicial))
+  );
   const [observacao, setObservacao] = useState("");
   const [adicionado, setAdicionado] = useState(false);
   const [avisoTroca, setAvisoTroca] = useState<string | null>(null);
@@ -78,8 +119,10 @@ export function ConfigKit({ produto, config, previa = false }: { produto: Produt
   function trocarPessoas(novo: number) {
     if (novo === pessoas) return;
     const tinhaDistribuicao = config.grupos.some((g) => g.modo === "distribuicao" && (escolhas[g.chave]?.length ?? 0) > 0);
+    const novas = escolhasIniciais(config, novo, escolhas);
     setPessoas(novo);
-    setEscolhas(escolhasIniciais(config, novo, escolhas));
+    setEscolhas(novas);
+    setAberto(proximoAberto(config, novo, novas));
     setAvisoTroca(
       tinhaDistribuicao
         ? `Você mudou para ${textoPessoas(novo)}: as quantidades mudam, então refaça a escolha dos itens que a gente zerou.`
@@ -91,7 +134,9 @@ export function ConfigKit({ produto, config, previa = false }: { produto: Produt
   function escolherUnica(grupo: KitGrupo, id: string) {
     const opcao = opcoesDeEscolha(grupo, pessoas).find((o) => o.opcao.id === id);
     if (!opcao) return;
-    setEscolhas((e) => ({ ...e, [grupo.chave]: [[id, opcao.total]] }));
+    const novas: EscolhasKit = { ...escolhas, [grupo.chave]: [[id, opcao.total]] };
+    setEscolhas(novas);
+    setAberto(proximoAberto(config, pessoas, novas, grupo.chave));
     setAdicionado(false);
   }
 
@@ -101,14 +146,17 @@ export function ConfigKit({ produto, config, previa = false }: { produto: Produt
   }
 
   function definirQuantidade(grupo: KitGrupo, id: string, quantidade: number) {
-    setEscolhas((e) => {
-      const outros = (e[grupo.chave] ?? []).filter(([i]) => i !== id);
-      const pares: [string, number][] = quantidade > 0 ? [...outros, [id, quantidade]] : outros;
-      // Mantém a ordem da lista para o texto da composição sair sempre igual.
-      const ordem = new Map(grupo.opcoes.map((o, i) => [o.id, i]));
-      pares.sort((a, b) => (ordem.get(a[0]) ?? 0) - (ordem.get(b[0]) ?? 0));
-      return { ...e, [grupo.chave]: pares };
-    });
+    const outros = (escolhas[grupo.chave] ?? []).filter(([i]) => i !== id);
+    const pares: [string, number][] = quantidade > 0 ? [...outros, [id, quantidade]] : outros;
+    // Mantém a ordem da lista para o texto da composição sair sempre igual.
+    const ordem = new Map(grupo.opcoes.map((o, i) => [o.id, i]));
+    pares.sort((a, b) => (ordem.get(a[0]) ?? 0) - (ordem.get(b[0]) ?? 0));
+    const novas: EscolhasKit = { ...escolhas, [grupo.chave]: pares };
+    setEscolhas(novas);
+    // Fechou a soma agora: passa para o próximo grupo que falta.
+    if (!grupoCompleto(grupo, pessoas, escolhas) && grupoCompleto(grupo, pessoas, novas)) {
+      setAberto(proximoAberto(config, pessoas, novas, grupo.chave));
+    }
     setAdicionado(false);
   }
 
@@ -123,7 +171,8 @@ export function ConfigKit({ produto, config, previa = false }: { produto: Produt
       quantidade: pessoas,
       unidade_venda: "a pessoa",
       escolhas,
-      retrato: montarRetrato(config, pessoas, escolhas),
+      retrato: montarRetrato(config, pessoas, escolhas, formato),
+      formato,
       foto: produto.image_url,
       observacao: normalizarObservacao(observacao),
     });
@@ -148,9 +197,24 @@ export function ConfigKit({ produto, config, previa = false }: { produto: Produt
 
     if (grupo.modo === "escolha_unica") {
       const opcoes = opcoesDeEscolha(grupo, pessoas);
+      const escolhida = opcoes.find((o) => o.opcao.id === escolhas[grupo.chave]?.[0]?.[0]);
       return (
-        <EscolhaRecheio
+        <AcordeaoDoGrupo
           key={grupo.chave}
+          id={`interna-kit-${grupo.chave}`}
+          titulo={grupo.rotulo}
+          resumo={
+            escolhida
+              ? [escolhida.opcao.nome, escolhida.rotulo, grupo.chave === GRUPO_DO_BOLO ? FORMATO_BOLO_LABELS[formato] : null]
+                  .filter(Boolean)
+                  .join(" · ")
+              : "Escolha uma opção"
+          }
+          completo={grupoCompleto(grupo, pessoas, escolhas)}
+          aberto={aberto === grupo.chave}
+          aoAlternar={() => setAberto(aberto === grupo.chave ? null : grupo.chave)}
+        >
+        <EscolhaRecheio
           titulo={grupo.rotulo}
           dica="Escolha uma opção."
           nomeCampo={`interna-kit-${grupo.chave}`}
@@ -170,6 +234,29 @@ export function ConfigKit({ produto, config, previa = false }: { produto: Produt
             },
           ]}
         />
+        {grupo.chave === GRUPO_DO_BOLO ? (
+          <fieldset className="interna-bloco interna-formato interna-formato-do-kit">
+            <legend className="interna-bloco-titulo">Formato do bolo</legend>
+            <div className="interna-formatos">
+              {FORMATOS_BOLO.map((f) => (
+                <label key={f} className="interna-opcao interna-opcao-pilula" data-marcada={formato === f}>
+                  <input
+                    type="radio"
+                    name="interna-kit-formato"
+                    value={f}
+                    checked={formato === f}
+                    onChange={() => {
+                      setFormato(f);
+                      setAdicionado(false);
+                    }}
+                  />
+                  <span className="interna-opcao-nome">{FORMATO_BOLO_LABELS[f]}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
+        </AcordeaoDoGrupo>
       );
     }
 
@@ -185,7 +272,16 @@ export function ConfigKit({ produto, config, previa = false }: { produto: Produt
     const porcentagem = progresso.total === 0 ? 0 : Math.min(100, (progresso.feitos / progresso.total) * 100);
     const titulo = `interna-kit-${grupo.chave}-titulo`;
     return (
-      <div key={grupo.chave} className="interna-composicao">
+      <AcordeaoDoGrupo
+        key={grupo.chave}
+        id={`interna-kit-${grupo.chave}`}
+        titulo={grupo.rotulo}
+        resumo={completa ? `${progresso.total} unidades escolhidas` : `${progresso.feitos} de ${progresso.total} selecionados`}
+        completo={completa}
+        aberto={aberto === grupo.chave}
+        aoAlternar={() => setAberto(aberto === grupo.chave ? null : grupo.chave)}
+      >
+      <div className="interna-composicao">
         <div className="interna-composicao-topo">
           <span className="interna-bloco-titulo" id={titulo}>
             {grupo.rotulo}
@@ -240,27 +336,26 @@ export function ConfigKit({ produto, config, previa = false }: { produto: Produt
           </div>
         </div>
       </div>
+      </AcordeaoDoGrupo>
     );
   }
 
   return (
     <>
       <fieldset className="interna-bloco interna-formato">
-        <legend className="interna-bloco-titulo">Para quantas pessoas?</legend>
-        <div className="interna-formatos">
+        <legend className="interna-bloco-titulo" id="interna-kit-pessoas-titulo">Para quantas pessoas?</legend>
+        <Select
+          aria-labelledby="interna-kit-pessoas-titulo"
+          name="interna-kit-pessoas"
+          value={pessoas}
+          onChange={(e) => trocarPessoas(Number(e.target.value))}
+        >
           {tamanhos.map((t) => (
-            <label key={t.pessoas} className="interna-opcao interna-opcao-pilula" data-marcada={pessoas === t.pessoas}>
-              <input
-                type="radio"
-                name="interna-kit-pessoas"
-                value={t.pessoas}
-                checked={pessoas === t.pessoas}
-                onChange={() => trocarPessoas(t.pessoas)}
-              />
-              <span className="interna-opcao-nome">{textoPessoas(t.pessoas)}</span>
-            </label>
+            <option key={t.pessoas} value={t.pessoas}>
+              {textoPessoas(t.pessoas)}
+            </option>
           ))}
-        </div>
+        </Select>
         {tamanho ? (
           <p className="interna-bloco-dica">
             Bolo de {textoKg(tamanho.boloKg)}

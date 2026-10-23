@@ -79,7 +79,7 @@ describe("unidade de venda: preço sem 'por', quantidade e mínimo no plural", (
   it("Cento (tipo Cento) e Bolo não mudam", () => {
     expect(preco(48, "o cento", "cento")).toBe("R$ 48,00 o cento");
     expect(preco(48, null, "cento")).toBe("R$ 48,00 o cento");
-    expect(preco(108, "o kg", "bolo")).toBe("a partir de R$ 108,00 o kg");
+    expect(preco(108, "o kg", "bolo")).toBe("A partir de R$ 108,00 o kg");
   });
 });
 
