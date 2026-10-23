@@ -5,7 +5,7 @@ import { SITE_URL } from "@/lib/site/url";
 // no teste basta a classe da variável.
 vi.mock("next/font/google", () => {
   const fonte = () => ({ variable: "fonte", className: "fonte" });
-  return { Geist: fonte, Geist_Mono: fonte, Merriweather: fonte, Nunito: fonte, Yellowtail: fonte };
+  return { Merriweather: fonte, Nunito: fonte, Yellowtail: fonte };
 });
 vi.mock("next/font/local", () => ({ default: () => ({ variable: "fonte", className: "fonte" }) }));
 
