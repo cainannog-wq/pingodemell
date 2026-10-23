@@ -99,9 +99,9 @@ describe("avisos (divergências que o banco não confere)", () => {
   });
 
   it("grupo sem quantidade para um tamanho e opção sem quantidade", () => {
-    const sem = ler("quantidades").replace(/Kit Exemplo Basico,20,bolo,,1,,\n/, "");
+    const sem = ler("quantidades").replace(/Kit Exemplo Basico,20,bolo,,1,,\r?\n/, "");
     expect(avisosCom({ quantidades: sem })).toMatch(/"bolo" não tem quantidade para 20/);
-    const semOpcao = ler("quantidades").replace(/Kit Exemplo Basico,20,bebida,Refrigerante,10,,\n/, "");
+    const semOpcao = ler("quantidades").replace(/Kit Exemplo Basico,20,bebida,Refrigerante,10,,\r?\n/, "");
     expect(avisosCom({ quantidades: semOpcao })).toMatch(/sem quantidade para Refrigerante/);
     expect(avisosCom({ quantidades: q("") })).toMatch(/não tem quantidade/);
   });

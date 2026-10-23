@@ -163,7 +163,9 @@ await emTransacaoDesfeita("Kit Festa por pessoa (kit_pessoa)", async (db) => {
 
     const lista = await c.tentar("insert into public.kit_listas (nome) values ('Fritos ZZPL') returning id");
     const item = await c.tentar("insert into public.kit_lista_itens (lista_id, nome, posicao) values ($1, 'Coxinha', 1)", [lista.rows?.[0]?.id]);
-    const altera = await c.tentar("update public.kit_lista_itens set ativo = false where nome = 'Coxinha'");
+    // Só o item desta prova: sem o filtro por lista, o update pegava também os
+    // itens reais de mesmo nome que a carga dos kits já cadastrou (2 linhas).
+    const altera = await c.tentar("update public.kit_lista_itens set ativo = false where lista_id = $1 and nome = 'Coxinha'", [lista.rows?.[0]?.id]);
     const tam = await c.tentar("insert into public.kit_tamanhos (produto_id, pessoas, bolo_kg, descartaveis) values ($1, 20, 2, true)", [p.inativo]);
     const apaga = await c.tentar("delete from public.kit_quantidades where produto_id = $1", [p.inativo]);
     registrar(
