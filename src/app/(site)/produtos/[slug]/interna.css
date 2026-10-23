@@ -921,3 +921,17 @@
 .interna-formato-do-kit .interna-bloco-titulo {
   margin-bottom: 8px;
 }
+.interna-acordeao-corpo .interna-formato-do-kit {
+  margin: 0;
+  padding: 16px 20px 20px;
+}
+.interna-acordeao-corpo .interna-formato-do-kit .interna-bloco-titulo {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0 0 10px;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  font-size: 15px;
+}
