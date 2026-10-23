@@ -4,7 +4,7 @@ import { linkWhatsApp } from "@/lib/site/whatsapp";
 import { mensagemSemRegistro, montarRetrato } from "./confirmacao";
 import { itemDaLinha } from "./envio";
 import { DADOS_TESTE, LINHAS_TESTE } from "./fixtura-teste";
-import { montarMensagem, ORCAMENTO_URL, TEXTO_INSTABILIDADE, textoCompleto, type DadosMensagem } from "./mensagem";
+import { montarMensagem, ORCAMENTO_URL, TEXTO_INSTABILIDADE, textoCompleto, textoCurto, textoMinimo, type DadosMensagem } from "./mensagem";
 
 // Mensagem do WhatsApp (PR confirmacao-e-gravacao).
 
@@ -79,6 +79,7 @@ describe("mensagem completa", () => {
         "Total dos itens: R$ 914,06",
         "O valor da entrega e o da decoração são informados no atendimento, e o total pode mudar.",
         "Se eu tiver foto de referência, mando nesta conversa.",
+        "Estou ciente de que o pedido pede 50% de sinal, com condições a combinar.",
       ].join("\n")
     );
   });
@@ -174,6 +175,7 @@ describe("orçamento na URL codificada e cascata completo → curto → mínimo"
         "",
         "Total dos itens: R$ 1.624,06",
         "O valor da entrega e o da decoração são informados no atendimento, e o total pode mudar.",
+        "Estou ciente de que o pedido pede 50% de sinal, com condições a combinar.",
         "",
         "Detalhes completos no pedido nº 1048.",
       ].join("\n")
@@ -294,5 +296,31 @@ describe("avulso com recheio personalizado", () => {
     const retrato = montarRetrato({ dados: DADOS_TESTE, linhas, resposta: resposta(linhas), prazo: null });
     expect(retrato.mensagem).toContain("1. Bolo Ganache, 2 kg, R$ 216,00");
     expect(retrato.linhas[0].detalhe).toBeNull();
+  });
+});
+
+describe("linha do sinal na mensagem do WhatsApp", () => {
+  const SINAL = "Estou ciente de que o pedido pede 50% de sinal, com condições a combinar.";
+
+  it("a mensagem completa traz a linha, perto do fim, depois do texto da foto", () => {
+    const linhas = textoCompleto(dadosGrandes()).split("\n");
+    expect(linhas).toContain(SINAL);
+    expect(linhas[linhas.length - 1]).toBe(SINAL);
+    expect(linhas.indexOf(SINAL)).toBeGreaterThan(linhas.indexOf("Se eu tiver foto de referência, mando nesta conversa."));
+  });
+
+  it("a mensagem curta e a mínima (quando o completo não cabe) também levam a linha", () => {
+    expect(textoCurto(dadosGrandes()).split("\n")).toContain(SINAL);
+    expect(textoMinimo(dadosGrandes()).split("\n")).toContain(SINAL);
+  });
+
+  it("o link do wa.me leva a linha codificada (acentos e %), e decodifica de volta idêntica", () => {
+    const d = dadosGrandes();
+    const m = montarMensagem(d);
+    expect(m.url.startsWith("https://wa.me/")).toBe(true);
+    expect(m.url).toContain(encodeURIComponent(SINAL));
+    expect(m.url).toContain("50%25%20de%20sinal");
+    expect(new URL(m.url).searchParams.get("text")).toBe(m.texto);
+    expect(m.texto).toContain(SINAL);
   });
 });

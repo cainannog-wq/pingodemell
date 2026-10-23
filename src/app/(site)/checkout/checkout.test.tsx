@@ -833,6 +833,20 @@ describe("Checkout — envio do pedido", () => {
 // PR de ajustes visuais (07/10/2026): saem os cinco subtítulos das seções;
 // ficam os títulos, o aviso das datas bloqueadas, a frase do pagamento e o
 // texto de abertura.
+describe("Checkout — aviso do sinal", () => {
+  it("o aviso do sinal fica junto de 'Nenhum pagamento é feito aqui no site.', no mesmo bloco, antes do fim do resumo", async () => {
+    await abrir();
+    const pagamento = screen.getByText("Nenhum pagamento é feito aqui no site.");
+    const sinal = screen.getByText("50% de sinal no pedido e negocie condições");
+    const bloco = pagamento.closest(".checkout-sem-pagamento")!;
+    expect(bloco).not.toBeNull();
+    expect(bloco.contains(sinal)).toBe(true);
+    // Um logo depois do outro.
+    expect(pagamento.compareDocumentPosition(sinal) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(sinal.closest("p")!.previousElementSibling).toBe(pagamento.closest("p"));
+  });
+});
+
 describe("Checkout — seções sem subtítulo", () => {
   const SUBTITULOS = [
     "É por aqui que a gente vai te responder.",

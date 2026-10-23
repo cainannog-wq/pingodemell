@@ -26,6 +26,10 @@ export const ORCAMENTO_URL = 3000;
 export const TEXTO_ENTREGA_DECORACAO =
   "O valor da entrega e o da decoração são informados no atendimento, e o total pode mudar.";
 export const TEXTO_FOTO = "Se eu tiver foto de referência, mando nesta conversa.";
+// Aviso do sinal: no checkout (voz da loja) e na mensagem do WhatsApp (voz da
+// cliente). Pedido da Taami, 23/10/2026.
+export const TEXTO_SINAL_CHECKOUT = "50% de sinal no pedido e negocie condições";
+export const TEXTO_SINAL_WHATSAPP = "Estou ciente de que o pedido pede 50% de sinal, com condições a combinar.";
 export const TEXTO_INSTABILIDADE = "Pedido não registrado no site, por instabilidade.";
 
 // composicao: só no kit, as linhas do retrato (o corpo do pedido leva só ids;
@@ -137,6 +141,7 @@ export function textoCompleto(d: DadosMensagem): string {
     `Total dos itens: ${reais(d.totalCentavos)}`,
     TEXTO_ENTREGA_DECORACAO,
     TEXTO_FOTO,
+    TEXTO_SINAL_WHATSAPP,
   ].join("\n");
 }
 
@@ -151,7 +156,7 @@ function cabecalhoCurto(d: DadosMensagem): string[] {
 }
 
 function rodapeCurto(d: DadosMensagem): string[] {
-  return ["", `Total dos itens: ${reais(d.totalCentavos)}`, TEXTO_ENTREGA_DECORACAO, "", `Detalhes completos no pedido nº ${d.numero}.`];
+  return ["", `Total dos itens: ${reais(d.totalCentavos)}`, TEXTO_ENTREGA_DECORACAO, TEXTO_SINAL_WHATSAPP, "", `Detalhes completos no pedido nº ${d.numero}.`];
 }
 
 export function textoCurto(d: DadosMensagem): string {
