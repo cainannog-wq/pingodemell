@@ -280,3 +280,31 @@ describe("validação do pedido no servidor: sabores do Cento", () => {
     expect(validarPedido(barato, HOJE).ok).toBe(true);
   });
 });
+
+// Auditoria de segurança (B13/B6): o subtotal é gravado em numeric(10,2). Pedido
+// que passa na forma mas passa de R$ 99.999.999,99 estourava no banco (22003),
+// virava 500 e, como a falha desfaz a contagem do limite por IP, gastava número
+// de pedido sem nunca contar no limite.
+describe("validação do pedido no servidor: valor que cabe na coluna", () => {
+  const linha = (preco: number, quantidade: number) => ({
+    ...corpo().itens[0],
+    preco,
+    quantidade,
+  });
+
+  it("recusa subtotal acima do que a coluna numeric(10,2) guarda (R$ 50.000 x 9.999)", () => {
+    expect(recusa(corpo({ itens: [linha(50000, 9999)] }))).toMatch(/valor/i);
+  });
+
+  it("recusa a soma de várias linhas que passa do limite, mesmo com cada linha abaixo dele", () => {
+    const itens = Array.from({ length: 30 }, () => linha(50000, 1000));
+    expect(recusa(corpo({ itens }))).toMatch(/valor/i);
+  });
+
+  it("aceita o subtotal exatamente no limite da coluna", () => {
+    // 1.999 x R$ 50.000 = R$ 99.950.000,00, abaixo do limite.
+    expect(validarPedido(corpo({ itens: [linha(50000, 1999)] }), HOJE).ok).toBe(true);
+    // + 1 x R$ 50.000 = R$ 100.000.000,00, acima.
+    expect(validarPedido(corpo({ itens: [linha(50000, 1999), linha(50000, 1)] }), HOJE).ok).toBe(false);
+  });
+});
